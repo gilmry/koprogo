@@ -1,0 +1,400 @@
+5a5f55d0 release(pilote): barrière de la vague 4 levée, vague 5 ouverte
+ea3a1065 merge: reprendre les relevés CSI arrivés pendant la fusion des 28 branches
+b801bb4c merge: 28 branches d'agent dans feature/dev, et ce que la fusion a cassé
+0ad5366e csi(telemetrie): 1 passe(s) relevée(s) — run 35025869977
+10e671cf csi(telemetrie): 1 passe(s) relevée(s) — run 35024951196
+2bced993 Merge remote-tracking branch 'origin/story/841' into feature/dev
+ca62a730 Merge remote-tracking branch 'origin/story/579' into feature/dev
+c82799ed Merge remote-tracking branch 'origin/story/425' into feature/dev
+dfeec37d Merge remote-tracking branch 'origin/story/864' into feature/dev
+8d4d4c98 Merge remote-tracking branch 'origin/story/872' into feature/dev
+3d7f38d1 Merge pull request #912 from gilmry/story/797
+3e1affac Merge pull request #908 from gilmry/story/762
+9503a665 Merge pull request #907 from gilmry/story/881
+503190cc Merge pull request #906 from gilmry/story/835
+9a6e78da Merge pull request #905 from gilmry/story/731
+0d834b7a csi(telemetrie): 1 passe(s) relevée(s) — run 35022988508
+79f300f9 Merge pull request #904 from gilmry/story/868
+d2f00b39 Merge pull request #900 from gilmry/story/882
+4a7d4061 Merge pull request #897 from gilmry/story/635
+fad3ff6b Merge pull request #893 from gilmry/story/850
+f3caf5ec feat(#797): implémentation par agent — créneau V4.8
+84b4e40d Merge pull request #889 from gilmry/story/805
+b11afebc Merge pull request #887 from gilmry/story/781
+d3ad897a Merge pull request #886 from gilmry/story/852
+6b1bb585 Merge pull request #885 from gilmry/story/576
+f5908001 Merge pull request #884 from gilmry/story/798
+d78bba46 Merge pull request #879 from gilmry/story/867
+f4ef2f4a Merge pull request #898 from gilmry/story/854
+54e9b6ab Merge pull request #903 from gilmry/story/848
+00783500 Merge pull request #899 from gilmry/story/847
+8f9f500e Merge pull request #902 from gilmry/story/595
+8b99ed48 Merge pull request #901 from gilmry/story/453
+6a118946 Merge pull request #895 from gilmry/story/432
+1af9e222 Merge pull request #896 from gilmry/story/429
+8a86ae58 Merge pull request #909 from gilmry/story/354
+048eb3d4 release(pilote): ce que l'ordre inversé protège, c'est l'attention
+46e743dd docs(pilotage): #913 — relire les promotions à l'envers de la pyramide
+33dd7895 csi(telemetrie): 1 passe(s) relevée(s) — run 35022834378
+7aaceccf feat(#797): implémentation par agent — créneau V4.8
+ce873a40 release(pilote): le Gantt est allé à son butoir — 22 dépendances sur 22
+31999545 fix(#874): la reprise ressuscitait les instruments périmés
+a9becc67 csi(telemetrie): 1 passe(s) relevée(s) — run 35021168580
+7413127d csi(telemetrie): 2 passe(s) relevée(s) — run 35019195617
+82cbd832 release(pilote): il y a DEUX silences, et ils n'appellent pas le même geste
+fb059bb7 release(pilote): les gates partent seuls — le harnais est complet
+6b434527 csi(telemetrie): 2 passe(s) relevée(s) — run 35015684252
+fb719c9b feat(#579): implémentation par agent — créneau V4.6
+615a9449 fix(#874): le PAT était posé là où git regarde en DERNIER
+42791ad9 release(pilote): état des lieux — le Gantt déroulé, le socle promu
+081067e1 csi(telemetrie): 4 passe(s) relevée(s) — run 34795614117
+b8565719 feat(#354): implémentation par agent — créneau V4.5
+04ce6196 feat(#762): implémentation par agent — créneau V4.5
+752ea0ae feat(#881): implémentation par agent — créneau V4.5
+9c6a4f42 release(pilote): six branches d'agent passent tous les gates
+ad7262e7 csi(telemetrie): 1 passe(s) relevée(s) — run 34793052029
+e08843e5 feat(#835): implémentation par agent — créneau V4.4
+499a4741 release(pilote): le silence des agents est de la variance, pas un verdict
+61cb8b68 feat(#731): implémentation par agent — créneau V4.4
+6ee1d412 feat(#868): implémentation par agent — créneau V4.4
+3f543041 feat(#848): implémentation par agent — créneau V4.4
+c4b3382d fix(#874): un tiers des agents se taisaient, et le harnais n'en disait rien
+29398799 csi(telemetrie): 1 passe(s) relevée(s) — run 34789291390
+50d54df2 release(pilote): le prior du Gantt calibré sur 15 passes réelles
+d8b39691 fix(#874): le chemin du dépôt était celui de mon poste, et le workflow mentait
+4f1bc286 csi(telemetrie): 4 passe(s) relevée(s) — run 34788733180
+df0ef3a8 csi(telemetrie): 7 passe(s) relevée(s) — run 34786782590
+b9674b60 feat(#595): implémentation par agent — créneau V4.3
+31bb9719 feat(#453): implémentation par agent — créneau V4.3
+f5756efe feat(#882): implémentation par agent — créneau V4.3
+a5ce54ba feat(#847): implémentation par agent — créneau V4.3
+03f601ba fix(#874): deux instruments mesuraient « prêt », et ils se contredisaient
+1fbabae3 release(pilote): l'épinglage du checkout, prouvé par contraste
+bfce1827 csi(telemetrie): 9 passe(s) relevée(s) — run 34783546008
+3692a9e5 release(pilote): V4.2 déroulée, et main bloqué par ses propres défauts
+927d7a66 feat(#854): implémentation par agent — créneau V4.2
+da73ee4f feat(#635): implémentation par agent — créneau V4.2
+982dfa0b feat(#429): implémentation par agent — créneau V4.2
+ab9738a4 feat(#432): implémentation par agent — créneau V4.2
+bfcc15b3 feat(#850): implémentation par agent — créneau V4.2
+af5b43a3 feat(#864): implémentation par agent — créneau V4.2
+25008843 feat(#841): implémentation par agent — créneau V4.2
+1d261413 release(pilote): les sept verdicts de V4.1 se lisent en deux colonnes
+b094778d docs(#874): « vieux de plusieurs jours » était faux — treize heures
+f190d268 fix(#874): le fan-out branchait depuis main, pas depuis feature/dev
+8b645321 release(pilote): la vague V4.1 a tourné — sept branches, trois défauts
+de4093d5 feat(#805): implémentation par agent — créneau V4.1
+07f71c4a feat(#425): implémentation par agent — créneau V4.1
+74fbc0b6 feat(#781): implémentation par agent — créneau V4.1
+983d9a61 feat(#852): implémentation par agent — créneau V4.1
+10e8115d feat(#576): implémentation par agent — créneau V4.1
+f8c0bf88 feat(#798): implémentation par agent — créneau V4.1
+4dd148d8 feat(#872): implémentation par agent — créneau V4.1
+69b915f7 release(pilote): #864 au registre — 95 → 73, et le cliquet classe
+61e77406 security(#864): douze routes de plus cloisonnées, et le cliquet CLASSE
+d0f2cc9b release(pilote): deux gates verts qui disaient plus qu'ils ne prouvent
+7c2a856d docs(pilotage): #832 fermée sur mesure, #877 volontairement gardée ouverte
+615c502d release(pilote): le gate e2e passe 🟢 — 308 ✓ / 0 ✘, code 0
+9d516c31 release(pilote): ACTIX_WORKERS=1 vérifié sur le conteneur, pas lu dans le fichier
+55cc8033 release(pilote): #718 expliqué et corrigé, deux 🔴 posés avec leur preuve
+40eb8edd fix(#718): bcrypt tenait le thread de travail, d'où les 502
+c92d556d docs(pilotage): #882 — dix-huit routes jettent explicitement leur identité
+b50f4fff docs(pilotage): l'écart depuis signature trace #881 — 84 signées, 89 aujourd'hui
+8fc0367f docs(pilotage): #881 au backlog — le registre d'audit affirme le contraire
+d5da00e9 docs(pilotage): #880 au backlog, #871 retirée, et le graphe cède au réel
+88c591b8 release(pilote): le banc de mesure devient le sujet, pas les échecs
+0713da2b fix(recette): make seed-reset annonçait ✅ sur un refus de l'API
+84332b67 security(#864): le cliquet passe de 95 à 85, par le travail
+5ce48d93 fix(#880): le rapport JSON s'écrasait lui-même d'une exécution à l'autre
+ee9512d5 security(#864): dix transitions d'état se pilotaient hors périmètre
+12c919b0 release(pilote): #877 tranchée, fan-out débloqué, #879 relancée
+72d719e6 fix(#877): minio a disparu de docker.io, quay.io sert les mêmes bits
+a2a8a306 docs(reprise): lettre de mission, pour qu'une session neuve ne redécouvre pas
+775cef47 feat(produit): RICE sur le backlog, à Reach et Impact substitués — et qui le dit
+acdbe2be csi(telemetrie): le fan-out produisait sa mesure et la jetait
+bef01dd5 fix(#874): le fan-out poussait avec un jeton qui n'éveille aucun gate
+ece29e28 feat(#867): implémentation par agent — créneau V4.10
+11e1dfd9 Merge pull request #764 from gilmry/feature/dev
+6fef176a release(pilote): la pile de recette a tourné, le registre passe au mesuré
+fc6251ad fix(#872): la campagne e2e visait la démo par défaut, dans 93 fichiers
+af790708 docs(backlog): #877 rattachée à C7.1 — le périmètre passe à 88
+489a5473 fix(#872): la pile de recette n'avait pas de JWT_SECRET, donc ne démarrait pas
+0f7181b2 release(pilote): ADR 0050 exécutée, #876 corrigé, deux gates passent en 🟠
+0e3036d8 fix(#872): la recette cesse de viser la démo — quatre ports décalés
+597b3eeb fix(#876): le parcours amorce son monde, aucun globalSetup ne le posait
+81a8f9ed chore(#876): la vitrine générée est dérivée, donc ignorée par git
+1aaba00a feat(#876): la vitrine au moule Foyer — parcours partagé, narration, chapitres
+5cb2eea8 feat(#876): la vitrine doit suivre le moule Foyer, pas juste exister
+48f66dca fix(ci): reformate la garde des couleurs — playwright était sauté depuis 5 runs
+23d8e38a feat(#873): la vitrine devient un artefact de branche
+77564b3b docs(pilote): l'arbitre de promotion tracé — koprogo#875 et foyer#7
+eed30472 feat(pilotage): story habilitante en rang 0 — le Gantt gagne une barrière
+223795d0 ci(fanout): un agent par story, un runner par agent
+38a0f488 docs(pilotage): Gantt validé, orchestration multiagent — 10 demandés, 2 tenus
+a816f8a0 docs(pilotage): Gantt de la v0.1.0 en passes d'agent — 28 passes
+ad20db18 docs(pilote): phase A close — livrable BMAD signé, plus aucun arbitrage 🔴
+2888f68d docs(pilote): étape 4 close côté agent — 84/84 « Agent IA Ready »
+938b7ca5 docs(pilote): rang 7 porté à « Agent IA Ready » — 81/84, et 84/84 sur les tests
+1778b5e2 docs(pilote): rang 6 porté à « Agent IA Ready » — 42/84, la moitié
+234c22d6 docs(pilote): rang 5, le noyau légal, porté à « Agent IA Ready » — 25/84
+8068a9d0 docs(pilote): rang 4 porté à « Agent IA Ready » — 17/84
+a0c107c5 docs(pilote): rang 3 porté à « Agent IA Ready » — 15/84
+bb322682 docs(pilote): rang 2 porté à « Agent IA Ready » — 7/84 → 14/84
+429ae007 docs(pilote): les quatre arbitrages restants tranchés — plus aucun 🔴
+2e4955ec docs(pilote): découpage de la v0.1.0 tranché — périmètre intégral
+10f6a17a chore(pilote): retire un séparateur en trop dans les commandes Foyer
+4f10b5be chore(pilote): installe le pilote Foyer, registre d'état PO ↔ dev
+0adb9b8e fix(recette): le garde surveillait la valeur du mot de passe, pas le choix
+d35332de fix(compose): la pile de dev montait le volume de données de la démo
+37cf0746 docs(backlog): la pile de dev revendique les conteneurs de la démo (#872)
+89788342 test(recette): un 401 muet cachait une variable manquante, plus maintenant
+1a14a8e4 docs(backlog): le périmètre était classé par provenance, pas par capacité
+2836d338 fix(design): trois verts de marque coexistaient, dont un turquoise servi
+bb3662b0 docs(backlog): aucune des 84 issues du périmètre n'était Agent IA Ready
+46ee956a security(iot): huit routes lisaient les relevés de tout immeuble
+ca7de310 Le cliquet que #864 réclamait : 103 routes prennent une identité sans décider
+7013e94b Le test de suppression taisait sa catégorie, et je n'avais pas lancé les gardes
+12f3ad85 Quatre suppressions demandaient un UUID, pas une autorisation (#864)
+e7f9d866 Onze en-têtes de page traduits, et un seul endroit pour les changer
+455125e8 Un couple ne peut voter à aucune assemblée, et le refus ne disait pas lequel (#848)
+cc319aec Deux harnais ne tournaient nulle part, dont celui qui prouve le cloisonnement
+652e16a3 Le cycle d'une AG va de bout en bout, et le test le prouve (#780)
+9a4c996a La voix d'un lot se lit sur l'acte de base, elle ne se déclare plus (#850)
+2edcb60a Quatre défauts d'affichage, et un formateur de montants sans aucun test (#871)
+fb27d200 Six libellés en dur sur les vingt écrans, dont la première phrase du produit
+c36eac96 Une clé de traduction affichée telle quelle, et mon script de mesure qui en inventait 28 autres
+ef0e00de Un conteneur défilant parfaitement écrit, que la grille au-dessus empêchait de défiler
+89e26649 L'onglet « Mes ACP » du syndic menait à une route qui le refuse
+63230a7e L'inventaire du WBS se régénère, il ne s'édite pas à la main
+fb8d36bd Mon propre test ne pouvait pas échouer, et il cachait un vrai débordement
+bf4e5a68 Le WBS dit ce que le banc mobile a changé, et pourquoi le compte monte
+3ae4ede1 Une étoile de 14 x 20 px dans une ligne de 52, qui renversait l'action
+c34dd164 Le projet de bureau ramassait le banc mobile, et la CI a rougi pour rien
+2561b4dc Le banc mobile entre au barrage, sinon il ne tournerait que si j'y pense
+3cb50ac8 Un navigateur à 393 px : le banc qui manquait à tout le Track U (#869)
+fc0656ec Deux marges de zone sûre écrites juste, et inertes sur tous les appareils
+064fd096 Une feuille du bas, qui réutilise le piège de focus au lieu d'en réécrire un
+7377a2a6 L'écran des dettes par association, et le paiement séparé (#867)
+2bcf4d48 Les dettes d'un copropriétaire, ventilées par association (#867)
+59168d64 L'écran « Plus » masquait cinq destinations — le même défaut, deux fois dans le même composant
+bfbeb92f Neuf destinations d'onglets sur dix-sept ne menaient nulle part — et c'était de moi
+fc63efa1 « Aujourd'hui » au lieu de « Bienvenue, Prénom », et la pression dite en mots
+f66488bd Six tableaux illisibles sur téléphone, dont trois qui coupaient leurs colonnes en silence
+d998edb2 La table « Mes ACP » débordait à 390 px — un défaut que je venais d'introduire
+d6dced6a Carte d'encaissement : une addition rendue visible, au lieu de deux cartes
+817b721a Les comptes de la copropriété n'étaient pas cloisonnés — et une troisième assertion qui ne pouvait pas échouer
+407245b2 Rend cliquables les quatre cartes de chiffres du syndic, et pose un cliquet sur les émojis
+0152daa3 Resynchronise package-lock.json avec package.json
+50dd0c2a Table « Mes ACP », de la requête SQL au pixel
+8b94b678 chore(deps)(deps): Bump the cargo-minor group in /backend with 4 updates (#862)
+1cd87011 chore(deps)(deps-dev): Bump vitest from 4.1.11 to 5.0.0 in /frontend (#861)
+f2dded95 chore(deps)(deps): Bump actions-rust-lang/setup-rust-toolchain (#863)
+0875de68 chore(deps)(deps): Bump printpdf in /backend in the cargo-patch group (#860)
+6c6dcbf1 chore(deps)(deps-dev): Bump @vitest/coverage-v8 in /frontend (#859)
+156fcd48 chore(deps)(deps): Bump the npm-minor group in /frontend with 2 updates (#858)
+b7117e25 chore(deps)(deps): Bump the npm-patch group in /frontend with 2 updates (#857)
+3a2f79d9 Deux routes inatteignables par ordre d'enregistrement, et la garde qui tient la classe
+0486d765 Encart d'intégrité des lots : le fait était affiché, sa conséquence ne l'était pas
+6a3e34bb Décompte d'échéance légale, suivi des PV, et quatre liens en double que j'avais introduits
+a4d8aaf2 Deux routes légales n'avaient jamais fonctionné, et quatre couches de tests verts le cachaient
+32bfffb6 Cadre légal unique, registre des règles, boutons d'action accessibles
+5d880d57 Coquille mobile : barre d'onglets, sélecteur qui s'ouvre, quotités chiffrées
+d4f97d6a Refonte UX étapes 2 et 4 : jetons, jeu d'icônes, défaut serveur de périmètre
+971d4a08 Applique les sept arbitrages : ADR 0046 à 0048, RFC 0003, dette d'identité de 6 à 1
+2b140694 Scinde l'Art. 3.87 § 2 en ses deux alinéas au registre légal (#847)
+6f5e4b64 Répare la régression du refus de vote hors ordre du jour (#840)
+ba3d94ce Une résolution hors ordre du jour ne peut plus être mise aux voix (#840)
+85fa395e Le mot de passe superadmin n'est plus écrit à quarante-cinq endroits (#832)
+008e328d Le CI Pipeline est vert, et l'audit de sécurité npm avec lui
+044790de Aucune interception d'API de la suite ne pouvait s'appliquer
+e0ce6e23 La connexion du notaire réussissait ; c'est l'URL attendue qui n'existait pas
+c6362ae2 Deux simulations réseau n'ont jamais rien simulé
+72b96f92 La troisième confirmation du parcours facture manquait aussi
+69b19837 Le portique d'accès pouvait attendre indéfiniment sans rien dire
+5021fb7f La recherche d'immeubles ne cherchait que la page affichée (#853)
+4ac23c69 Trois specs comptables empruntent enfin le chemin supporté
+5bddea94 Trois recettes croyaient avoir un rôle qu'elles n'avaient pas
+ea34a617 Les captures d'écran de chromium étaient détruites avant d'être lues
+83c292a3 Onze recettes attendaient un dialogue que #844 a supprimé
+159b0814 Le projet smoke devient bloquant : 92/98 hier, 98/98 aujourd'hui
+de24176c Le serveur disait la cause depuis le début, le test la jetait (#852)
+e3fc38e0 Les douze scénarios passent, et les 63 assertions smoke diront pourquoi
+fadbdd45 Trois gardes ne lisaient pas les douze scénarios, faute d'extension
+d2779084 La comparaison de devis n'a jamais affiché une ligne (#851)
+6a3f2132 Le scénario dépliait la liste des votes au lieu de voter
+f2fc913e Les vidéos de documentation vivante montraient la barre d'outils d'Astro
+26d3373f La conversion des dialogues natifs a laissé les scénarios derrière elle
+ff5109e2 Douze gestes d'écriture cessent d'échouer en silence, et #850
+b128c74f Aucun copropriétaire ne pouvait voter à une consultation (#849)
+8b0376e4 Ma garde des formulations avait son propre angle mort
+66117f2d Quatre scénarios cliquaient des liens que leur rôle ne voit pas
+900b83d5 Le scénario des moyens de paiement documentait un écran disparu
+58bf7aaa Le monde de scénario naissait non conforme à son acte de base
+7eca4c76 Une reprise au lieu de deux : quarante exécutions pour zéro flake
+edb8e461 Six scénarios n'ont jamais amorcé leur monde : `Array.isArray` sur une enveloppe
+603cccf1 Onze cliquets sur treize n'étaient exécutés par aucun portail
+cf33975b Le WBS enregistre #848 au Track S
+ce4ae77c La moitié des contrôles du domaine n'est appelée par rien
+eec2aa2b Les six échecs `smoke` étaient des tests périmés, pas des défauts produit
+26048b99 Le refus de répartition accusait la mauvaise cause
+84953b6b La CI ne pouvait plus rendre de verdict : trois suites, un seul plafond
+4d093ec4 Les ancres de navigation changeaient avec la langue (#803, #834)
+202d9f4d Le WBS enregistre #847 et le déblocage des maquettes du Track U
+3443a54e La dette d'ancrage de #803 est soldée : 755 → 0
+8e73c50b Les fichiers JavaScript étaient servis sans aucun en-tête de sécurité
+61428f4f Ancrage des pages publiques et de la longue traîne : 179 → 126 (#803)
+c4f3c67e Sept liens internes ne menaient nulle part, et rendaient 200
+91c9c637 Ancrage des tableaux de bord, de la navigation et des formulaires (#803)
+1e7102ac Une garde interdit de chercher un élément par sa formulation (#803)
+30160c2f Les identifiants déjà posés deviennent des ancres : 343 → 251 (#803)
+3030c1b5 Les quatre parcours de recette sont ancrés : 440 → 343 (#803)
+7af53d23 La création d'immeuble et de lot est intégralement ancrée : 517 → 440 (#803)
+0c56f4cf La saisie comptable est intégralement ancrée : 557 → 517 (#803)
+9a684ac9 Le détecteur d'ancrage ne compte plus les balises citées dans un commentaire (#803)
+35a26471 Ancre relances, factures et budgets : 591 → 560 (#803)
+a89a55ef Entame le parcours de saisie comptable : 620 → 591 (#803)
+71026878 Le cycle de vie d'une AG est intégralement ancré : 635 → 620 (#803, #780)
+a884a43e Relit les vingt-neuf invariants légaux un par un (#847)
+bd58a4d5 Le registre légal exige un vrai test, pas une sous-chaîne (#847)
+2d6e9655 Implémente le plafond de trois ans du mandat de syndic, et corrige l'invariant qui prétendait le couvrir (#847, #837, Art. 3.89 § 1er)
+e825cebd Ancre les formulaires d'annonce et de compétence : 648 → 635 (#803)
+36be2407 Ancre les trois écrans que #803 nomme en priorité : 672 → 648
+8a08a6be Ramène les routes sans identité à leurs six arbitrages, et corrige deux angles morts de la garde (#845)
+7f31f738 Épuise les dialogues natifs : 60 → 0 (#844)
+a2065a4d Rend atteignables dix actions de plus, et le barrage attrape mon erreur de mode (#844, #832)
+04914206 Rend atteignables huit actions de plus : devis et défis (#844)
+70b176b6 Rend atteignables sept actions de plus : échanges locaux et convocations (#844)
+4abddbfe Rend atteignables neuf actions de plus : sondages, relances, appels de fonds (#844)
+21493fc2 Rend atteignables six actions destructrices de la comptabilité (#844)
+f46f2a7e Regroupe les six arbitrages qui bloquent la clôture du WBS
+205014fd Rend atteignables les quatre actions de l'état daté, sur un chemin daté par la loi (#844)
+7855530a Garde cinq routes de plus, et apprend au cliquet de taxonomie sa cinquième catégorie (#845, #427)
+7d28bb5e Débranche la réhydratation du périmètre : elle casse trois specs (#841)
+9e3ce860 Borne la taxonomie des scénarios BDD, et ne compte que ceux qui s'exécutent (#427, #838)
+36eaca46 Borne aussi la taxonomie des specs Playwright, la couche la plus muette (#427)
+15eab40b Mesure enfin le ratio de taxonomie des tests, et le borne (#427)
+ba78cd88 Donne un immeuble aux fixtures comptables, et l'URL qui le désigne (#841, #832)
+393c6ee0 Fait survivre le périmètre d'immeuble à une navigation, par lien profond validé côté serveur (#841)
+8ec25faa Remet le WBS à la vérité du 2026-09-08 (#846, #845, #844, #842, #841, #840)
+3199ac13 Rend atteignables les cinq actions de l'écran de convocation, verrou 2 de #780 (#844)
+fb0b49a9 Fait lire au cliquet de libellés les 58 pages Astro qu'il ignorait (#834)
+c65a936d Relève la convention de nommage des ancres, et la tient (#803)
+6460eac9 Signale les onze tables que le schéma promet et que rien ne lit (#846)
+e8a527d4 Route le classement d'erreurs vers le lexique bilingue : 118 → 39 (#762)
+7cf14dfa Rend une identité aux six routes les plus exposées, et pose le cliquet qui les voit (#845)
+254aa87c Rend au registre d'audit les 194 types d'évènements qu'il relisait en accès non autorisés (#843, #780, #844)
+ab99acf6 Ancre le bouton de génération des rapports, que la spec cherchait par son libellé français (#832)
+03ddd913 Fait basculer vers le copropriétaire les quatre parcours qui se disaient en son nom sans jamais le devenir (#832)
+6fc608e3 Rend l'effacement RGPD atteignable depuis /settings/gdpr, et pose un cliquet sur les ancres ambiguës (#832, #842)
+a8462e0f Vérifie les douze règles légales déclarées manquantes, et rend la matrice exécutée (#837)
+b3809759 Répare clippy sur le cliquet à zéro, et déplace l'ancre `owner-units` sur le bon composant (#838, #832)
+53924ba7 Sort de `tests/features/` 28 fichiers que personne ne chargeait, cliquet à 0 (#838)
+d4d7d4fd Fait lire au gate de formatage les 94 % du frontend qu'il sautait (#839)
+8de5339a Traduit le dernier fichier à libellés en dur et ramène le cliquet à 0 (#834)
+862add82 Vide la dette de libellés hors du panneau de données de test (#834)
+a9786727 Traduit vingt-huit écrans d'un lot, dont dix-huit libellés restés en anglais (#834)
+a75f4160 Traduit la pagination et quatre écrans, dont deux libellés restés en anglais (#834)
+b9ba4994 Accentue un écran d'administration, et ancre un avertissement plutôt que ses mots (#834, #803)
+4fbf9c4c Débloque le Track U : #772 est fermée (#772, #798)
+70259c22 Met l'inventaire à jour : #772 fermée, 66 issues ouvertes
+2fca4d3b Traduit le contact du syndic, les réglages et le prêt d'objet (#834)
+eaa4412a Traduit l'attribution des rôles, et corrige un quatrième test de libellé (#834)
+c9367798 Ferme dix routes que mon propre renommage avait laissées ouvertes (#772)
+756a5a95 Traduit trois écrans de gestion, dont le suivi des décisions du conseil (#834)
+edefe6f2 Prouve le cloisonnement inter-organisations de bout en bout (#772)
+b4f3adcf Applique un contrôle qui dormait en commentaire, et cloisonne la révocation de mandat (#772)
+661c00fa Cloisonne la distribution de charges, et reconnaît le garde du portefeuille (#772)
+a40a8c87 Cloisonne annonces et défis, avec deux périmètres différents (#772)
+9cfb61eb Cloisonne les quatre routes de sondage par identifiant (#772)
+0d1b9c22 Ferme trois routes, dont une signature portant deux underscores (#772)
+cbd4dc8d Cloisonne les trois routes qui touchent l'argent des copropriétaires (#772)
+4c6de348 Cloisonne les fiches techniques, par l'ACP et non par l'immeuble (#772)
+2c37f87f Ajoute le périmètre là où seul le rôle était vérifié (#772)
+05c73a28 Cloisonne les six routes du système d'échange local (#772)
+f53fed2b Cloisonne six routes de plus : devis décidés, défis, échanges nominatifs (#772)
+2e704c1e Reconnaît un garde local, et cloisonne deux routes de sondage (#772)
+80f58fae Cloisonne les cinq routes qui disent qui détient quel lot (#772)
+07a022fa Inscrit les deux gardes neuves à la liste que le cliquet consulte (#772)
+26f97eca Écrit verify_quote_org_access et ferme six routes de devis (#772)
+df83d27b Applique une règle que le commentaire annonçait depuis toujours (#772)
+0842fd44 Cloisonne quatre routes de devis : lire un devis, c'est lire la concurrence (#772)
+e3aa567e Écrit verify_booking_org_access, et protège quatre routes que le cliquet ne compte pas (#772)
+3e203ce8 Cloisonne huit routes de réservation qui ignoraient l'identité (#772)
+7423b5c7 Cloisonne cinq routes qui prenaient l'identité pour l'ignorer (#772)
+f9f4c3ba Ajoute au cliquet la primitive de cloisonnement qu'il ignorait (#772)
+17ed5285 Traduit la table de libellés que le cliquet ne pouvait pas voir (#834)
+cb857216 Traduit la liste des organisations et la réputation des prestataires (#834)
+3305a8a3 Corrige un détecteur qui accusait 84 éléments ancrés, et ancre l'écran RGPD (#803)
+bceafe20 Retire une note de développement affichée à l'utilisateur (#834)
+a0719f69 Sort le vocabulaire de base de données de deux écrans, et répare ce que j'ai cassé (#834, #780)
+bc304c87 Traduit l'écran du prestataire et la création d'assemblée, et répare trois imports manquants (#834)
+c63ce6a3 Traduit la liste des ACP, y compris son avertissement de suppression (#834)
+ee67d9f1 Rebranche le formulaire de ticket sur les traductions qui existaient (#834)
+bacac5bf Traduit l'écran de profil, et répare le cliquet qui refusait la baisse (#834)
+ff31af4f Corrige un détecteur qui accusait à tort neuf routes protégées (#772)
+7ff1e9eb Traduit le refus qui ferme le cycle d'AG, et lui fait nommer le recours (#780)
+338783bc Remplace soixante-treize comparaisons de rôle par la méthode qui existait (#772)
+f261af8c Borne les fichiers .feature que personne ne charge (#838)
+1c79c2c2 Remet la matrice de conformité légale d'accord avec le code (#837)
+0becff8d Borne les points de panique, et corrige la métrique qui les comptait (#427)
+630f18db Met l'inventaire à jour : 66 issues, #426 fermée
+8be2269d Relève les conventions de travail avec un agent (#426, point 1.8)
+f17ef38a Corrige le chiffre de départ du cliquet, que le test a lui-même démenti (#762)
+fa67349e Écrit les recettes d'agents que le dépôt n'avait jamais eues (#426, point 1.8)
+d6b75343 Fait décrire à .claude/README.md le dépôt qui existe (#426)
+50030f26 Met l'inventaire à jour : 67 issues, #443 fermée
+f39df1b2 Rassemble le lexique bilingue des erreurs, et borne sa dispersion (#762)
+39e97277 Écrit le contrat de tests que la refonte ne doit pas casser (#802)
+ee080fc7 Finit la cascade Decimal dans les harnais, et fait regarder le gate (#443)
+332bbe0d Met l'inventaire à jour : #540 fermée, #837 ouverte
+c30f90f3 Rend atteignables trois steps de CI qui ne s'exécutaient jamais (#696, Track D)
+ee49de3a Met l'inventaire à jour : 68 issues, #548 fermée
+bcea59bd Rend lisibles les refus des échanges locaux et du conseil (#832, #814)
+6df4aa98 Rend le lot obligatoire dans le formulaire de quote-part (#832, #780)
+7c441902 Remplace les trois dialogues natifs par des modals (#780, verrou 1)
+e1eb0eda Dit le délai de convocation avant qu'il soit trop tard (#780, verrou 1)
+e55e14fb Met l'inventaire à jour : 69 issues ouvertes
+40d1ae09 Supprime le repli qui fabriquait un ACP inexistant (#761)
+9fb10437 Fait vérifier par le test ce que son commentaire se contentait de demander (#777)
+aeb0cf41 Borne les onze jobs de CI, et la suite Playwright entière
+3b78dc28 Met l'inventaire à jour : #829 fermée, #836 classée au Track R
+9625aee6 Répercute la signature de ConvocationUseCases sur les trois harnais (#829)
+49f9b177 Ouvre trois menus au conseil, et cesse de travestir dix rôles (#816, #836)
+68c3b722 Fait dire aux tests e2e POURQUOI le serveur a refusé (#832)
+e002d79f Tranche l'accès du prestataire : lien magique, pas compte (#815, #814)
+13384499 Mesure la dette de traduction des gabarits, et traduit la navigation (#834)
+edffaabe Formate le test neuf, et rend le WBS incapable de se périmer en silence (#832)
+6f58d58d Rend le panneau RGPD réactif, et la CI capable de le voir (#832)
+60988175 Traduit les trente-six messages d'interface écrits en dur (#833)
+a2767e95 Traduit les dix messages que mon propre garde-fou laissait passer (#774, #833)
+c9111209 Rend possible la saisie d'une écriture comptable (#832)
+168b0aaa Retire les cinquante-neuf sélecteurs qui se rabattaient sur un titre (#830)
+c9e042cb Remet la barre de sélection en flux normal, et ferme la Partie 0 (#825)
+7a3865a2 Inerte l'arrière-plan quand le tiroir mobile s'ouvre (#831)
+34f334cc Consigne la remise de design, et deux choses qu'elle corrige (#831)
+5d759eda Rend au syndic son cookie de session dans le harnais e2e (#828)
+737f8bbf Rend exécutables les huit derniers scénarios de demande d'AGE (#540)
+f51883b1 Rend exécutables les scénarios de demande d'AGE (#540, Art. 3.87 § 2)
+63ada1ec Ancre les deux écrans des personas jamais éprouvés (#803, #807, #815)
+21ef2a51 Enferme le focus dans le tiroir mobile, et fait de son overlay un vrai bouton (#794)
+168f322e Traduit les énumérations affichées telles quelles, et pose le cliquet (#792)
+86c0e359 Répare la PWA, inopérante depuis novembre 2025 (#804)
+c776509b Rend exécutables les scénarios de convocation qui ne l'étaient pas (#540)
+53c9575e Retourne le scénario BDD qui encodait l'ancienne règle de conformité (#770)
+e5983e50 Fait entrer les dépenses au contrat (#765), traduit l'écran RGPD (#774), et mesure le désaccord de chemins (#779)
+a6f1c8d9 Dit le délai de convocation à la saisie, au lieu de le découvrir trop tard (#780)
+a5cd2fb5 Le nombre de lots se compte, il ne se déclare pas (#770), et un rôle sans écran reçoit une phrase (#814)
+dfdcae63 Ferme la fuite inter-organisations : 73 routes gardées sur 81, et les huit restantes sont nommées
+03f8b3f0 Garde la situation financière nominative des copropriétaires, et ferme six défauts critiques avec leur filet
+45308a3f Répare quatre jobs de CI rouges depuis cinq jours, et corrige le cliquet qui mesurait la mauvaise chose
+6e6ac56a Rend la navigation aux rôles qui n'en avaient aucune, et borne les lectures imbriquées
+3e8e7945 Corrige le compte du périmètre : 84 issues, pas 77
+2bc5b397 Un document qui décrit une capacité inatteignable ment
+2082dabd Figer un contrat ne sert à rien là où il n'y a rien à figer
+a16b7562 Convoquer personne n'est pas convoquer, et un contrat qu'on ne fige pas se perd
+53a3febe Une information que le serveur donne et que l'écran jette n'existe pas
+95abc678 La 0.1.0 ne sera plus « montrable » mais « menable à son terme »
+e94d0904 Le dénominateur d'une majorité ne se reçoit pas du client
+f0e78ab2 Un test qui affirme un libellé décourage de rendre le libellé lisible
+c6d609c9 Créer une annonce puis la voir disparaître, c'est ce que l'écran faisait
+4f5ffd91 Une capacité qu'on ne peut pas atteindre n'existe pas
