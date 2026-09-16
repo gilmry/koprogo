@@ -203,6 +203,11 @@ harness = false
 [[test]]
 name = "bdd_meeting_hybrid_quorum"
 harness = false
+
+# Story 4.7 - CdC membre élu + action create_alert (Art. 3.90 §1er CC)
+[[test]]
+name = "bdd_cdc_alert"
+harness = false
 # Story 4.4 - ElectronicSignatureProvider port + 3 adapters (mocks wiremock)
 [[test]]
 name = "signature_providers_test"

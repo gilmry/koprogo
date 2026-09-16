@@ -155,6 +155,7 @@ async fn main() -> std::io::Result<()> {
     let budget_repo = Arc::new(PostgresBudgetRepository::new(pool.clone()));
     let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
     let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
+    let board_alert_repo = Arc::new(PostgresBoardAlertRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
     let gdpr_art30_repo = Arc::new(PostgresGdprArt30Repository::new(pool.clone()));
     let gdpr_art30_use_cases = GdprArt30UseCases::new(gdpr_art30_repo);
@@ -393,6 +394,12 @@ async fn main() -> std::io::Result<()> {
         building_repo.clone(),
         meeting_repo.clone(),
     );
+    // Story 4.7 (#582) — clone avant le move de `board_member_repo` ci-dessous.
+    let cdc_use_cases = CdcUseCases::new(
+        board_alert_repo,
+        board_member_repo.clone(),
+        meeting_repo.clone(),
+    );
     let board_dashboard_use_cases = BoardDashboardUseCases::new(
         board_member_repo,
         board_decision_repo,
@@ -589,6 +596,7 @@ async fn main() -> std::io::Result<()> {
         linky_use_cases,
         board_member_use_cases,
         board_decision_use_cases,
+        cdc_use_cases,
         board_dashboard_use_cases,
         dashboard_use_cases,
         financial_report_use_cases,

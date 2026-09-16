@@ -328,6 +328,15 @@ pub enum AppError {
         "Cette résolution générée automatiquement (évaluation des prestataires) ne peut être ni supprimée ni modifiée"
     )]
     ResolutionAutoNotRemovable,
+    /// Story 4.7 — élection du conseil de copropriété tentée sur une AG dont
+    /// le statut n'est pas `Completed` : la clôture d'une AG suppose déjà le
+    /// quorum double atteint (`Meeting::assert_can_complete`, Art. 3.87 §5
+    /// CC) — une AG non clôturée n'a donc jamais prouvé son quorum. 422 +
+    /// payload `CDC_ELECTION_QUORUM_NOT_REACHED`.
+    #[error(
+        "L'élection du conseil suppose une assemblée clôturée (quorum validé, Art. 3.90 §3 CC)"
+    )]
+    CdcElectionQuorumNotReached { meeting_id: uuid::Uuid },
 }
 
 impl AppError {
@@ -351,6 +360,7 @@ impl AppError {
             AppError::MeetingModeRequiresVideoconf { .. } => "meeting_mode_requires_videoconf",
             AppError::VoteAuthMethodRequired => "vote_auth_method_required",
             AppError::VoteAuthInsufficient { .. } => "vote_auth_insufficient",
+            AppError::CdcElectionQuorumNotReached { .. } => "cdc_election_quorum_not_reached",
             AppError::RateLimited => "rate_limited",
             AppError::Database(_) => "database",
             AppError::Crypto(_) => "crypto",
@@ -421,6 +431,7 @@ impl ResponseError for AppError {
             | AppError::VotingRightSuspended { .. }
             | AppError::MeetingModeRequiresVideoconf { .. }
             | AppError::VoteAuthMethodRequired => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::CdcElectionQuorumNotReached { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -505,6 +516,12 @@ impl ResponseError for AppError {
                 "code": "VOTE_AUTH_INSUFFICIENT",
                 "mode": mode,
                 "auth_method": auth_method,
+            // Story 4.7 — payload narratif `CDC_ELECTION_QUORUM_NOT_REACHED`
+            // (422). Le FE consomme `details.code` pour expliquer pourquoi
+            // l'élection est refusée (AG pas encore clôturée).
+            AppError::CdcElectionQuorumNotReached { meeting_id } => Some(json!({
+                "code": "CDC_ELECTION_QUORUM_NOT_REACHED",
+                "meeting_id": meeting_id,
             })),
             // Track H Story H3 — payload narratif pour `MeetingNotCompletable`
             // (422) : le FE consomme `details.code == "MEETING_NOT_COMPLETABLE"`
@@ -693,6 +710,14 @@ impl From<crate::domain::entities::OwnerContributionError> for AppError {
     /// une erreur d'entrée client → 400 validation, **jamais** 500 Internal
     /// (#433 / WP-A6 EXP-008).
     fn from(e: crate::domain::entities::OwnerContributionError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
+impl From<crate::domain::entities::AlerteRefusee> for AppError {
+    /// Une alerte CdC malformée (texte vide) est une erreur d'entrée client
+    /// → 400 validation, jamais 500 Internal (Story 4.7 / #582).
+    fn from(e: crate::domain::entities::AlerteRefusee) -> Self {
         AppError::Validation(e.to_string())
     }
 }

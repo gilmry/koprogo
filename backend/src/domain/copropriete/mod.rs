@@ -24,6 +24,7 @@
 pub mod acp;
 pub mod ag_session;
 pub mod age_request;
+pub mod board_alert;
 pub mod board_decision;
 pub mod board_member;
 pub mod building;
@@ -71,6 +72,7 @@ pub use acp::{
 };
 pub use ag_session::{AgSession, AgSessionStatus, VideoPlatform};
 pub use age_request::{AgeRequest, AgeRequestCosignatory, AgeRequestStatus};
+pub use board_alert::{AlertSeverity, AlerteRefusee, BoardAlert};
 pub use board_decision::{BoardDecision, DecisionStatus};
 pub use board_member::{BoardMember, BoardPosition};
 pub use building::{Building, BuildingMetrics, BuildingNotConformantError};
