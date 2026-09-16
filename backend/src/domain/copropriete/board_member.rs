@@ -91,10 +91,27 @@ impl BoardMember {
         })
     }
 
+    /// Vérifie si le mandat est actif à un instant donné.
+    ///
+    /// Borne de fin **exclusive** : cohérent avec `MembreDuConseil::en_fonction_le`
+    /// (`conseil_de_copropriete.rs`), qui documente pourquoi — « le jour de
+    /// l'AG, le mandat est échu ». Permet aussi de tester précisément la
+    /// bascule d'une démission (`resign`) sans dépendre de `Utc::now()`.
+    pub fn is_active_at(&self, moment: DateTime<Utc>) -> bool {
+        moment >= self.mandate_start && moment < self.mandate_end
+    }
+
     /// Vérifie si le mandat est actuellement actif
     pub fn is_active(&self) -> bool {
-        let now = Utc::now();
-        now >= self.mandate_start && now <= self.mandate_end
+        self.is_active_at(Utc::now())
+    }
+
+    /// Démissionne : le mandat s'arrête à `at`, immédiatement (Story 4.7,
+    /// @edge). N'avance jamais `mandate_end` — seulement l'avancer a du sens
+    /// pour une démission.
+    pub fn resign(&mut self, at: DateTime<Utc>) {
+        self.mandate_end = self.mandate_end.min(at);
+        self.updated_at = Utc::now();
     }
 
     /// Calcule le nombre de jours restants dans le mandat
@@ -542,6 +559,80 @@ mod tests {
             result.unwrap_err(),
             "Cannot extend mandate more than 60 days before expiration"
         );
+    }
+
+    // ── Story 4.7 — démission et bascule du mandat ──────────────────────
+
+    /// @happy — un membre en cours de mandat démissionne : le mandat
+    /// s'arrête au moment de la démission.
+    #[test]
+    fn happy_resign_sets_mandate_end_to_now() {
+        let start = Utc::now() - Duration::days(100);
+        let end = start + Duration::days(365);
+        let mut member = BoardMember::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            BoardPosition::Member,
+            start,
+            end,
+            Uuid::new_v4(),
+        )
+        .unwrap();
+
+        let resignation_instant = Utc::now();
+        member.resign(resignation_instant);
+
+        assert_eq!(member.mandate_end, resignation_instant);
+    }
+
+    /// @edge — la borne se teste au moment précis de la bascule, pas
+    /// seulement juste avant / juste après (Story 4.7 §@edge).
+    #[test]
+    fn edge_resign_loses_rights_exactly_at_mandate_end() {
+        let start = Utc::now() - Duration::days(100);
+        let end = start + Duration::days(365);
+        let mut member = BoardMember::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            BoardPosition::Member,
+            start,
+            end,
+            Uuid::new_v4(),
+        )
+        .unwrap();
+
+        let resignation_instant = Utc::now();
+        member.resign(resignation_instant);
+
+        assert!(
+            member.is_active_at(resignation_instant - Duration::milliseconds(1)),
+            "juste avant la démission, le mandat était encore actif"
+        );
+        assert!(
+            !member.is_active_at(resignation_instant),
+            "au moment exact de la démission, le mandat est déjà échu"
+        );
+    }
+
+    /// @edge — démissionner ne peut jamais *prolonger* un mandat déjà échu :
+    /// `resign` prend le minimum entre la fin actuelle et l'instant donné.
+    #[test]
+    fn edge_resign_after_mandate_already_ended_does_not_extend_it() {
+        let start = Utc::now() - Duration::days(400);
+        let end = start + Duration::days(365); // déjà échu
+        let mut member = BoardMember::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            BoardPosition::Member,
+            start,
+            end,
+            Uuid::new_v4(),
+        )
+        .unwrap();
+
+        member.resign(Utc::now());
+
+        assert_eq!(member.mandate_end, end, "la fin de mandat n'a pas bougé");
     }
 
     #[test]

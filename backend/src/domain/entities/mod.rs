@@ -25,6 +25,8 @@ pub use crate::domain::copropriete::age_request;
 pub use crate::domain::copropriete::age_request::{
     AgeRequest, AgeRequestCosignatory, AgeRequestStatus,
 };
+pub use crate::domain::copropriete::board_alert;
+pub use crate::domain::copropriete::board_alert::{AlertSeverity, AlerteRefusee, BoardAlert};
 pub use crate::domain::copropriete::board_decision;
 pub use crate::domain::copropriete::board_decision::{BoardDecision, DecisionStatus};
 pub use crate::domain::copropriete::board_member;

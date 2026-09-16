@@ -84,6 +84,10 @@ pub enum AuditEventType {
     BoardDecisionUpdated,
     BoardDecisionCompleted,
     BoardDecisionNotesAdded,
+    /// Story 4.7 — le conseil de copropriété alerte la prochaine AG.
+    CdcAlertCreated,
+    /// Story 4.7 — élection des membres du conseil à l'issue d'une AG clôturée.
+    CdcMembersElected,
 
     // Voting events (Issue #46 - Phase 2)
     ResolutionCreated,

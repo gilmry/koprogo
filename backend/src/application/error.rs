@@ -283,6 +283,16 @@ pub enum AppError {
         "Configuration de visioconférence manquante pour ce mode de réunion (Art. 3.87 §1er CC)"
     )]
     MeetingModeRequiresVideoconf { mode: String },
+
+    /// Story 4.7 — élection du conseil de copropriété tentée sur une AG dont
+    /// le statut n'est pas `Completed` : la clôture d'une AG suppose déjà le
+    /// quorum double atteint (`Meeting::assert_can_complete`, Art. 3.87 §5
+    /// CC) — une AG non clôturée n'a donc jamais prouvé son quorum. 422 +
+    /// payload `CDC_ELECTION_QUORUM_NOT_REACHED`.
+    #[error(
+        "L'élection du conseil suppose une assemblée clôturée (quorum validé, Art. 3.90 §3 CC)"
+    )]
+    CdcElectionQuorumNotReached { meeting_id: uuid::Uuid },
 }
 
 impl AppError {
@@ -304,6 +314,7 @@ impl AppError {
             AppError::ReserveFundInsufficient { .. } => "reserve_fund_insufficient",
             AppError::VotingRightSuspended { .. } => "voting_right_suspended",
             AppError::MeetingModeRequiresVideoconf { .. } => "meeting_mode_requires_videoconf",
+            AppError::CdcElectionQuorumNotReached { .. } => "cdc_election_quorum_not_reached",
             AppError::RateLimited => "rate_limited",
             AppError::Database(_) => "database",
             AppError::Crypto(_) => "crypto",
@@ -363,7 +374,8 @@ impl ResponseError for AppError {
             | AppError::AcpNotConformant { .. }
             | AppError::ReserveFundInsufficient { .. }
             | AppError::VotingRightSuspended { .. }
-            | AppError::MeetingModeRequiresVideoconf { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::MeetingModeRequiresVideoconf { .. }
+            | AppError::CdcElectionQuorumNotReached { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -441,6 +453,13 @@ impl ResponseError for AppError {
             AppError::MeetingModeRequiresVideoconf { mode } => Some(json!({
                 "code": "MEETING_MODE_REQUIRES_VIDEOCONF",
                 "mode": mode,
+            })),
+            // Story 4.7 — payload narratif `CDC_ELECTION_QUORUM_NOT_REACHED`
+            // (422). Le FE consomme `details.code` pour expliquer pourquoi
+            // l'élection est refusée (AG pas encore clôturée).
+            AppError::CdcElectionQuorumNotReached { meeting_id } => Some(json!({
+                "code": "CDC_ELECTION_QUORUM_NOT_REACHED",
+                "meeting_id": meeting_id,
             })),
             // Track H Story H3 — payload narratif pour `MeetingNotCompletable`
             // (422) : le FE consomme `details.code == "MEETING_NOT_COMPLETABLE"`
@@ -629,6 +648,14 @@ impl From<crate::domain::entities::OwnerContributionError> for AppError {
     /// une erreur d'entrée client → 400 validation, **jamais** 500 Internal
     /// (#433 / WP-A6 EXP-008).
     fn from(e: crate::domain::entities::OwnerContributionError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
+impl From<crate::domain::entities::AlerteRefusee> for AppError {
+    /// Une alerte CdC malformée (texte vide) est une erreur d'entrée client
+    /// → 400 validation, jamais 500 Internal (Story 4.7 / #582).
+    fn from(e: crate::domain::entities::AlerteRefusee) -> Self {
         AppError::Validation(e.to_string())
     }
 }

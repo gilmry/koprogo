@@ -11,6 +11,7 @@ pub mod boinc_use_cases;
 pub mod budget_use_cases;
 pub mod building_use_cases;
 pub mod call_for_funds_use_cases;
+pub mod cdc_use_cases;
 pub mod charge_distribution_use_cases;
 pub mod compute_quorum_use_case;
 pub mod consent_use_cases;
@@ -80,6 +81,7 @@ pub use boinc_use_cases::{BoincUseCases, GridTaskResponseDto, SubmitOptimisation
 pub use budget_use_cases::BudgetUseCases;
 pub use building_use_cases::BuildingUseCases;
 pub use call_for_funds_use_cases::CallForFundsUseCases;
+pub use cdc_use_cases::CdcUseCases;
 pub use charge_distribution_use_cases::ChargeDistributionUseCases;
 pub use compute_quorum_use_case::{compute_quorum, ComputeQuorumInput, QuorumResult};
 pub use contractor_evaluation_use_cases::ContractorEvaluationUseCases;

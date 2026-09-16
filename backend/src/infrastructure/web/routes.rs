@@ -426,6 +426,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(add_notes)
             .service(complete_decision)
             .service(get_decision_stats)
+            // CdC — alertes + élection (Story 4.7 / #582)
+            .service(create_cdc_alert)
+            .service(list_cdc_alerts_for_meeting)
+            .service(elect_cdc_members)
             // Documents
             .service(upload_document)
             .service(list_documents)
