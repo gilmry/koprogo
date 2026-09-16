@@ -121,7 +121,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn un_nom_inconnu_donne_422_et_pas_403() {
+    fn negative_un_nom_inconnu_donne_422_et_pas_403() {
         // Le client doit pouvoir distinguer « n'existe pas » de « éteint ».
         let err = ModuleRegistryUseCases::reconnaitre("foobar").unwrap_err();
         assert!(matches!(err, AppError::UnknownModule { ref module } if module == "foobar"));
@@ -132,7 +132,7 @@ mod tests {
     }
 
     #[test]
-    fn un_nom_connu_est_reconnu() {
+    fn happy_un_nom_connu_est_reconnu() {
         assert_eq!(
             ModuleRegistryUseCases::reconnaitre("accounting").unwrap(),
             Module::Accounting
@@ -140,7 +140,7 @@ mod tests {
     }
 
     #[test]
-    fn eteindre_identity_est_un_403_type_pas_une_chaine() {
+    fn negative_eteindre_identity_est_un_403_type_pas_une_chaine() {
         let err = AppError::ModuleAlwaysOn {
             module: Module::Identity.to_string(),
         };
@@ -151,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn module_disabled_porte_le_nom_du_module() {
+    fn security_module_disabled_porte_le_nom_du_module() {
         // `ModuleGate` est fail-closed : il doit pouvoir nommer le module
         // éteint, pas seulement constater un refus.
         let err = AppError::ModuleDisabled {

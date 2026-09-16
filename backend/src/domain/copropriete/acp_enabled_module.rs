@@ -110,13 +110,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn un_nom_inconnu_nest_pas_un_module() {
+    fn negative_un_nom_inconnu_nest_pas_un_module() {
         assert_eq!(Module::depuis_nom("foobar"), None);
         assert_eq!(Module::depuis_nom(""), None);
     }
 
     #[test]
-    fn la_casse_nest_pas_rattrapee() {
+    fn edge_la_casse_nest_pas_rattrapee() {
         // Le nom vient d'un chemin d'URL. L'accepter en majuscules ferait
         // diverger la clé d'unicité en base du nom reçu.
         assert_eq!(Module::depuis_nom("Accounting"), None);
@@ -124,14 +124,14 @@ mod tests {
     }
 
     #[test]
-    fn chaque_variante_fait_laller_retour_par_son_nom() {
+    fn happy_chaque_variante_fait_laller_retour_par_son_nom() {
         for module in Module::ALL {
             assert_eq!(Module::depuis_nom(module.as_str()), Some(module));
         }
     }
 
     #[test]
-    fn identity_est_le_seul_module_toujours_actif() {
+    fn happy_identity_est_le_seul_module_toujours_actif() {
         let toujours_actifs: Vec<&str> = Module::ALL
             .into_iter()
             .filter(|m| m.est_toujours_actif())
@@ -141,7 +141,7 @@ mod tests {
     }
 
     #[test]
-    fn archived_at_est_la_seule_lecture_de_letat() {
+    fn happy_archived_at_est_la_seule_lecture_de_letat() {
         let mut m = AcpEnabledModule {
             id: Uuid::new_v4(),
             acp_id: Uuid::new_v4(),
