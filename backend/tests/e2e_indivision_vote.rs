@@ -508,20 +508,11 @@ async fn happy_designer_un_representant_leve_la_suspension() {
                     .set_json(json!({
                         "owner_id": proprietaires[0],
                         "unit_id": unit_id,
-                        "vote_choice": "pour"
+                        "vote_choice": "pour",
+                        "auth_method": "presence"
                     })),
             )
         }
-        porteur(
-            test::TestRequest::post()
-                .uri(&format!("/api/v1/resolutions/{resolution_id}/vote"))
-                .set_json(json!({
-                    "owner_id": proprietaires[0],
-                    "unit_id": unit_id,
-                    "vote_choice": "pour",
-                    "auth_method": "presence"
-                })),
-        )
         .to_request(),
     )
     .await;

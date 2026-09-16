@@ -24,6 +24,7 @@ Feature: Vote distant — authentification forte (Story 4.2, #48)
   # @edge — Owner tente vote distant avec proxy (procuration à distance) → autorisé
   # sous conditions Art. 3.87 §4 : la procuration elle-même reste régie par ses
   # propres conditions (limite de trois mandats), pas par cette garde.
+  @happy
   Scenario: Vote distant par procuration en bonne et due forme est autorisé
     When "Alice" votes "Pour" as proxy for "Bob" using "proxy"
     Then the vote should be recorded with auth method "proxy"
@@ -31,6 +32,7 @@ Feature: Vote distant — authentification forte (Story 4.2, #48)
   # @security — Owner tente vote distant avec auth_method=presence → 403
   # VoteAuthInsufficient. Déclarer sa présence quand on est absent est
   # exactement la fraude que l'authentification forte doit rendre impossible.
+  @security
   Scenario: Vote distant avec presence est refusé
     When "Alice" votes "Pour" using "presence"
     Then the vote should be rejected with error "VOTE_AUTH_INSUFFICIENT"

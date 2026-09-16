@@ -1493,7 +1493,7 @@ async fn test_cloturer_le_vote_accepte_un_corps_vide_comme_le_frontend() {
 
 #[actix_web::test]
 #[serial]
-async fn test_close_voting_refuse_pour_un_coproprietaire() {
+async fn security_close_voting_refuse_pour_un_coproprietaire() {
     let (app_state, _container, org_id) = setup_app().await;
     let (syndic_token, _org, _building, meeting_id, _o1, _o2, _u1) =
         create_test_fixtures(&app_state, org_id).await;

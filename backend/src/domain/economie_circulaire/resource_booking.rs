@@ -661,16 +661,23 @@ mod tests {
             .contains("Booking duration must be at least"));
     }
 
+    // `booked_by` est devenu `Option<Uuid>` — `None` quand la réservation est
+    // prise PAR le syndic POUR l'ACP (#588). Ces trois tests le passaient
+    // encore directement à `cancel`, qui attend l'identité de l'annulant.
+    //
+    // `expect` plutôt qu'`unwrap` : si la fixture cessait de poser un
+    // réservataire, le message dirait laquelle des deux choses a changé.
     #[test]
-    fn test_cancel_booking_success() {
+    fn happy_cancel_booking_success() {
         let mut booking = create_test_booking();
-        let result = booking.cancel(booking.booked_by);
+        let reservataire = booking.booked_by.expect("la fixture pose un réservataire");
+        let result = booking.cancel(reservataire);
         assert!(result.is_ok());
         assert_eq!(booking.status, BookingStatus::Cancelled);
     }
 
     #[test]
-    fn test_cancel_booking_wrong_user() {
+    fn security_cancel_booking_wrong_user() {
         let mut booking = create_test_booking();
         let wrong_user = Uuid::new_v4();
         let result = booking.cancel(wrong_user);
@@ -681,10 +688,11 @@ mod tests {
     }
 
     #[test]
-    fn test_cancel_already_cancelled() {
+    fn negative_cancel_already_cancelled() {
         let mut booking = create_test_booking();
-        booking.cancel(booking.booked_by).unwrap();
-        let result = booking.cancel(booking.booked_by);
+        let reservataire = booking.booked_by.expect("la fixture pose un réservataire");
+        booking.cancel(reservataire).expect("première annulation");
+        let result = booking.cancel(reservataire);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("already cancelled"));
     }
@@ -1005,9 +1013,12 @@ mod tests {
             None,
         );
 
+        // `assert_eq!` sur un `Result` exige `PartialEq` sur le type Ok, que
+        // `ResourceBooking` ne dérive pas. On compare donc l'ERREUR, ce qui
+        // est d'ailleurs ce que le test veut dire.
         assert_eq!(
-            result,
-            Err(ReservationOnBehalfError::MotifRequired.to_string())
+            result.err(),
+            Some(ReservationOnBehalfError::MotifRequired.to_string())
         );
     }
 
@@ -1035,9 +1046,12 @@ mod tests {
             None,
         );
 
+        // `assert_eq!` sur un `Result` exige `PartialEq` sur le type Ok, que
+        // `ResourceBooking` ne dérive pas. On compare donc l'ERREUR, ce qui
+        // est d'ailleurs ce que le test veut dire.
         assert_eq!(
-            result,
-            Err(ReservationOnBehalfError::MotifRequired.to_string())
+            result.err(),
+            Some(ReservationOnBehalfError::MotifRequired.to_string())
         );
     }
 

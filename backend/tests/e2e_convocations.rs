@@ -1629,7 +1629,7 @@ async fn test_envoi_accepte_un_corps_vide_comme_le_frontend() {
 
 #[actix_web::test]
 #[serial]
-async fn test_envoi_avec_selection_explicitement_vide_est_refuse() {
+async fn negative_envoi_avec_selection_explicitement_vide_est_refuse() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
     let building_id = create_test_building(&app_state, org_id).await;
@@ -1683,7 +1683,7 @@ async fn test_envoi_avec_selection_explicitement_vide_est_refuse() {
 
 #[actix_web::test]
 #[serial]
-async fn test_send_convocation_refuse_pour_un_coproprietaire() {
+async fn security_send_convocation_refuse_pour_un_coproprietaire() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let syndic_token = common::register_and_login(&app_state, org_id).await;
     let owner_token = common::register_and_login_with_role(&app_state, org_id, "owner").await;
@@ -1739,7 +1739,7 @@ async fn test_send_convocation_refuse_pour_un_coproprietaire() {
 
 #[actix_web::test]
 #[serial]
-async fn test_eligible_recipients_liste_les_coproprietaires_actifs_dedupliques() {
+async fn happy_eligible_recipients_liste_les_coproprietaires_actifs_dedupliques() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
     let building_id = create_test_building(&app_state, org_id).await;
@@ -1782,7 +1782,7 @@ async fn test_eligible_recipients_liste_les_coproprietaires_actifs_dedupliques()
 
 #[actix_web::test]
 #[serial]
-async fn test_eligible_recipients_immeuble_sans_lots_rend_liste_vide() {
+async fn edge_eligible_recipients_immeuble_sans_lots_rend_liste_vide() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let token = common::register_and_login(&app_state, org_id).await;
     let building_id = create_test_building(&app_state, org_id).await;

@@ -575,6 +575,19 @@ pub async fn setup_test_db() -> (
         linky_use_cases,
         board_member_use_cases,
         board_decision_use_cases,
+        // #582 — le conseil de copropriété a gagné son cas d'usage dans
+        // `AppState`, et ce harnais ne l'avait pas suivi. Défaut de jonction :
+        // la branche qui ajoute le champ ne touche pas au harnais, celle qui
+        // devrait le suivre n'existe pas.
+        koprogo_api::application::use_cases::CdcUseCases::new(
+            std::sync::Arc::new(
+                koprogo_api::infrastructure::database::repositories::PostgresBoardAlertRepository::new(
+                    pool.clone(),
+                ),
+            ),
+            board_member_repo.clone(),
+            meeting_repo.clone(),
+        ),
         board_dashboard_use_cases,
         dashboard_use_cases,
         financial_report_use_cases,

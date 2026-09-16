@@ -1510,7 +1510,7 @@ mod tests {
     /// possédant un lot supplémentaire) rendent deux destinataires, triés par
     /// nom, sans doublon.
     #[tokio::test]
-    async fn list_eligible_recipients_dedup_et_trie_par_nom() {
+    async fn happy_list_eligible_recipients_dedup_et_trie_par_nom() {
         let building_id = Uuid::new_v4();
         let zoe_id = Uuid::new_v4();
         let adam_id = Uuid::new_v4();
@@ -1567,7 +1567,7 @@ mod tests {
     /// une erreur : c'est un état légitime (immeuble neuf, lots pas encore
     /// attribués), pas une panne.
     #[tokio::test]
-    async fn list_eligible_recipients_immeuble_sans_lots_rend_liste_vide() {
+    async fn edge_list_eligible_recipients_immeuble_sans_lots_rend_liste_vide() {
         let mut unit_owner_repo = MockUnitOwnerRepo::new();
         unit_owner_repo
             .expect_find_active_by_building()
@@ -1593,7 +1593,7 @@ mod tests {
     /// (incohérence de données) doit produire une erreur typée et nommée,
     /// jamais un panic ni un destinataire fantôme silencieusement ignoré.
     #[tokio::test]
-    async fn list_eligible_recipients_fiche_coproprietaire_introuvable_est_une_erreur() {
+    async fn negative_list_eligible_recipients_fiche_coproprietaire_introuvable_est_une_erreur() {
         let owner_id = Uuid::new_v4();
         let mut unit_owner_repo = MockUnitOwnerRepo::new();
         unit_owner_repo
@@ -1631,7 +1631,7 @@ mod tests {
     /// le monde par défaut ». Confondre les deux ignorerait un renoncement
     /// délibéré (#780, DoD @negative).
     #[tokio::test]
-    async fn send_convocation_avec_selection_explicitement_vide_est_refuse() {
+    async fn negative_send_convocation_avec_selection_explicitement_vide_est_refuse() {
         let uc = make_use_cases(
             MockConvRepo::new(),
             MockRecipientRepo::new(),

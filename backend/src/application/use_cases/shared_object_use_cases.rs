@@ -474,7 +474,6 @@ impl SharedObjectUseCases {
     /// # Authorization
     /// - Only owner can delete their object
     /// - Cannot delete if currently borrowed
-    /// Delete a shared object.
     ///
     /// # Authorization (Story 5.3 — #587, INV-4)
     /// - The listing's owner can delete it, no reason needed (self-service).

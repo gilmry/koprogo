@@ -422,8 +422,8 @@ impl ResponseError for AppError {
             | AppError::NotaryLinkInvalid
             | AppError::NotaryLinkExpired
             | AppError::NotaryLinkRevoked => StatusCode::FORBIDDEN,
-            | AppError::VoteAuthInsufficient { .. } => StatusCode::FORBIDDEN,
-            | AppError::ResolutionAutoNotRemovable => StatusCode::FORBIDDEN,
+            AppError::VoteAuthInsufficient { .. } => StatusCode::FORBIDDEN,
+            AppError::ResolutionAutoNotRemovable => StatusCode::FORBIDDEN,
             AppError::NotFound(_) | AppError::MandateNotFound => StatusCode::NOT_FOUND,
             AppError::Conflict(_)
             | AppError::RoleAlreadyAssigned { .. }
@@ -439,8 +439,8 @@ impl ResponseError for AppError {
             | AppError::VotingRightSuspended { .. }
             | AppError::MeetingModeRequiresVideoconf { .. }
             | AppError::VoteAuthMethodRequired => StatusCode::UNPROCESSABLE_ENTITY,
-            | AppError::CdcElectionQuorumNotReached { .. } => StatusCode::UNPROCESSABLE_ENTITY,
-            | AppError::ReservationMotifRequired => StatusCode::UNPROCESSABLE_ENTITY,
+            AppError::CdcElectionQuorumNotReached { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            AppError::ReservationMotifRequired => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -525,6 +525,7 @@ impl ResponseError for AppError {
                 "code": "VOTE_AUTH_INSUFFICIENT",
                 "mode": mode,
                 "auth_method": auth_method,
+            })),
             // Story 4.7 — payload narratif `CDC_ELECTION_QUORUM_NOT_REACHED`
             // (422). Le FE consomme `details.code` pour expliquer pourquoi
             // l'élection est refusée (AG pas encore clôturée).
@@ -1030,7 +1031,11 @@ impl From<crate::domain::entities::LienNotaireError> for AppError {
                 AppError::Validation(err.to_string())
             }
             LienNotaireError::DejaRevoque => AppError::Conflict(err.to_string()),
-=======
+        }
+    }
+}
+
+// ============================================================================
 // Story 4.2 — bridges From<VoteAuthError> (auth_method du vote distant, #48)
 // ============================================================================
 
@@ -1063,7 +1068,11 @@ impl From<crate::domain::entities::VoteAuthError> for String {
                 mode.to_db_str(),
                 auth_method.to_db_str()
             ),
-=======
+        }
+    }
+}
+
+// ============================================================================
 // Story 5.4 — bridge From<ReservationOnBehalfError> (#588, INV-5/FR27)
 // ============================================================================
 
@@ -1700,6 +1709,8 @@ mod tests {
         }
         .into();
         assert_eq!(s, "VOTE_AUTH_INSUFFICIENT:remote:itsme");
+    }
+
     // Story 5.4 — ReservationMotifRequired (#588, INV-5/FR27) 4-cat
     // ------------------------------------------------------------------------
 

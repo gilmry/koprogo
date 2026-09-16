@@ -29,6 +29,7 @@ use uuid::Uuid;
 // Dépôts en mémoire — MeetingRepository / ResolutionRepository
 // ============================================================
 
+#[derive(Debug)]
 struct FakeMeetingRepository {
     meetings: Mutex<HashMap<Uuid, Meeting>>,
 }
@@ -79,6 +80,7 @@ impl MeetingRepository for FakeMeetingRepository {
     }
 }
 
+#[derive(Debug)]
 struct FakeResolutionRepository {
     resolutions: Mutex<HashMap<Uuid, Resolution>>,
 }
@@ -163,6 +165,7 @@ impl ResolutionRepository for FakeResolutionRepository {
 // requis par la signature de `ResolutionUseCases::new`.
 // ============================================================
 
+#[derive(Debug)]
 struct FakeVoteRepository;
 
 #[async_trait]
@@ -216,6 +219,7 @@ impl VoteRepository for FakeVoteRepository {
     }
 }
 
+#[derive(Debug)]
 struct FakeUnitOwnerRepository;
 
 #[async_trait]
@@ -280,6 +284,7 @@ impl UnitOwnerRepository for FakeUnitOwnerRepository {
     }
 }
 
+#[derive(Debug)]
 struct FakeUnitRepository;
 
 #[async_trait]
@@ -315,7 +320,16 @@ impl UnitRepository for FakeUnitRepository {
 // World
 // ============================================================
 
-#[derive(World)]
+// `Debug` est exigé par `cucumber::World` — sans lui, ce harnais ne compile
+// pas. Il ne l'avait jamais fait : rien ne l'exécutait, donc rien ne le
+// compilait. Le câbler dans `ci.yml` le 2026-09-16 l'a révélé, ce qui est
+// exactement la fonction de `garde_harnais_executes` :
+//
+//     Ils compilent, ils passent en local, et la CI reste verte sans les
+//     avoir vus.
+//
+// Ici, ils ne compilaient même pas.
+#[derive(Debug, World)]
 #[world(init = Self::new)]
 pub struct ResolutionAutoEvaluationWorld {
     meeting_repo: Arc<FakeMeetingRepository>,

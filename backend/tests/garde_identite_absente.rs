@@ -330,8 +330,16 @@ fn aucune_route_supplementaire_ne_se_passe_didentite() {
     let liste = nues();
     let n = liste.len();
 
+    // `== 0` et non `<= 0`. Le seuil vaut ZÉRO depuis #845, et clippy a
+    // raison de signaler la comparaison : sur un `usize`, `<= 0` ne peut
+    // signifier que `== 0`.
+    //
+    // L'écrire ainsi n'est pas cosmétique — c'est dire que ce cliquet n'est
+    // PAS une dette qu'on tolère à un reste près, mais un invariant. La
+    // forme `<= SEUIL` était celle des cliquets qui descendent ; celui-ci
+    // est arrivé, et sa forme doit le refléter.
     assert!(
-        n <= DETTE_AU_2026_09_15,
+        n == DETTE_AU_2026_09_15,
         "{n} routes ne vérifient AUCUNE identité, contre {DETTE_AU_2026_09_15} \
          au 2026-09-15 — le seuil est verrouillé à ZÉRO (#845 @edge), pas à un \
          reste toléré.\n\n\

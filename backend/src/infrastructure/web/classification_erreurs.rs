@@ -85,6 +85,8 @@ pub fn est_refus_owner_requis(message: &str) -> bool {
 /// condition de forme (le motif d'audit), pas une autorisation.
 pub fn est_motif_manquant(message: &str) -> bool {
     message == crate::application::error::MOTIF_MODERATION_REQUIS
+}
+
 /// L'erreur est-elle PRÉCISÉMENT le refus « motif obligatoire » d'une
 /// réservation `on_behalf_of_acp` (story #588, INV-5/FR27) ?
 ///
@@ -178,6 +180,7 @@ mod tests {
     fn happy_le_motif_manquant_est_reconnu() {
         assert!(est_motif_manquant(
             crate::application::error::MOTIF_MODERATION_REQUIS
+        ));
         assert!(est_motif_acp_manquant(
             &crate::domain::entities::ReservationOnBehalfError::MotifRequired.to_string()
         ));
@@ -196,6 +199,9 @@ mod tests {
     #[test]
     fn security_un_message_vide_nest_jamais_pris_pour_le_motif_manquant() {
         assert!(!est_motif_manquant(""));
+    }
+
+    #[test]
     fn negative_un_autre_refus_ne_declenche_pas_ce_kind() {
         assert!(!est_motif_acp_manquant(
             crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES

@@ -14,10 +14,8 @@ use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
 use koprogo_api::infrastructure::web::{
-    configure_routes, AppState, ConcurrencyLimitConfig, GdprRateLimit, GdprRateLimitConfig,
-    RequestConcurrencyLimit, SecurityHeaders,
-    configure_routes, AppState, CommunityAccessGuard, GdprRateLimit, GdprRateLimitConfig,
-    SecurityHeaders,
+    configure_routes, AppState, CommunityAccessGuard, ConcurrencyLimitConfig, GdprRateLimit,
+    GdprRateLimitConfig, RequestConcurrencyLimit, SecurityHeaders,
 };
 use koprogo_api::infrastructure::LinkyApiClientImpl;
 use std::env;

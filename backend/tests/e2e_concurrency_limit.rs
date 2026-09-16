@@ -154,7 +154,7 @@ async fn edge_burst_from_two_workers_stays_deterministic() {
     }
 
     assert!(
-        ok_count >= 1 && ok_count <= MAX_CONCURRENT,
+        (1..=MAX_CONCURRENT).contains(&ok_count),
         "au plus `max_concurrent` requêtes servies en même temps, au moins une : {ok_count}"
     );
     assert_eq!(ok_count + rejected.len(), BURST_SIZE);

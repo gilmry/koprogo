@@ -757,6 +757,9 @@ pub struct VoteStatistics {
 
 #[cfg(test)]
 mod tests {
+    // `status_code()` vient du trait `ResponseError` : sans l'importer, la
+    // méthode n'existe pas sur `AppError` au point d'appel. Deux branches
+    // ont ajouté des tests qui l'emploient, aucune n'a apporté l'import.
     use super::*;
     use crate::application::dto::{PageRequest, UnitFilters};
     use crate::application::ports::{
@@ -767,6 +770,7 @@ mod tests {
         LotHolder, Meeting, MeetingMode, MeetingType, OwnershipType, Unit, UnitOwner, UnitType,
         VoteChoice,
     };
+    use actix_web::ResponseError;
     use async_trait::async_trait;
     use chrono::Utc;
     use rust_decimal_macros::dec;

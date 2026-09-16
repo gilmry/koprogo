@@ -517,6 +517,17 @@ async fn setup_test_db() -> (
         linky_use_cases,
         board_member_use_cases,
         board_decision_use_cases,
+        // #582 — `cdc_use_cases` a rejoint `AppState`, ce harnais ne l'avait
+        // pas suivi. Même défaut de jonction que dans `tests/common/mod.rs`.
+        koprogo_api::application::use_cases::CdcUseCases::new(
+            std::sync::Arc::new(
+                koprogo_api::infrastructure::database::repositories::PostgresBoardAlertRepository::new(
+                    pool.clone(),
+                ),
+            ),
+            board_member_repo.clone(),
+            meeting_repo.clone(),
+        ),
         board_dashboard_use_cases,
         dashboard_use_cases,
         financial_report_use_cases,
