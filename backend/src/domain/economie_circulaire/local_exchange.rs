@@ -240,6 +240,33 @@ impl LocalExchange {
         Ok(())
     }
 
+    /// Annule un échange PAR MODÉRATION (syndic ou `community.moderator`),
+    /// sans être partie prenante (ni `provider_id` ni `requester_id`).
+    ///
+    /// Story 5.3 (#587), INV-4 — l'autorisation de modérer et l'obligation
+    /// d'un motif non vide sont vérifiées en AMONT, côté application
+    /// (`LocalExchangeUseCases`), qui seule connaît le rôle de l'appelant :
+    /// le domaine ne doit pas importer `UserRole` pour rester agnostique de
+    /// l'identité. Ce point d'entrée ne revérifie donc que les invariants
+    /// d'état déjà appliqués par `cancel()` (pas de double vérification
+    /// d'appartenance, contrairement à `cancel()`).
+    pub fn moderate_cancel(&mut self, reason: String) -> Result<(), String> {
+        if self.status == ExchangeStatus::Completed {
+            return Err("Cannot cancel a completed exchange".to_string());
+        }
+
+        if self.status == ExchangeStatus::Cancelled {
+            return Err("Exchange is already cancelled".to_string());
+        }
+
+        self.status = ExchangeStatus::Cancelled;
+        self.cancelled_at = Some(Utc::now());
+        self.cancellation_reason = Some(reason);
+        self.updated_at = Utc::now();
+
+        Ok(())
+    }
+
     /// Rate the provider (by requester)
     pub fn rate_provider(&mut self, requester_id: Uuid, rating: i32) -> Result<(), String> {
         if self.status != ExchangeStatus::Completed {
@@ -438,6 +465,86 @@ mod tests {
             exchange.cancellation_reason,
             Some("Changed my mind".to_string())
         );
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 5.3 (#587), INV-4 — moderate_cancel
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_moderate_cancel_par_un_tiers_a_l_echange() {
+        let building_id = Uuid::new_v4();
+        let provider_id = Uuid::new_v4();
+        let requester_id = Uuid::new_v4();
+
+        let mut exchange = LocalExchange::new(
+            building_id,
+            provider_id,
+            ExchangeType::Service,
+            "Service".to_string(),
+            "Description".to_string(),
+            2,
+        )
+        .unwrap();
+        exchange.request(requester_id).unwrap();
+
+        // Ni provider ni requester : un `cancel()` classique refuserait.
+        // `moderate_cancel` l'autorise, l'autorisation ayant déjà été
+        // vérifiée côté application.
+        let result = exchange.moderate_cancel("Litige signalé par un voisin".to_string());
+        assert!(result.is_ok(), "moderate_cancel failed: {:?}", result.err());
+        assert_eq!(exchange.status, ExchangeStatus::Cancelled);
+        assert_eq!(
+            exchange.cancellation_reason,
+            Some("Litige signalé par un voisin".to_string())
+        );
+    }
+
+    #[test]
+    fn negative_moderate_cancel_refuse_un_echange_deja_complete() {
+        let building_id = Uuid::new_v4();
+        let provider_id = Uuid::new_v4();
+        let requester_id = Uuid::new_v4();
+
+        let mut exchange = LocalExchange::new(
+            building_id,
+            provider_id,
+            ExchangeType::Service,
+            "Service".to_string(),
+            "Description".to_string(),
+            2,
+        )
+        .unwrap();
+        exchange.request(requester_id).unwrap();
+        exchange.start(provider_id).unwrap();
+        exchange.complete(provider_id).unwrap();
+
+        let result = exchange.moderate_cancel("Motif".to_string());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Cannot cancel a completed"));
+    }
+
+    #[test]
+    fn edge_moderate_cancel_refuse_un_echange_deja_annule() {
+        let building_id = Uuid::new_v4();
+        let provider_id = Uuid::new_v4();
+
+        let mut exchange = LocalExchange::new(
+            building_id,
+            provider_id,
+            ExchangeType::Service,
+            "Service".to_string(),
+            "Description".to_string(),
+            2,
+        )
+        .unwrap();
+        exchange
+            .moderate_cancel("Premier motif".to_string())
+            .unwrap();
+
+        let result = exchange.moderate_cancel("Second motif".to_string());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("already cancelled"));
     }
 
     #[test]

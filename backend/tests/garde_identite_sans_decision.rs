@@ -173,11 +173,6 @@ const EXCEPTIONS: &[(&str, &str)] = &[
         "SELECT ... WHERE organization_id = $1 — idem",
     ),
     (
-        "local_exchange_handlers.rs::delete_exchange",
-        "le cas d'usage refuse : `if exchange.provider_id != owner_id`, lu \
-         dans local_exchange_use_cases.rs:372",
-    ),
-    (
         "document_handlers.rs::list_documents",
         "`user.organization_id` passé au cas d'usage, qui borne la requête",
     ),

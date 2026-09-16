@@ -984,6 +984,28 @@ pub const REFUS_RESERVE_AUX_COPROPRIETAIRES: &str =
      cette organisation. Si vous êtes syndic et souhaitez agir pour le compte \
      de l'ACP, cette possibilité n'existe pas encore.";
 
+/// Refus opposé à qui n'a pas de fiche de copropriétaire et tente de voter à
+/// une consultation (Poll). Même famille que [`REFUS_RESERVE_AUX_COPROPRIETAIRES`]
+/// mais un module séparé : voter engage un avis personnel, la constante et le
+/// message diffèrent donc légèrement (repris du message déjà affiché côté
+/// handler avant Story 5.3 #587, pour n'avoir plus qu'une seule source).
+pub const REFUS_VOTE_RESERVE_AUX_COPROPRIETAIRES: &str =
+    "Aucune fiche de copropriétaire n'est rattachée à ce compte : le vote à une \
+     consultation est réservé aux copropriétaires.";
+
+/// Refus opposé à une modération communautaire (SEL/Poll/Notice/SharedObject)
+/// tentée sans motif texte.
+///
+/// Story 5.3 (#587), INV-4 — un syndic (ou `community.moderator`) peut
+/// éditer/annuler/supprimer le contenu d'autrui, mais jamais sans motif : le
+/// motif EST la trace d'audit, pas un commentaire optionnel qu'on pourrait
+/// ajouter après coup. Une partie prenante (auteur/participant) qui agit sur
+/// son propre contenu n'est pas concernée par cette exigence : elle n'a pas à
+/// se justifier auprès d'elle-même.
+pub const MOTIF_MODERATION_REQUIS: &str =
+    "Un motif est requis pour modérer ce contenu (édition, annulation ou \
+     suppression) : la modération doit pouvoir être auditée.";
+
 #[cfg(test)]
 mod tests {
     use super::*;

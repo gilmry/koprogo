@@ -314,6 +314,21 @@ impl PollUseCases {
     }
 
     /// Cast a vote on a poll
+    ///
+    /// # Authorization (Story 5.3 — #587, INV-4)
+    /// `owner_id: None` a un double sens historique dans cette méthode : soit
+    /// « vote anonyme d'un copropriétaire déjà vérifié éligible » (Scénario 8,
+    /// `polls.feature` — le VRAI `owner_id` existe mais l'appelant choisit de
+    /// ne pas le transmettre pour ne pas l'enregistrer), soit « aucune fiche de
+    /// copropriétaire ». Cette méthode ne peut PAS distinguer les deux : elle
+    /// n'a que ce qu'on lui donne. L'éligibilité (INV-4 — un syndic sans lot ne
+    /// vote pas) est donc vérifiée EN AMONT, côté appelant, qui seul connaît la
+    /// provenance du `None` — voir `poll_handlers::cast_poll_vote`, qui résout
+    /// `find_owner_by_user_id` et refuse (403 `owner_not_linked`) AVANT
+    /// d'appeler `cast_vote`, sans jamais lui transmettre de `None` pour un
+    /// utilisateur non-copropriétaire. Un syndic qui a AUSSI une fiche de
+    /// copropriétaire vote ès qualités de copropriétaire, `owner_id: Some`,
+    /// sans traitement différent du reste de cette méthode.
     pub async fn cast_vote(
         &self,
         dto: CastVoteDto,
@@ -1020,5 +1035,102 @@ mod tests {
         let result = use_cases.create_poll(dto, created_by).await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("must be in the future"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 5.3 (#587), INV-4 — cast_vote : où vit le refus du syndic pur ?
+    // ------------------------------------------------------------------------
+    //
+    // Volontairement PAS de test ici pour "syndic pur → 403" : cette méthode
+    // ne peut pas distinguer un `None` "non-copropriétaire" d'un `None` "vote
+    // anonyme d'un copropriétaire déjà vérifié" (Scénario 8, `polls.feature`).
+    // Le refus vit dans `poll_handlers::cast_poll_vote`, seul endroit qui
+    // connaît la provenance du `None` — voir la doc de `cast_vote` ci-dessus.
+
+    async fn make_active_poll(
+        use_cases: &PollUseCases,
+        building_id: Uuid,
+        created_by: Uuid,
+    ) -> Uuid {
+        let dto = CreatePollDto {
+            building_id: building_id.to_string(),
+            title: "Faut-il repeindre le hall ?".to_string(),
+            description: None,
+            poll_type: "yes_no".to_string(),
+            options: vec![
+                CreatePollOptionDto {
+                    id: None,
+                    option_text: "Oui".to_string(),
+                    attachment_url: None,
+                    display_order: 0,
+                },
+                CreatePollOptionDto {
+                    id: None,
+                    option_text: "Non".to_string(),
+                    attachment_url: None,
+                    display_order: 1,
+                },
+            ],
+            is_anonymous: Some(true),
+            allow_multiple_votes: Some(false),
+            require_all_owners: None,
+            ends_at: (Utc::now() + chrono::Duration::days(7))
+                .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+        };
+        let created = use_cases.create_poll(dto, created_by).await.unwrap();
+        let poll_id = Uuid::parse_str(&created.id).unwrap();
+        use_cases.publish_poll(poll_id, created_by).await.unwrap();
+        poll_id
+    }
+
+    #[tokio::test]
+    async fn edge_vote_anonyme_reste_possible_sans_owner_id() {
+        // Non-régression du Scénario 8 (`polls.feature`) : un `owner_id: None`
+        // représente ICI un vote anonyme déjà vérifié éligible en amont, pas
+        // une absence de copropriétaire. Le bloquer casserait ce scénario.
+        let use_cases = setup_use_cases();
+        let building_id = Uuid::new_v4();
+        let created_by = Uuid::new_v4();
+        let poll_id = make_active_poll(&use_cases, building_id, created_by).await;
+        let poll = use_cases.get_poll(poll_id).await.unwrap();
+        let option_id = poll.options.first().unwrap().id.clone();
+
+        let vote_dto = CastVoteDto {
+            poll_id: poll_id.to_string(),
+            selected_option_ids: Some(vec![option_id]),
+            rating_value: None,
+            open_text: None,
+        };
+
+        let result = use_cases.cast_vote(vote_dto, None).await;
+        assert!(
+            result.is_ok(),
+            "un vote anonyme (owner_id=None) doit rester possible : {:?}",
+            result.err()
+        );
+    }
+
+    #[tokio::test]
+    async fn security_owner_hors_immeuble_est_refuse() {
+        let use_cases = setup_use_cases();
+        let building_id = Uuid::new_v4();
+        let created_by = Uuid::new_v4();
+        let poll_id = make_active_poll(&use_cases, building_id, created_by).await;
+        let poll = use_cases.get_poll(poll_id).await.unwrap();
+        let option_id = poll.options.first().unwrap().id.clone();
+
+        // `MockUnitOwnerRepository::find_active_by_building` ne renvoie que des
+        // UUID générés aléatoirement : ce owner_id n'y figurera jamais.
+        let outsider_owner_id = Uuid::new_v4();
+        let vote_dto = CastVoteDto {
+            poll_id: poll_id.to_string(),
+            selected_option_ids: Some(vec![option_id]),
+            rating_value: None,
+            open_text: None,
+        };
+
+        let result = use_cases.cast_vote(vote_dto, Some(outsider_owner_id)).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("not authorized to vote"));
     }
 }

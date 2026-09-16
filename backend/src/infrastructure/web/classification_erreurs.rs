@@ -77,6 +77,16 @@ pub fn est_refus_owner_requis(message: &str) -> bool {
     message == crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES
 }
 
+/// L'erreur est-elle PRÉCISÉMENT le refus d'une modération communautaire
+/// (SEL/Poll/Notice/SharedObject) tentée sans motif texte ?
+///
+/// Story 5.3 (#587), INV-4 — distinct de `est_interdit` (403 générique) : ce
+/// refus est un 422, la modération existe mais son exercice manque une
+/// condition de forme (le motif d'audit), pas une autorisation.
+pub fn est_motif_manquant(message: &str) -> bool {
+    message == crate::application::error::MOTIF_MODERATION_REQUIS
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,5 +159,31 @@ mod tests {
     #[test]
     fn security_un_message_vide_nest_jamais_pris_pour_ce_refus() {
         assert!(!est_refus_owner_requis(""));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 5.3 (#587) — est_motif_manquant
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_le_motif_manquant_est_reconnu() {
+        assert!(est_motif_manquant(
+            crate::application::error::MOTIF_MODERATION_REQUIS
+        ));
+    }
+
+    #[test]
+    fn negative_un_refus_generique_ne_declenche_pas_ce_kind() {
+        // `est_interdit` reconnaît aussi ce message (403 générique) — mais il
+        // ne s'agit pas de l'absence de motif (422) : les deux refus ont des
+        // causes différentes et ne doivent jamais se confondre.
+        let refus_403 = "Only the provider or a community moderator can delete the exchange";
+        assert!(est_interdit(refus_403));
+        assert!(!est_motif_manquant(refus_403));
+    }
+
+    #[test]
+    fn security_un_message_vide_nest_jamais_pris_pour_le_motif_manquant() {
+        assert!(!est_motif_manquant(""));
     }
 }
