@@ -151,6 +151,15 @@ async fn main() -> std::io::Result<()> {
     let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
     let etat_date_repo = Arc::new(PostgresEtatDateRepository::new(pool.clone()));
+    // Issue #855 — cloné : `EtatDateUseCases::new` consomme `etat_date_repo`
+    // plus bas ; `NotaryLinkUseCases` a besoin de sa propre référence pour
+    // résoudre une référence d'état daté sans passer par le use case HTTP.
+    let etat_date_repo_for_notary_link = etat_date_repo.clone();
+    let notary_link_repo: Arc<dyn koprogo_api::application::ports::NotaryLinkRepository> = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresNotaryLinkRepository::new(
+            pool.clone(),
+        ),
+    );
     let budget_repo = Arc::new(PostgresBudgetRepository::new(pool.clone()));
     let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
     let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
@@ -461,6 +470,10 @@ async fn main() -> std::io::Result<()> {
     // Story 3.4 — Mandate use cases (juridical delegation tracker).
     let mandate_use_cases =
         koprogo_api::application::use_cases::MandateUseCases::new(mandate_repo.clone());
+    // Issue #855 — NotaryLink use cases (signed, time-boxed, single-état-daté
+    // access link for a notary without a KoproGo account).
+    let notary_link_use_cases =
+        NotaryLinkUseCases::new(notary_link_repo.clone(), etat_date_repo_for_notary_link);
     // Story 3.5 — Role delegation use cases (FR8 INV-8).
     let role_delegation_use_cases =
         koprogo_api::application::use_cases::RoleDelegationUseCases::new(
@@ -601,6 +614,7 @@ async fn main() -> std::io::Result<()> {
         user_use_cases,
         magic_link_use_cases,
         mandate_use_cases,
+        notary_link_use_cases,
         role_delegation_use_cases,
         syndic_response_use_cases,
         technical_spec_use_cases,

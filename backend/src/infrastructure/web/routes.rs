@@ -483,6 +483,13 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(update_financial_data)
             .service(update_additional_data)
             .service(delete_etat_date)
+            // NotaryLink (Issue #855 — ADR 0048/0051): syndic-facing issuance
+            // / revocation / renewal / listing. The anonymous consultation
+            // route is `get_by_reference_number` above.
+            .service(issue_notary_link)
+            .service(revoke_notary_link)
+            .service(renew_notary_link)
+            .service(list_notary_links)
             // Budgets (Annual budget management)
             // Specific routes MUST come before parameterized /budgets/{id}
             .service(create_budget)

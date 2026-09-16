@@ -37,6 +37,7 @@ pub mod local_exchange_use_cases;
 pub mod magic_link_use_cases;
 pub mod mandate_use_cases;
 pub mod meeting_use_cases;
+pub mod notary_link_use_cases;
 pub mod notice_use_cases;
 pub mod notification_use_cases;
 pub mod organization_use_cases;
@@ -107,6 +108,9 @@ pub use local_exchange_use_cases::LocalExchangeUseCases;
 pub use magic_link_use_cases::{IssuedMagicLinkDto, MagicLinkUseCases};
 pub use mandate_use_cases::MandateUseCases;
 pub use meeting_use_cases::MeetingUseCases;
+pub use notary_link_use_cases::{
+    IssuedNotaryLinkDto, NotaryLinkRateLimiter, NotaryLinkResponse, NotaryLinkUseCases,
+};
 pub use notice_use_cases::{NoticeStatistics, NoticeUseCases};
 pub use notification_use_cases::NotificationUseCases;
 pub use organization_use_cases::OrganizationUseCases;

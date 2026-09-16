@@ -105,6 +105,25 @@ pub enum AppError {
     #[error("Lien déjà utilisé")]
     MagicLinkAlreadyConsumed,
 
+    /// A `NotaryLink` token is absent, malformed, unknown, expired, revoked,
+    /// or scoped to a different état daté. Deliberately a SINGLE variant
+    /// with a SINGLE message for every one of those causes: on the anonymous
+    /// `GET /etats-dates/reference/{reference_number}` route, distinguishing
+    /// "expired" from "unknown" would confirm to the caller that the
+    /// reference number exists (#855 @negative, ADR 0051). Returns 403
+    /// Forbidden.
+    #[error("Lien invalide ou expiré")]
+    NotaryLinkInvalid,
+
+    /// A syndic — authenticated, already holding the link's id — tries to
+    /// renew a link that was explicitly revoked. Unlike `NotaryLinkInvalid`,
+    /// this path has no anonymity concern: the caller already knows the
+    /// link exists, so the cause can be named precisely. Returns 409
+    /// Conflict (state-of-the-resource refusal, not an authorization
+    /// failure). Issue #855.
+    #[error("Lien révoqué, impossible à renouveler")]
+    NotaryLinkRevoked,
+
     /// Mandate is past its `valid_until` boundary. Returns 403 Forbidden.
     /// Story 3.4 (FR7 INV-14).
     #[error("Mandat expiré, contactez le syndic")]
@@ -311,6 +330,8 @@ impl AppError {
             AppError::MagicLinkInvalid => "magic_link_invalid",
             AppError::MagicLinkExpired => "magic_link_expired",
             AppError::MagicLinkAlreadyConsumed => "magic_link_consumed",
+            AppError::NotaryLinkInvalid => "notary_link_invalid",
+            AppError::NotaryLinkRevoked => "notary_link_revoked",
             AppError::MandateExpired => "mandate_expired",
             AppError::MandateRevoked => "mandate_revoked",
             AppError::MandateInvalidScope => "mandate_invalid_scope",
@@ -343,6 +364,7 @@ impl ResponseError for AppError {
             | AppError::MagicLinkInvalid
             | AppError::MagicLinkExpired
             | AppError::MagicLinkAlreadyConsumed
+            | AppError::NotaryLinkInvalid
             | AppError::MandateExpired
             | AppError::MandateRevoked
             | AppError::MandateInvalidScope
@@ -354,6 +376,7 @@ impl ResponseError for AppError {
             AppError::Conflict(_)
             | AppError::RoleAlreadyAssigned { .. }
             | AppError::TechnicalSpecAlreadyApproved
+            | AppError::NotaryLinkRevoked
             | AppError::SignatureAlreadyExists => StatusCode::CONFLICT,
             AppError::TechnicalSpecResignatureRequired
             | AppError::TechnicalSpecRequired
@@ -1024,6 +1047,8 @@ mod tests {
             AppError::MagicLinkInvalid,
             AppError::MagicLinkExpired,
             AppError::MagicLinkAlreadyConsumed,
+            AppError::NotaryLinkInvalid,
+            AppError::NotaryLinkRevoked,
             AppError::RoleAlreadyAssigned {
                 user_id: uuid::Uuid::nil(),
                 role: "syndic".into(),
@@ -1054,6 +1079,35 @@ mod tests {
         let e = AppError::DelegationChainNotAllowed;
         assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
         assert_eq!(e.kind(), "delegation_chain_not_allowed");
+    }
+
+    // ------------------------------------------------------------------------
+    // Issue #855 — NotaryLinkInvalid / NotaryLinkRevoked
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn security_notary_link_invalid_maps_to_403() {
+        let e = AppError::NotaryLinkInvalid;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "notary_link_invalid");
+    }
+
+    #[test]
+    fn negative_notary_link_invalid_is_a_single_variant_for_every_cause() {
+        // #855 @negative : un jeton absent, illisible, expiré ou révoqué
+        // renvoie le MÊME message (contrairement à MagicLink, qui distingue
+        // Invalid/Expired/AlreadyConsumed). Un texte qui dirait "expiré"
+        // plutôt qu'"inconnu" confirmerait à l'appelant que la référence
+        // existe — il n'existe donc qu'UNE variante pour tous ces cas.
+        let e = AppError::NotaryLinkInvalid;
+        assert_eq!(e.to_string(), "Lien invalide ou expiré");
+    }
+
+    #[test]
+    fn happy_notary_link_revoked_maps_to_409() {
+        let e = AppError::NotaryLinkRevoked;
+        assert_eq!(e.status_code(), StatusCode::CONFLICT);
+        assert_eq!(e.kind(), "notary_link_revoked");
     }
 
     // ------------------------------------------------------------------------

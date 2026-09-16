@@ -230,6 +230,10 @@ pub use crate::domain::plateforme::gdpr_restriction::{
 };
 pub use crate::domain::plateforme::magic_link;
 pub use crate::domain::plateforme::magic_link::{MagicLink, MagicLinkScopeKind};
+pub use crate::domain::plateforme::notary_link;
+pub use crate::domain::plateforme::notary_link::{
+    NotaryLink, VALIDITE_JOURS as NOTARY_LINK_VALIDITE_JOURS,
+};
 pub use crate::domain::plateforme::notification;
 pub use crate::domain::plateforme::notification::{
     Notification, NotificationChannel, NotificationPreference, NotificationPriority,

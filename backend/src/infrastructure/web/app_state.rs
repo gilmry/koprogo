@@ -10,13 +10,14 @@ use crate::application::use_cases::{
     EnergyCampaignUseCases, EtatDateUseCases, ExpenseUseCases, FinancialReportUseCases,
     GamificationStatsUseCases, GdprArt30UseCases, GdprUseCases, IndividualMemberUseCases,
     IoTUseCases, JournalEntryUseCases, LinkyUseCases, LocalExchangeUseCases, MagicLinkUseCases,
-    MandateUseCases, MeetingUseCases, NoticeUseCases, NotificationUseCases, OrganizationUseCases,
-    OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases, PaymentReminderUseCases,
-    PaymentUseCases, PcnUseCases, PollUseCases, PortfolioUseCases, QuoteUseCases,
-    ResolutionUseCases, ResourceBookingUseCases, RoleDelegationUseCases, SecurityIncidentUseCases,
-    ServiceProviderUseCases, SharedObjectUseCases, SkillUseCases, StatsUseCases,
-    SyndicResponseUseCases, TechnicalInspectionUseCases, TechnicalSpecUseCases, TicketUseCases,
-    TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, UserUseCases, WorkReportUseCases,
+    MandateUseCases, MeetingUseCases, NotaryLinkUseCases, NoticeUseCases, NotificationUseCases,
+    OrganizationUseCases, OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases,
+    PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases, PortfolioUseCases,
+    QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases, RoleDelegationUseCases,
+    SecurityIncidentUseCases, ServiceProviderUseCases, SharedObjectUseCases, SkillUseCases,
+    StatsUseCases, SyndicResponseUseCases, TechnicalInspectionUseCases, TechnicalSpecUseCases,
+    TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, UserUseCases,
+    WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::database::repositories::{
@@ -98,6 +99,9 @@ pub struct AppState {
     /// Story 3.4 — Mandate (delegation to external professionals: notaire,
     /// avocat, AMO, architecte, BET, gardien) with bounded validity.
     pub mandate_use_cases: Arc<MandateUseCases>,
+    /// Issue #855 — signed, time-boxed, single-état-daté access link for a
+    /// notary who has no KoproGo account (ADR 0048 / ADR 0051).
+    pub notary_link_use_cases: Arc<NotaryLinkUseCases>,
     /// Story 3.5 — Temporary role delegation (syndic → owner, bounded).
     pub role_delegation_use_cases: Arc<RoleDelegationUseCases>,
     /// Story 3.7 — SyndicResponse (append-only) + SLA escalation use-cases.
@@ -183,6 +187,7 @@ impl AppState {
         user_use_cases: UserUseCases,
         magic_link_use_cases: MagicLinkUseCases,
         mandate_use_cases: MandateUseCases,
+        notary_link_use_cases: NotaryLinkUseCases,
         role_delegation_use_cases: RoleDelegationUseCases,
         syndic_response_use_cases: SyndicResponseUseCases<
             PostgresSyndicResponseRepository,
@@ -259,6 +264,7 @@ impl AppState {
             user_use_cases: Arc::new(user_use_cases),
             magic_link_use_cases: Arc::new(magic_link_use_cases),
             mandate_use_cases: Arc::new(mandate_use_cases),
+            notary_link_use_cases: Arc::new(notary_link_use_cases),
             role_delegation_use_cases: Arc::new(role_delegation_use_cases),
             syndic_response_use_cases: Arc::new(syndic_response_use_cases),
             technical_spec_use_cases: Arc::new(technical_spec_use_cases),

@@ -229,6 +229,12 @@ async fn setup_test_db() -> (
     let energy_campaign_repo = Arc::new(PostgresEnergyCampaignRepository::new(pool.clone()));
     let energy_bill_upload_repo = Arc::new(PostgresEnergyBillUploadRepository::new(pool.clone()));
     let etat_date_repo = Arc::new(PostgresEtatDateRepository::new(pool.clone()));
+    let etat_date_repo_for_notary_link = etat_date_repo.clone();
+    let notary_link_repo: Arc<dyn koprogo_api::application::ports::NotaryLinkRepository> = Arc::new(
+        koprogo_api::infrastructure::database::repositories::PostgresNotaryLinkRepository::new(
+            pool.clone(),
+        ),
+    );
     let iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
     let owner_contribution_repo = Arc::new(PostgresOwnerContributionRepository::new(pool.clone()));
     let call_for_funds_repo = Arc::new(PostgresCallForFundsRepository::new(pool.clone()));
@@ -415,6 +421,10 @@ async fn setup_test_db() -> (
         ),
     );
     let mandate_use_cases = koprogo_api::application::use_cases::MandateUseCases::new(mandate_repo);
+    let notary_link_use_cases = koprogo_api::application::use_cases::NotaryLinkUseCases::new(
+        notary_link_repo,
+        etat_date_repo_for_notary_link,
+    );
 
     let role_delegation_repo: Arc<
         dyn koprogo_api::application::ports::RoleDelegationRepository,
@@ -535,6 +545,7 @@ async fn setup_test_db() -> (
         user_use_cases,
         magic_link_use_cases,
         mandate_use_cases,
+        notary_link_use_cases,
         role_delegation_use_cases,
         syndic_response_use_cases,
         technical_spec_use_cases,

@@ -61,9 +61,23 @@ use std::path::{Path, PathBuf};
 ///   pas un secret, et derrière elle il y a les dettes d'un copropriétaire
 ///   nommé.
 ///
-/// Reste donc **une** route non gardée, et elle a une issue : l'identité
-/// notaire est à créer (#845, ADR 0048).
-const DETTE_AU_2026_09_10: usize = 1;
+/// ── #855 (2026-09-16) — la dernière route est gardée ─────────────────────
+///
+/// [ADR 0051](../../docs/adr/0051-lien-notaire-sept-jours-renouvelable.md) a
+/// tranché la modalité : un lien signé, émis par le syndic, scopé à UN état
+/// daté, valide sept jours, révocable, journalisé. `GET
+/// /etats-dates/reference/{reference_number}` vérifie désormais ce jeton —
+/// via `NotaryLinkUseCases::consult`, pas via `AuthenticatedUser` : le
+/// notaire n'a pas de compte KoproGo, c'est le LIEN qui porte l'identité.
+///
+/// Le détecteur statique de `verifie_lidentite()` ne peut pas voir un jeton
+/// vérifié en dehors de `AuthenticatedUser` / l'en-tête `Authorization` — la
+/// route rejoint donc `PUBLIQUES` avec sa raison, à la manière des routes à
+/// lien magique (`/c/{token}` etc.) déjà présentes dans cette liste.
+///
+/// Plus aucune route non gardée : ce cliquet devient une interdiction, pas
+/// un solde à faire fondre.
+const DETTE_AU_2026_09_16: usize = 0;
 
 /// Les routes publiques, et pourquoi.
 ///
@@ -138,6 +152,21 @@ const PUBLIQUES: &[(&str, &str)] = &[
         "/convocation-recipients/{id}/email-opened",
         "pixel de suivi d'ouverture : l'appelant est un client de messagerie, \
          qui ne porte aucun jeton (ADR 0048)",
+    ),
+    // ── #855, ADR 0051, tranché le 2026-09-12 ────────────────────────────
+    //
+    // Dernière route du relevé initial. Gardée, mais pas par
+    // `AuthenticatedUser` : le notaire n'a pas de compte KoproGo. Le jeton
+    // (query `?token=`) est vérifié par `NotaryLinkUseCases::consult` —
+    // signé, scopé à UN état daté, valide sept jours, révocable, journalisé.
+    // Même famille que les routes à lien magique ci-dessus (`/c/{token}`) :
+    // le détecteur statique ne voit pas un jeton vérifié hors
+    // `AuthenticatedUser` / l'en-tête `Authorization`, donc la route est
+    // documentée ici plutôt que silencieusement comptée comme nue.
+    (
+        "/etats-dates/reference/{reference_number}",
+        "lien notaire signé (query ?token=), scopé à un état daté, 7 jours, \
+         révocable, journalisé — pas de compte notaire (#855, ADR 0051)",
     ),
 ];
 
@@ -320,9 +349,9 @@ fn aucune_route_supplementaire_ne_se_passe_didentite() {
     let n = liste.len();
 
     assert!(
-        n <= DETTE_AU_2026_09_10,
-        "{n} routes ne vérifient AUCUNE identité, contre {DETTE_AU_2026_09_10} \
-         au 2026-09-08.\n\n\
+        n <= DETTE_AU_2026_09_16,
+        "{n} routes ne vérifient AUCUNE identité, contre {DETTE_AU_2026_09_16} \
+         au 2026-09-16.\n\n\
          Ni `AuthenticatedUser`, ni lecture de l'en-tête `Authorization`. Le \
          seul obstacle pour l'appeler est de connaître un UUID.\n\n\
          Ces routes échappent aux deux cliquets de #772, qui ne comptent que \

@@ -15,6 +15,7 @@ pub mod gdpr_objection;
 pub mod gdpr_rectification;
 pub mod gdpr_restriction;
 pub mod magic_link;
+pub mod notary_link;
 pub mod notification;
 pub mod organization;
 pub mod portfolio;
@@ -35,6 +36,7 @@ pub use gdpr_objection::{GdprObjectionRequest, ObjectionStatus, ObjectionType, P
 pub use gdpr_rectification::{FieldChange, GdprRectificationRequest, RectificationStatus};
 pub use gdpr_restriction::{GdprRestrictionRequest, RestrictionReason, RestrictionStatus};
 pub use magic_link::{MagicLink, MagicLinkScopeKind};
+pub use notary_link::{NotaryLink, VALIDITE_JOURS as NOTARY_LINK_VALIDITE_JOURS};
 pub use notification::{
     Notification, NotificationChannel, NotificationPreference, NotificationPriority,
     NotificationStatus, NotificationType,

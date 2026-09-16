@@ -7,9 +7,35 @@ use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::handlers::conformity_response::try_build_conformity_response;
 use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
+use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder, ResponseError};
 use serde::Deserialize;
 use uuid::Uuid;
+
+/// Extrait l'IP appelante pour la clé du limiteur de débit du lien notaire
+/// (#855 @security). Même heuristique que `security_incident_handlers.rs` /
+/// `gdpr_handlers.rs` : X-Forwarded-For > X-Real-IP > adresse de connexion
+/// directe. La route étant anonyme (aucun JWT), l'IP est la seule clé
+/// disponible.
+fn extract_ip_address(req: &HttpRequest) -> String {
+    req.headers()
+        .get("X-Forwarded-For")
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.split(',').next().unwrap_or("").trim().to_string())
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            req.headers()
+                .get("X-Real-IP")
+                .and_then(|h| h.to_str().ok())
+                .map(|s| s.to_string())
+        })
+        .or_else(|| req.peer_addr().map(|addr| addr.ip().to_string()))
+        .unwrap_or_else(|| "unknown".to_string())
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NotaryLinkTokenQuery {
+    pub token: Option<String>,
+}
 
 #[derive(Debug, Deserialize)]
 pub struct EtatDateListQuery {
@@ -175,24 +201,49 @@ pub async fn get_etat_date(
     }
 }
 
-/// Get état daté by reference number
+/// Get état daté by reference number — gated by a syndic-issued NotaryLink
+/// token (#855, ADR 0048, ADR 0051).
+///
+/// La référence n'est PAS le secret ici : Art. 3.89 la fait circuler dans des
+/// courriels et des dossiers de vente. Le secret est le jeton `?token=...`,
+/// émis par le syndic via `POST /etats-dates/{id}/notary-links`, scopé à CET
+/// état daté, valide sept jours, révocable. Un notaire sans compte KoproGo
+/// peut donc consulter — l'identité vérifiée est celle du LIEN, pas d'un
+/// utilisateur (cf. `NotaryLinkUseCases::consult` pour le détail du refus
+/// uniforme entre jeton absent/inconnu/expiré/révoqué/hors-portée).
+///
+/// N'apparaît PAS avec `AuthenticatedUser` : cette route rejoint `PUBLIQUES`
+/// dans `tests/garde_identite_absente.rs` avec sa justification — la garde
+/// d'identité statique ne peut pas voir un jeton vérifié en query string,
+/// seulement `AuthenticatedUser` / l'en-tête `Authorization`.
 #[get("/etats-dates/reference/{reference_number}")]
 pub async fn get_by_reference_number(
     state: web::Data<AppState>,
+    req: HttpRequest,
     reference_number: web::Path<String>,
+    query: web::Query<NotaryLinkTokenQuery>,
 ) -> impl Responder {
+    let ip = extract_ip_address(&req);
     match state
-        .etat_date_use_cases
-        .get_by_reference_number(&reference_number)
+        .notary_link_use_cases
+        .consult(&reference_number, query.token.as_deref(), &ip)
         .await
     {
-        Ok(Some(etat_date)) => HttpResponse::Ok().json(etat_date),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "État daté not found"
-        })),
-        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": err
-        })),
+        Ok(etat_date) => {
+            // ADR 0051 : "chaque consultation ... journalisée". Aucun
+            // `user_id` : l'appelant est un notaire sans compte KoproGo —
+            // c'est le lien lui-même, pas une identité, qui est audité ici.
+            AuditLogEntry::new(
+                AuditEventType::NotaryLinkConsulted,
+                None,
+                Some(etat_date.organization_id),
+            )
+            .with_resource("EtatDate", etat_date.id)
+            .with_client_info(Some(ip), None)
+            .log();
+            HttpResponse::Ok().json(etat_date)
+        }
+        Err(err) => err.error_response(),
     }
 }
 
