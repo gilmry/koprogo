@@ -783,3 +783,40 @@ pub async fn register_and_login_with_role(
         .expect("login")
         .token
 }
+
+/// Comme `register_and_login_with_role`, mais rend AUSSI l'identifiant de
+/// l'utilisateur créé.
+///
+/// Nécessaire depuis #850 : voter à une assemblée exige une fiche de
+/// copropriétaire rattachée au COMPTE de l'appelant. Sans l'`user_id`, un
+/// test ne peut pas établir ce lien, et se retrouve à voter en syndic — ce
+/// que le produit refuse désormais, à raison.
+#[allow(dead_code)]
+pub async fn register_and_login_returning_user(
+    app_state: &actix_web::web::Data<AppState>,
+    org_id: Uuid,
+    role: &str,
+) -> (String, Uuid) {
+    let email = format!("e2e+{}@test.com", Uuid::new_v4());
+    let reg = koprogo_api::application::dto::RegisterRequest {
+        email: email.clone(),
+        password: "Passw0rd!".to_string(),
+        first_name: "E2E".to_string(),
+        last_name: "Tester".to_string(),
+        role: role.to_string(),
+        organization_id: Some(org_id),
+    };
+    let _ = app_state.auth_use_cases.register(reg).await;
+
+    let login = app_state
+        .auth_use_cases
+        .login(koprogo_api::application::dto::LoginRequest {
+            email: email.clone(),
+            password: "Passw0rd!".to_string(),
+        })
+        .await
+        .expect("login");
+
+    let user_id = login.user.id;
+    (login.token, user_id)
+}
