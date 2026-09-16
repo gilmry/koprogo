@@ -1,4 +1,4 @@
-use crate::domain::entities::{Vote, VoteChoice};
+use crate::domain::entities::{Vote, VoteAuthMethod, VoteChoice};
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -17,6 +17,8 @@ pub struct VoteResponse {
     pub proxy_owner_id: Option<Uuid>,
     pub voted_at: DateTime<Utc>,
     pub is_proxy_vote: bool,
+    /// Story 4.2 (#48) — comment le votant a été authentifié.
+    pub auth_method: VoteAuthMethod,
 }
 
 impl From<Vote> for VoteResponse {
@@ -31,6 +33,7 @@ impl From<Vote> for VoteResponse {
             proxy_owner_id: vote.proxy_owner_id,
             voted_at: vote.voted_at,
             is_proxy_vote: vote.is_proxy_vote(),
+            auth_method: vote.auth_method,
         }
     }
 }
@@ -53,6 +56,13 @@ pub struct CastVoteRequest {
     #[serde(default)]
     pub voting_power: Option<Decimal>,
     pub proxy_owner_id: Option<Uuid>,
+    /// Story 4.2 (#48) — comment le votant a été authentifié. Obligatoire
+    /// (absent → 422 `VOTE_AUTH_METHOD_REQUIRED`) : `Option` ici seulement
+    /// pour distinguer « absent » (422 typé) d'un JSON malformé (400 générique
+    /// de désérialisation). Le cas d'usage `cast_vote` le valide contre la
+    /// modalité de l'AG (`assert_vote_auth_sufficient`).
+    #[serde(default)]
+    pub auth_method: Option<VoteAuthMethod>,
 }
 
 /// Request DTO for changing a vote

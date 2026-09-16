@@ -790,6 +790,7 @@ pub async fn export_meeting_minutes_pdf(
                 voting_power: v.voting_power,
                 proxy_owner_id: v.proxy_owner_id,
                 voted_at: v.voted_at,
+                auth_method: v.auth_method,
             })
             .collect();
 

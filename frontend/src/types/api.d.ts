@@ -3239,6 +3239,14 @@ export interface components {
     };
     /** @description Request DTO for casting a vote */
     CastVoteRequest: {
+      /**
+       * @description Story 4.2 (#48) — comment le votant a été authentifié. Obligatoire
+       *     (absent → 422 `VOTE_AUTH_METHOD_REQUIRED`) : `Option` ici seulement
+       *     pour distinguer « absent » (422 typé) d'un JSON malformé (400 générique
+       *     de désérialisation). Le cas d'usage `cast_vote` le valide contre la
+       *     modalité de l'AG (`assert_vote_auth_sufficient`).
+       */
+      auth_method?: components["schemas"]["VoteAuthMethod"] | null;
       /** Format: uuid */
       owner_id: string;
       /** Format: uuid */
@@ -4600,6 +4608,16 @@ export interface components {
      * @enum {string}
      */
     VoteChoice: "pour" | "contre" | "abstention";
+    /**
+     * @description Méthode d'authentification du votant (Story 4.2, Art. 3.87 §1er, §4 CC,
+     *     #48). `Presence` couvre la signature de la feuille de présence en AG
+     *     physique ; `Proxy` une procuration papier en bonne et due forme ;
+     *     `Itsme`/`Eid` l'authentification forte requise pour un vote à
+     *     distance (Art. 3.87 §1er : « à distance au moyen d'une communication
+     *     électronique » suppose de savoir QUI a voté).
+     * @enum {string}
+     */
+    VoteAuthMethod: "presence" | "proxy" | "itsme" | "eid";
     WarrantyType:
       | "none"
       | "standard"

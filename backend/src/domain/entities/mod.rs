@@ -84,7 +84,9 @@ pub use crate::domain::copropriete::unit_owner::{
     VotingRightSuspendedError,
 };
 pub use crate::domain::copropriete::vote;
-pub use crate::domain::copropriete::vote::{Vote, VoteChoice};
+pub use crate::domain::copropriete::vote::{
+    assert_vote_auth_sufficient, Vote, VoteAuthError, VoteAuthMethod, VoteChoice,
+};
 
 // --- comptabilite ---
 pub use crate::domain::comptabilite::account;
