@@ -61,6 +61,7 @@ use utoipa_swagger_ui::SwaggerUi;
         // les 16 endpoints `payment-methods` (#732).
         crate::infrastructure::web::handlers::acp_handlers::create_acp,
         crate::infrastructure::web::handlers::acp_handlers::list_acps,
+        crate::infrastructure::web::handlers::acp_handlers::list_acps_with_metrics,
         crate::infrastructure::web::handlers::acp_handlers::get_acp,
         crate::infrastructure::web::handlers::acp_handlers::update_acp,
         crate::infrastructure::web::handlers::acp_handlers::archive_acp,

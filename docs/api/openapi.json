@@ -99,6 +99,29 @@
         ]
       }
     },
+    "/acps/with-metrics": {
+      "get": {
+        "tags": [
+          "Acps"
+        ],
+        "summary": "Les ACP du périmètre, avec leurs métriques agrégées",
+        "description": "Sert la table « Mes ACP » du tableau de bord syndic : nombre de blocs, lots encodés et déclarés, somme des quotités. Séparée de `GET /acps` parce que les métriques coûtent quatre sous-requêtes par ligne : un sélecteur qui n'a besoin que des noms ne doit pas les payer.",
+        "operationId": "list_acps_with_metrics",
+        "responses": {
+          "200": {
+            "description": "Liste des ACP avec métriques"
+          },
+          "401": {
+            "description": "Non authentifié"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/acps/{id}": {
       "get": {
         "tags": [

@@ -22,6 +22,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/acps/with-metrics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Les ACP du périmètre, avec leurs métriques agrégées
+     * @description Sert la table « Mes ACP » du tableau de bord syndic : nombre de blocs, lots encodés et déclarés, somme des quotités. Séparée de `GET /acps` parce que les métriques coûtent quatre sous-requêtes par ligne : un sélecteur qui n'a besoin que des noms ne doit pas les payer.
+     */
+    get: operations["list_acps_with_metrics"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/acps/{id}": {
     parameters: {
       query?: never;
@@ -4674,6 +4694,31 @@ export interface operations {
       };
       /** @description Domain validation error */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_acps_with_metrics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des ACP avec métriques */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
         headers: {
           [name: string]: unknown;
         };
