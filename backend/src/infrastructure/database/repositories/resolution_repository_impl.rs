@@ -1,5 +1,7 @@
 use crate::application::ports::ResolutionRepository;
-use crate::domain::entities::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
+use crate::domain::entities::{
+    MajorityType, Resolution, ResolutionKind, ResolutionStatus, ResolutionType,
+};
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
 use rust_decimal::Decimal;
@@ -35,6 +37,23 @@ impl PostgresResolutionRepository {
             MajorityType::Unanimity => "Unanimity".to_string(),
         }
     }
+
+    /// Story 4.6 (#581) — nature métier de la résolution en base.
+    fn kind_to_string(kind: &ResolutionKind) -> &'static str {
+        match kind {
+            ResolutionKind::Standard => "standard",
+            ResolutionKind::EvaluationContractorsAuto => "evaluation_contractors_auto",
+        }
+    }
+
+    /// Toute valeur inconnue retombe sur `Standard` : une résolution ne perd
+    /// jamais sa modifiabilité par défaut à cause d'une valeur imprévue.
+    fn parse_kind(s: &str) -> ResolutionKind {
+        match s {
+            "evaluation_contractors_auto" => ResolutionKind::EvaluationContractorsAuto,
+            _ => ResolutionKind::Standard,
+        }
+    }
 }
 
 #[async_trait]
@@ -52,6 +71,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
         };
 
         let majority_str = Self::majority_type_to_string(&resolution.majority_required);
+        let kind_str = Self::kind_to_string(&resolution.kind);
 
         sqlx::query(
             r#"
@@ -59,9 +79,9 @@ impl ResolutionRepository for PostgresResolutionRepository {
                 id, meeting_id, title, description, resolution_type, majority_required,
                 vote_count_pour, vote_count_contre, vote_count_abstention,
                 total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission
+                status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission, kind
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
             "#,
         )
         .bind(resolution.id)
@@ -83,6 +103,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
         // borne a >= 0 par un CHECK cote base.
         .bind(resolution.agenda_item_index.map(|i| i as i32))
         .bind(resolution.prestataire_de_la_mission)
+        .bind(kind_str)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Database error creating resolution: {}", e))?;
@@ -96,7 +117,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
                    total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                   status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission
+                   status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission, kind
             FROM resolutions
             WHERE id = $1
             "#,
@@ -122,6 +143,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
 
             let majority_str: String = row.get("majority_required");
             let majority_required = Self::parse_majority_type(&majority_str);
+            let kind_str: String = row.get("kind");
 
             Resolution {
                 id: row.get("id"),
@@ -143,6 +165,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
                     .get::<Option<i32>, _>("agenda_item_index")
                     .map(|i| i as usize),
                 prestataire_de_la_mission: row.get("prestataire_de_la_mission"),
+                kind: Self::parse_kind(&kind_str),
             }
         }))
     }
@@ -153,7 +176,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
                    total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                   status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission
+                   status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission, kind
             FROM resolutions
             WHERE meeting_id = $1
             ORDER BY created_at ASC
@@ -182,6 +205,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
 
                 let majority_str: String = row.get("majority_required");
                 let majority_required = Self::parse_majority_type(&majority_str);
+                let kind_str: String = row.get("kind");
 
                 Resolution {
                     id: row.get("id"),
@@ -203,6 +227,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
                         .get::<Option<i32>, _>("agenda_item_index")
                         .map(|i| i as usize),
                     prestataire_de_la_mission: row.get("prestataire_de_la_mission"),
+                    kind: Self::parse_kind(&kind_str),
                 }
             })
             .collect())
@@ -220,7 +245,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
                    total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
-                   status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission
+                   status, created_at, voted_at, agenda_item_index, prestataire_de_la_mission, kind
             FROM resolutions
             WHERE status = $1
             ORDER BY created_at DESC
@@ -242,6 +267,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
 
                 let majority_str: String = row.get("majority_required");
                 let majority_required = Self::parse_majority_type(&majority_str);
+                let kind_str: String = row.get("kind");
 
                 Resolution {
                     id: row.get("id"),
@@ -263,6 +289,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
                         .get::<Option<i32>, _>("agenda_item_index")
                         .map(|i| i as usize),
                     prestataire_de_la_mission: row.get("prestataire_de_la_mission"),
+                    kind: Self::parse_kind(&kind_str),
                 }
             })
             .collect())

@@ -289,10 +289,10 @@ pub async fn delete_resolution(
                 Some(user.user_id),
                 Some(organization_id),
             )
-            .with_error(err.clone())
+            .with_error(err.to_string())
             .log();
 
-            HttpResponse::BadRequest().json(serde_json::json!({"error": err}))
+            err.error_response()
         }
     }
 }

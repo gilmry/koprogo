@@ -1,3 +1,4 @@
+use crate::application::error::AppError;
 use crate::application::ports::{
     MeetingRepository, ResolutionRepository, UnitOwnerRepository, UnitRepository, VoteRepository,
 };
@@ -163,24 +164,60 @@ impl ResolutionUseCases {
         self.resolution_repository.find_by_status(status).await
     }
 
-    /// Update a resolution (only allowed if status is Pending)
-    pub async fn update_resolution(&self, resolution: &Resolution) -> Result<Resolution, String> {
+    /// Update a resolution (only allowed if status is Pending).
+    ///
+    /// Refuse aussi toute résolution générée d'office (Story 4.6, #581) :
+    /// immuable quel que soit son statut — le syndic qu'elle évalue ne peut
+    /// pas la réécrire.
+    pub async fn update_resolution(&self, resolution: &Resolution) -> Result<Resolution, AppError> {
+        if resolution.is_auto_generated() {
+            return Err(AppError::ResolutionAutoNotRemovable);
+        }
         if resolution.status != ResolutionStatus::Pending {
-            return Err("Cannot update a resolution that is not pending".to_string());
+            return Err(AppError::Validation(
+                "Cannot update a resolution that is not pending".to_string(),
+            ));
         }
 
-        self.resolution_repository.update(resolution).await
+        self.resolution_repository
+            .update(resolution)
+            .await
+            .map_err(AppError::from)
     }
 
-    /// Delete a resolution (only allowed if no votes have been cast)
-    pub async fn delete_resolution(&self, id: Uuid) -> Result<bool, String> {
-        // Check if any votes exist
-        let votes = self.vote_repository.find_by_resolution_id(id).await?;
-        if !votes.is_empty() {
-            return Err("Cannot delete a resolution with existing votes".to_string());
+    /// Delete a resolution (only allowed if no votes have been cast).
+    ///
+    /// Refuse aussi toute résolution générée d'office (Story 4.6, #581) —
+    /// c'est le cœur de la story : le point évalue le syndic, il ne peut donc
+    /// pas le retirer de l'ordre du jour.
+    pub async fn delete_resolution(&self, id: Uuid) -> Result<bool, AppError> {
+        let resolution = self
+            .resolution_repository
+            .find_by_id(id)
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::NotFound(format!("resolution {}", id)))?;
+
+        if resolution.is_auto_generated() {
+            return Err(AppError::ResolutionAutoNotRemovable);
         }
 
-        self.resolution_repository.delete(id).await
+        // Check if any votes exist
+        let votes = self
+            .vote_repository
+            .find_by_resolution_id(id)
+            .await
+            .map_err(AppError::from)?;
+        if !votes.is_empty() {
+            return Err(AppError::Validation(
+                "Cannot delete a resolution with existing votes".to_string(),
+            ));
+        }
+
+        self.resolution_repository
+            .delete(id)
+            .await
+            .map_err(AppError::from)
     }
 
     /// Cast a vote on a resolution
@@ -3016,5 +3053,103 @@ mod tests {
             erreur.contains("FORBIDDEN") && erreur.contains("ne détient pas"),
             "le refus doit dire POURQUOI, got: {erreur}"
         );
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 4.6 — ResolutionAutoNotRemovable guard (#581)
+    // ------------------------------------------------------------------------
+
+    fn build_use_cases_pour_resolution(
+        resolution_repo: Arc<MockResolutionRepository>,
+        vote_repo: Arc<MockVoteRepository>,
+        meeting_repo: Arc<MockMeetingRepository>,
+    ) -> ResolutionUseCases {
+        ResolutionUseCases::new(
+            resolution_repo,
+            vote_repo,
+            meeting_repo,
+            Arc::new(MockUnitOwnerRepository::new()),
+            Arc::new(MockUnitRepository::new()),
+        )
+    }
+
+    /// @security — le syndic tente de supprimer la résolution d'évaluation
+    /// des prestataires générée d'office : refus typé 403
+    /// (`ResolutionAutoNotRemovable`), jamais un 400 générique. C'est le
+    /// cœur de la story : le point évalue le syndic, il ne peut pas le
+    /// retirer lui-même de l'ordre du jour.
+    #[tokio::test]
+    async fn security_delete_resolution_auto_generated_refuse() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let auto = Resolution::new_evaluation_contractors_auto(Uuid::new_v4());
+        resolution_repo.create(&auto).await.unwrap();
+        let use_cases = build_use_cases_pour_resolution(
+            resolution_repo,
+            Arc::new(MockVoteRepository::new()),
+            Arc::new(MockMeetingRepository::new()),
+        );
+
+        let result = use_cases.delete_resolution(auto.id).await;
+
+        assert!(matches!(result, Err(AppError::ResolutionAutoNotRemovable)));
+    }
+
+    /// @negative — modifier le texte d'une résolution auto-générée est
+    /// refusé même si son statut est `Pending`, le cas normalement
+    /// modifiable : l'immutabilité de Story 4.6 ne dépend pas du statut.
+    #[tokio::test]
+    async fn negative_update_resolution_auto_generated_refuse() {
+        let use_cases = build_use_cases_pour_resolution(
+            Arc::new(MockResolutionRepository::new()),
+            Arc::new(MockVoteRepository::new()),
+            Arc::new(MockMeetingRepository::new()),
+        );
+        let mut auto = Resolution::new_evaluation_contractors_auto(Uuid::new_v4());
+        auto.description = "Texte modifié par le syndic".to_string();
+
+        let result = use_cases.update_resolution(&auto).await;
+
+        assert!(matches!(result, Err(AppError::ResolutionAutoNotRemovable)));
+    }
+
+    /// @happy — une résolution standard, sans vote, reste supprimable comme
+    /// avant Story 4.6 : la nouvelle garde ne touche pas au cas nominal.
+    #[tokio::test]
+    async fn happy_delete_resolution_standard_sans_votes_reussit() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let standard = Resolution::new(
+            Uuid::new_v4(),
+            "Titre".to_string(),
+            "Description".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            None,
+        )
+        .unwrap();
+        resolution_repo.create(&standard).await.unwrap();
+        let use_cases = build_use_cases_pour_resolution(
+            resolution_repo,
+            Arc::new(MockVoteRepository::new()),
+            Arc::new(MockMeetingRepository::new()),
+        );
+
+        let result = use_cases.delete_resolution(standard.id).await;
+
+        assert!(result.unwrap());
+    }
+
+    /// @edge — supprimer une résolution introuvable rend un 404 typé, pas un
+    /// panic ni un 400 générique.
+    #[tokio::test]
+    async fn edge_delete_resolution_introuvable_rend_404() {
+        let use_cases = build_use_cases_pour_resolution(
+            Arc::new(MockResolutionRepository::new()),
+            Arc::new(MockVoteRepository::new()),
+            Arc::new(MockMeetingRepository::new()),
+        );
+
+        let result = use_cases.delete_resolution(Uuid::new_v4()).await;
+
+        assert!(matches!(result, Err(AppError::NotFound(_))));
     }
 }

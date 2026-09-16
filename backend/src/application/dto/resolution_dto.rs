@@ -23,6 +23,10 @@ pub struct ResolutionResponse {
     pub agenda_item_index: Option<usize>, // Issue #310: Link to agenda item
     pub created_at: DateTime<Utc>,
     pub voted_at: Option<DateTime<Utc>>,
+    /// Story 4.6 (#581) — dérivé de `Resolution::is_auto_generated()`. Le
+    /// frontend s'en sert pour afficher `resolution-auto-badge` et masquer
+    /// la suppression/l'édition, en plus du refus 403 côté serveur.
+    pub is_auto_generated: bool,
     // Calculated fields
     pub total_votes: i32,
     pub pour_percentage: f64,
@@ -49,6 +53,7 @@ impl From<Resolution> for ResolutionResponse {
             agenda_item_index: resolution.agenda_item_index,
             created_at: resolution.created_at,
             voted_at: resolution.voted_at,
+            is_auto_generated: resolution.is_auto_generated(),
             // Calculated
             total_votes: resolution.total_votes(),
             pour_percentage: resolution.pour_percentage(),

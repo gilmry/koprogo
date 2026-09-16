@@ -109,7 +109,7 @@ pub use procurations::{
 pub use registre_legal::{rapport_de_conformite, InvariantLegal, REGISTRE};
 pub use releve_notaire::{DemandeDeReleve, EtatDemande};
 pub use requete_ag::{deposer as deposer_requete_ag, RequeteAg, RequeteIrrecevable};
-pub use resolution::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
+pub use resolution::{MajorityType, Resolution, ResolutionKind, ResolutionStatus, ResolutionType};
 pub use signatures_pv::{pv_valablement_signe, SeanceCloturee, SignatureManquante};
 pub use solidarite::{poursuivables_pour_le_tout, repartir_charge, Obligation, Titulaire};
 pub use syndic_mandate::{SyndicMandate, SyndicMandateError};

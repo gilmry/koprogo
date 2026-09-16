@@ -409,6 +409,7 @@ mod tests {
             agenda_item_index: None,
             voted_at: Some(Utc::now()),
             created_at: Utc::now(),
+            kind: crate::domain::entities::ResolutionKind::Standard,
         };
 
         let resolutions = vec![ResolutionWithVotes {
