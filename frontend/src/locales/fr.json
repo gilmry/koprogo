@@ -4333,5 +4333,48 @@
       "title": "Mes charges",
       "description": "Consultez les charges de votre copropriété"
     }
+  },
+  "onboarding": {
+    "accessDeniedTitle": "Accès réservé",
+    "accessDenied": "Cet assistant est réservé aux administrateurs de la plateforme, lors de la création d'une nouvelle ACP.",
+    "stepOf": "Étape {current} sur {total}",
+    "step1Title": "Profil de la copropriété",
+    "step2Title": "Modules recommandés",
+    "step3Title": "Activation",
+    "step4Title": "Démonstration",
+    "confirmationTitle": "Mise en service terminée",
+    "nameLabel": "Nom de l'ACP",
+    "streetLabel": "Rue et numéro",
+    "postalCodeLabel": "Code postal",
+    "cityLabel": "Commune",
+    "unitsCountLabel": "Nombre de lots",
+    "hasSharedSpacesLabel": "Dispose d'espaces communs partagés (jardin, buanderie, local vélos…)",
+    "profileIncomplete": "Complétez le nom et l'adresse avant de continuer.",
+    "unitsCountInvalid": "Le nombre de lots doit être d'au moins 1.",
+    "acpCreateError": "Impossible de créer l'ACP. Réessayez.",
+    "creating": "Création…",
+    "next": "Suivant",
+    "back": "Précédent",
+    "recommendedIntro": "Sur base du profil renseigné, ces modules sont recommandés :",
+    "recommendedBadge": "recommandé",
+    "skipRecommendation": "Passer cette étape",
+    "activateSubmit": "Activer les modules sélectionnés",
+    "activating": "Activation en cours…",
+    "activationError": "Échec de l'activation des modules. Réessayez.",
+    "demoIntro": "Aperçu rapide des modules activés.",
+    "demoNext": "Continuer",
+    "elapsedTime": "Temps écoulé :",
+    "kpiUnderTarget": "Objectif atteint (moins de 5 minutes)",
+    "kpiOverTarget": "Au-delà de l'objectif de 5 minutes",
+    "finishSubmit": "Terminer",
+    "resumedBanner": "Reprise d'une mise en service interrompue.",
+    "discardDraft": "Recommencer à zéro",
+    "module": {
+      "identity": "Identité (socle)",
+      "community": "Communauté",
+      "accounting": "Comptabilité",
+      "governance": "Gouvernance",
+      "ticketing": "Tickets & interventions"
+    }
   }
 }

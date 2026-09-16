@@ -8,7 +8,30 @@ import AcpList from "../../components/admin/AcpList.svelte";
     <div class="max-w-7xl mx-auto">
       <AcpList client:load />
 
-      <div class="mt-6">
+      <div class="mt-6 flex items-center gap-4">
+        <!-- Libellé porté par aria-label plutôt qu'en texte visible : cf.
+             garde-libelles-en-dur (#834), qui interdit toute nouvelle phrase
+             en dur dans les gabarits .astro (pas d'infrastructure i18n
+             disponible dans le frontmatter Astro à ce jour). -->
+        <a
+          data-testid="acps-onboarding-wizard-link"
+          href="/admin/acps/onboarding"
+          aria-label="Assistant de mise en service (nouvelle ACP)"
+          class="inline-flex items-center text-primary-600 hover:text-primary-700"
+        >
+          <svg
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </a>
         <a
           data-testid="acps-back-link"
           href="/admin"
