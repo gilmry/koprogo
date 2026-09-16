@@ -32,7 +32,10 @@
 mod common;
 
 use actix_web::{http::header, test, App};
-use common::{create_test_building, register_and_login_with_role, setup_test_db};
+use common::{
+    create_test_building, register_and_login_returning_user, register_and_login_with_role,
+    setup_test_db,
+};
 use koprogo_api::infrastructure::web::routes::configure_routes;
 use serde_json::json;
 use uuid::Uuid;
@@ -92,6 +95,7 @@ async fn negative_un_lot_detenu_a_deux_ne_peut_pas_voter() {
     let unit_id = unit["id"].as_str().unwrap().to_string();
 
     let mut proprietaires = Vec::new();
+    let mut jetons: Vec<String> = Vec::new();
     for prenom in ["Alice", "Bertrand"] {
         let resp = test::call_service(
             &app,
@@ -145,6 +149,29 @@ async fn negative_un_lot_detenu_a_deux_ne_peut_pas_voter() {
              suspension se lève et ce test doit être réécrit — pas rendu vert. \
              Voir #848 : l'arbitrage est « qui désigne ? ». got: {lien}"
         );
+
+        // ── Le copropriétaire reçoit un COMPTE (#850) ───────────────────────
+        //
+        // Voter exige désormais une fiche de copropriétaire rattachée au
+        // compte de l'appelant : `resolution_handlers` refuse en 403 sinon.
+        // Ce test votait avec le jeton du syndic — sa SPÉCIFICATION est
+        // périmée, pas le produit.
+        //
+        // Aucune assertion n'est retirée : le test continue de vérifier que
+        // l'indivision suspend le vote (422) tant qu'aucun représentant n'est
+        // désigné, Art. 3.87 § 1er CC. Il le vérifie simplement depuis le
+        // compte qui a le droit de voter.
+        let (jeton_copro, user_id) =
+            register_and_login_returning_user(&app_state, org_id, "owner").await;
+        app_state
+            .owner_use_cases
+            .link_user_to_owner(
+                Uuid::parse_str(&owner_id).expect("identifiant de copropriétaire lisible"),
+                Some(user_id),
+            )
+            .await
+            .expect("rattachement du compte au copropriétaire");
+        jetons.push(jeton_copro);
 
         proprietaires.push(owner_id);
     }
@@ -223,15 +250,21 @@ async fn negative_un_lot_detenu_a_deux_ne_peut_pas_voter() {
     // ── Le vote est refusé, et c'est ce que #848 décrit ──────────────────
     let resp = test::call_service(
         &app,
-        porteur(
-            test::TestRequest::post()
-                .uri(&format!("/api/v1/resolutions/{resolution_id}/vote"))
-                .set_json(json!({
-                    "owner_id": proprietaires[0],
-                    "unit_id": unit_id,
-                    "vote_choice": "pour"
-                })),
-        )
+        {
+            let jeton = jetons.first().expect("un compte de copropriétaire").clone();
+            let porteur_copro = move |req: test::TestRequest| {
+                req.insert_header((header::AUTHORIZATION, format!("Bearer {jeton}")))
+            };
+            porteur_copro(
+                test::TestRequest::post()
+                    .uri(&format!("/api/v1/resolutions/{resolution_id}/vote"))
+                    .set_json(json!({
+                        "owner_id": proprietaires[0],
+                        "unit_id": unit_id,
+                        "vote_choice": "pour"
+                    })),
+            )
+        }
         .to_request(),
     )
     .await;
@@ -304,6 +337,7 @@ async fn happy_designer_un_representant_leve_la_suspension() {
     let unit_id = unit["id"].as_str().unwrap().to_string();
 
     let mut proprietaires = Vec::new();
+    let mut jetons: Vec<String> = Vec::new();
     for prenom in ["Alice", "Bertrand"] {
         let resp = test::call_service(
             &app,
@@ -345,6 +379,29 @@ async fn happy_designer_un_representant_leve_la_suspension() {
         .await;
         let (statut, texte, _) = lire(resp).await;
         assert_eq!(statut, 201, "rattachement de {prenom} : {texte}");
+
+        // ── Le copropriétaire reçoit un COMPTE (#850) ───────────────────────
+        //
+        // Voter exige désormais une fiche de copropriétaire rattachée au
+        // compte de l'appelant : `resolution_handlers` refuse en 403 sinon.
+        // Ce test votait avec le jeton du syndic — sa SPÉCIFICATION est
+        // périmée, pas le produit.
+        //
+        // Aucune assertion n'est retirée : le test continue de vérifier que
+        // l'indivision suspend le vote (422) tant qu'aucun représentant n'est
+        // désigné, Art. 3.87 § 1er CC. Il le vérifie simplement depuis le
+        // compte qui a le droit de voter.
+        let (jeton_copro, user_id) =
+            register_and_login_returning_user(&app_state, org_id, "owner").await;
+        app_state
+            .owner_use_cases
+            .link_user_to_owner(
+                Uuid::parse_str(&owner_id).expect("identifiant de copropriétaire lisible"),
+                Some(user_id),
+            )
+            .await
+            .expect("rattachement du compte au copropriétaire");
+        jetons.push(jeton_copro);
 
         proprietaires.push(owner_id);
     }
@@ -440,15 +497,21 @@ async fn happy_designer_un_representant_leve_la_suspension() {
     // Le vote est désormais accepté : la suspension a été levée.
     let resp = test::call_service(
         &app,
-        porteur(
-            test::TestRequest::post()
-                .uri(&format!("/api/v1/resolutions/{resolution_id}/vote"))
-                .set_json(json!({
-                    "owner_id": proprietaires[0],
-                    "unit_id": unit_id,
-                    "vote_choice": "pour"
-                })),
-        )
+        {
+            let jeton = jetons.first().expect("un compte de copropriétaire").clone();
+            let porteur_copro = move |req: test::TestRequest| {
+                req.insert_header((header::AUTHORIZATION, format!("Bearer {jeton}")))
+            };
+            porteur_copro(
+                test::TestRequest::post()
+                    .uri(&format!("/api/v1/resolutions/{resolution_id}/vote"))
+                    .set_json(json!({
+                        "owner_id": proprietaires[0],
+                        "unit_id": unit_id,
+                        "vote_choice": "pour"
+                    })),
+            )
+        }
         .to_request(),
     )
     .await;
@@ -505,6 +568,7 @@ async fn edge_un_second_representant_est_refuse() {
     let unit_id = unit["id"].as_str().unwrap().to_string();
 
     let mut proprietaires = Vec::new();
+    let mut jetons: Vec<String> = Vec::new();
     for prenom in ["Alice", "Bertrand"] {
         let resp = test::call_service(
             &app,
@@ -546,6 +610,29 @@ async fn edge_un_second_representant_est_refuse() {
         .await;
         let (statut, texte, _) = lire(resp).await;
         assert_eq!(statut, 201, "rattachement de {prenom} : {texte}");
+
+        // ── Le copropriétaire reçoit un COMPTE (#850) ───────────────────────
+        //
+        // Voter exige désormais une fiche de copropriétaire rattachée au
+        // compte de l'appelant : `resolution_handlers` refuse en 403 sinon.
+        // Ce test votait avec le jeton du syndic — sa SPÉCIFICATION est
+        // périmée, pas le produit.
+        //
+        // Aucune assertion n'est retirée : le test continue de vérifier que
+        // l'indivision suspend le vote (422) tant qu'aucun représentant n'est
+        // désigné, Art. 3.87 § 1er CC. Il le vérifie simplement depuis le
+        // compte qui a le droit de voter.
+        let (jeton_copro, user_id) =
+            register_and_login_returning_user(&app_state, org_id, "owner").await;
+        app_state
+            .owner_use_cases
+            .link_user_to_owner(
+                Uuid::parse_str(&owner_id).expect("identifiant de copropriétaire lisible"),
+                Some(user_id),
+            )
+            .await
+            .expect("rattachement du compte au copropriétaire");
+        jetons.push(jeton_copro);
 
         proprietaires.push(owner_id);
     }
@@ -645,6 +732,7 @@ async fn security_un_tiers_ne_peut_pas_designer() {
     let unit_id = unit["id"].as_str().unwrap().to_string();
 
     let mut proprietaires = Vec::new();
+    let mut jetons: Vec<String> = Vec::new();
     for prenom in ["Alice", "Bertrand"] {
         let resp = test::call_service(
             &app,
@@ -686,6 +774,29 @@ async fn security_un_tiers_ne_peut_pas_designer() {
         .await;
         let (statut, texte, _) = lire(resp).await;
         assert_eq!(statut, 201, "rattachement de {prenom} : {texte}");
+
+        // ── Le copropriétaire reçoit un COMPTE (#850) ───────────────────────
+        //
+        // Voter exige désormais une fiche de copropriétaire rattachée au
+        // compte de l'appelant : `resolution_handlers` refuse en 403 sinon.
+        // Ce test votait avec le jeton du syndic — sa SPÉCIFICATION est
+        // périmée, pas le produit.
+        //
+        // Aucune assertion n'est retirée : le test continue de vérifier que
+        // l'indivision suspend le vote (422) tant qu'aucun représentant n'est
+        // désigné, Art. 3.87 § 1er CC. Il le vérifie simplement depuis le
+        // compte qui a le droit de voter.
+        let (jeton_copro, user_id) =
+            register_and_login_returning_user(&app_state, org_id, "owner").await;
+        app_state
+            .owner_use_cases
+            .link_user_to_owner(
+                Uuid::parse_str(&owner_id).expect("identifiant de copropriétaire lisible"),
+                Some(user_id),
+            )
+            .await
+            .expect("rattachement du compte au copropriétaire");
+        jetons.push(jeton_copro);
 
         proprietaires.push(owner_id);
     }
