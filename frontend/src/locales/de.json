@@ -4342,5 +4342,48 @@
       "title": "Meine Lasten",
       "description": "Sehen Sie die Lasten Ihrer Eigentümergemeinschaft"
     }
+  },
+  "onboarding": {
+    "accessDeniedTitle": "Zugriff eingeschränkt",
+    "accessDenied": "Dieser Assistent ist ausschließlich Plattform-Administratoren bei der Erstellung einer neuen Eigentümergemeinschaft vorbehalten.",
+    "stepOf": "Schritt {current} von {total}",
+    "step1Title": "Profil der Eigentümergemeinschaft",
+    "step2Title": "Empfohlene Module",
+    "step3Title": "Aktivierung",
+    "step4Title": "Demonstration",
+    "confirmationTitle": "Inbetriebnahme abgeschlossen",
+    "nameLabel": "Name der Eigentümergemeinschaft",
+    "streetLabel": "Straße und Hausnummer",
+    "postalCodeLabel": "Postleitzahl",
+    "cityLabel": "Gemeinde",
+    "unitsCountLabel": "Anzahl der Einheiten",
+    "hasSharedSpacesLabel": "Verfügt über gemeinsam genutzte Räume (Garten, Waschküche, Fahrradraum…)",
+    "profileIncomplete": "Vervollständigen Sie Name und Adresse, bevor Sie fortfahren.",
+    "unitsCountInvalid": "Die Anzahl der Einheiten muss mindestens 1 betragen.",
+    "acpCreateError": "Die Eigentümergemeinschaft konnte nicht erstellt werden. Bitte erneut versuchen.",
+    "creating": "Wird erstellt…",
+    "next": "Weiter",
+    "back": "Zurück",
+    "recommendedIntro": "Basierend auf dem eingegebenen Profil werden diese Module empfohlen:",
+    "recommendedBadge": "empfohlen",
+    "skipRecommendation": "Diesen Schritt überspringen",
+    "activateSubmit": "Ausgewählte Module aktivieren",
+    "activating": "Aktivierung läuft…",
+    "activationError": "Aktivierung der Module fehlgeschlagen. Bitte erneut versuchen.",
+    "demoIntro": "Kurzer Überblick über die aktivierten Module.",
+    "demoNext": "Weiter",
+    "elapsedTime": "Verstrichene Zeit:",
+    "kpiUnderTarget": "Ziel erreicht (weniger als 5 Minuten)",
+    "kpiOverTarget": "Über dem Ziel von 5 Minuten",
+    "finishSubmit": "Abschließen",
+    "resumedBanner": "Unterbrochene Inbetriebnahme wurde fortgesetzt.",
+    "discardDraft": "Von vorne beginnen",
+    "module": {
+      "identity": "Identität (Basis)",
+      "community": "Gemeinschaft",
+      "accounting": "Buchhaltung",
+      "governance": "Verwaltung",
+      "ticketing": "Tickets & Einsätze"
+    }
   }
 }

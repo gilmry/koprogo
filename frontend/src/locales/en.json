@@ -4342,5 +4342,48 @@
       "title": "My charges",
       "description": "View the charges of your condominium"
     }
+  },
+  "onboarding": {
+    "accessDeniedTitle": "Access restricted",
+    "accessDenied": "This wizard is reserved for platform administrators, when creating a new condominium association.",
+    "stepOf": "Step {current} of {total}",
+    "step1Title": "Condominium profile",
+    "step2Title": "Recommended modules",
+    "step3Title": "Activation",
+    "step4Title": "Demo",
+    "confirmationTitle": "Onboarding complete",
+    "nameLabel": "Association name",
+    "streetLabel": "Street and number",
+    "postalCodeLabel": "Postal code",
+    "cityLabel": "City",
+    "unitsCountLabel": "Number of units",
+    "hasSharedSpacesLabel": "Has shared common spaces (garden, laundry room, bike storage…)",
+    "profileIncomplete": "Complete the name and address before continuing.",
+    "unitsCountInvalid": "The number of units must be at least 1.",
+    "acpCreateError": "Could not create the association. Please try again.",
+    "creating": "Creating…",
+    "next": "Next",
+    "back": "Back",
+    "recommendedIntro": "Based on the profile you entered, these modules are recommended:",
+    "recommendedBadge": "recommended",
+    "skipRecommendation": "Skip this step",
+    "activateSubmit": "Activate selected modules",
+    "activating": "Activating…",
+    "activationError": "Failed to activate modules. Please try again.",
+    "demoIntro": "Quick preview of the activated modules.",
+    "demoNext": "Continue",
+    "elapsedTime": "Elapsed time:",
+    "kpiUnderTarget": "Target reached (under 5 minutes)",
+    "kpiOverTarget": "Over the 5-minute target",
+    "finishSubmit": "Finish",
+    "resumedBanner": "Resumed an interrupted onboarding session.",
+    "discardDraft": "Start over",
+    "module": {
+      "identity": "Identity (baseline)",
+      "community": "Community",
+      "accounting": "Accounting",
+      "governance": "Governance",
+      "ticketing": "Tickets & interventions"
+    }
   }
 }
