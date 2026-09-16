@@ -129,6 +129,9 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
   });
 
   test.describe("Organizations Management with Test IDs", () => {
+    // Fixme: data-testid supprimés par la migration Svelte 5 runes (commit
+    // 087949c, 2026-04-12) — cf. 09e791b « mark 9 admin+polls tests as
+    // fixme ». Suivi : ré-ajouter les testid ou migrer vers getByRole/getByText.
     test.fixme("should create, edit, and delete organization using test IDs", async ({
       page,
     }) => {
@@ -228,6 +231,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       await expect(searchInput).toHaveValue("test");
     });
 
+    // Fixme: même cause que ci-dessus (data-testid perdus, migration runes).
     test.fixme("should toggle organization status", async ({ page }) => {
       const testData = generateTestData("Toggle");
 
@@ -272,6 +276,9 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
   });
 
   test.describe("Users Management with Test IDs", () => {
+    // Fixme: data-testid supprimés par la migration Svelte 5 runes (commit
+    // 087949c, 2026-04-12) — cf. 09e791b « mark 9 admin+polls tests as
+    // fixme ». Suivi : ré-ajouter les testid ou migrer vers getByRole/getByText.
     test.fixme("should create, edit, and delete user using test IDs", async ({
       page,
     }) => {
@@ -379,6 +386,9 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
   });
 
   test.describe("Buildings Management with Test IDs", () => {
+    // Fixme: data-testid supprimés par la migration Svelte 5 runes (commit
+    // 087949c, 2026-04-12) — cf. 09e791b « mark 9 admin+polls tests as
+    // fixme ». Suivi : ré-ajouter les testid ou migrer vers getByRole/getByText.
     test.fixme("should create, edit, and delete a building using test IDs", async ({
       page,
     }) => {
@@ -484,6 +494,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       await deleteOrganizationByName(page, organization.name);
     });
 
+    // Fixme: même cause que ci-dessus (data-testid perdus, migration runes).
     test.fixme("should search buildings using test IDs", async ({ page }) => {
       const testData = generateTestData("Search");
       const organization = await createOrganizationViaUI(
@@ -503,6 +514,9 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
   });
 
   test.describe("Idempotent Full Journey", () => {
+    // Fixme: data-testid supprimés par la migration Svelte 5 runes (commit
+    // 087949c, 2026-04-12) — cf. 09e791b « mark 9 admin+polls tests as
+    // fixme ». Suivi : ré-ajouter les testid ou migrer vers getByRole/getByText.
     test.fixme("should complete full workflow and cleanup automatically", async ({
       page,
     }) => {

@@ -188,7 +188,8 @@ jobs:
             --test garde_perimetre_wbs \
             --test garde_schema_mort \
             --test garde_taxonomie_bdd \
-            --test garde_taxonomie_des_tests
+            --test garde_taxonomie_des_tests \
+            --test garde_skips_justifies
 
   test-bdd:
     name: BDD Tests
