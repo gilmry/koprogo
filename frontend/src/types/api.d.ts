@@ -607,6 +607,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/c/{token}/respond": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Public write action for a magic link (currently: ContractorReport submit) */
+    post: operations["respond_magic_link"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/call-for-funds": {
     parameters: {
       query?: never;
@@ -3152,6 +3169,11 @@ export interface components {
       description: string;
       /** Format: date-time */
       due_date: string;
+      /**
+       * Format: uuid
+       * @description Le fonds alimenté par cet appel (issue #635).
+       */
+      fund_id?: string | null;
       /** Format: uuid */
       id: string;
       is_overdue: boolean;
@@ -3479,8 +3501,14 @@ export interface components {
       description: string;
       /** Format: uuid */
       owner_id: string;
-      /** Format: uuid */
-      unit_id?: string | null;
+      /**
+       * Format: uuid
+       * @description Obligatoire : c'est le lot qui porte l'ACP créancière (Story H15,
+       *     ADR-0045). `resoudre_lacp_creanciere` refuse déjà `None` en use case —
+       *     Issue #852 aligne la signature sur ce que le code a toujours exigé,
+       *     pour qu'un client suivant le contrat n'essuie plus un 400 opaque.
+       */
+      unit_id: string;
     };
     /** @description Create payment method request DTO (from Stripe) */
     CreatePaymentMethodRequest: {
@@ -4140,6 +4168,14 @@ export interface components {
     ReopenTicketRequest: {
       reason: string;
     };
+    ReplacedPartDto: {
+      name: string;
+      /** Format: uuid */
+      photo_document_id?: string | null;
+      /** Format: int32 */
+      quantity: number;
+      reference?: string | null;
+    };
     /**
      * @description Statut d'une résolution
      * @enum {string}
@@ -4430,6 +4466,23 @@ export interface components {
       total_tantiemes?: number | null;
       /** Format: int32 */
       total_units: number;
+    };
+    /**
+     * @description Mise à jour du brouillon (photos, pièces, compte-rendu)
+     *
+     *     `ToSchema` est requis depuis la fusion du 2026-09-15 : `magic_link_handlers`
+     *     expose ce DTO dans un `#[utoipa::path]`, et utoipa exige alors qu'il sache
+     *     se décrire. Les deux branches étaient justes séparément — l'une ajoutait le
+     *     handler, l'autre le DTO — et leur rencontre a produit l'incohérence. C'est
+     *     le genre de défaut qu'aucune des deux revues n'aurait pu voir.
+     */
+    UpdateContractorReportDto: {
+      compte_rendu?: string | null;
+      parts_replaced?: components["schemas"]["ReplacedPartDto"][] | null;
+      photos_after?: string[] | null;
+      photos_before?: string[] | null;
+      /** Format: date-time */
+      work_date?: string | null;
     };
     /** @description Modifier une facture brouillon ou rejetée. */
     UpdateInvoiceDraftDto: {
@@ -5765,6 +5818,44 @@ export interface operations {
         content?: never;
       };
       /** @description Invalid / expired / already consumed */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  respond_magic_link: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateContractorReportDto"];
+      };
+    };
+    responses: {
+      /** @description Report updated and submitted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unsupported scope for this link, or validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid / expired token */
       403: {
         headers: {
           [name: string]: unknown;
@@ -7201,7 +7292,7 @@ export interface operations {
           "application/json": components["schemas"]["JournalEntryWithLinesResponse"];
         };
       };
-      /** @description Unbalanced entry, or unknown field in the body */
+      /** @description Unbalanced entry, missing building, unknown field in the body */
       400: {
         headers: {
           [name: string]: unknown;
@@ -7217,6 +7308,13 @@ export interface operations {
       };
       /** @description Forbidden (accountant or superadmin only) */
       403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Designated building does not exist */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -8096,7 +8194,7 @@ export interface operations {
           "application/json": components["schemas"]["OwnerContributionResponse"];
         };
       };
-      /** @description Validation error, or unknown field in the body */
+      /** @description Malformed JSON body, or wrong Content-Type */
       400: {
         headers: {
           [name: string]: unknown;
@@ -8105,6 +8203,13 @@ export interface operations {
       };
       /** @description User does not belong to an organization */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Body does not match the schema (e.g. unit_id missing) — see Issue #852 */
+      422: {
         headers: {
           [name: string]: unknown;
         };

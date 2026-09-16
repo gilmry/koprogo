@@ -1309,6 +1309,46 @@
         }
       }
     },
+    "/c/{token}/respond": {
+      "post": {
+        "tags": [
+          "MagicLink"
+        ],
+        "summary": "Public write action for a magic link (currently: ContractorReport submit)",
+        "operationId": "respond_magic_link",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContractorReportDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Report updated and submitted"
+          },
+          "400": {
+            "description": "Unsupported scope for this link, or validation error"
+          },
+          "403": {
+            "description": "Invalid / expired token"
+          }
+        }
+      }
+    },
     "/call-for-funds": {
       "get": {
         "tags": [
@@ -2836,13 +2876,16 @@
             }
           },
           "400": {
-            "description": "Unbalanced entry, or unknown field in the body"
+            "description": "Unbalanced entry, missing building, unknown field in the body"
           },
           "401": {
             "description": "User does not belong to an organization"
           },
           "403": {
             "description": "Forbidden (accountant or superadmin only)"
+          },
+          "404": {
+            "description": "Designated building does not exist"
           }
         },
         "security": [
@@ -3789,10 +3832,13 @@
             }
           },
           "400": {
-            "description": "Validation error, or unknown field in the body"
+            "description": "Malformed JSON body, or wrong Content-Type"
           },
           "401": {
             "description": "User does not belong to an organization"
+          },
+          "422": {
+            "description": "Body does not match the schema (e.g. unit_id missing) — see Issue #852"
           }
         },
         "security": [
@@ -8045,6 +8091,14 @@
             "type": "string",
             "format": "date-time"
           },
+          "fund_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Le fonds alimenté par cet appel (issue #635)."
+          },
           "id": {
             "type": "string",
             "format": "uuid"
@@ -8808,6 +8862,7 @@
         "description": "DTO for creating a new owner contribution",
         "required": [
           "owner_id",
+          "unit_id",
           "description",
           "amount",
           "contribution_type",
@@ -8838,11 +8893,9 @@
             "format": "uuid"
           },
           "unit_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
+            "type": "string",
+            "format": "uuid",
+            "description": "Obligatoire : c'est le lot qui porte l'ACP créancière (Story H15,\nADR-0045). `resoudre_lacp_creanciere` refuse déjà `None` en use case —\nIssue #852 aligne la signature sur ce que le code a toujours exigé,\npour qu'un client suivant le contrat n'essuie plus un 400 opaque."
           }
         },
         "additionalProperties": false
@@ -10636,6 +10689,36 @@
           }
         }
       },
+      "ReplacedPartDto": {
+        "type": "object",
+        "required": [
+          "name",
+          "quantity"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "photo_document_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "ResolutionStatus": {
         "type": "string",
         "description": "Statut d'une résolution",
@@ -11228,6 +11311,54 @@
           "total_units": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "UpdateContractorReportDto": {
+        "type": "object",
+        "description": "Mise à jour du brouillon (photos, pièces, compte-rendu)\n\n`ToSchema` est requis depuis la fusion du 2026-09-15 : `magic_link_handlers`\nexpose ce DTO dans un `#[utoipa::path]`, et utoipa exige alors qu'il sache\nse décrire. Les deux branches étaient justes séparément — l'une ajoutait le\nhandler, l'autre le DTO — et leur rencontre a produit l'incohérence. C'est\nle genre de défaut qu'aucune des deux revues n'aurait pu voir.",
+        "properties": {
+          "compte_rendu": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "parts_replaced": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ReplacedPartDto"
+            }
+          },
+          "photos_after": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "photos_before": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "work_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
