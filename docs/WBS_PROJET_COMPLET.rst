@@ -640,8 +640,8 @@ load tests (287 req/s), documentation Sphinx.
      - All FE
      - Playwright test suite
 
-9.2 WP-INFRA-J1 : Tests Infrastructure (NOUVEAU — #354, #355)
---------------------------------------------------------------
+9.2 WP-INFRA-J1 : Restructuration IaC — decoupage (#355) et tests (#354)
+----------------------------------------------------------------------------------
 
 .. note::
 
@@ -649,63 +649,142 @@ load tests (287 req/s), documentation Sphinx.
    represente 52% des commits (1 033 / 1 977) mais 0% de tests automatises.
    Cette dette bloque la confiance pour le passage en production (beta publique).
 
+.. note::
+
+   **Correction 2026-09-16** : la story #355 a ete reprecisee (gabarit BMAD
+   phase E, "Agent IA Ready — C9.2") en **epopee-borne**. Sa Definition of
+   Done n'est plus "livrer les WP ci-dessous" (lecture du 2026-03-29, perimee)
+   mais **le decoupage des sous-chantiers et leur ordre** — #354 en premier,
+   structure des depots documentee, divergence detectee. Les WP J1.4/.5/.6
+   ci-dessous, attribues a #355 en mars, sont en realite **des sous-chantiers
+   a ouvrir en issues distinctes** une fois la decomposition validee : #355
+   ne les livre pas elle-meme. Audit complet dans
+   ``docs/agent-activity/2026-09-16-story355-decomposition.md``.
+
+Etat reel constate (audit 2026-09-16)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- **#354 (tests IaC) : ~20-30% fait, pas 0%.** Le job ``iac-lint`` de
+  ``.github/workflows/ci-infra.yml`` fait deja tourner ``terraform
+  fmt``/``validate``, ``ansible-lint``, ``yamllint`` et ``shellcheck`` — mais
+  seulement sur le sous-ensemble "VPS production" ("WP-E1 minimal viable
+  gate" dans le commentaire du job), pas les 14 roles Ansible / 4 modules
+  Terraform annonces par l'issue.
+- Les policies OPA ISO 27001 (14 fichiers ``.rego`` + ``_test.rego`` dans
+  ``infrastructure/_shared/conftest/policies/iso27001/``) et 3 scenarios
+  molecule (roles ``backup``, ``hardening``, ``security``) **existent deja
+  sur disque** (commit ``b8565719``, "creneau V4.5") mais sont **non relus**
+  (mention explicite dans le message de commit) et **exclus du gate CI**
+  (``ci-infra.yml`` les marque "Phase 2 (OUT here)"). Une politique de
+  securite non relue et non branchee au merge gate n'est pas un controle,
+  c'est un fichier — exactement ce que le critere ``@security`` de #355 met
+  en garde ("une politique appliquee en production est un constat, pas un
+  controle" ; ici elle n'est meme pas appliquee).
+- **#466 (strategie GitOps) : deja tranchee et deployee, mais le document de
+  reference ne le reflete pas.** ``docs/governance/rfc/0001-gitops-multi-environment-strategy.rst``
+  affiche ``:Statut: Draft``, alors que l'alternative F qu'il decrit (branches
+  symetriques ``infra-{dev,integration,staging,prod}`` + ``main``) tourne
+  deja en CI depuis le commit ``42d48158`` (2026-05-13 : 4 workflows de
+  promotion + 1 de back-sync). L'issue #466 exige un label ``accepted`` signe
+  par un humain pour cloturer — absent a ce jour. C'est une divergence
+  documentation <-> implementation reelle (pas hypothetique), trouvee en
+  auditant #355 : l'exemple concret que son critere ``@negative`` demandait
+  de traiter.
+- **La premisse "repo separe" de #355 ne correspond plus a la decision
+  prise.** Dans le RFC 0001, l'alternative D ("2 repos", ``koprogo`` +
+  ``koprogo-infra``) a ete **rejetee** ; c'est l'alternative F (mono-repo,
+  branches infra symetriques aux branches applicatives) qui est **retenue et
+  deployee**. Le sous-chantier "Structure repo infra" de #355 (documenter
+  ``koprogo-infra-restructure`` comme second depot avec son propre
+  versioning) doit donc etre **reformule** : il n'y a plus qu'un depot ; sa
+  structure de reference est celle du RFC 0001, pas celle du brief
+  d'analyse BMAD de mars (``Maury/analyse-temporelle-bmad-vs-reel.md``, qui
+  decrit un etat passe : 920 commits dans un ``koprogo-infra-restructure``
+  aujourd'hui sans aucune trace de tooling de synchronisation).
+
+Ordre retenu pour les sous-chantiers (DoD de #355)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. list-table::
    :header-rows: 1
-   :widths: 10 40 10 10 10 20
+   :widths: 8 8 44 20 20
 
-   * - WP
-     - Description
+   * - Ordre
      - Issue
-     - Heures
-     - Couche
-     - Cycle TDD
-   * - WP-INFRA-J1.1
-     - **Linting IaC** : terraform fmt + validate (39 .tf),
-       ansible-lint (47 YAML + 21 J2), helm lint (23), yamllint, shellcheck (36 scripts)
+     - Sous-chantier
+     - Pourquoi cet ordre
+     - Statut
+   * - 1
      - #354
-     - 8h
-     - IaC
-     - CI: infra-lint.yml
-   * - WP-INFRA-J1.2
-     - **Policy-as-Code ISO 27001** : conftest + OPA policies pour
-       9 controles (A.5 politiques, A.8.7 malware, A.8.9 config,
-       A.8.15 logs, A.8.16 IDS, A.8.24 crypto, A.8.25 dev securise,
-       A.8.28 codage, A.8.32 changements)
-     - #354
-     - 16h
-     - IaC/Securite
-     - Policy tests OPA
-   * - WP-INFRA-J1.3
-     - **Molecule tests Ansible** : tester au minimum roles security,
-       monitoring, common (3 roles / 14 total)
-     - #354
-     - 12h
-     - IaC
-     - Molecule + Docker
-   * - WP-INFRA-J1.4
-     - **Terraform plan CI** : terraform plan automatise sur PR
-       pour les 4 modules (ovh-vps, ovh-k3s, ovh-k8s, networking)
-     - #355
-     - 8h
-     - IaC
-     - CI: infra-plan.yml
-   * - WP-INFRA-J1.5
-     - **Backup/restore test** : test automatise backup GPG + S3
-       + restore dans container ephemere
-     - #355
-     - 8h
-     - IaC
-     - Integration test
-   * - WP-INFRA-J1.6
-     - **Documentation infra** : README repo infra actualise,
-       mapping ISO 27001 -> tests, runbooks ITIL
-     - #355
-     - 4h
-     - Docs
-     - n/a
+     - Tests IaC : relire et brancher au gate CI l'existant non-relu
+       (conftest ISO 27001, molecule x3 roles), puis etendre aux 14 roles /
+       4 modules restants
+     - Restructurer sans filet ce qui n'a aucun test = deplacer 18 770
+       lignes a l'aveugle (``@edge`` de #355). Priorite absolue, non
+       negociable.
+     - En cours (~20-30%) ; scaffolding non relu a auditer avant extension
+   * - 2
+     - #466
+     - Reconciliation RFC 0001 : faire correspondre ``:Statut:`` a la
+       decision deja verrouillee et deployee (ou la rouvrir explicitement si
+       elle ne convient plus)
+     - Une politique de branches qui tourne en CI sans RFC signee est une
+       decision prise hors trace (regle CRITICAL #6) — a corriger avant
+       d'ajouter de la structure par-dessus
+     - 🔴 Arbitrage humain requis (signature / label ``accepted`` sur #466)
+   * - 3
+     - a ouvrir
+     - Structure du depot infra : documenter le mono-repo + branches
+       ``infra-*`` comme structure de reference (remplace la premisse
+       "2 depots" de #355)
+     - Depend de 2 : tant que le statut RFC n'est pas clarifie, documenter
+       une "structure officielle" reviendrait a documenter une fiction
+     - Bloque par 2
+   * - 4
+     - a ouvrir
+     - CI/CD infra dedie : formaliser ``ci-infra.yml`` + les 4 workflows de
+       promotion/back-sync existants comme reponse a ce sous-chantier ;
+       ajouter le garde-fou "statut RFC vs decision deployee" (detection de
+       divergence, cf. ci-dessous)
+     - Depend de 1 (tests) et 3 (structure) pour savoir quoi gate-keeper
+     - Non demarre — le detecteur de divergence est concu ci-dessous, pas
+       encore code (``@security`` de #355 : la policy doit s'appliquer avant
+       la fusion, donc elle se construit apres avoir choisi quoi gater)
+   * - 5
+     - a ouvrir
+     - Documentation : table de mapping ISO 27001 -> tests dans
+       ``infrastructure/SECURITY.md`` (absente aujourd'hui), runbooks ITIL
+       incident/changement/release
+     - Derniere : n'a de sens qu'une fois #354 produit de vrais resultats de
+       test a documenter
+     - Non demarre
 
-**Total Jalon 1 restant** : ~4h (Playwright bugs backend) + **~56h (infra IaC tests)** = **~60h**
-(#337 et #340 resolus — economise ~8h)
+Detection de divergence posee (``@negative``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Deux divergences documentation <-> implementation existent deja aujourd'hui,
+trouvees en auditant #355 — pas des risques hypothetiques :
+
+1. RFC 0001 ``:Statut: Draft`` vs. decision deployee en CI depuis mai 2026
+   (voir sous-chantier 2 ci-dessus).
+2. Ce WBS attribuait 20h de code a #355 alors que sa story actuelle dit
+   explicitement "pas la restructuration elle-meme" (corrige par cette
+   entree, 2026-09-16).
+
+Mecanisme propose pour le sous-chantier 4 (conception seulement, pas encore
+construit — construire cet outil maintenant serait deja de la
+"restructuration", hors DoD de #355) : un job CI qui recherche dans
+``.github/workflows/*.yml`` toute mention ``RFC #NNN`` ou ``issue #NNN
+(decide)``, retrouve le document RFC/issue correspondant, et echoue si son
+``:Statut:`` n'est ni ``Accepted`` ni ``Implemented``. Generalisable au-dela
+de l'infra : toute decision citee dans du code doit etre signee dans son
+document de reference, sinon c'est une decision hors trace (regle CRITICAL
+#6).
+
+**Total Jalon 1 restant** : voir 9.1 pour les features. Le total "~56h infra"
+de la version 2026-03-29 de cette section n'est plus fiable (il chiffrait un
+perimetre que #355 ne livre plus elle-meme) — a rechiffrer une fois les
+issues des sous-chantiers 3/4/5 ouvertes avec leur propre estimation.
 
 =========================================================
 10. Jalon 2 : Conformite Legale Belge [COMPLETE]
