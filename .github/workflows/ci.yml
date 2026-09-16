@@ -183,6 +183,7 @@ jobs:
             --test garde_audit_des_transitions \
             --test garde_documentation_personas \
             --test garde_identite_jetee \
+            --test garde_enum_contre_contrainte \
             --test garde_paniques_en_production \
             --test garde_perimetre_wbs \
             --test garde_schema_mort \
