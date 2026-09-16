@@ -253,14 +253,20 @@ impl Convocation {
         created_by: Uuid,
     ) -> Result<Self, String> {
         // Validation: la 2e AG doit être au moins 15 jours après la 1ère
+        //
+        // Ce message était resté en anglais alors que celui de `new()` avait
+        // déjà été traduit (#780) : même défaut, même produit belge à quatre
+        // langues, même syndic sans recours utile face à un texte qu'il ne
+        // comprend pas forcément.
         let min_second_date = first_meeting_date + Duration::days(15);
         if new_meeting_date < min_second_date {
             return Err(format!(
-                "Second convocation meeting date {} must be at least 15 days after the first \
-                 meeting date {} (Art. 3.87 §3 CC). Minimum date: {}",
-                new_meeting_date.format("%Y-%m-%d"),
-                first_meeting_date.format("%Y-%m-%d"),
-                min_second_date.format("%Y-%m-%d")
+                "Art. 3.87 § 3 : la seconde assemblée doit se tenir au moins 15 jours \
+                 après la première (tenue le {}). Date proposée : {}. \
+                 Reportez la seconde assemblée au {} ou plus tard.",
+                first_meeting_date.format("%d/%m/%Y"),
+                new_meeting_date.format("%d/%m/%Y"),
+                min_second_date.format("%d/%m/%Y")
             ));
         }
 
@@ -704,7 +710,20 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("15 days after"));
+        // Message traduit en français le même jour que celui de `new()`
+        // (#780, DoD : « le message de refus des 15 jours traduit »).
+        // L'assertion vérifiait auparavant `"15 days after"` (texte anglais
+        // désormais retiré) ; elle porte maintenant sur l'article cité et le
+        // recours nommé, au même titre que `test_create_convocation_meeting_too_soon`.
+        let erreur = result.unwrap_err();
+        assert!(
+            erreur.contains("3.87"),
+            "le refus doit citer l'article qui le fonde, reçu : {erreur}"
+        );
+        assert!(
+            erreur.contains("Reportez"),
+            "le refus doit nommer le recours, reçu : {erreur}"
+        );
     }
 
     #[test]

@@ -1470,3 +1470,60 @@ async fn test_cloturer_le_vote_accepte_un_corps_vide_comme_le_frontend() {
         resp.status()
     );
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// @security — clôturer un vote proclame une majorité opposable (Art. 3.87
+// §4 CC) : c'est un geste du syndic, jamais celui d'un copropriétaire, même
+// membre de la même organisation. Avant #780, `close_voting` ne vérifiait ni
+// le rôle ni le mandat sur l'AG.
+// ─────────────────────────────────────────────────────────────────────────
+
+#[actix_web::test]
+#[serial]
+async fn test_close_voting_refuse_pour_un_coproprietaire() {
+    let (app_state, _container, org_id) = setup_app().await;
+    let (syndic_token, _org, _building, meeting_id, _o1, _o2, _u1) =
+        create_test_fixtures(&app_state, org_id).await;
+    let owner_token = common::register_and_login_with_role(&app_state, org_id, "owner").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let create_req = test::TestRequest::post()
+        .uri(&format!("/api/v1/meetings/{}/resolutions", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", syndic_token)))
+        .set_json(json!({
+            "meeting_id": meeting_id.to_string(),
+            "title": "Résolution — clôture refusée à un copropriétaire",
+            "description": "@security #780",
+            "resolution_type": "ordinary",
+            "majority_required": "absolute",
+            "agenda_item_index": 0
+        }))
+        .to_request();
+    let resp = test::call_service(&app, create_req).await;
+    assert_eq!(
+        resp.status(),
+        201,
+        "la résolution doit être créée par le syndic"
+    );
+    let cree: serde_json::Value = test::read_body_json(resp).await;
+    let resolution_id = cree["id"].as_str().expect("identifiant rendu").to_string();
+
+    let close_req = test::TestRequest::put()
+        .uri(&format!("/api/v1/resolutions/{}/close", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", owner_token)))
+        .set_json(json!({}))
+        .to_request();
+    let resp = test::call_service(&app, close_req).await;
+
+    assert_eq!(
+        resp.status(),
+        403,
+        "un copropriétaire ne doit jamais pouvoir clôturer un vote"
+    );
+}

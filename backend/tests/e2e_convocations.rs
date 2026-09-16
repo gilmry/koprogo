@@ -8,9 +8,9 @@ use uuid::Uuid;
 
 use koprogo_api::application::dto::{
     ConvocationRecipientResponse, ConvocationResponse, CreateBuildingDto, CreateMeetingRequest,
-    CreateOwnerDto, RecipientTrackingSummaryResponse,
+    CreateOwnerDto, CreateUnitDto, EligibleRecipientResponse, RecipientTrackingSummaryResponse,
 };
-use koprogo_api::domain::entities::{AttendanceStatus, ConvocationStatus, MeetingType};
+use koprogo_api::domain::entities::{AttendanceStatus, ConvocationStatus, MeetingType, UnitType};
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
 
 // ==================== Test Helpers ====================
@@ -90,6 +90,45 @@ async fn create_test_owner(
         .expect("Failed to create test owner");
 
     Uuid::parse_str(&owner.id).expect("Failed to parse owner id")
+}
+
+/// Crée un lot et l'attribue à un copropriétaire actif — c'est ce que
+/// `list_eligible_recipients` interroge pour savoir qui convoquer.
+async fn attach_owner_to_new_unit(
+    app_state: &actix_web::web::Data<AppState>,
+    building_id: Uuid,
+    owner_id: Uuid,
+    unit_number: &str,
+) -> Uuid {
+    let building = app_state
+        .building_use_cases
+        .get_building(building_id)
+        .await
+        .expect("building lookup")
+        .expect("building must exist");
+    let unit_dto = CreateUnitDto {
+        acp_id: Some(building.acp_id),
+        building_id: building_id.to_string(),
+        unit_number: unit_number.to_string(),
+        floor: Some(1),
+        surface_area: 60.0,
+        unit_type: UnitType::Apartment,
+        quota: rust_decimal_macros::dec!(0.5),
+    };
+    let unit = app_state
+        .unit_use_cases
+        .create_unit(unit_dto)
+        .await
+        .expect("Failed to create unit");
+    let unit_id = Uuid::parse_str(&unit.id).expect("Failed to parse unit id");
+
+    app_state
+        .unit_owner_use_cases
+        .add_owner_to_unit(unit_id, owner_id, rust_decimal_macros::dec!(0.5), true)
+        .await
+        .expect("Failed to attach owner to unit");
+
+    unit_id
 }
 
 // ==================== Convocation CRUD Tests ====================
@@ -1578,4 +1617,195 @@ async fn test_envoi_accepte_un_corps_vide_comme_le_frontend() {
         "aucune erreur de désérialisation ne doit subsister, \
          réponse obtenue ({statut}) : {texte}"
     );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// @negative — l'écran de sélection (#780 verrou 1, #784) rend maintenant
+// possible ce qui ne l'était pas avant : un syndic qui décoche TOUS les
+// destinataires puis clique « Envoyer ». `{}`  (champ absent) déduit tout le
+// monde par défaut ; `{"recipient_owner_ids": []}` (choix explicite) doit
+// être refusé, pas silencieusement remplacé par le défaut.
+// ─────────────────────────────────────────────────────────────────────────
+
+#[actix_web::test]
+#[serial]
+async fn test_envoi_avec_selection_explicitement_vide_est_refuse() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
+    let owner_id = create_test_owner(&app_state, org_id).await;
+    attach_owner_to_new_unit(&app_state, building_id, owner_id, "A101").await;
+    let meeting_date = Utc::now() + Duration::days(30);
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let create_req = test::TestRequest::post()
+        .uri("/api/v1/convocations")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "building_id": building_id.to_string(),
+            "meeting_id": meeting_id.to_string(),
+            "meeting_type": "Ordinary",
+            "meeting_date": meeting_date.to_rfc3339(),
+            "language": "FR"
+        }))
+        .to_request();
+    let create_resp = test::call_service(&app, create_req).await;
+    let convocation: ConvocationResponse = test::read_body_json(create_resp).await;
+
+    let send_req = test::TestRequest::post()
+        .uri(&format!("/api/v1/convocations/{}/send", convocation.id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({ "recipient_owner_ids": [] }))
+        .to_request();
+    let send_resp = test::call_service(&app, send_req).await;
+
+    assert_eq!(
+        send_resp.status(),
+        400,
+        "une sélection explicitement vide doit être refusée, pas silencieusement \
+         remplacée par « tout le monde par défaut »"
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// @security — envoyer une convocation fait courir le délai légal de l'Art.
+// 3.87 § 3 CC pour tous les copropriétaires : c'est un acte du syndic,
+// jamais celui d'un copropriétaire, même membre de la même organisation.
+// Avant #780, `send_convocation` ne vérifiait aucun rôle.
+// ─────────────────────────────────────────────────────────────────────────
+
+#[actix_web::test]
+#[serial]
+async fn test_send_convocation_refuse_pour_un_coproprietaire() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let syndic_token = common::register_and_login(&app_state, org_id).await;
+    let owner_token = common::register_and_login_with_role(&app_state, org_id, "owner").await;
+    let building_id = create_test_building(&app_state, org_id).await;
+    let meeting_date = Utc::now() + Duration::days(30);
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let create_req = test::TestRequest::post()
+        .uri("/api/v1/convocations")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", syndic_token)))
+        .set_json(json!({
+            "building_id": building_id.to_string(),
+            "meeting_id": meeting_id.to_string(),
+            "meeting_type": "Ordinary",
+            "meeting_date": meeting_date.to_rfc3339(),
+            "language": "FR"
+        }))
+        .to_request();
+    let create_resp = test::call_service(&app, create_req).await;
+    assert_eq!(
+        create_resp.status(),
+        201,
+        "la convocation doit être créée par le syndic"
+    );
+    let convocation: ConvocationResponse = test::read_body_json(create_resp).await;
+
+    let send_req = test::TestRequest::post()
+        .uri(&format!("/api/v1/convocations/{}/send", convocation.id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", owner_token)))
+        .set_json(json!({}))
+        .to_request();
+    let send_resp = test::call_service(&app, send_req).await;
+
+    assert_eq!(
+        send_resp.status(),
+        403,
+        "un copropriétaire ne doit jamais pouvoir envoyer une convocation"
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// GET /buildings/{id}/eligible-convocation-recipients — écran de sélection
+// des destinataires (#780 verrou 1, #784). Avant cet endpoint, « 0
+// destinataire » était un libellé sans contrôle pour le constituer.
+// ─────────────────────────────────────────────────────────────────────────
+
+#[actix_web::test]
+#[serial]
+async fn test_eligible_recipients_liste_les_coproprietaires_actifs_dedupliques() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
+
+    let owner1 = create_test_owner(&app_state, org_id).await;
+    let owner2 = create_test_owner(&app_state, org_id).await;
+    // owner1 détient deux lots : il ne doit apparaître qu'une fois.
+    attach_owner_to_new_unit(&app_state, building_id, owner1, "A101").await;
+    attach_owner_to_new_unit(&app_state, building_id, owner1, "A102").await;
+    attach_owner_to_new_unit(&app_state, building_id, owner2, "A103").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/buildings/{}/eligible-convocation-recipients",
+            building_id
+        ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 200);
+
+    let destinataires: Vec<EligibleRecipientResponse> = test::read_body_json(resp).await;
+    let ids: Vec<Uuid> = destinataires.iter().map(|d| d.owner_id).collect();
+    assert_eq!(
+        destinataires.len(),
+        2,
+        "owner1 détient deux lots mais ne doit compter qu'une fois : {:?}",
+        ids
+    );
+    assert!(ids.contains(&owner1));
+    assert!(ids.contains(&owner2));
+}
+
+#[actix_web::test]
+#[serial]
+async fn test_eligible_recipients_immeuble_sans_lots_rend_liste_vide() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/buildings/{}/eligible-convocation-recipients",
+            building_id
+        ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+
+    // Un immeuble sans lot attribué est un état légitime (immeuble neuf) :
+    // liste vide, pas une erreur.
+    assert_eq!(resp.status(), 200);
+    let destinataires: Vec<EligibleRecipientResponse> = test::read_body_json(resp).await;
+    assert!(destinataires.is_empty());
 }

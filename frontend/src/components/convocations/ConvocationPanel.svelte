@@ -13,6 +13,7 @@
   import { withErrorHandling } from "../../lib/utils/error.utils";
   import ConvocationTrackingSummary from "./ConvocationTrackingSummary.svelte";
   import ConvocationRecipientList from "./ConvocationRecipientList.svelte";
+  import ConvocationRecipientSelector from "./ConvocationRecipientSelector.svelte";
   import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   let {
@@ -34,6 +35,10 @@
   let error = $state("");
   let showRecipients = $state(false);
   let actionLoading = $state(false);
+  // Destinataires sélectionnés dans l'écran de choix (#780 verrou 1).
+  // `null` tant que le sélecteur n'a pas rendu sa première liste : distinct
+  // d'un tableau vide, qui lui dit « tout le monde décoché ».
+  let selectedRecipientIds = $state<string[] | null>(null);
 
   /// L'action en attente de confirmation, ou `null`.
   ///
@@ -51,6 +56,14 @@
   let isAdmin = $derived(
     $authStore.user?.role === UserRole.SYNDIC ||
       $authStore.user?.role === UserRole.SUPERADMIN,
+  );
+
+  // Bloque l'envoi tant que le sélecteur a rendu et que le syndic a
+  // explicitement décoché tout le monde — pas avant qu'il ait rendu
+  // (`selectedRecipientIds === null`), sans quoi le bouton serait
+  // désactivé le temps du premier chargement.
+  let sendDisabled = $derived(
+    actionLoading || selectedRecipientIds?.length === 0,
   );
 
   $effect(() => {
@@ -102,8 +115,16 @@
   async function executer_envoyer() {
     actionEnAttente = null;
     if (!convocation) return;
+    // `selectedRecipientIds` reste `null` tant que le sélecteur n'a pas
+    // encore rendu (chargement lent, ou panel affiché sans lui) : on laisse
+    // alors le serveur déduire tous les copropriétaires actifs par défaut,
+    // plutôt que d'envoyer un tableau vide qu'il refuserait à tort.
     const result = await withErrorHandling({
-      action: () => convocationsApi.send(convocation!.id),
+      action: () =>
+        convocationsApi.send(
+          convocation!.id,
+          selectedRecipientIds ?? undefined,
+        ),
       setLoading: (v: boolean) => (actionLoading = v),
       successMessage: $_("convocations.messages.sent"),
       errorMessage: $_("convocations.errors.sendingFailed"),
@@ -351,12 +372,19 @@
           <ConvocationTrackingSummary convocationId={convocation.id} />
         {/if}
 
+        {#if isAdmin && (convocation.status === ConvocationStatus.Draft || convocation.status === ConvocationStatus.Scheduled)}
+          <ConvocationRecipientSelector
+            buildingId={convocation.building_id}
+            onchange={(ids) => (selectedRecipientIds = ids)}
+          />
+        {/if}
+
         {#if isAdmin}
           <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
             {#if convocation.status === ConvocationStatus.Draft}
               <button
                 onclick={handleSend}
-                disabled={actionLoading}
+                disabled={sendDisabled}
                 data-testid="convocation-btn-send"
                 class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
@@ -373,7 +401,7 @@
             {:else if convocation.status === ConvocationStatus.Scheduled}
               <button
                 onclick={handleSend}
-                disabled={actionLoading}
+                disabled={sendDisabled}
                 data-testid="convocation-btn-send"
                 class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
