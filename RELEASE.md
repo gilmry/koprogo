@@ -226,7 +226,7 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `plancher` secrets | 🟢 | `.claude/hooks/stop-leak-scan.sh` | bloquant, 3 hooks sur 8 bloquent vraiment |
 | `plancher` migrations | 🟡 | `kcargo test --test garde_versions_de_migration` | **Passe de ⚪ à 🟡 le 2026-09-16.** Un gate existe enfin, né d'un vrai dégât (#939) : deux migrations au même horodatage faisaient échouer TOUTE base neuve en 23505. Il vérifie désormais la collision de version (dur) et le nombre de montantes sans `.down.sql` (cliquet à **93 sur 138**, mesuré). Reste 🟡 et non 🟢 : la réversibilité elle-même n'est toujours pas *exécutée*, seulement l'existence du fichier |
 | `verify` structurel | 🟢 | `kcargo test --test architecture` + 15 gardes | 16 suites vertes |
-| `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée |
+| `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée. **Remesuré le 2026-09-16** : la couverture était ROUGE depuis la fusion (417 routes non annotées contre un cliquet à 410) et bloquait le déploiement. Huit routes annotées et enregistrées, dix DTO passés à `ToSchema`, cliquet resserré à **409** — la valeur mesurée, pas celle d'avant. `api.d.ts` passe de 161 à 173 schémas sans en perdre un |
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
 | `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré en local le 2026-09-13**. ⚠️ #877 reste OUVERTE : son premier critère dit « vert EN CI », et la CI ne l'a pas vu — les commits ne sont pas poussés |
 | `bdd` | 🟢 | suites `bdd_*.rs` | `bdd_acp` remesuré le 2026-09-16 : **17 scénarios / 78 étapes, code 0**. Était rouge à 17 sur 17 avant #939, sans que personne le sache — le vert du 2026-09-12 datait d'avant la fusion qui a créé la collision |
@@ -351,6 +351,13 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 | **PR #879** | **relancer pour qu'elle ait ses gates** avant la revue. La chronométrer sans preuve mesurerait autre chose que ce que #875 cherche | Gilles Maury | 2026-09-13 | #875, run `34764114133` |
 
 ## Journal (chronologie courte)
+
+- 2026-09-16 — **CI verte sur `eff6e6ab`, déploiement compris.** Le workflow
+  « VPS ecosolva » était rouge depuis au moins trois commits. Il ne l'était pas
+  pour une raison, mais pour trois, découvertes l'une derrière l'autre : la
+  couverture OpenAPI (417 contre 410), puis un cliquet cité par aucun workflow,
+  puis neuf tests taisant leur catégorie. Chaque garde franchi en révélait un
+  autre — c'est le signe qu'ils mordent, pas qu'ils s'acharnent.
 
 - 2026-09-16 — **Deux défauts que seule la jonction pouvait produire, et que
   les gates ne pouvaient pas voir.**
