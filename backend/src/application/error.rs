@@ -283,6 +283,14 @@ pub enum AppError {
         "Configuration de visioconférence manquante pour ce mode de réunion (Art. 3.87 §1er CC)"
     )]
     MeetingModeRequiresVideoconf { mode: String },
+
+    /// Story 5.4 (#588, INV-5/FR27) — `on_behalf_of_acp = true` sans motif.
+    /// L'exception à l'interdiction de participation personnelle du syndic
+    /// ne se justifie pas d'elle-même : sans motif, elle ne serait pas
+    /// traçable. 422 Unprocessable Entity — la requête est syntaxiquement
+    /// valide, la règle métier la refuse.
+    #[error("Une réservation pour le compte de l'ACP doit porter un motif (AG, prestataire…)")]
+    ReservationMotifRequired,
 }
 
 impl AppError {
@@ -326,6 +334,7 @@ impl AppError {
             AppError::TechnicalSpecRequired => "technical_spec_required",
             AppError::EvaluatorIsContractor => "evaluator_is_contractor",
             AppError::BuildingNotConformant { .. } => "building_not_conformant",
+            AppError::ReservationMotifRequired => "reservation_motif_required",
         }
     }
 }
@@ -363,7 +372,8 @@ impl ResponseError for AppError {
             | AppError::AcpNotConformant { .. }
             | AppError::ReserveFundInsufficient { .. }
             | AppError::VotingRightSuspended { .. }
-            | AppError::MeetingModeRequiresVideoconf { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::MeetingModeRequiresVideoconf { .. }
+            | AppError::ReservationMotifRequired => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -916,6 +926,21 @@ impl From<crate::domain::entities::MeetingModeError> for AppError {
 }
 
 // ============================================================================
+// Story 5.4 — bridge From<ReservationOnBehalfError> (#588, INV-5/FR27)
+// ============================================================================
+
+impl From<crate::domain::entities::ReservationOnBehalfError> for AppError {
+    /// `on_behalf_of_acp = true` sans motif → 422 `ReservationMotifRequired`.
+    fn from(err: crate::domain::entities::ReservationOnBehalfError) -> Self {
+        match err {
+            crate::domain::entities::ReservationOnBehalfError::MotifRequired => {
+                AppError::ReservationMotifRequired
+            }
+        }
+    }
+}
+
+// ============================================================================
 // Tests — taxonomie 4 catégories obligatoire (cf. CRITICAL.md règle #3, #427)
 // ============================================================================
 
@@ -937,7 +962,18 @@ pub const REFUS_RESERVE_AUX_COPROPRIETAIRES: &str =
     "Cette action est réservée aux copropriétaires : elle engage une personne, \
      pas la copropriété. Votre compte n'a pas de fiche de copropriétaire dans \
      cette organisation. Si vous êtes syndic et souhaitez agir pour le compte \
-     de l'ACP, cette possibilité n'existe pas encore.";
+     de l'ACP, utilisez l'option « réservation pour le compte de l'ACP ».";
+
+/// Story #588 (INV-5/FR27) — refus opposé à un copropriétaire (ou tout
+/// compte non-syndic) qui tente de positionner `on_behalf_of_acp = true` sur
+/// une réservation. Contient volontairement la sous-chaîne « réservée aux »
+/// déjà reconnue par `classification_erreurs::est_interdit` (403), pour ne
+/// pas dupliquer le lexique bilingue — même raisonnement que
+/// `REFUS_RESERVE_AUX_COPROPRIETAIRES`.
+pub const REFUS_ON_BEHALF_RESERVE_AUX_SYNDICS: &str =
+    "Cette action est réservée aux syndics : seul le syndic peut réserver une \
+     ressource commune pour le compte de l'ACP. Si vous êtes copropriétaire, \
+     réservez en votre nom propre, sans cette option.";
 
 #[cfg(test)]
 mod tests {
@@ -1433,6 +1469,24 @@ mod tests {
         };
         let s = format!("{}", e);
         assert!(!s.contains("meeting_id"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 5.4 — ReservationMotifRequired (#588, INV-5/FR27) 4-cat
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_reservation_motif_required_maps_to_422() {
+        let e = AppError::ReservationMotifRequired;
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "reservation_motif_required");
+    }
+
+    #[test]
+    fn happy_from_reservation_on_behalf_domain_error() {
+        use crate::domain::entities::ReservationOnBehalfError;
+        let app_err: AppError = ReservationOnBehalfError::MotifRequired.into();
+        assert!(matches!(app_err, AppError::ReservationMotifRequired));
     }
 
     #[test]

@@ -76,6 +76,9 @@ export interface Booking {
   approval_notes?: string;
   cancellation_reason?: string;
   rating?: number;
+  /** Story #588 (INV-5/FR27). */
+  on_behalf_of_acp?: boolean;
+  motif?: string;
   created_at: string;
   updated_at: string;
 }
@@ -118,6 +121,14 @@ export interface CreateBookingDto {
   purpose?: string;
   attendees_count?: number;
   special_requests?: string;
+  /**
+   * Story #588 (INV-5/FR27) — le syndic réserve pour le compte de l'ACP (AG,
+   * prestataires) plutôt qu'à titre personnel. Réservé au syndic ; exige
+   * `motif`.
+   */
+  on_behalf_of_acp?: boolean;
+  /** Obligatoire si `on_behalf_of_acp = true` (422 sinon). */
+  motif?: string;
 }
 
 export const bookingsApi = {

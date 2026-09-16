@@ -43,21 +43,29 @@ pub async fn create_booking(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+    // Story #588 (INV-5/FR27) — même idiome RBAC que le reste des handlers
+    // (cf. iot_grid_handlers, stats_handlers) : "syndic" ou superadmin.
+    let is_syndic = auth.is_superadmin() || auth.role == "syndic";
     match data
         .resource_booking_use_cases
-        .create_booking(auth.user_id, org_id, request.into_inner())
+        .create_booking(auth.user_id, org_id, is_syndic, request.into_inner())
         .await
     {
         Ok(booking) => HttpResponse::Created().json(booking),
         Err(e) => {
             // Issue #781 — le refus "pas de fiche de copropriétaire" est un
             // 403 (règle métier : réserver engage une personne, pas encore
-            // la copropriété — cf. story #588 non implémentée), jamais un
-            // 400. Le `kind` laisse le frontend router vers un message
-            // traduit dans les quatre locales sans dépendre du libellé
-            // français.
+            // la copropriété). Depuis la story #588, un syndic dispose d'une
+            // échappatoire tracée : `on_behalf_of_acp` + motif. Le `kind`
+            // laisse le frontend router vers un message traduit dans les
+            // quatre locales sans dépendre du libellé français.
             if e.contains("conflicts with") {
                 HttpResponse::Conflict().json(serde_json::json!({"error": e}))
+            } else if classification_erreurs::est_motif_acp_manquant(&e) {
+                HttpResponse::UnprocessableEntity().json(serde_json::json!({
+                    "error": e,
+                    "kind": "reservation_motif_required",
+                }))
             } else if classification_erreurs::est_refus_owner_requis(&e) {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e,

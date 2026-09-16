@@ -77,6 +77,16 @@ pub fn est_refus_owner_requis(message: &str) -> bool {
     message == crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES
 }
 
+/// L'erreur est-elle PRÉCISÉMENT le refus « motif obligatoire » d'une
+/// réservation `on_behalf_of_acp` (story #588, INV-5/FR27) ?
+///
+/// Doit router vers 422 (règle métier sur une requête par ailleurs valide),
+/// pas 400/403 — d'où un `kind` stable distinct, même raisonnement que
+/// `est_refus_owner_requis`.
+pub fn est_motif_acp_manquant(message: &str) -> bool {
+    message == crate::domain::entities::ReservationOnBehalfError::MotifRequired.to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,5 +159,24 @@ mod tests {
     #[test]
     fn security_un_message_vide_nest_jamais_pris_pour_ce_refus() {
         assert!(!est_refus_owner_requis(""));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 5.4 — est_motif_acp_manquant (#588, INV-5/FR27)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_le_motif_manquant_est_reconnu() {
+        assert!(est_motif_acp_manquant(
+            &crate::domain::entities::ReservationOnBehalfError::MotifRequired.to_string()
+        ));
+    }
+
+    #[test]
+    fn negative_un_autre_refus_ne_declenche_pas_ce_kind() {
+        assert!(!est_motif_acp_manquant(
+            crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES
+        ));
+        assert!(!est_motif_acp_manquant("Booking not found"));
     }
 }

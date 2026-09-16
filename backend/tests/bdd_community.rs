@@ -2642,10 +2642,12 @@ async fn when_create_booking(
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
-    match uc.create_booking(user_id, org_id, dto).await {
+    match uc.create_booking(user_id, org_id, false, dto).await {
         Ok(resp) => {
             world.last_booking_id = Some(resp.id);
             world.last_booking_response = Some(resp);
@@ -2696,11 +2698,13 @@ async fn given_booked_on_date(
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
     let resp = uc
-        .create_booking(user_id, org_id, dto)
+        .create_booking(user_id, org_id, false, dto)
         .await
         .expect("create booking");
     world.last_booking_id = Some(resp.id);
@@ -2744,10 +2748,12 @@ async fn when_try_book_conflict(
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
-    match uc.create_booking(user_id, org_id, dto).await {
+    match uc.create_booking(user_id, org_id, false, dto).await {
         Ok(resp) => {
             world.last_booking_response = Some(resp);
             world.last_booking_error = None;
@@ -2788,11 +2794,13 @@ async fn given_booked_simple(
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
     let resp = uc
-        .create_booking(user_id, org_id, dto)
+        .create_booking(user_id, org_id, false, dto)
         .await
         .expect("create");
     world.last_booking_id = Some(resp.id);
@@ -2831,10 +2839,12 @@ async fn when_book_adjacent(
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
-    match uc.create_booking(user_id, org_id, dto).await {
+    match uc.create_booking(user_id, org_id, false, dto).await {
         Ok(resp) => {
             world.last_booking_id = Some(resp.id);
             world.last_booking_response = Some(resp);
@@ -2877,11 +2887,13 @@ async fn create_pending_booking(world: &mut CommunityWorld) {
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
     let resp = uc
-        .create_booking(user_id, org_id, dto)
+        .create_booking(user_id, org_id, false, dto)
         .await
         .expect("create pending");
     world.last_booking_id = Some(resp.id);
@@ -2952,8 +2964,10 @@ async fn given_owner_has_bookings(world: &mut CommunityWorld, name: String, coun
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
-        uc.create_booking(user_id, org_id, dto)
+        uc.create_booking(user_id, org_id, false, dto)
             .await
             .expect("create");
     }
@@ -2981,9 +2995,11 @@ async fn given_active_and_cancelled(world: &mut CommunityWorld, active: usize, c
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
         let resp = uc
-            .create_booking(user_id, org_id, dto)
+            .create_booking(user_id, org_id, false, dto)
             .await
             .expect("create active");
         // Confirm booking, then backdate to be currently in progress
@@ -3011,9 +3027,11 @@ async fn given_active_and_cancelled(world: &mut CommunityWorld, active: usize, c
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
         let resp = uc
-            .create_booking(user_id, org_id, dto)
+            .create_booking(user_id, org_id, false, dto)
             .await
             .expect("create");
         uc.cancel_booking(resp.id, user_id, org_id)
@@ -3042,8 +3060,10 @@ async fn given_bookings_for_types(world: &mut CommunityWorld, type1: String, typ
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
-        uc.create_booking(user_id, org_id, dto)
+        uc.create_booking(user_id, org_id, false, dto)
             .await
             .expect("create");
     }
@@ -3078,8 +3098,10 @@ async fn given_bookings_different_resources(world: &mut CommunityWorld, count: u
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
-        uc.create_booking(user_id, org_id, dto)
+        uc.create_booking(user_id, org_id, false, dto)
             .await
             .expect("create");
     }
@@ -3105,8 +3127,10 @@ async fn given_future_and_past_bookings(world: &mut CommunityWorld) {
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
-    uc.create_booking(user_id, org_id, dto)
+    uc.create_booking(user_id, org_id, false, dto)
         .await
         .expect("create future");
 
@@ -3123,9 +3147,11 @@ async fn given_future_and_past_bookings(world: &mut CommunityWorld) {
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
     let past_booking = uc
-        .create_booking(user_id, org_id, dto2)
+        .create_booking(user_id, org_id, false, dto2)
         .await
         .expect("create past");
     let pool = world.pool.as_ref().unwrap();
@@ -3160,9 +3186,11 @@ async fn given_various_status_bookings(world: &mut CommunityWorld) {
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
         let resp = uc
-            .create_booking(user_id, org_id, dto)
+            .create_booking(user_id, org_id, false, dto)
             .await
             .expect("create");
         if i == 1 {

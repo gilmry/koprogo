@@ -177,7 +177,7 @@ pub use crate::domain::economie_circulaire::notice::{
 };
 pub use crate::domain::economie_circulaire::resource_booking;
 pub use crate::domain::economie_circulaire::resource_booking::{
-    BookingStatus, RecurringPattern, ResourceBooking, ResourceType,
+    BookingStatus, RecurringPattern, ReservationOnBehalfError, ResourceBooking, ResourceType,
 };
 pub use crate::domain::economie_circulaire::service_provider;
 pub use crate::domain::economie_circulaire::service_provider::{ServiceProvider, TradeCategory};

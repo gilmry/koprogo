@@ -477,12 +477,15 @@
       "endTimeAfterStart": "Die Endzeit muss nach der Startzeit liegen",
       "endTimeRequired": "Die Endzeit ist erforderlich",
       "maxDuration": "Die maximale Reservierungsdauer beträgt {hours} Std.",
+      "motifRequired": "Für eine Reservierung im Namen der Eigentümergemeinschaft ist ein Grund erforderlich",
       "startTimeInFuture": "Die Startzeit muss in der Zukunft liegen",
       "startTimeRequired": "Die Startzeit ist erforderlich"
     },
     "loadError": "Fehler beim Laden der Reservierungen",
+    "motif": "Grund",
     "noBookings": "Keine Reservierungen.",
     "noResources": "Keine Ressourcen verfügbar.",
+    "onBehalfOfAcp": "Im Namen der Eigentümergemeinschaft reservieren",
     "purpose": "Zweck der Buchung",
     "resource": "Ressource",
     "resourceType": {
