@@ -58,7 +58,7 @@ pub use crate::domain::copropriete::poll_vote;
 pub use crate::domain::copropriete::poll_vote::PollVote;
 pub use crate::domain::copropriete::resolution;
 pub use crate::domain::copropriete::resolution::{
-    MajorityType, Resolution, ResolutionStatus, ResolutionType,
+    MajorityType, Resolution, ResolutionKind, ResolutionStatus, ResolutionType,
 };
 pub use crate::domain::copropriete::syndic_mandate;
 pub use crate::domain::copropriete::syndic_mandate::{SyndicMandate, SyndicMandateError};

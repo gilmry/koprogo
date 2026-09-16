@@ -283,6 +283,15 @@ pub enum AppError {
         "Configuration de visioconférence manquante pour ce mode de réunion (Art. 3.87 §1er CC)"
     )]
     MeetingModeRequiresVideoconf { mode: String },
+
+    /// Story 4.6 (#581) — `Resolution::is_auto_generated()` est vraie : la
+    /// résolution d'évaluation des prestataires générée d'office à toute AGO
+    /// (Art. 3.89 § 5, 12° Code Civil belge) ne peut être ni supprimée ni
+    /// modifiée par le syndic qu'elle évalue. Returns 403 Forbidden.
+    #[error(
+        "Cette résolution générée automatiquement (évaluation des prestataires) ne peut être ni supprimée ni modifiée"
+    )]
+    ResolutionAutoNotRemovable,
 }
 
 impl AppError {
@@ -326,6 +335,7 @@ impl AppError {
             AppError::TechnicalSpecRequired => "technical_spec_required",
             AppError::EvaluatorIsContractor => "evaluator_is_contractor",
             AppError::BuildingNotConformant { .. } => "building_not_conformant",
+            AppError::ResolutionAutoNotRemovable => "resolution_auto_not_removable",
         }
     }
 }
@@ -349,7 +359,8 @@ impl ResponseError for AppError {
             | AppError::DelegationChainNotAllowed
             | AppError::TicketImmutable
             | AppError::ResponseImmutable
-            | AppError::SignatoryNotAuthorized => StatusCode::FORBIDDEN,
+            | AppError::SignatoryNotAuthorized
+            | AppError::ResolutionAutoNotRemovable => StatusCode::FORBIDDEN,
             AppError::NotFound(_) | AppError::MandateNotFound => StatusCode::NOT_FOUND,
             AppError::Conflict(_)
             | AppError::RoleAlreadyAssigned { .. }
@@ -1078,6 +1089,18 @@ mod tests {
         assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
         assert_eq!(e.kind(), "response_immutable");
         assert!(format!("{}", e).contains("ne peut pas"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 4.6 — ResolutionAutoNotRemovable (#581)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn security_resolution_auto_not_removable_maps_to_403() {
+        let e = AppError::ResolutionAutoNotRemovable;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "resolution_auto_not_removable");
+        assert!(format!("{}", e).contains("ne peut être ni supprimée ni modifiée"));
     }
 
     // ------------------------------------------------------------------------

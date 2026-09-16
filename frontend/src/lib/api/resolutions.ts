@@ -46,6 +46,11 @@ export interface Resolution {
   voted_at?: string;
   created_at: string;
   updated_at?: string;
+  // Story 4.6 (#581) — vrai pour la résolution d'évaluation des prestataires
+  // générée d'office à toute AGO (Art. 3.89 § 5, 12° CC). Le serveur refuse
+  // déjà sa suppression/modification (403) ; ce champ pilote l'affichage du
+  // badge et le masquage du bouton de suppression.
+  is_auto_generated?: boolean;
 }
 
 // Re-exported from the generated OpenAPI spec — single source of truth.

@@ -1101,7 +1101,7 @@ async fn when_try_delete(world: &mut GovernanceWorld) {
         }
         Err(e) => {
             world.operation_success = false;
-            world.operation_error = Some(e);
+            world.operation_error = Some(e.to_string());
         }
     }
 }
