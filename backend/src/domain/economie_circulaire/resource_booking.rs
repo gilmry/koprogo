@@ -59,7 +59,16 @@ pub struct ResourceBooking {
     pub building_id: Uuid,
     pub resource_type: ResourceType,
     pub resource_name: String, // e.g., "Meeting Room A", "Laundry Room 1st Floor"
-    pub booked_by: Uuid,       // owner_id who made the booking
+    // Story #588 (INV-5/FR27) — un syndic n'a structurellement pas de fiche
+    // de copropriétaire (cf. `resolve_owner()` dans
+    // `resource_booking_use_cases.rs`). Une réservation "pour le compte de
+    // l'ACP" ne peut donc pas prétendre à un `owner_id` : elle porte
+    // `booked_by_user_id` à la place, et `booked_by` reste `None`. Les deux
+    // champs sont mutuellement exclusifs (cf. `on_behalf_of_acp`).
+    pub booked_by: Option<Uuid>, // owner_id who made the booking (None si on_behalf_of_acp)
+    pub booked_by_user_id: Option<Uuid>, // syndic user_id si on_behalf_of_acp
+    pub on_behalf_of_acp: bool,
+    pub motif: Option<String>, // obligatoire si on_behalf_of_acp
     pub start_time: DateTime<Utc>,
     pub end_time: DateTime<Utc>,
     pub status: BookingStatus,
@@ -68,6 +77,40 @@ pub struct ResourceBooking {
     pub recurrence_end_date: Option<DateTime<Utc>>, // For recurring bookings
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+/// Story #588 (INV-5/FR27) — erreur typée pour l'exception syndic
+/// "réservation pour le compte de l'ACP". Suit le pattern déjà établi par
+/// `ChargeDistributionError` (entité → erreur typée → bridge `String` pour
+/// les use-cases legacy, bridge `AppError` pour la 422 côté HTTP).
+#[derive(Debug, Clone, PartialEq)]
+pub enum ReservationOnBehalfError {
+    /// `on_behalf_of_acp = true` sans motif (ou motif vide/blanc) : l'exception
+    /// à l'interdiction de participation personnelle du syndic (INV-5) ne
+    /// serait pas traçable sans lui.
+    MotifRequired,
+}
+
+impl std::fmt::Display for ReservationOnBehalfError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MotifRequired => write!(
+                f,
+                "Une réservation pour le compte de l'ACP doit porter un motif (AG, prestataire…)"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for ReservationOnBehalfError {}
+
+/// Bridge pour les use-cases `Result<_, String>` existants (mêmes raisons que
+/// `ChargeDistributionError` : pas de refacto en cascade du module hors
+/// scope de la story #588).
+impl From<ReservationOnBehalfError> for String {
+    fn from(e: ReservationOnBehalfError) -> String {
+        e.to_string()
+    }
 }
 
 impl ResourceBooking {
@@ -184,7 +227,10 @@ impl ResourceBooking {
             building_id,
             resource_type,
             resource_name,
-            booked_by,
+            booked_by: Some(booked_by),
+            booked_by_user_id: None,
+            on_behalf_of_acp: false,
+            motif: None,
             start_time,
             end_time,
             status: BookingStatus::Pending, // Pending until syndic confirms
@@ -194,6 +240,65 @@ impl ResourceBooking {
             created_at: now,
             updated_at: now,
         })
+    }
+
+    /// Create a booking made by a syndic on behalf of the ACP (AG,
+    /// prestataires) rather than a co-owner personally.
+    ///
+    /// Story #588 (INV-5/FR27) — l'exception à l'interdiction de
+    /// participation personnelle du syndic n'existe que motivée : `motif`
+    /// est obligatoire (vide ou blanc = refusé). La légitimité du DEMANDEUR
+    /// (est-il bien syndic ?) n'est PAS du ressort du domaine — elle est
+    /// tranchée en amont, côté use-case/RBAC (cf. `ResourceBookingUseCases::
+    /// create_booking`), car elle dépend d'un rôle applicatif, pas d'un
+    /// invariant de l'entité.
+    ///
+    /// Délègue à `new()` pour les invariants partagés (durée, avance,
+    /// récurrence) plutôt que de les dupliquer : seule la question « qui a
+    /// réservé » change entre les deux chemins. `syndic_user_id` est passé à
+    /// `new()` comme `booked_by` temporaire, uniquement pour réutiliser sa
+    /// validation ; il est aussitôt déplacé vers `booked_by_user_id` et
+    /// `booked_by` est remis à `None` avant de rendre la main.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_on_behalf_of_acp(
+        building_id: Uuid,
+        resource_type: ResourceType,
+        resource_name: String,
+        syndic_user_id: Uuid,
+        motif: String,
+        start_time: DateTime<Utc>,
+        end_time: DateTime<Utc>,
+        notes: Option<String>,
+        recurring_pattern: RecurringPattern,
+        recurrence_end_date: Option<DateTime<Utc>>,
+        max_duration_hours: Option<i64>,
+        max_advance_days: Option<i64>,
+    ) -> Result<Self, String> {
+        let trimmed_motif = motif.trim();
+        if trimmed_motif.is_empty() {
+            return Err(ReservationOnBehalfError::MotifRequired.into());
+        }
+
+        let mut booking = Self::new(
+            building_id,
+            resource_type,
+            resource_name,
+            syndic_user_id,
+            start_time,
+            end_time,
+            notes,
+            recurring_pattern,
+            recurrence_end_date,
+            max_duration_hours,
+            max_advance_days,
+        )?;
+
+        booking.booked_by = None;
+        booking.booked_by_user_id = Some(syndic_user_id);
+        booking.on_behalf_of_acp = true;
+        booking.motif = Some(trimmed_motif.to_string());
+
+        Ok(booking)
     }
 
     /// Cancel this booking
@@ -209,7 +314,7 @@ impl ResourceBooking {
     /// - Err if booking cannot be cancelled
     pub fn cancel(&mut self, canceller_id: Uuid) -> Result<(), String> {
         // Only booking owner can cancel
-        if self.booked_by != canceller_id {
+        if self.booked_by != Some(canceller_id) {
             return Err("Only the booking owner can cancel this booking".to_string());
         }
 
@@ -627,7 +732,10 @@ mod tests {
             building_id,
             resource_type: ResourceType::MeetingRoom,
             resource_name: "Meeting Room A".to_string(),
-            booked_by,
+            booked_by: Some(booked_by),
+            booked_by_user_id: None,
+            on_behalf_of_acp: false,
+            motif: None,
             start_time,
             end_time,
             status: BookingStatus::Confirmed,
@@ -837,5 +945,141 @@ mod tests {
         let booking = booking.unwrap();
         assert!(booking.is_recurring());
         assert_eq!(booking.recurring_pattern, RecurringPattern::Weekly);
+    }
+
+    // ------------------------------------------------------------------------
+    // Story #588 — `new_on_behalf_of_acp` (INV-5/FR27), taxonomie 4-cat
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_on_behalf_of_acp_with_motif_is_created() {
+        let building_id = Uuid::new_v4();
+        let syndic_user_id = Uuid::new_v4();
+        let start_time = Utc::now() + chrono::Duration::hours(2);
+        let end_time = start_time + chrono::Duration::hours(2);
+
+        let booking = ResourceBooking::new_on_behalf_of_acp(
+            building_id,
+            ResourceType::CommonSpace,
+            "Salle Commune".to_string(),
+            syndic_user_id,
+            "AG annuelle".to_string(),
+            start_time,
+            end_time,
+            None,
+            RecurringPattern::None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        assert!(booking.on_behalf_of_acp);
+        assert_eq!(booking.motif.as_deref(), Some("AG annuelle"));
+        assert_eq!(booking.booked_by_user_id, Some(syndic_user_id));
+        assert_eq!(
+            booking.booked_by, None,
+            "une réservation pour le compte de l'ACP ne porte pas d'owner_id"
+        );
+    }
+
+    #[test]
+    fn negative_on_behalf_of_acp_without_motif_is_rejected() {
+        let building_id = Uuid::new_v4();
+        let syndic_user_id = Uuid::new_v4();
+        let start_time = Utc::now() + chrono::Duration::hours(2);
+        let end_time = start_time + chrono::Duration::hours(2);
+
+        let result = ResourceBooking::new_on_behalf_of_acp(
+            building_id,
+            ResourceType::CommonSpace,
+            "Salle Commune".to_string(),
+            syndic_user_id,
+            String::new(),
+            start_time,
+            end_time,
+            None,
+            RecurringPattern::None,
+            None,
+            None,
+            None,
+        );
+
+        assert_eq!(
+            result,
+            Err(ReservationOnBehalfError::MotifRequired.to_string())
+        );
+    }
+
+    #[test]
+    fn edge_on_behalf_of_acp_whitespace_only_motif_is_rejected() {
+        // Un motif fait uniquement d'espaces n'est pas un motif : la trace
+        // d'audit resterait vide (AC @negative — "sans motif").
+        let building_id = Uuid::new_v4();
+        let syndic_user_id = Uuid::new_v4();
+        let start_time = Utc::now() + chrono::Duration::hours(2);
+        let end_time = start_time + chrono::Duration::hours(2);
+
+        let result = ResourceBooking::new_on_behalf_of_acp(
+            building_id,
+            ResourceType::CommonSpace,
+            "Salle Commune".to_string(),
+            syndic_user_id,
+            "   ".to_string(),
+            start_time,
+            end_time,
+            None,
+            RecurringPattern::None,
+            None,
+            None,
+            None,
+        );
+
+        assert_eq!(
+            result,
+            Err(ReservationOnBehalfError::MotifRequired.to_string())
+        );
+    }
+
+    #[test]
+    fn edge_on_behalf_of_acp_still_enforces_shared_invariants() {
+        // Délègue à `new()` : les invariants partagés (ex. start < end)
+        // s'appliquent identiquement sur le chemin syndic.
+        let building_id = Uuid::new_v4();
+        let syndic_user_id = Uuid::new_v4();
+        let start_time = Utc::now() + chrono::Duration::hours(4);
+        let end_time = start_time - chrono::Duration::hours(2); // end before start
+
+        let result = ResourceBooking::new_on_behalf_of_acp(
+            building_id,
+            ResourceType::CommonSpace,
+            "Salle Commune".to_string(),
+            syndic_user_id,
+            "AG annuelle".to_string(),
+            start_time,
+            end_time,
+            None,
+            RecurringPattern::None,
+            None,
+            None,
+            None,
+        );
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("Start time must be before end time"));
+    }
+
+    #[test]
+    fn security_regular_new_never_sets_on_behalf_of_acp() {
+        // Le chemin copropriétaire (`new()`) ne doit jamais activer
+        // `on_behalf_of_acp` de lui-même — seul `new_on_behalf_of_acp()`, et
+        // seulement après la garde RBAC syndic côté use-case, le peut.
+        let booking = create_test_booking();
+        assert!(!booking.on_behalf_of_acp);
+        assert_eq!(booking.motif, None);
+        assert_eq!(booking.booked_by_user_id, None);
+        assert!(booking.booked_by.is_some());
     }
 }

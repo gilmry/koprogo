@@ -337,6 +337,13 @@ pub enum AppError {
         "L'élection du conseil suppose une assemblée clôturée (quorum validé, Art. 3.90 §3 CC)"
     )]
     CdcElectionQuorumNotReached { meeting_id: uuid::Uuid },
+    /// Story 5.4 (#588, INV-5/FR27) — `on_behalf_of_acp = true` sans motif.
+    /// L'exception à l'interdiction de participation personnelle du syndic
+    /// ne se justifie pas d'elle-même : sans motif, elle ne serait pas
+    /// traçable. 422 Unprocessable Entity — la requête est syntaxiquement
+    /// valide, la règle métier la refuse.
+    #[error("Une réservation pour le compte de l'ACP doit porter un motif (AG, prestataire…)")]
+    ReservationMotifRequired,
 }
 
 impl AppError {
@@ -387,6 +394,7 @@ impl AppError {
             AppError::NotaryLinkExpired => "notary_link_expired",
             AppError::NotaryLinkRevoked => "notary_link_revoked",
             AppError::ResolutionAutoNotRemovable => "resolution_auto_not_removable",
+            AppError::ReservationMotifRequired => "reservation_motif_required",
         }
     }
 }
@@ -432,6 +440,7 @@ impl ResponseError for AppError {
             | AppError::MeetingModeRequiresVideoconf { .. }
             | AppError::VoteAuthMethodRequired => StatusCode::UNPROCESSABLE_ENTITY,
             | AppError::CdcElectionQuorumNotReached { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::ReservationMotifRequired => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -1006,7 +1015,7 @@ impl From<crate::domain::entities::MeetingModeError> for AppError {
 
 // ============================================================================
 // #845 / ADR 0051 — bridge From<LienNotaireError> (lien notaire)
-// =====================================================================
+// ==============================================================
 
 impl From<crate::domain::entities::LienNotaireError> for AppError {
     /// Un lien notaire malformé à l'émission (`etat_date_id`/`emis_par` nil)
@@ -1054,6 +1063,17 @@ impl From<crate::domain::entities::VoteAuthError> for String {
                 mode.to_db_str(),
                 auth_method.to_db_str()
             ),
+=======
+// Story 5.4 — bridge From<ReservationOnBehalfError> (#588, INV-5/FR27)
+// ============================================================================
+
+impl From<crate::domain::entities::ReservationOnBehalfError> for AppError {
+    /// `on_behalf_of_acp = true` sans motif → 422 `ReservationMotifRequired`.
+    fn from(err: crate::domain::entities::ReservationOnBehalfError) -> Self {
+        match err {
+            crate::domain::entities::ReservationOnBehalfError::MotifRequired => {
+                AppError::ReservationMotifRequired
+            }
         }
     }
 }
@@ -1080,7 +1100,18 @@ pub const REFUS_RESERVE_AUX_COPROPRIETAIRES: &str =
     "Cette action est réservée aux copropriétaires : elle engage une personne, \
      pas la copropriété. Votre compte n'a pas de fiche de copropriétaire dans \
      cette organisation. Si vous êtes syndic et souhaitez agir pour le compte \
-     de l'ACP, cette possibilité n'existe pas encore.";
+     de l'ACP, utilisez l'option « réservation pour le compte de l'ACP ».";
+
+/// Story #588 (INV-5/FR27) — refus opposé à un copropriétaire (ou tout
+/// compte non-syndic) qui tente de positionner `on_behalf_of_acp = true` sur
+/// une réservation. Contient volontairement la sous-chaîne « réservée aux »
+/// déjà reconnue par `classification_erreurs::est_interdit` (403), pour ne
+/// pas dupliquer le lexique bilingue — même raisonnement que
+/// `REFUS_RESERVE_AUX_COPROPRIETAIRES`.
+pub const REFUS_ON_BEHALF_RESERVE_AUX_SYNDICS: &str =
+    "Cette action est réservée aux syndics : seul le syndic peut réserver une \
+     ressource commune pour le compte de l'ACP. Si vous êtes copropriétaire, \
+     réservez en votre nom propre, sans cette option.";
 
 /// Refus opposé à qui n'a pas de fiche de copropriétaire et tente de voter à
 /// une consultation (Poll). Même famille que [`REFUS_RESERVE_AUX_COPROPRIETAIRES`]
@@ -1669,6 +1700,21 @@ mod tests {
         }
         .into();
         assert_eq!(s, "VOTE_AUTH_INSUFFICIENT:remote:itsme");
+    // Story 5.4 — ReservationMotifRequired (#588, INV-5/FR27) 4-cat
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_reservation_motif_required_maps_to_422() {
+        let e = AppError::ReservationMotifRequired;
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "reservation_motif_required");
+    }
+
+    #[test]
+    fn happy_from_reservation_on_behalf_domain_error() {
+        use crate::domain::entities::ReservationOnBehalfError;
+        let app_err: AppError = ReservationOnBehalfError::MotifRequired.into();
+        assert!(matches!(app_err, AppError::ReservationMotifRequired));
     }
 
     #[test]

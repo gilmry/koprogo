@@ -477,12 +477,15 @@
       "endTimeAfterStart": "End time must be after start time",
       "endTimeRequired": "End time is required",
       "maxDuration": "Maximum booking duration is {hours} h",
+      "motifRequired": "A reason is required for a booking on behalf of the ACP",
       "startTimeInFuture": "Start time must be in the future",
       "startTimeRequired": "Start time is required"
     },
     "loadError": "Error loading bookings",
+    "motif": "Reason",
     "noBookings": "No bookings.",
     "noResources": "No resources available.",
+    "onBehalfOfAcp": "Book on behalf of the ACP",
     "purpose": "Purpose of the booking",
     "resource": "Resource",
     "resourceType": {

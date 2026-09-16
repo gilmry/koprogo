@@ -477,12 +477,15 @@
       "endTimeAfterStart": "L'heure de fin doit être après l'heure de début",
       "endTimeRequired": "L'heure de fin est obligatoire",
       "maxDuration": "La durée maximale de réservation est de {hours} h",
+      "motifRequired": "Un motif est obligatoire pour une réservation pour le compte de l'ACP",
       "startTimeInFuture": "L'heure de début doit être dans le futur",
       "startTimeRequired": "L'heure de début est obligatoire"
     },
     "loadError": "Erreur lors du chargement des réservations",
+    "motif": "Motif",
     "noBookings": "Aucune réservation.",
     "noResources": "Aucune ressource disponible.",
+    "onBehalfOfAcp": "Réserver pour le compte de l'ACP",
     "purpose": "Objet de la réservation",
     "resource": "Ressource",
     "resourceType": {

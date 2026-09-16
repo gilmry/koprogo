@@ -23,6 +23,14 @@ pub struct CreateResourceBookingDto {
     /// Optional max advance booking in days (uses default if not provided)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_advance_days: Option<i64>,
+    /// Story #588 (INV-5/FR27) — le syndic réserve pour le compte de l'ACP
+    /// (AG, prestataires) plutôt qu'à titre personnel. Réservé au syndic
+    /// (RBAC en use-case) ; exige `motif`.
+    #[serde(default)]
+    pub on_behalf_of_acp: bool,
+    /// Obligatoire si `on_behalf_of_acp = true` (422 sinon).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub motif: Option<String>,
 }
 
 /// DTO for updating booking details (resource_name, notes)
@@ -43,8 +51,16 @@ pub struct ResourceBookingResponseDto {
     pub building_id: Uuid,
     pub resource_type: ResourceType,
     pub resource_name: String,
-    pub booked_by: Uuid,
-    pub booked_by_name: String, // Enriched: Owner full name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub booked_by: Option<Uuid>,
+    pub booked_by_name: String, // Enriched: Owner full name, or syndic label if on_behalf_of_acp
+    /// Story #588 — syndic user_id si `on_behalf_of_acp = true`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub booked_by_user_id: Option<Uuid>,
+    #[serde(default)]
+    pub on_behalf_of_acp: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub motif: Option<String>,
     pub start_time: DateTime<Utc>,
     pub end_time: DateTime<Utc>,
     pub status: BookingStatus,
@@ -74,6 +90,9 @@ impl ResourceBookingResponseDto {
             resource_name: booking.resource_name.clone(),
             booked_by: booking.booked_by,
             booked_by_name,
+            booked_by_user_id: booking.booked_by_user_id,
+            on_behalf_of_acp: booking.on_behalf_of_acp,
+            motif: booking.motif.clone(),
             start_time: booking.start_time,
             end_time: booking.end_time,
             status: booking.status.clone(),
@@ -126,6 +145,8 @@ mod tests {
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
 
         let json = serde_json::to_string(&dto).unwrap();

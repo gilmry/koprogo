@@ -53,6 +53,16 @@ impl PostgresResourceBookingRepository {
             booked_by: row
                 .try_get("booked_by")
                 .map_err(|e| format!("Failed to get booked_by: {}", e))?,
+            // Story #588 — colonnes nullables (syndic on_behalf_of_acp).
+            booked_by_user_id: row
+                .try_get("booked_by_user_id")
+                .map_err(|e| format!("Failed to get booked_by_user_id: {}", e))?,
+            on_behalf_of_acp: row
+                .try_get("on_behalf_of_acp")
+                .map_err(|e| format!("Failed to get on_behalf_of_acp: {}", e))?,
+            motif: row
+                .try_get("motif")
+                .map_err(|e| format!("Failed to get motif: {}", e))?,
             start_time: row
                 .try_get("start_time")
                 .map_err(|e| format!("Failed to get start_time: {}", e))?,
@@ -101,10 +111,10 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
             INSERT INTO resource_bookings (
                 id, building_id, resource_type, resource_name, booked_by,
                 start_time, end_time, status, notes, recurring_pattern,
-                recurrence_end_date, created_at, updated_at
+                recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
             )
             VALUES ($1, $2, $3::resource_type, $4, $5, $6, $7, $8::booking_status, $9,
-                    $10::recurring_pattern, $11, $12, $13)
+                    $10::recurring_pattern, $11, $12, $13, $14, $15, $16)
             "#,
         )
         .bind(booking.id)
@@ -120,6 +130,9 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
         .bind(booking.recurrence_end_date)
         .bind(booking.created_at)
         .bind(booking.updated_at)
+        .bind(booking.booked_by_user_id)
+        .bind(booking.on_behalf_of_acp)
+        .bind(&booking.motif)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Failed to create resource booking: {}", e))?;
@@ -132,7 +145,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
             r#"
             SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                    start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                   recurrence_end_date, created_at, updated_at
+                   recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
             FROM resource_bookings
             WHERE id = $1
             "#,
@@ -153,7 +166,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
             r#"
             SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                    start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                   recurrence_end_date, created_at, updated_at
+                   recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
             FROM resource_bookings
             WHERE building_id = $1
             ORDER BY start_time ASC
@@ -181,7 +194,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
             r#"
             SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                    start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                   recurrence_end_date, created_at, updated_at
+                   recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
             FROM resource_bookings
             WHERE building_id = $1 AND resource_type = $2::resource_type
             ORDER BY start_time ASC
@@ -216,7 +229,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
             r#"
             SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                    start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                   recurrence_end_date, created_at, updated_at
+                   recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
             FROM resource_bookings
             WHERE building_id = $1 AND resource_type = $2::resource_type AND resource_name = $3
             ORDER BY start_time ASC
@@ -237,7 +250,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
             r#"
             SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                    start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                   recurrence_end_date, created_at, updated_at
+                   recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
             FROM resource_bookings
             WHERE booked_by = $1
             ORDER BY start_time DESC
@@ -265,7 +278,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
             r#"
             SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                    start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                   recurrence_end_date, created_at, updated_at
+                   recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
             FROM resource_bookings
             WHERE booked_by = $1 AND status = $2::booking_status
             ORDER BY start_time DESC
@@ -294,7 +307,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
             r#"
             SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                    start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                   recurrence_end_date, created_at, updated_at
+                   recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
             FROM resource_bookings
             WHERE building_id = $1 AND status = $2::booking_status
             ORDER BY start_time ASC
@@ -320,7 +333,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
             r#"
             SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                    start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                   recurrence_end_date, created_at, updated_at
+                   recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
             FROM resource_bookings
             WHERE building_id = $1
               AND start_time > NOW()
@@ -343,7 +356,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
             r#"
             SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                    start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                   recurrence_end_date, created_at, updated_at
+                   recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
             FROM resource_bookings
             WHERE building_id = $1
               AND status = 'Confirmed'
@@ -371,7 +384,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
             r#"
             SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                    start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                   recurrence_end_date, created_at, updated_at
+                   recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
             FROM resource_bookings
             WHERE building_id = $1
               AND end_time < NOW()
@@ -409,7 +422,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
                 r#"
                 SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                        start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                       recurrence_end_date, created_at, updated_at
+                       recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
                 FROM resource_bookings
                 WHERE building_id = $1
                   AND resource_type = $2::resource_type
@@ -434,7 +447,7 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
                 r#"
                 SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
                        start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
-                       recurrence_end_date, created_at, updated_at
+                       recurrence_end_date, created_at, updated_at, booked_by_user_id, on_behalf_of_acp, motif
                 FROM resource_bookings
                 WHERE building_id = $1
                   AND resource_type = $2::resource_type

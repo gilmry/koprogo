@@ -477,12 +477,15 @@
       "endTimeAfterStart": "De eindtijd moet na de starttijd liggen",
       "endTimeRequired": "De eindtijd is verplicht",
       "maxDuration": "De maximale reservatieduur is {hours} u",
+      "motifRequired": "Een reden is verplicht voor een reservering namens de VME",
       "startTimeInFuture": "De starttijd moet in de toekomst liggen",
       "startTimeRequired": "De starttijd is verplicht"
     },
     "loadError": "Fout bij het laden van reserveringen",
+    "motif": "Reden",
     "noBookings": "Geen reserveringen.",
     "noResources": "Geen faciliteiten beschikbaar.",
+    "onBehalfOfAcp": "Reserveren namens de VME",
     "purpose": "Doel van de reservering",
     "resource": "Faciliteit",
     "resourceType": {

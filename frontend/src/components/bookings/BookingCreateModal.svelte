@@ -9,12 +9,18 @@
     isOpen = false,
     resource,
     ownerId,
+    isSyndic = false,
     oncreated,
     onclose,
   }: {
     isOpen?: boolean;
     resource: BookableResource;
     ownerId: string;
+    /**
+     * Story #588 (INV-5/FR27) — seul le syndic peut voir et activer
+     * l'option "réservation pour le compte de l'ACP".
+     */
+    isSyndic?: boolean;
     oncreated?: (booking: any) => void;
     onclose?: () => void;
   } = $props();
@@ -36,6 +42,8 @@
   let purpose = $state("");
   let attendeesCount = $state<number | undefined>(undefined);
   let specialRequests = $state("");
+  let onBehalfOfAcp = $state(false);
+  let motif = $state("");
   let submitting = $state(false);
   let errors = $state<Record<string, string>>({});
 
@@ -64,6 +72,13 @@
       }
     }
 
+    // Story #588 (INV-5/FR27) — motif obligatoire côté client, en plus du
+    // 422 serveur : l'exception à l'interdiction de participation
+    // personnelle du syndic ne se justifie pas d'elle-même.
+    if (isSyndic && onBehalfOfAcp && !motif.trim()) {
+      errors.motif = $_("bookings.error.motifRequired");
+    }
+
     return Object.keys(errors).length === 0;
   }
 
@@ -80,6 +95,8 @@
           purpose: purpose || undefined,
           attendees_count: attendeesCount || undefined,
           special_requests: specialRequests || undefined,
+          on_behalf_of_acp: isSyndic && onBehalfOfAcp ? true : undefined,
+          motif: isSyndic && onBehalfOfAcp ? motif.trim() : undefined,
         }),
       setLoading: (v: boolean) => (submitting = v),
       successMessage: $_("bookings.success.created"),
@@ -93,6 +110,8 @@
 
   function handleClose() {
     errors = {};
+    onBehalfOfAcp = false;
+    motif = "";
     onclose?.();
   }
 </script>
@@ -226,6 +245,49 @@
       </div>
     {/if}
 
+    <!-- Story #588 (INV-5/FR27) — réservation pour le compte de l'ACP,
+         réservée au syndic (RBAC serveur : ce toggle est un raccourci UX,
+         pas une garde de sécurité). -->
+    {#if isSyndic}
+      <div class="border-t border-gray-200 pt-4">
+        <label class="flex items-center gap-2">
+          <input
+            data-testid="reservation-on-behalf-toggle"
+            type="checkbox"
+            bind:checked={onBehalfOfAcp}
+            class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+          />
+          <span class="text-sm font-medium text-gray-700"
+            >{$_("bookings.onBehalfOfAcp")}</span
+          >
+        </label>
+
+        {#if onBehalfOfAcp}
+          <div class="mt-2">
+            <label
+              for="reservation-motif"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
+              {$_("bookings.motif")} <span class="text-red-500">*</span>
+            </label>
+            <input
+              data-testid="reservation-motif-input"
+              id="reservation-motif"
+              type="text"
+              bind:value={motif}
+              placeholder="Ex : AG annuelle"
+              class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 {errors.motif
+                ? 'border-red-500'
+                : 'border-gray-300'}"
+            />
+            {#if errors.motif}
+              <p class="text-red-500 text-xs mt-1">{errors.motif}</p>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
+
     <!-- Actions -->
     <div class="flex justify-end gap-3 pt-2">
       <button
@@ -240,7 +302,7 @@
         type="submit"
         disabled={submitting}
         class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
-        data-testid="submit-booking-button"
+        data-testid="reservation-submit"
       >
         {submitting ? "Création…" : "Confirmer la réservation"}
       </button>

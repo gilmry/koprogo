@@ -7,9 +7,12 @@
   let {
     resource,
     ownerId,
+    isSyndic = false,
   }: {
     resource: BookableResource;
     ownerId: string;
+    /** Story #588 (INV-5/FR27) — voir `BookingCreateModal`. */
+    isSyndic?: boolean;
   } = $props();
 
   let modalOpen = $state(false);
@@ -28,6 +31,7 @@
     isOpen={modalOpen}
     {resource}
     {ownerId}
+    {isSyndic}
     onclose={() => (modalOpen = false)}
     oncreated={() => (modalOpen = false)}
   />
