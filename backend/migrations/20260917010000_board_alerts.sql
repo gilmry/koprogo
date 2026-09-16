@@ -1,3 +1,14 @@
+-- RENUMÉROTÉE le 2026-09-16 : portait 20260916000000, déjà pris par
+-- `create_funds_and_link_call_for_funds`. sqlx indexe `_sqlx_migrations` sur
+-- la VERSION, pas sur le nom : deux fichiers au même horodatage faisaient
+-- échouer TOUTE la migration sur une base neuve (23505 duplicate key), donc
+-- toute l'intégration, la BDD, et tout déploiement partant de zéro.
+--
+-- Renumérotée vers l'avant et non l'autre : les bases de démo et de dev ont
+-- enregistré 20260916000000 sous « create funds », jamais sous celle-ci.
+-- Déplacer l'autre aurait orphelin une version déjà appliquée. Celle-ci
+-- n'ayant jamais tourné nulle part, la déplacer ne défait rien. Cf. #939.
+
 -- Story 4.7 — CdC : action create_alert(text, severity, target=AG_next).
 --
 -- Art. 3.90 §1er CC confie au conseil de copropriété la mission de veiller à
