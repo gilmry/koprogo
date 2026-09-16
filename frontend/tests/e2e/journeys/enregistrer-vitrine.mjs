@@ -47,76 +47,96 @@ async function charger(relatif) {
 }
 
 const { Scene } = await charger("scene.ts");
-const { perimetreMultiRole } = await charger("perimetre-multi-role.journey.ts");
 
-const parcours = perimetreMultiRole;
+// Chaque parcours de référence du dépôt, un par persona filmée. Ajouter une
+// entrée ici suffit : la boucle plus bas et `assembler-vitrine.mjs` (qui lit
+// tout `*.json` du dossier vidéos) prennent le reste en charge — aucun autre
+// fichier à toucher pour qu'une nouvelle vitrine rejoigne la galerie.
+const PARCOURS_A_FILMER = [
+  { fichier: "perimetre-multi-role.journey.ts", export: "perimetreMultiRole" },
+  { fichier: "coproprietaire.journey.ts", export: "coproprietaire" },
+];
 
 if (!existsSync(DOSSIER_VIDEOS)) mkdirSync(DOSSIER_VIDEOS, { recursive: true });
 
 const navigateur = await chromium.launch({
   args: ["--no-sandbox", "--disable-dev-shm-usage"],
 });
-const contexte = await navigateur.newContext({
-  baseURL: BASE,
-  viewport: { width: 1280, height: 720 },
-  recordVideo: { dir: DOSSIER_VIDEOS, size: { width: 1280, height: 720 } },
-  locale: "fr-BE",
-});
-const page = await contexte.newPage();
 
-let echec = null;
-let scene = new Scene(page);
-try {
-  // L'amorçage est DANS le try : s'il échoue, la vitrine doit le montrer
-  // plutôt que de s'interrompre sans vidéo. C'est l'amorçage qui a rendu la
-  // première vitrine muette, en CI, sur un monde que rien ne créait (#876).
-  scene = new Scene(page, await parcours.amorcer(page));
-  await scene.raconter(parcours.propos);
-  for (const etape of parcours.etapes) {
-    await scene.raconter(etape.description, etape.acteur);
-    await etape.action(scene);
-    // Pas d'assertion ici : ce harnais ne rend PAS de verdict. Si le parcours
-    // casse, c'est le gate E2E qui le dit — lui seul en a la responsabilité.
+for (const { fichier, export: nomExport } of PARCOURS_A_FILMER) {
+  const module = await charger(fichier);
+  const parcours = module[nomExport];
+
+  // Un contexte PAR parcours : `recordVideo` compresse la vidéo à la
+  // fermeture du contexte, et deux parcours qui partageraient un contexte
+  // finiraient dans le même fichier — exactement ce que le renommage
+  // ci-dessous, écrit pour UN SEUL fichier `.webm` neuf, ne saurait démêler.
+  const contexte = await navigateur.newContext({
+    baseURL: BASE,
+    viewport: { width: 1280, height: 720 },
+    recordVideo: { dir: DOSSIER_VIDEOS, size: { width: 1280, height: 720 } },
+    locale: "fr-BE",
+  });
+  const page = await contexte.newPage();
+
+  let echec = null;
+  let scene = new Scene(page);
+  try {
+    // L'amorçage est DANS le try : s'il échoue, la vitrine doit le montrer
+    // plutôt que de s'interrompre sans vidéo. C'est l'amorçage qui a rendu
+    // la première vitrine muette, en CI, sur un monde que rien ne créait
+    // (#876).
+    scene = new Scene(page, await parcours.amorcer(page));
+    await scene.raconter(parcours.propos);
+    for (const etape of parcours.etapes) {
+      await scene.raconter(etape.description, etape.acteur);
+      await etape.action(scene);
+      // Pas d'assertion ici : ce harnais ne rend PAS de verdict. Si le
+      // parcours casse, c'est le gate E2E qui le dit — lui seul en a la
+      // responsabilité.
+    }
+  } catch (e) {
+    // On enregistre quand même ce qui a été filmé : une vitrine partielle
+    // montre où ça s'arrête, ce qu'un échec silencieux ne montrerait pas.
+    echec = e;
+    console.error(`  ⚠️  ${parcours.slug} interrompu : ${e.message}`);
   }
-} catch (e) {
-  // On enregistre quand même ce qui a été filmé : une vitrine partielle
-  // montre où ça s'arrête, ce qu'un échec silencieux ne montrerait pas.
-  echec = e;
-  console.error(`  ⚠️  parcours interrompu : ${e.message}`);
+
+  await contexte.close(); // déclenche l'écriture de la vidéo
+
+  // Playwright nomme les vidéos aléatoirement : on fixe un slug stable pour
+  // que la galerie et les chapitres se retrouvent. Un contexte par parcours
+  // (ci-dessus) garantit qu'un seul `.webm` neuf apparaît ici.
+  const brutes = readdirSync(DOSSIER_VIDEOS).filter((f) => f.endsWith(".webm"));
+  const derniere = brutes
+    .map((f) => resolve(DOSSIER_VIDEOS, f))
+    .filter((f) => !f.endsWith(`${parcours.slug}.webm`))
+    .sort()
+    .pop();
+  const cible = resolve(DOSSIER_VIDEOS, `${parcours.slug}.webm`);
+  if (derniere) renameSync(derniere, cible);
+
+  writeFileSync(
+    resolve(DOSSIER_VIDEOS, `${parcours.slug}.json`),
+    JSON.stringify(
+      {
+        slug: parcours.slug,
+        title: parcours.titre,
+        propos: parcours.propos,
+        acteurs: [...new Set(parcours.etapes.map((e) => e.acteur))],
+        interrompu: echec ? String(echec.message) : null,
+        narration: scene.narration,
+      },
+      null,
+      2,
+    ),
+  );
+
+  console.log(
+    `  🎬 ${cible} — ${scene.narration.length} chapitres` +
+      (echec ? " (parcours interrompu, vitrine partielle)" : ""),
+  );
 }
 
-await contexte.close(); // déclenche l'écriture de la vidéo
 await navigateur.close();
 await vite.close();
-
-// Playwright nomme les vidéos aléatoirement : on fixe un slug stable pour que
-// la galerie et les chapitres se retrouvent.
-const brutes = readdirSync(DOSSIER_VIDEOS).filter((f) => f.endsWith(".webm"));
-const derniere = brutes
-  .map((f) => resolve(DOSSIER_VIDEOS, f))
-  .filter((f) => !f.endsWith(`${parcours.slug}.webm`))
-  .sort()
-  .pop();
-const cible = resolve(DOSSIER_VIDEOS, `${parcours.slug}.webm`);
-if (derniere) renameSync(derniere, cible);
-
-writeFileSync(
-  resolve(DOSSIER_VIDEOS, `${parcours.slug}.json`),
-  JSON.stringify(
-    {
-      slug: parcours.slug,
-      title: parcours.titre,
-      propos: parcours.propos,
-      acteurs: [...new Set(parcours.etapes.map((e) => e.acteur))],
-      interrompu: echec ? String(echec.message) : null,
-      narration: scene.narration,
-    },
-    null,
-    2,
-  ),
-);
-
-console.log(
-  `  🎬 ${cible} — ${scene.narration.length} chapitres` +
-    (echec ? " (parcours interrompu, vitrine partielle)" : ""),
-);
