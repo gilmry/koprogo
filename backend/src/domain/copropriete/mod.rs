@@ -22,6 +22,7 @@
 //! (Art. 3.89 § 5, 12°).
 
 pub mod acp;
+pub mod acp_enabled_module;
 pub mod ag_session;
 pub mod age_request;
 pub mod board_alert;

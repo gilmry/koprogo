@@ -18,6 +18,11 @@ pub enum AuditEventType {
     BuildingDeleted,
     AcpCreated,
     AcpUpdated,
+    /// Story 5.1 (#585) — activation/désactivation d'un module pour une ACP.
+    /// Tracé parce qu'éteindre un module fait disparaître des écrans pour
+    /// tout le monde : il faut pouvoir dire qui l'a fait et quand.
+    AcpModuleEnabled,
+    AcpModuleDisabled,
     AcpArchived,
     JournalEntryCreated,
     JournalEntryDeleted,

@@ -44,6 +44,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_acp)
             .service(update_acp)
             .service(archive_acp)
+            // Registre de modules par ACP (Story 5.1 #585, ADR-0015).
+            // Trois segments : aucun risque de capture par `/acps/{id}`.
+            .service(list_acp_modules)
+            .service(enable_acp_module)
+            .service(disable_acp_module)
             // Portfolios (Story 2.1 — Slice 2 Refonte UX multi-rôle, ADR-0011)
             .service(create_portfolio)
             .service(list_portfolios)

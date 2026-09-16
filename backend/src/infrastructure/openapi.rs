@@ -65,6 +65,12 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::acp_handlers::get_acp,
         crate::infrastructure::web::handlers::acp_handlers::update_acp,
         crate::infrastructure::web::handlers::acp_handlers::archive_acp,
+        // Registre de modules (Story 5.1 #585, ADR-0015). Une fois au
+        // schéma, le frontend peut remplacer son DTO écrit à la main
+        // (`modules.ts`) par le type généré.
+        crate::infrastructure::web::handlers::acp_module_handlers::list_acp_modules,
+        crate::infrastructure::web::handlers::acp_module_handlers::enable_acp_module,
+        crate::infrastructure::web::handlers::acp_module_handlers::disable_acp_module,
         // Auth
         crate::infrastructure::web::handlers::auth_handlers::login,
         crate::infrastructure::web::handlers::auth_handlers::register,
@@ -330,6 +336,7 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::application::dto::acp_dto::CreateAcpDto,
         crate::application::dto::acp_dto::UpdateAcpDto,
         crate::application::dto::acp_dto::AcpResponseDto,
+        crate::application::dto::module_dto::EnabledModulesResponseDto,
         crate::domain::entities::acp::AcpLegalStatus,
         // Pagination primitives — referenced by query params on list endpoints
         crate::application::dto::pagination::SortOrder,

@@ -73,6 +73,26 @@ pub enum AppError {
     #[error("ACP {acp_id} not found or out of scope")]
     AcpNotInScope { acp_id: uuid::Uuid },
 
+    /// Le module demandé est éteint pour cette ACP. 403 typé, produit par
+    /// `ModuleGuard`, jamais par l'interface seule — Story 5.1 @security
+    /// (ADR-0015). Le nom du module voyage dans l'erreur pour que le
+    /// frontend puisse dire *lequel* sans le deviner depuis l'URL.
+    #[error("Module {module} désactivé pour cette copropriété")]
+    ModuleDisabled { module: String },
+
+    /// Nom de module inconnu (`foobar`). 422 — Story 5.1 @negative.
+    /// Distinct de `ModuleDisabled` : « ce module n'existe pas » n'est pas
+    /// « ce module est éteint », et les confondre apprendrait au client à
+    /// réessayer un nom qui ne marchera jamais.
+    #[error("Module inconnu : {module}")]
+    UnknownModule { module: String },
+
+    /// Tentative d'éteindre un module toujours actif (`identity`). 403 —
+    /// Story 5.1 @negative. Ce n'est pas un défaut de droits de l'appelant,
+    /// c'est une propriété de la capacité : aucun rôle ne peut le faire.
+    #[error("Module {module} toujours actif, sa désactivation est refusée")]
+    ModuleAlwaysOn { module: String },
+
     /// Rate limit exceeded.
     #[error("Rate limit exceeded")]
     RateLimited,
@@ -360,6 +380,13 @@ impl AppError {
             AppError::NotFound(_) => "not_found",
             AppError::Conflict(_) => "conflict",
             AppError::AcpNotInScope { .. } => "acp_not_in_scope",
+            // Story 5.1 (#585) — trois `kind` distincts et non un seul
+            // « module_error » : le client doit pouvoir distinguer « éteint »
+            // (réessayer après activation), « inconnu » (ne réessaiera
+            // jamais) et « toujours actif » (aucun rôle ne peut le faire).
+            AppError::ModuleDisabled { .. } => "module_disabled",
+            AppError::UnknownModule { .. } => "unknown_module",
+            AppError::ModuleAlwaysOn { .. } => "module_always_on",
             AppError::MeetingNotCompletable { .. } => "meeting_not_completable",
             AppError::AcpNotConformant { .. } => "acp_not_conformant",
             AppError::ReserveFundInsufficient { .. } => "reserve_fund_insufficient",
@@ -423,6 +450,10 @@ impl ResponseError for AppError {
             | AppError::NotaryLinkExpired
             | AppError::NotaryLinkRevoked => StatusCode::FORBIDDEN,
             AppError::VoteAuthInsufficient { .. } => StatusCode::FORBIDDEN,
+            AppError::ModuleDisabled { .. } | AppError::ModuleAlwaysOn { .. } => {
+                StatusCode::FORBIDDEN
+            }
+            AppError::UnknownModule { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::ResolutionAutoNotRemovable => StatusCode::FORBIDDEN,
             AppError::NotFound(_) | AppError::MandateNotFound => StatusCode::NOT_FOUND,
             AppError::Conflict(_)
@@ -512,6 +543,21 @@ impl ResponseError for AppError {
             AppError::VotingRightSuspended { unit_id } => Some(json!({
                 "code": "VOTING_RIGHT_SUSPENDED",
                 "unit_id": unit_id,
+            })),
+            // Story 5.1 (#585) — payload narratif `MODULE_DISABLED` (403).
+            // `ModuleGate` côté frontend est fail-closed : il doit pouvoir
+            // nommer le module éteint, pas seulement constater un refus.
+            AppError::ModuleDisabled { module } => Some(json!({
+                "code": "MODULE_DISABLED",
+                "module": module,
+            })),
+            AppError::UnknownModule { module } => Some(json!({
+                "code": "UNKNOWN_MODULE",
+                "module": module,
+            })),
+            AppError::ModuleAlwaysOn { module } => Some(json!({
+                "code": "MODULE_ALWAYS_ON",
+                "module": module,
             })),
             // Story 4.1 — payload narratif `MEETING_MODE_REQUIRES_VIDEOCONF`
             // (422). Le FE consomme `details.code` pour focus le champ URL.

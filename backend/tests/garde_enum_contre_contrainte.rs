@@ -43,11 +43,21 @@ use std::path::PathBuf;
 /// Volontairement explicite. Une découverte automatique paraîtrait plus
 /// élégante et se tairait le jour où la convention de nommage change — et un
 /// cliquet qui se tait est pire qu'absent.
-const PAIRES: &[(&str, &str, &str)] = &[(
-    "src/domain/plateforme/magic_link.rs",
-    "MagicLinkScopeKind",
-    "magic_links_scope_kind_check",
-)];
+const PAIRES: &[(&str, &str, &str)] = &[
+    (
+        "src/domain/plateforme/magic_link.rs",
+        "MagicLinkScopeKind",
+        "magic_links_scope_kind_check",
+    ),
+    // Story 5.1 (#585) — le registre de modules. L'enum et la contrainte
+    // portent la même liste à deux endroits ; sans cette paire, l'une
+    // pourrait devancer l'autre sans que rien ne le dise.
+    (
+        "src/domain/copropriete/acp_enabled_module.rs",
+        "Module",
+        "acp_enabled_modules_module_check",
+    ),
+];
 
 fn racine() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))

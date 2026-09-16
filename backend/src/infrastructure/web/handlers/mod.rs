@@ -1,5 +1,6 @@
 pub mod account_handlers;
 pub mod acp_handlers;
+pub mod acp_module_handlers;
 pub mod admin_gdpr_handlers;
 pub mod ag_session_handlers;
 pub mod age_request_handlers;
@@ -75,6 +76,7 @@ pub mod work_report_handlers;
 
 pub use account_handlers::*;
 pub use acp_handlers::*;
+pub use acp_module_handlers::*;
 pub use admin_gdpr_handlers::*;
 pub use ag_session_handlers::*;
 pub use age_request_handlers::*;

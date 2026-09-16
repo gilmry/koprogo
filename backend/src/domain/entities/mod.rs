@@ -19,6 +19,8 @@ pub use crate::domain::copropriete::acp;
 pub use crate::domain::copropriete::acp::{
     Acp, AcpError, AcpLegalStatus, AcpMetrics, AcpNotConformantError, ReserveFundInsufficientError,
 };
+pub use crate::domain::copropriete::acp_enabled_module;
+pub use crate::domain::copropriete::acp_enabled_module::{AcpEnabledModule, Module};
 pub use crate::domain::copropriete::ag_session;
 pub use crate::domain::copropriete::ag_session::{AgSession, AgSessionStatus, VideoPlatform};
 pub use crate::domain::copropriete::age_request;

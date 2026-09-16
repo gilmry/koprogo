@@ -1,6 +1,7 @@
 use crate::application::ports::mqtt_energy_port::MqttEnergyPort;
 use crate::application::use_cases::boinc_use_cases::BoincUseCases;
 use crate::application::use_cases::consent_use_cases::ConsentUseCases;
+use crate::application::use_cases::module_registry_use_cases::ModuleRegistryUseCases;
 use crate::application::use_cases::{
     AccountUseCases, AchievementUseCases, AcpUseCases, AgSessionUseCases, AgeRequestUseCases,
     AuditLogUseCases, AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases,
@@ -21,7 +22,7 @@ use crate::application::use_cases::{
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::database::repositories::{
-    PostgresSyndicResponseRepository, PostgresTicketRepository,
+    PostgresModuleRegistry, PostgresSyndicResponseRepository, PostgresTicketRepository,
 };
 use crate::infrastructure::email::EmailService;
 use crate::infrastructure::pool::DbPool;
@@ -30,6 +31,8 @@ use std::sync::Arc;
 pub struct AppState {
     pub account_use_cases: Arc<AccountUseCases>,
     pub acp_use_cases: Arc<AcpUseCases>,
+    /// Registre de modules par ACP — Story 5.1 (#585), ADR-0015.
+    pub module_registry_use_cases: Arc<ModuleRegistryUseCases>,
     pub audit_log_use_cases: Arc<AuditLogUseCases>,
     pub auth_use_cases: Arc<AuthUseCases>,
     pub building_use_cases: Arc<BuildingUseCases>,
@@ -198,9 +201,20 @@ impl AppState {
         technical_spec_use_cases: TechnicalSpecUseCases,
         contractor_evaluation_use_cases: ContractorEvaluationUseCases,
     ) -> Self {
+        // Construit ICI plutôt qu'ajouté à la signature : `new()` est
+        // positionnelle et appelée par plusieurs harnais de test. Un
+        // paramètre de plus les aurait tous cassés d'un coup, pour une
+        // dépendance qu'on sait déjà dériver de `pool` et `acp_use_cases`.
+        let acp_use_cases = Arc::new(acp_use_cases);
+        let module_registry_use_cases = Arc::new(ModuleRegistryUseCases::new(
+            Arc::new(PostgresModuleRegistry::new(pool.clone())),
+            acp_use_cases.clone(),
+        ));
+
         Self {
             account_use_cases: Arc::new(account_use_cases),
-            acp_use_cases: Arc::new(acp_use_cases),
+            acp_use_cases,
+            module_registry_use_cases,
             audit_log_use_cases: Arc::new(audit_log_use_cases),
             auth_use_cases: Arc::new(auth_use_cases),
             building_use_cases: Arc::new(building_use_cases),
