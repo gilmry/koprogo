@@ -283,13 +283,29 @@ impl LocalExchangeUseCases {
     }
 
     /// Cancel an exchange
+    ///
+    /// # Authorization (Story 5.3 — #587, INV-4)
+    /// - Provider or requester : annulation personnelle, motif optionnel
+    ///   (comportement inchangé).
+    /// - Un modérateur communauté (syndic, `community.moderator`,
+    ///   superadmin) qui n'est ni provider ni requester : MODÉRATION, motif
+    ///   obligatoire (audit). Un syndic qui a aussi une fiche de
+    ///   copropriétaire et qui EST provider/requester passe par la première
+    ///   branche, ès qualités de copropriétaire — le droit vient du lot, pas
+    ///   de la fonction (même raisonnement que l'ADR-0052 sur le comptable).
+    /// - Personne d'autre : refus.
     pub async fn cancel_exchange(
         &self,
         exchange_id: Uuid,
         user_id: Uuid, // From auth (user_id, resolved to owner_id internally)
+        actor_role: &str,
         dto: CancelExchangeDto,
     ) -> Result<LocalExchangeResponseDto, String> {
-        let owner_id = self.resolve_owner_id(user_id).await?;
+        let owner_id = self
+            .owner_repo
+            .find_by_user_id(user_id)
+            .await?
+            .map(|o| o.id);
 
         let mut exchange = self
             .exchange_repo
@@ -297,7 +313,26 @@ impl LocalExchangeUseCases {
             .await?
             .ok_or("Exchange not found".to_string())?;
 
-        exchange.cancel(owner_id, dto.reason)?;
+        let party_owner_id = owner_id
+            .filter(|oid| exchange.provider_id == *oid || exchange.requester_id == Some(*oid));
+
+        match party_owner_id {
+            Some(oid) => {
+                exchange.cancel(oid, dto.reason)?;
+            }
+            None if crate::application::community_permissions::peut_moderer(actor_role) => {
+                let reason = dto.reason.filter(|r| !r.trim().is_empty()).ok_or_else(|| {
+                    crate::application::error::MOTIF_MODERATION_REQUIS.to_string()
+                })?;
+                exchange.moderate_cancel(reason)?;
+            }
+            None => {
+                return Err(
+                    "Only the provider, requester, or a community moderator can cancel the exchange"
+                        .to_string(),
+                );
+            }
+        }
 
         let updated = self.exchange_repo.update(&exchange).await?;
 
@@ -359,8 +394,24 @@ impl LocalExchangeUseCases {
     }
 
     /// Delete an exchange (only if not completed)
-    pub async fn delete_exchange(&self, exchange_id: Uuid, user_id: Uuid) -> Result<(), String> {
-        let owner_id = self.resolve_owner_id(user_id).await?;
+    /// Delete an exchange (only if not completed)
+    ///
+    /// # Authorization (Story 5.3 — #587, INV-4)
+    /// Même logique que [`Self::cancel_exchange`] : le provider supprime sans
+    /// justification, un modérateur communauté qui n'est pas le provider doit
+    /// motiver la suppression (audit).
+    pub async fn delete_exchange(
+        &self,
+        exchange_id: Uuid,
+        user_id: Uuid,
+        actor_role: &str,
+        reason: Option<String>,
+    ) -> Result<(), String> {
+        let owner_id = self
+            .owner_repo
+            .find_by_user_id(user_id)
+            .await?
+            .map(|o| o.id);
 
         let exchange = self
             .exchange_repo
@@ -368,9 +419,21 @@ impl LocalExchangeUseCases {
             .await?
             .ok_or("Exchange not found".to_string())?;
 
-        // Only provider can delete
-        if exchange.provider_id != owner_id {
-            return Err("Only the provider can delete the exchange".to_string());
+        let is_provider = owner_id
+            .map(|oid| exchange.provider_id == oid)
+            .unwrap_or(false);
+
+        if !is_provider {
+            if crate::application::community_permissions::peut_moderer(actor_role) {
+                reason.filter(|r| !r.trim().is_empty()).ok_or_else(|| {
+                    crate::application::error::MOTIF_MODERATION_REQUIS.to_string()
+                })?;
+            } else {
+                return Err(
+                    "Only the provider or a community moderator can delete the exchange"
+                        .to_string(),
+                );
+            }
         }
 
         // Cannot delete completed exchanges
@@ -1410,7 +1473,7 @@ mod tests {
             reason: Some("Changed my mind".to_string()),
         };
         let result = uc
-            .cancel_exchange(created.id, requester_user_id, cancel_dto)
+            .cancel_exchange(created.id, requester_user_id, "owner", cancel_dto)
             .await;
         assert!(result.is_ok(), "cancel_exchange failed: {:?}", result.err());
 
@@ -1421,6 +1484,314 @@ mod tests {
             resp.cancellation_reason,
             Some("Changed my mind".to_string())
         );
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 5.3 (#587), INV-4 — Syndic = community.moderator sur le SEL
+    // ------------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn security_syndic_pur_ne_peut_pas_creer_une_offre_sel() {
+        // Syndic sans fiche de copropriétaire dans cette organisation : aucun
+        // `Owner` n'est inséré pour ce `user_id`. `create_exchange` (l'acte de
+        // PARTICIPATION personnelle) doit rester refusé — INV-4.
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+        let syndic_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let uc = setup_use_cases(owner_repo, exchange_repo, balance_repo);
+
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Coup de main".to_string(),
+            description: "Offre personnelle".to_string(),
+            credits: 1,
+        };
+
+        let result = uc.create_exchange(syndic_user_id, dto).await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES
+        );
+    }
+
+    #[tokio::test]
+    async fn happy_syndic_moderator_annule_un_echange_litigieux_avec_motif() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let syndic_user_id = Uuid::new_v4(); // aucune fiche Owner
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        owner_repo.insert(provider.clone());
+
+        let uc = setup_use_cases(owner_repo, exchange_repo, balance_repo);
+
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Bricolage".to_string(),
+            description: "Offre litigieuse".to_string(),
+            credits: 3,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+
+        let cancel_dto = CancelExchangeDto {
+            reason: Some("Signalement d'un voisin : offre inappropriée".to_string()),
+        };
+        let result = uc
+            .cancel_exchange(created.id, syndic_user_id, "syndic", cancel_dto)
+            .await;
+        assert!(
+            result.is_ok(),
+            "un syndic modérateur doit pouvoir annuler un échange litigieux : {:?}",
+            result.err()
+        );
+        assert_eq!(result.unwrap().status, ExchangeStatus::Cancelled);
+    }
+
+    #[tokio::test]
+    async fn negative_moderation_sans_motif_est_refusee() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let syndic_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        owner_repo.insert(provider.clone());
+
+        let uc = setup_use_cases(owner_repo, exchange_repo, balance_repo);
+
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Bricolage".to_string(),
+            description: "Offre".to_string(),
+            credits: 3,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+
+        // Motif absent : une modération non motivée n'est pas auditable.
+        let cancel_dto = CancelExchangeDto { reason: None };
+        let result = uc
+            .cancel_exchange(created.id, syndic_user_id, "syndic", cancel_dto)
+            .await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            crate::application::error::MOTIF_MODERATION_REQUIS
+        );
+
+        // Motif vide (espaces uniquement) : même refus, pas de contournement.
+        let cancel_dto_blank = CancelExchangeDto {
+            reason: Some("   ".to_string()),
+        };
+        let result_blank = uc
+            .cancel_exchange(created.id, syndic_user_id, "syndic", cancel_dto_blank)
+            .await;
+        assert!(result_blank.is_err());
+        assert_eq!(
+            result_blank.unwrap_err(),
+            crate::application::error::MOTIF_MODERATION_REQUIS
+        );
+    }
+
+    #[tokio::test]
+    async fn security_ni_partie_ni_moderateur_ne_peut_annuler() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let bystander_user_id = Uuid::new_v4(); // un autre copropriétaire, non partie
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        let bystander = make_owner_with_name(bystander_user_id, "Carl", "Voisin");
+        owner_repo.insert(provider.clone());
+        owner_repo.insert(bystander.clone());
+
+        let uc = setup_use_cases(owner_repo, exchange_repo, balance_repo);
+
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Bricolage".to_string(),
+            description: "Offre".to_string(),
+            credits: 3,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+
+        let cancel_dto = CancelExchangeDto {
+            reason: Some("Je n'aime pas cette offre".to_string()),
+        };
+        let result = uc
+            .cancel_exchange(created.id, bystander_user_id, "owner", cancel_dto)
+            .await;
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("Only the provider, requester, or a community moderator"));
+    }
+
+    #[tokio::test]
+    async fn edge_syndic_cumulant_le_role_owner_annule_son_propre_echange_sans_motif() {
+        // Le syndic a AUSSI une fiche de copropriétaire dans cette ACP (un
+        // lot) : il agit ès qualités de copropriétaire, comme n'importe quel
+        // provider — pas de motif requis, comportement inchangé. Le droit
+        // vient du lot, pas de la fonction (ADR-0052).
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let syndic_owner_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let syndic_as_owner = make_owner_with_name(syndic_owner_user_id, "Denise", "Syndic");
+        owner_repo.insert(syndic_as_owner.clone());
+
+        let uc = setup_use_cases(owner_repo, exchange_repo, balance_repo);
+
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Offre du syndic-copropriétaire".to_string(),
+            description: "Offre personnelle, ès qualités de copropriétaire".to_string(),
+            credits: 1,
+        };
+        let created = uc.create_exchange(syndic_owner_user_id, dto).await.expect(
+            "un syndic qui a un lot doit pouvoir créer une offre ès qualités de copropriétaire",
+        );
+
+        let cancel_dto = CancelExchangeDto { reason: None };
+        let result = uc
+            .cancel_exchange(created.id, syndic_owner_user_id, "syndic", cancel_dto)
+            .await;
+        assert!(
+            result.is_ok(),
+            "le provider n'a pas à motiver l'annulation de sa propre offre : {:?}",
+            result.err()
+        );
+        assert_eq!(result.unwrap().status, ExchangeStatus::Cancelled);
+    }
+
+    #[tokio::test]
+    async fn happy_syndic_moderator_supprime_un_echange_litigieux_avec_motif() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let syndic_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        owner_repo.insert(provider.clone());
+
+        let uc = setup_use_cases(owner_repo, exchange_repo, balance_repo);
+
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Bricolage".to_string(),
+            description: "Offre litigieuse".to_string(),
+            credits: 3,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+
+        let result = uc
+            .delete_exchange(
+                created.id,
+                syndic_user_id,
+                "syndic",
+                Some("Contenu inapproprié signalé".to_string()),
+            )
+            .await;
+        assert!(
+            result.is_ok(),
+            "un syndic modérateur doit pouvoir supprimer une offre litigieuse : {:?}",
+            result.err()
+        );
+        assert!(uc.get_exchange(created.id).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn negative_suppression_par_moderation_sans_motif_est_refusee() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let syndic_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        owner_repo.insert(provider.clone());
+
+        let uc = setup_use_cases(owner_repo, exchange_repo, balance_repo);
+
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Bricolage".to_string(),
+            description: "Offre".to_string(),
+            credits: 3,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+
+        let result = uc
+            .delete_exchange(created.id, syndic_user_id, "syndic", None)
+            .await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            crate::application::error::MOTIF_MODERATION_REQUIS
+        );
+    }
+
+    #[tokio::test]
+    async fn security_ni_provider_ni_moderateur_ne_peut_supprimer() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let bystander_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        let bystander = make_owner_with_name(bystander_user_id, "Carl", "Voisin");
+        owner_repo.insert(provider.clone());
+        owner_repo.insert(bystander.clone());
+
+        let uc = setup_use_cases(owner_repo, exchange_repo, balance_repo);
+
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Bricolage".to_string(),
+            description: "Offre".to_string(),
+            credits: 3,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+
+        let result = uc
+            .delete_exchange(created.id, bystander_user_id, "owner", None)
+            .await;
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("Only the provider or a community moderator"));
     }
 
     #[tokio::test]

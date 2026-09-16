@@ -1,3 +1,4 @@
+pub mod community_permissions;
 pub mod dto;
 pub mod error;
 pub mod ports;
