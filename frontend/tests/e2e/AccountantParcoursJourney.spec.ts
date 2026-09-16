@@ -164,9 +164,7 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     // qui l'affiche effectivement est le rappel pédagogique de /reports.
     await page.goto("/reports", { waitUntil: "networkidle" });
     await expect(page.getByTestId("reports")).toBeVisible();
-    await expect(
-      page.getByText("Plan Comptable Minimum Normalisé"),
-    ).toBeVisible();
+    await expect(page.getByTestId("reports-pcmn-mention")).toBeVisible();
   });
 
   test("3. @happy saisir une dépense sur un immeuble conforme", async ({
@@ -239,7 +237,9 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     await amorce(expenseResp, "seed expense pour workflow facture");
 
     await page.goto("/invoice-workflow", { waitUntil: "networkidle" });
-    const card = page.getByTestId("invoice-card").filter({ hasText: description });
+    const card = page
+      .getByTestId("invoice-card")
+      .filter({ hasText: description });
     await expect(card).toBeVisible();
 
     const attenteSoumission = page.waitForResponse(
@@ -251,7 +251,7 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     await expect(card.getByTestId("approve-button")).toBeVisible();
 
     const approveModal = page.locator(".modal-footer").filter({
-      has: page.getByRole("button", { name: "Approuver" }),
+      has: page.getByTestId("invoice-approve-confirm-button"),
     });
     const [approveResp] = await Promise.all([
       page.waitForResponse(
@@ -259,7 +259,9 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
       ),
       (async () => {
         await card.getByTestId("approve-button").click();
-        await approveModal.getByRole("button", { name: "Approuver" }).click();
+        await approveModal
+          .getByTestId("invoice-approve-confirm-button")
+          .click();
       })(),
     ]);
     expect(approveResp.status()).toBe(200);
@@ -348,9 +350,10 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     );
     await page.getByTestId("submit-budget-button").click();
     const confirme = await confirmerSiDemande(page);
-    expect(confirme, "la modale de confirmation « soumettre » doit s'ouvrir").toBe(
-      true,
-    );
+    expect(
+      confirme,
+      "la modale de confirmation « soumettre » doit s'ouvrir",
+    ).toBe(true);
     expect((await attenteSoumission).status()).toBe(200);
 
     await page.getByTestId("approve-budget-button").click();
@@ -389,9 +392,7 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     await expect(page.getByTestId("no-distribution")).toBeVisible();
 
     const [resp] = await Promise.all([
-      page.waitForResponse((r) =>
-        r.url().includes("/calculate-distribution"),
-      ),
+      page.waitForResponse((r) => r.url().includes("/calculate-distribution")),
       page.getByTestId("calculate-distribution-button").click(),
     ]);
     expect(resp.ok()).toBe(true);
@@ -418,7 +419,8 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     const [resp] = await Promise.all([
       page.waitForResponse(
         (r) =>
-          r.url().includes("/call-for-funds") && r.request().method() === "POST",
+          r.url().includes("/call-for-funds") &&
+          r.request().method() === "POST",
       ),
       page.getByTestId("call-for-funds-submit-button").click(),
     ]);
@@ -444,14 +446,19 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     const [resp] = await Promise.all([
       page.waitForResponse(
         (r) =>
-          r.url().includes("/call-for-funds") && r.request().method() === "POST",
+          r.url().includes("/call-for-funds") &&
+          r.request().method() === "POST",
       ),
       page.getByTestId("call-for-funds-submit-button").click(),
     ]);
     expect(resp.status()).toBe(422);
     // Le toast narratif documenté (docs/personas/accountant.md, § Cas
     // dégradé) : "Calcul bloqué — Immeuble non conforme".
-    await expect(page.getByText(/non conforme/i).first()).toBeVisible();
+    // Le badge de conformité porte son ancre : chercher « non conforme »
+    // serait un pari sur la langue résolue (#803).
+    await expect(
+      page.getByTestId("building-conformity-badge").first(),
+    ).toBeVisible();
   });
 
   test("9. @happy produire un état daté", async ({ page }) => {
@@ -500,7 +507,9 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     expect(resp.status()).toBe(200);
     const bilan = await resp.json();
 
-    await expect(page.getByText("Bilan").first()).toBeVisible();
+    await expect(
+      page.getByTestId("financial-reports-balance-sheet-title"),
+    ).toBeVisible();
     // Équilibre comptable : actif == passif (à l'arrondi près, cf. Decimal
     // côté serveur — ADR-0007, jamais de f64 en comptabilité).
     if (

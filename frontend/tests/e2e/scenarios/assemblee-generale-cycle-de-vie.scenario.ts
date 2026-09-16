@@ -121,7 +121,7 @@ test.describe("Scenario: Le cycle de vie d'une assemblee generale", () => {
     });
   });
 
-  test("le fil syndic -> coproprietaire -> syndic, jusqu'au verrou de cloture", async ({
+  test("@happy le fil syndic -> coproprietaire -> syndic, jusqu'au verrou de cloture", async ({
     page,
     request,
   }) => {
@@ -173,10 +173,7 @@ test.describe("Scenario: Le cycle de vie d'une assemblee generale", () => {
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     await expect(
-      page
-        .getByTestId("meeting-card")
-        .filter({ hasText: titreAg })
-        .first(),
+      page.getByTestId("meeting-card").filter({ hasText: titreAg }).first(),
     ).toBeVisible({ timeout: 15000 });
     await stepPause(page);
 
@@ -431,9 +428,9 @@ test.describe("Scenario: Le cycle de vie d'une assemblee generale", () => {
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     // Etape 9 : le systeme proclame le resultat (Art. 3.88 §1er).
-    const statusBadge = resolutionItem2.locator("span").filter({
-      hasText: /Adoptée|Rejetée|adoptée|rejetée/,
-    });
+    // L'ancre porte le STATUT, pas le libellé : chercher « Adoptée|Rejetée »
+    // était un pari sur la langue résolue (#803).
+    const statusBadge = resolutionItem2.getByTestId("resolution-status-badge");
     await expect(statusBadge).toBeVisible({ timeout: 15000 });
     await stepPause(page);
 

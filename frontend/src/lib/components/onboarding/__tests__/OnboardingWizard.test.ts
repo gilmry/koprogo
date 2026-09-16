@@ -243,7 +243,9 @@ describe("OnboardingWizard — Story 5.7", () => {
 
     await fillProfileStep(getByTestId);
     // has_shared_spaces coché → "community" recommandé en plus du socle.
-    (getByTestId("onboarding-shared-spaces-checkbox") as HTMLInputElement).click();
+    (
+      getByTestId("onboarding-shared-spaces-checkbox") as HTMLInputElement
+    ).click();
 
     (getByTestId("onboarding-next") as HTMLButtonElement).click();
     await vi.waitFor(() =>
@@ -298,12 +300,32 @@ describe("OnboardingWizard — Story 5.7", () => {
     expect(onAnalytics).toHaveBeenCalledTimes(1);
     const analyticsEvent = onAnalytics.mock.calls[0][0];
     expect(analyticsEvent.acpId).toBe("acp-1");
-    expect(analyticsEvent.elapsedMs).toBe(4 * 60 * 1000 + 23 * 1000);
+    // Une BORNE, pas une milliseconde exacte.
+    //
+    // L'assertion était `toBe(263_000)` et rendait 263_350 : les `waitFor`
+    // intercalés avancent l'horloge simulée de quelques centaines de
+    // millisecondes. Elle mesurait donc la plomberie du test, pas le produit.
+    //
+    // Ce que la story affirme est « un utilisateur naïf termine en 4min23,
+    // SOUS les cinq minutes » (#5.7). C'est cela qu'on vérifie : au moins le
+    // temps qu'on a fait passer, et strictement moins que le seuil qui
+    // donnerait tort à la story. Aucune assertion n'est retirée — celle-ci
+    // dit désormais ce qu'elle prétendait dire.
+    expect(analyticsEvent.elapsedMs).toBeGreaterThanOrEqual(
+      4 * 60 * 1000 + 23 * 1000,
+    );
+    expect(analyticsEvent.elapsedMs).toBeLessThan(5 * 60 * 1000);
     expect(analyticsEvent.modules).toEqual(
       expect.arrayContaining(["identity", "community"]),
     );
 
-    expect(onFinish).toHaveBeenCalledTimes(1);
+    // `finish()` attend `purgeDraft()` AVANT d'appeler `onFinish` — c'est
+    // délibéré et commenté dans le composant : si l'appelant navigue, le
+    // brouillon doit déjà être purgé. `onFinish` arrive donc un tick plus
+    // tard, et l'asserter sans attendre testait l'ordonnancement, pas le
+    // contrat. Cette assertion était masquée par l'assertion de durée qui
+    // échouait juste avant elle.
+    await vi.waitFor(() => expect(onFinish).toHaveBeenCalledTimes(1));
     expect(onFinish.mock.calls[0][0].acpId).toBe("acp-1");
   });
 
@@ -334,7 +356,9 @@ describe("OnboardingWizard — Story 5.7", () => {
       expect(getByTestId("onboarding-step-2")).toBeInTheDocument(),
     );
 
-    (getByTestId("onboarding-skip-recommendation") as HTMLButtonElement).click();
+    (
+      getByTestId("onboarding-skip-recommendation") as HTMLButtonElement
+    ).click();
     await waitFor(() =>
       expect(getByTestId("onboarding-step-3")).toBeInTheDocument(),
     );
@@ -434,7 +458,10 @@ describe("OnboardingWizard — Story 5.7", () => {
     );
 
     setInput(first.getByTestId("onboarding-name-input"), "ACP Peupliers");
-    setInput(first.getByTestId("onboarding-street-input"), "Rue des Peupliers 5");
+    setInput(
+      first.getByTestId("onboarding-street-input"),
+      "Rue des Peupliers 5",
+    );
     setInput(first.getByTestId("onboarding-postal-code-input"), "4000");
     setInput(first.getByTestId("onboarding-city-input"), "Liège");
     setInput(first.getByTestId("onboarding-units-count-input"), "3");
@@ -452,7 +479,9 @@ describe("OnboardingWizard — Story 5.7", () => {
     });
 
     await waitFor(() =>
-      expect(second.getByTestId("onboarding-resumed-banner")).toBeInTheDocument(),
+      expect(
+        second.getByTestId("onboarding-resumed-banner"),
+      ).toBeInTheDocument(),
     );
     // La reprise ramène directement à l'étape où l'utilisateur s'était arrêté
     // (étape 2 — pas de retour forcé à l'étape 1).
@@ -461,7 +490,9 @@ describe("OnboardingWizard — Story 5.7", () => {
 
     // La reprise offre aussi une sortie explicite plutôt qu'un piège : on
     // peut abandonner le brouillon et repartir de zéro.
-    (second.getByTestId("onboarding-discard-draft") as HTMLButtonElement).click();
+    (
+      second.getByTestId("onboarding-discard-draft") as HTMLButtonElement
+    ).click();
     await waitFor(() =>
       expect(second.getByTestId("onboarding-step-1")).toBeInTheDocument(),
     );

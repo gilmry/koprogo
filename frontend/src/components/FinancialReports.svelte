@@ -288,7 +288,12 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <!-- Report Header -->
       <div class="bg-primary-600 text-white p-6">
-        <h2 class="text-2xl font-bold">{$_("reports.balance_sheet")}</h2>
+        <h2
+          class="text-2xl font-bold"
+          data-testid="financial-reports-balance-sheet-title"
+        >
+          {$_("reports.balance_sheet")}
+        </h2>
         <p class="text-primary-100 mt-1">
           {$_("common.date")}: {formatDate(balanceSheet.report_date)}
         </p>

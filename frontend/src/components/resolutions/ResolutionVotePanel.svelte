@@ -528,9 +528,16 @@
         </div>
       </div>
 
+      <!-- `resolution-vote-submit-button` et non `vote-cast-submit` : l'agent
+           de #577 avait renommé cet ancrage, ce qui cassait EN SILENCE le
+           parcours partagé (`coproprietaire.journey.ts`) et le scénario de
+           cycle de vie d'une AG. `garde-data-testid` (#802) l'a vu.
+
+           Un data-testid est un CONTRAT avec les recettes, pas un détail
+           d'implémentation. -->
       <button
         onclick={handleVote}
-        data-testid="vote-cast-submit"
+        data-testid="resolution-vote-submit-button"
         disabled={!voteChoice || submittingVote}
         class="w-full py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >

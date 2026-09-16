@@ -58,7 +58,7 @@ test.describe("Work Reports - Digital Maintenance Logbook", () => {
     expect(Array.isArray(reports) || reports.data !== undefined).toBeTruthy();
   });
 
-  test("should check active warranties", async ({ page }) => {
+  test("happy_should check active warranties", async ({ page }) => {
     const { token, buildingId } = await setupSyndicWithBuilding(page);
 
     const warrantiesResp = await page.request.get(
