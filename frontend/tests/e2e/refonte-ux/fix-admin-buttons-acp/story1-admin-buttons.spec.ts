@@ -37,12 +37,39 @@ async function approveExpense(
   });
 }
 
+/**
+ * Attend que `RouteGuard` ait fini de vérifier l'accès.
+ *
+ * Tant qu'il vérifie, il pose un voile `fixed inset-0 bg-white z-50` par
+ * dessus toute la page. `toBeVisible()` ne le voit PAS — la visibilité
+ * d'un élément ne tient pas compte de ce qui le recouvre — mais le clic,
+ * lui, est intercepté :
+ *
+ *     <div class="fixed inset-0 bg-white z-50 …"> from <astro-island …
+ *     RouteGuard.svelte …> subtree intercepts pointer events
+ *
+ * Mesuré le 2026-09-17 : le voile se retire en 2 à 4 s en temps normal,
+ * mais ces tests cliquaient dès la visibilité du bouton. Résultat, 4 échecs
+ * sur 27 exécutions (`--repeat-each=3`), répartis sur plusieurs tests du
+ * fichier — un aléa, pas une régression.
+ *
+ * Attendre ce voile n'allonge aucun délai et ne relâche aucune assertion :
+ * c'est la précondition réelle du geste. Un utilisateur non plus ne clique
+ * pas à travers un écran de chargement.
+ */
+async function attendreFinDuGardeDeRoute(page: Page): Promise<void> {
+  await expect(page.locator("div.fixed.inset-0.bg-white.z-50")).toHaveCount(0, {
+    timeout: 15_000,
+  });
+}
+
 test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
   test('@happy clic "Nouvelle organisation" ouvre la modale', async ({
     page,
   }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/organizations");
+    await attendreFinDuGardeDeRoute(page);
     const createBtn = page.getByTestId("create-organization-button");
     await expect(createBtn).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -67,6 +94,7 @@ test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
   test('@happy clic "Nouvel utilisateur" ouvre la modale', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/users");
+    await attendreFinDuGardeDeRoute(page);
     const createBtn = page.getByTestId("create-user-button");
     await expect(createBtn).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -81,6 +109,7 @@ test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
   }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/organizations");
+    await attendreFinDuGardeDeRoute(page);
 
     const btn = page.getByTestId("create-organization-button");
     await expect(btn).toBeVisible({ timeout: 15_000 });
