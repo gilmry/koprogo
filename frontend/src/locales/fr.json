@@ -4206,7 +4206,9 @@
     "selfManaged": "Aucun — ACP auto-gérée",
     "empty": "Aucune ACP. Créez-en une avec le bouton ci-dessus.",
     "managingAgent": "Cabinet",
-    "deleteConfirm": "Supprimer définitivement « {nom} » ? Cette action est irréversible. Une ACP portant encore des immeubles sera refusée."
+    "deleteConfirm": "Supprimer définitivement « {nom} » ? Cette action est irréversible. Une ACP portant encore des immeubles sera refusée.",
+    "searchOrganization": "Rechercher une organisation…",
+    "organizationsMore": "{affichees} affichées sur {total}. Affinez la recherche pour voir les autres."
   },
   "organizations": {
     "searchPlaceholder": "Rechercher par nom, courriel ou identifiant",

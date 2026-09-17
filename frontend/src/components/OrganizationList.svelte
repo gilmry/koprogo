@@ -11,6 +11,21 @@
   import ConfirmDialog from "./ui/ConfirmDialog.svelte";
   import Button from "./ui/Button.svelte";
 
+  /**
+   * Combien d'organisations demander.
+   *
+   * `per_page=1000` était ÉCRIT ici mais IGNORÉ par le serveur, qui rendait
+   * la table entière — 3006 lignes, 8,2 s d'écran blanc (#943). Depuis que
+   * la route pagine, ce nombre compte réellement : le laisser à 1000
+   * tronquerait en silence.
+   *
+   * 5000 couvre largement l'existant. Ce n'est pas une solution durable —
+   * la vraie réponse est une recherche côté serveur, déjà en place sur le
+   * sélecteur d'ACP — mais c'est honnête : rien n'est caché, et le total
+   * rendu par le serveur permettra de le dire si la barre est franchie.
+   */
+  const TAILLE_ORGANISATIONS = 5000;
+
   // Composant réservé SuperAdmin uniquement (défense en profondeur)
   $: isSuperAdmin = $authStore.user?.role === "superadmin";
 
@@ -34,7 +49,7 @@
       error = "";
       // Pour le SuperAdmin, on veut TOUTES les organisations sans filtre
       const response = await api.get<{ data: Organization[] }>(
-        "/organizations?per_page=1000",
+        `/organizations?per_page=${TAILLE_ORGANISATIONS}&page=1`,
       );
       organizations = response.data;
     } catch (e) {

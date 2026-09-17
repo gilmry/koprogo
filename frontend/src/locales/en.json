@@ -4206,7 +4206,9 @@
     "selfManaged": "None — self-managed association",
     "empty": "No association yet. Create one with the button above.",
     "managingAgent": "Managing agent",
-    "deleteConfirm": "Permanently delete “{nom}”? This action is irreversible. An association that still holds buildings will be refused."
+    "deleteConfirm": "Permanently delete “{nom}”? This action is irreversible. An association that still holds buildings will be refused.",
+    "searchOrganization": "Search an organisation…",
+    "organizationsMore": "{affichees} of {total} shown. Refine the search to see the rest."
   },
   "organizations": {
     "searchPlaceholder": "Search by name, email or identifier",

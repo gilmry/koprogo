@@ -18,6 +18,25 @@ impl OrganizationUseCases {
         self.repo.find_all().await
     }
 
+    /// Une page d'organisations, et le total qui va avec.
+    ///
+    /// Le total n'est pas un ornement : sans lui, l'appelant reçoit un
+    /// fragment sans savoir la taille du tout, et c'est exactement ainsi
+    /// qu'une liste tronquée passe pour complète.
+    pub async fn list_page(
+        &self,
+        recherche: Option<String>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<(Vec<Organization>, i64), String> {
+        let page = self
+            .repo
+            .find_page(recherche.clone(), limit, offset)
+            .await?;
+        let total = self.repo.count_matching(recherche).await?;
+        Ok((page, total))
+    }
+
     pub async fn create(
         &self,
         name: String,
@@ -148,6 +167,22 @@ mod tests {
         }
     }
 
+    impl MockOrgRepository {
+        fn filtrer<'a>(
+            orgs: &'a [Organization],
+            recherche: Option<&'a str>,
+        ) -> impl Iterator<Item = &'a Organization> {
+            let motif = recherche
+                .map(str::trim)
+                .filter(|r| !r.is_empty())
+                .map(|r| r.to_lowercase());
+            orgs.iter().filter(move |o| match &motif {
+                None => true,
+                Some(m) => o.name.to_lowercase().contains(m) || o.slug.to_lowercase().contains(m),
+            })
+        }
+    }
+
     #[async_trait]
     impl OrganizationRepository for MockOrgRepository {
         async fn create(&self, org: &Organization) -> Result<Organization, String> {
@@ -161,6 +196,26 @@ mod tests {
         }
         async fn find_all(&self) -> Result<Vec<Organization>, String> {
             Ok(self.orgs.clone())
+        }
+
+        async fn find_page(
+            &self,
+            recherche: Option<String>,
+            limit: i64,
+            offset: i64,
+        ) -> Result<Vec<Organization>, String> {
+            // Le double reproduit le filtre du vrai dépôt — nom OU slug,
+            // sans distinction de casse. S'il se contentait de rendre tout,
+            // les tests passeraient sans rien éprouver du filtrage.
+            Ok(Self::filtrer(&self.orgs, recherche.as_deref())
+                .skip(offset.max(0) as usize)
+                .take(limit.max(0) as usize)
+                .cloned()
+                .collect())
+        }
+
+        async fn count_matching(&self, recherche: Option<String>) -> Result<i64, String> {
+            Ok(Self::filtrer(&self.orgs, recherche.as_deref()).count() as i64)
         }
         async fn update(&self, org: &Organization) -> Result<Organization, String> {
             Ok(org.clone())

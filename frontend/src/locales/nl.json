@@ -4206,7 +4206,9 @@
     "selfManaged": "Geen — vereniging in zelfbeheer",
     "empty": "Nog geen vereniging. Maak er een aan met de knop hierboven.",
     "managingAgent": "Kantoor",
-    "deleteConfirm": "“{nom}” definitief verwijderen? Deze actie is onomkeerbaar. Een vereniging die nog gebouwen bevat, wordt geweigerd."
+    "deleteConfirm": "“{nom}” definitief verwijderen? Deze actie is onomkeerbaar. Een vereniging die nog gebouwen bevat, wordt geweigerd.",
+    "searchOrganization": "Zoek een organisatie…",
+    "organizationsMore": "{affichees} van {total} weergegeven. Verfijn de zoekopdracht voor de rest."
   },
   "organizations": {
     "searchPlaceholder": "Zoeken op naam, e-mail of identificatie",

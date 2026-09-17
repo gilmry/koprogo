@@ -4206,7 +4206,9 @@
     "selfManaged": "Keines — selbstverwaltete Gemeinschaft",
     "empty": "Noch keine Gemeinschaft. Legen Sie eine über die Schaltfläche oben an.",
     "managingAgent": "Büro",
-    "deleteConfirm": "„{nom}“ endgültig löschen? Diese Aktion ist unumkehrbar. Eine Gemeinschaft, die noch Gebäude enthält, wird abgelehnt."
+    "deleteConfirm": "„{nom}“ endgültig löschen? Diese Aktion ist unumkehrbar. Eine Gemeinschaft, die noch Gebäude enthält, wird abgelehnt.",
+    "searchOrganization": "Organisation suchen…",
+    "organizationsMore": "{affichees} von {total} angezeigt. Verfeinern Sie die Suche für die übrigen."
   },
   "organizations": {
     "searchPlaceholder": "Suche nach Name, E-Mail oder Kennung",

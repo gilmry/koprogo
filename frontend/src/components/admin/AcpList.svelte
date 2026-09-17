@@ -18,6 +18,7 @@
     type UpdateAcpDto,
   } from "../../lib/api/acps";
   import { api } from "../../lib/api";
+  import { chercherOrganisations } from "../../lib/api/organisations-recherche";
 
   import { _ } from "../../lib/i18n";
 
@@ -28,6 +29,12 @@
 
   let acps = $state<AcpResponseDto[]>([]);
   let organizations = $state<OrganizationOption[]>([]);
+  /** Ce qui est tapé dans le champ de recherche d'organisation. */
+  let rechercheOrganisation = $state("");
+  /** Total renvoyé par le serveur pour la recherche courante. */
+  let totalOrganisations = $state(0);
+  /** Y a-t-il plus d'organisations que celles affichées ? */
+  let listeIncomplete = $state(false);
   let loading = $state(true);
   let error = $state<string | null>(null);
   let showCreate = $state(false);
@@ -64,15 +71,40 @@
     }
   }
 
-  async function loadOrganizations(): Promise<void> {
+  /**
+   * Charge une PAGE d'organisations, filtrée par ce qui est tapé.
+   *
+   * Chargeait auparavant `?per_page=1000` — ignoré par le serveur, qui
+   * rendait les 3006 lignes de la table. C'est ce qui mettait 8,2 s à
+   * afficher cet écran (#943).
+   *
+   * Le total vient du serveur : quand il dépasse ce qui est affiché, on le
+   * DIT, au lieu de laisser croire que la liste est complète.
+   */
+  async function loadOrganizations(recherche = ""): Promise<void> {
     try {
-      const response = await api.get<{ data: OrganizationOption[] }>(
-        "/organizations?per_page=1000",
-      );
-      organizations = response.data;
+      const page = await chercherOrganisations(recherche);
+      organizations = page.elements;
+      totalOrganisations = page.total;
+      listeIncomplete = page.incomplete;
     } catch (e) {
       console.error("Error loading organizations:", e);
     }
+  }
+
+  /**
+   * Relance la recherche après une pause de frappe.
+   *
+   * 250 ms : assez pour ne pas interroger à chaque touche, assez peu pour
+   * que la liste suive la frappe. La route répond en ~65 ms.
+   */
+  let minuterieRecherche: ReturnType<typeof setTimeout> | undefined;
+  function surRechercheOrganisation(valeur: string): void {
+    rechercheOrganisation = valeur;
+    clearTimeout(minuterieRecherche);
+    minuterieRecherche = setTimeout(() => {
+      void loadOrganizations(valeur);
+    }, 250);
   }
 
   // `undefined` accepté en plus de `null` : dans le type généré depuis la spec,
@@ -228,6 +260,14 @@
           <span class="text-sm font-medium text-gray-700">
             {$_("acps.managingAgentOptional")}
           </span>
+          <input
+            type="search"
+            value={rechercheOrganisation}
+            oninput={(e) => surRechercheOrganisation(e.currentTarget.value)}
+            placeholder={$_("acps.searchOrganization")}
+            class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+            data-testid="acp-form-org-search"
+          />
           <select
             bind:value={form.organization_id}
             class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
@@ -238,6 +278,19 @@
               <option value={org.id}>{org.name}</option>
             {/each}
           </select>
+          {#if listeIncomplete}
+            <p
+              class="mt-1 text-sm text-gray-600"
+              data-testid="acp-form-org-reste"
+            >
+              {$_("acps.organizationsMore", {
+                values: {
+                  affichees: organizations.length,
+                  total: totalOrganisations,
+                },
+              })}
+            </p>
+          {/if}
         </label>
         <label class="block">
           <span class="text-sm font-medium text-gray-700"
