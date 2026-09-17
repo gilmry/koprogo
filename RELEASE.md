@@ -230,7 +230,7 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
 | `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré en local le 2026-09-13**. ⚠️ #877 reste OUVERTE : son premier critère dit « vert EN CI », et la CI ne l'a pas vu — les commits ne sont pas poussés |
 | `bdd` | 🟢 | suites `bdd_*.rs` | `bdd_acp` remesuré le 2026-09-16 : **17 scénarios / 78 étapes, code 0**. Était rouge à 17 sur 17 avant #939, sans que personne le sache — le vert du 2026-09-12 datait d'avant la fusion qui a créé la collision |
-| `e2e` parcours | 🟡 | `CI=1 make test-e2e` | **340 ✓ / 2 ✘ / 14 sautés, aucun non-exécuté**, mesuré le 2026-09-17, backend stable (**zéro redémarrage**). Les deux restants : le parcours comptable qui décrit une approbation que le produit refuse au comptable (arbitrage, #942), et `story2-acp-organization` qui tient en 30,4 s contre un budget de 30 s parce que `/admin/acps` met **8,2 s** à s'afficher (#943 — `GET /organizations` **ignore `per_page`** et rend la table entière : demander 10 éléments en rend 2743). ⚠️ Sans `CI=1`, la campagne n'est pas comparable |
+| `e2e` parcours | 🟡 | `CI=1 make test-e2e` | **338 ✓ / 1 ✘ / 3 instables / 14 sautés**, mesuré le 2026-09-17 après les trois arbitrages du PO, backend stable (**zéro redémarrage**). L'échec ET les trois instables sont des dépassements de 30 s sur des écrans `/admin/*`, tous remontant à **#943** : `GET /organizations` ignore `per_page` et rend 2743 lignes, d'où 8,2 s sur `/admin/acps` contre 1,9 s sur `/admin/users`. **Une seule cause reste, identifiée et mesurée.** ⚠️ Sans `CI=1`, la campagne n'est pas comparable |
 | `visuel` | ⚪ | — | pas de goldens |
 | `doc-vivante` | 🟢 | `make vitrine` | le PARCOURS : complet, 10 chapitres, 81 s, `interrompu: None`, artefact de 79 Mo publié (run 34764114133). ⚠️ Les douze `.scenario.ts` du même job rendent **10 ✓ / 2 ✘** et ne peuvent PAS rougir le job : `continue-on-error: true` depuis le 2026-06-15, avec une condition de retrait jamais rouverte |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
@@ -289,18 +289,23 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Arbitrages
 
-### Les cinq décisions qui restent avant la revue (2026-09-17)
+### Trois décisions rendues le 2026-09-17, livrées et mesurées
+
+| Décision du PO | Livré | Mesure |
+|---|---|---|
+| Paralléliser les bcrypt du semis plutôt qu'abaisser leur coût | ✅ | **44 s → 20,7 s**. Les ~11 s annoncées ne sont PAS atteintes : les hachages pèsent la moitié, le travail en base l'autre |
+| La séparation des rôles est juste : le comptable n'approuve pas ce qu'il saisit | ✅ | `docs/personas/accountant.md` corrigé, `approve-button` retiré de ses ancres, le test vérifie l'ABSENCE du bouton comme une propriété |
+| Corriger les cinq couples de contraste, d'un cran | ✅ | 45 remplacements dans 25 fichiers ; le cliquet passe de cinq tolérances à **zéro** |
+
+### Ce qui reste avant la revue
 
 Aucune n'est du travail d'agent : ce sont des choix de produit ou de
 conception, chacun posé avec sa mesure.
 
 | # | Décision | Mesure qui l'appelle |
 |---|---|---|
-| #942 | Le comptable doit-il pouvoir approuver une facture ? `docs/personas/accountant.md` décrit cette chaîne comme la sienne ; l'UI et l'API la lui refusent (séparation des rôles) | 1 test e2e |
-| #942 | Le semis du monde coûte 44 s (26 bcrypts en série). Paralléliser (4 cœurs → ~11 s) ou abaisser le coût bcrypt des fixtures ? | bloque 7 tests d'accessibilité en campagne |
-| #942 / #876 | Qui POSSÈDE le monde de scénario ? Aucun `globalSetup` déclaré, quatorze teardowns le supprimaient | corrigé à moitié : plus personne ne le supprime |
-| #943 | `GET /organizations` ignore `per_page` et rend la table (2743 lignes). Paginer change un contrat consommé ailleurs | 8,2 s sur `/admin/acps`, 1 test e2e |
-| #942 | Cinq couples de contraste sous 4,5:1 (`green-600` 3,30, `amber-600` 3,18, `yellow-600` 2,94, `red-500` 3,81, `orange-600` 3,60). Les corriger fonce l'application sur de nombreux écrans | cliquet posé, ne peut plus empirer |
+| #943 | `GET /organizations` ignore `per_page` et rend la table (2743 lignes). Paginer change un contrat consommé ailleurs | 8,2 s sur `/admin/acps` — **la seule cause des 4 tests encore fragiles** |
+| #876 | Qui POSSÈDE le monde de scénario ? Aucun `globalSetup` déclaré | corrigé à moitié : plus personne ne le supprime |
 
 Les défauts, eux, sont corrigés et leurs issues fermées : #939 (migrations à
 la même version), #941 (quatre colonnes absentes de la base), #937 (reclassé
