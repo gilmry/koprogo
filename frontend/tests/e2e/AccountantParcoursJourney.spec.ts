@@ -418,6 +418,15 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
       .getByTestId("call-for-funds-title-input")
       .fill(`Appel de fonds travaux ${Date.now()}`);
     await page.getByTestId("call-for-funds-amount-input").fill("8000");
+    // La description est OBLIGATOIRE : `CallForFundsForm.svelte:62` refuse
+    // la soumission si elle manque (`!title || !description`), affiche un
+    // toast et ne POSTe jamais. Le test attendait donc une réponse qui ne
+    // partait pas, et expirait au bout de 10 s sur `waitForResponse` — un
+    // échec qui ressemble à un serveur muet alors que c'est le formulaire
+    // qui refuse.
+    await page
+      .getByTestId("call-for-funds-description-textarea")
+      .fill("Appel de fonds du parcours comptable");
 
     const [resp] = await Promise.all([
       page.waitForResponse(
@@ -445,6 +454,15 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
       .getByTestId("call-for-funds-title-input")
       .fill(`Appel refusé ${Date.now()}`);
     await page.getByTestId("call-for-funds-amount-input").fill("1000");
+    // La description est OBLIGATOIRE : `CallForFundsForm.svelte:62` refuse
+    // la soumission si elle manque (`!title || !description`), affiche un
+    // toast et ne POSTe jamais. Le test attendait donc une réponse qui ne
+    // partait pas, et expirait au bout de 10 s sur `waitForResponse` — un
+    // échec qui ressemble à un serveur muet alors que c'est le formulaire
+    // qui refuse.
+    await page
+      .getByTestId("call-for-funds-description-textarea")
+      .fill("Appel de fonds du parcours comptable");
 
     const [resp] = await Promise.all([
       page.waitForResponse(

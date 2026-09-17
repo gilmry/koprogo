@@ -9,6 +9,7 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 import { confirmerSiDemande } from "../../helpers/amorcage";
+import { attendreFinDuGardeDeRoute } from "../../helpers/garde-de-route";
 import { loginAsAdmin, loginAsSyndicWithExpense } from "../../helpers/auth";
 
 import { API_BASE } from "../../helpers/adresses";
@@ -34,32 +35,6 @@ async function approveExpense(
   await page.request.put(`${API_BASE}/invoices/${expenseId}/approve`, {
     data: { approved_by_user_id: approvedByUserId },
     headers: { Authorization: `Bearer ${token}` },
-  });
-}
-
-/**
- * Attend que `RouteGuard` ait fini de vérifier l'accès.
- *
- * Tant qu'il vérifie, il pose un voile `fixed inset-0 bg-white z-50` par
- * dessus toute la page. `toBeVisible()` ne le voit PAS — la visibilité
- * d'un élément ne tient pas compte de ce qui le recouvre — mais le clic,
- * lui, est intercepté :
- *
- *     <div class="fixed inset-0 bg-white z-50 …"> from <astro-island …
- *     RouteGuard.svelte …> subtree intercepts pointer events
- *
- * Mesuré le 2026-09-17 : le voile se retire en 2 à 4 s en temps normal,
- * mais ces tests cliquaient dès la visibilité du bouton. Résultat, 4 échecs
- * sur 27 exécutions (`--repeat-each=3`), répartis sur plusieurs tests du
- * fichier — un aléa, pas une régression.
- *
- * Attendre ce voile n'allonge aucun délai et ne relâche aucune assertion :
- * c'est la précondition réelle du geste. Un utilisateur non plus ne clique
- * pas à travers un écran de chargement.
- */
-async function attendreFinDuGardeDeRoute(page: Page): Promise<void> {
-  await expect(page.locator("div.fixed.inset-0.bg-white.z-50")).toHaveCount(0, {
-    timeout: 15_000,
   });
 }
 
