@@ -309,7 +309,10 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
       },
       headers: { Authorization: `Bearer ${ctx.token}` },
     });
-    await amorce(expenseResp, "seed expense pour workflow facture");
+    const expense = await amorce(
+      expenseResp,
+      "seed expense pour workflow facture",
+    );
 
     await page.goto("/invoice-workflow", { waitUntil: "networkidle" });
     const card = page
@@ -323,23 +326,35 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     await card.getByTestId("submit-approval-button").click();
     await confirmerSiDemande(page);
     expect((await attenteSoumission).status()).toBe(200);
-    await expect(card.getByTestId("approve-button")).toBeVisible();
 
-    const approveModal = page.locator(".modal-footer").filter({
-      has: page.getByTestId("invoice-approve-confirm-button"),
-    });
-    const [approveResp] = await Promise.all([
-      page.waitForResponse(
-        (r) => r.url().includes("/approve") && r.request().method() === "PUT",
-      ),
-      (async () => {
-        await card.getByTestId("approve-button").click();
-        await approveModal
-          .getByTestId("invoice-approve-confirm-button")
-          .click();
-      })(),
-    ]);
+    // ── La main passe. Le comptable n'approuve pas ce qu'il a saisi. ──
+    //
+    // Ce test faisait faire la chaîne entière à UN comptable. Le produit le
+    // refuse, des deux côtés : `check_syndic_role` rend 403 côté API, et
+    // `InvoiceWorkflow.svelte:220` ne rend le bouton que pour syndic ou
+    // superadmin. C'est une séparation des rôles, tranchée en ce sens par le
+    // PO le 2026-09-17 (#942) : qui saisit une dépense ne l'approuve pas.
+    //
+    // L'absence du bouton n'est donc PAS un contournement à écrire en
+    // commentaire : c'est la propriété qu'on vérifie.
+    await expect(
+      card.getByTestId("approve-button"),
+      "le comptable ne doit PAS pouvoir approuver ce qu'il a saisi",
+    ).toHaveCount(0);
+
+    // L'approbation appartient à l'administration. Faite par l'API : basculer
+    // la session du navigateur en cours de parcours testerait la connexion,
+    // pas le workflow.
+    const approveResp = await page.request.put(
+      `${API_BASE}/invoices/${expense.id}/approve`,
+      { data: {}, headers: { Authorization: `Bearer ${ctx.adminToken}` } },
+    );
     expect(approveResp.status()).toBe(200);
+
+    // Et le comptable reprend la main pour le paiement — `canMarkAsPaid`
+    // (ligne 236) l'y autorise explicitement, une fois la facture approuvée.
+    await page.reload({ waitUntil: "load" });
+    await expect(card).toBeVisible();
     await expect(card.getByTestId("mark-paid-button")).toBeVisible();
 
     const attentePaiement = page.waitForResponse(

@@ -52,9 +52,24 @@ question de support la plus fréquente du produit.
 3. 🔒 Saisir une dépense → `/expenses` : `create-button`,
    `building-select`, `description-input`, `amount-input`,
    `submit-button`.
-4. Suivre le workflow d'une facture, brouillon → soumission → approbation
-   → paiement → `/invoice-workflow` : `invoice-card`,
-   `submit-approval-button`, `approve-button`, `mark-paid-button`.
+4. Suivre le workflow d'une facture, brouillon → soumission → **[le syndic
+   approuve]** → paiement → `/invoice-workflow` : `invoice-card`,
+   `submit-approval-button`, `mark-paid-button`.
+
+   **L'approbation n'est PAS de son ressort.** Le comptable saisit la
+   dépense et la soumet ; c'est le syndic (ou un superadmin) qui l'approuve ;
+   le comptable reprend la main pour le paiement. Qui saisit une dépense ne
+   l'approuve pas.
+
+   Ce document affirmait l'inverse jusqu'au 2026-09-17, et le produit le
+   démentait des deux côtés : `check_syndic_role` rend 403 côté API, et
+   `InvoiceWorkflow.svelte:220` ne rend `approve-button` que pour syndic ou
+   superadmin. C'est la doc qui avait tort — arbitrage rendu par le PO
+   (#942). `approve-button` est retiré de la liste des ancres de ce parcours :
+   le comptable ne le verra jamais.
+
+   Le parcours e2e vérifie désormais cette absence comme une PROPRIÉTÉ, pas
+   comme une gêne à contourner.
 5. Passer une écriture au journal (ACH/VEN/FIN/ODS), en partie double →
    `/journal-entries` : `journal-entry-form`,
    `journal-entry-description-input`, une ligne par code de compte PCMN
