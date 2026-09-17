@@ -132,9 +132,18 @@ impl OrganizationRepository for PostgresOrganizationRepository {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Organization>, String> {
-        // `ILIKE` sur le nom ET le slug : un administrateur cherche l'un ou
-        // l'autre sans savoir lequel il a sous les yeux. Le motif est lié,
-        // jamais concaténé — une recherche est une donnée d'utilisateur.
+        // `ILIKE` sur le nom, le slug ET le courriel de contact : un
+        // administrateur cherche l'un des trois sans savoir lequel il a sous
+        // les yeux.
+        //
+        // Le courriel a été ajouté en alignant `OrganizationList`, dont le
+        // filtre CLIENT le cherchait déjà. S'en tenir au nom et au slug
+        // aurait rétréci en silence ce qu'un administrateur peut trouver —
+        // le genre de perte qu'un remplacement « équivalent » fait passer
+        // inaperçue.
+        //
+        // Le motif est LIÉ, jamais concaténé : une recherche est une donnée
+        // d'utilisateur.
         let motif = recherche
             .map(|r| r.trim().to_string())
             .filter(|r| !r.is_empty())
@@ -144,7 +153,7 @@ impl OrganizationRepository for PostgresOrganizationRepository {
             "SELECT id, name, slug, contact_email, contact_phone, subscription_plan, \
                     max_buildings, max_users, is_active, created_at, updated_at \
              FROM organizations \
-             WHERE $1::text IS NULL OR name ILIKE $1 OR slug ILIKE $1 \
+             WHERE $1::text IS NULL OR name ILIKE $1 OR slug ILIKE $1 OR contact_email ILIKE $1 \
              ORDER BY name ASC \
              LIMIT $2 OFFSET $3",
         )
@@ -185,7 +194,7 @@ impl OrganizationRepository for PostgresOrganizationRepository {
 
         let total: i64 = sqlx::query_scalar(
             "SELECT COUNT(*) FROM organizations \
-             WHERE $1::text IS NULL OR name ILIKE $1 OR slug ILIKE $1",
+             WHERE $1::text IS NULL OR name ILIKE $1 OR slug ILIKE $1 OR contact_email ILIKE $1",
         )
         .bind(motif.as_deref())
         .fetch_one(&self.pool)

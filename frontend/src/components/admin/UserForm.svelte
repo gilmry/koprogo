@@ -3,26 +3,12 @@
   import { _ } from "../../lib/i18n";
   import { toast } from "../../stores/toast";
   import { api } from "../../lib/api";
+  import { chercherOrganisations } from "../../lib/api/organisations-recherche";
   import { UserRole, type User, type Organization } from "../../lib/types";
   import Modal from "../ui/Modal.svelte";
   import FormInput from "../ui/FormInput.svelte";
   import FormSelect from "../ui/FormSelect.svelte";
   import Button from "../ui/Button.svelte";
-
-  /**
-   * Combien d'organisations demander.
-   *
-   * `per_page=1000` était ÉCRIT ici mais IGNORÉ par le serveur, qui rendait
-   * la table entière — 3006 lignes, 8,2 s d'écran blanc (#943). Depuis que
-   * la route pagine, ce nombre compte réellement : le laisser à 1000
-   * tronquerait en silence.
-   *
-   * 5000 couvre largement l'existant. Ce n'est pas une solution durable —
-   * la vraie réponse est une recherche côté serveur, déjà en place sur le
-   * sélecteur d'ACP — mais c'est honnête : rien n'est caché, et le total
-   * rendu par le serveur permettra de le dire si la barre est franchie.
-   */
-  const TAILLE_ORGANISATIONS = 5000;
 
   let {
     isOpen = false,
@@ -83,6 +69,12 @@
   });
 
   let organizations = $state<Organization[]>([]);
+  /** Ce qui est tapé dans le champ de recherche d'organisation. */
+  let rechercheOrg = $state("");
+  /** Total renvoyé par le serveur pour la recherche courante. */
+  let totalOrgs = $state(0);
+  /** Reste-t-il des organisations au-delà de celles proposées ? */
+  let orgsIncompletes = $state(false);
   let organizationOptions = $state<Array<{ value: string; label: string }>>([]);
   let loading = $state(false);
   let loadingOrgs = $state(false);
@@ -99,13 +91,20 @@
     loadOrganizations();
   });
 
-  async function loadOrganizations() {
+  /**
+   * Charge une PAGE d'organisations, filtrée par le SERVEUR.
+   *
+   * Chargeait auparavant toute la table — 3006 lignes — pour remplir une
+   * liste déroulante (#943). La recherche porte sur le nom, le slug et le
+   * courriel de contact.
+   */
+  async function loadOrganizations(recherche = rechercheOrg) {
     loadingOrgs = true;
     try {
-      const response = await api.get<{ data: Organization[] }>(
-        `/organizations?per_page=${TAILLE_ORGANISATIONS}&page=1`,
-      );
-      organizations = response.data;
+      const page = await chercherOrganisations(recherche);
+      organizations = page.elements as unknown as Organization[];
+      totalOrgs = page.total;
+      orgsIncompletes = page.incomplete;
       organizationOptions = organizations.map((org) => ({
         value: org.id,
         label: `${org.name} (${org.subscription_plan})`,
@@ -115,6 +114,16 @@
     } finally {
       loadingOrgs = false;
     }
+  }
+
+  /** Relance la recherche après 250 ms de pause, comme les deux autres. */
+  let minuterieRecherche: ReturnType<typeof setTimeout> | undefined;
+  function surRechercheOrg(valeur: string) {
+    rechercheOrg = valeur;
+    clearTimeout(minuterieRecherche);
+    minuterieRecherche = setTimeout(() => {
+      void loadOrganizations(valeur);
+    }, 250);
   }
 
   function resetForm() {
@@ -552,6 +561,14 @@
                   {$_("common.organization")}
                   <span class="text-red-500">*</span>
                 </label>
+                <input
+                  type="search"
+                  value={rechercheOrg}
+                  oninput={(e) => surRechercheOrg(e.currentTarget.value)}
+                  placeholder={$_("acps.searchOrganization")}
+                  class="mb-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  data-testid="user-organization-search"
+                />
                 <FormSelect
                   id={`role-org-${index}`}
                   placeholder="Selectionner une organisation"
@@ -560,6 +577,19 @@
                   disabled={loadingOrgs}
                   data-testid="user-organization-select"
                 />
+                {#if orgsIncompletes}
+                  <p
+                    class="mt-1 text-sm text-gray-600"
+                    data-testid="user-organization-reste"
+                  >
+                    {$_("acps.organizationsMore", {
+                      values: {
+                        affichees: organizationOptions.length,
+                        total: totalOrgs,
+                      },
+                    })}
+                  </p>
+                {/if}
               {/if}
             </div>
 

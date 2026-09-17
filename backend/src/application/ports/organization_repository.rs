@@ -15,7 +15,8 @@ pub trait OrganizationRepository: Send + Sync {
     /// 2026-09-17, d'où 8,2 s d'écran blanc sur `/admin/acps` (#943). Il
     /// reste pour les appelants internes qui ont réellement besoin de tout.
     ///
-    /// `recherche` porte sur le nom ET le slug, sans distinction de casse.
+    /// `recherche` porte sur le nom, le slug ET le courriel de contact, sans
+    /// distinction de casse.
     /// `None` ou une chaîne vide ne filtre rien.
     async fn find_page(
         &self,
