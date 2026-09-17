@@ -648,9 +648,22 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     const ctx = await loginAsAccountant(page, "parcours-10-bilan");
     const buildingId = await immeubleConforme(page, ctx);
 
+    // `load` et non `networkidle`, puis attente de l'élément réellement
+    // attendu.
+    //
+    // Mesuré sur `/reports` : 427 ms pour `load`, 2000 ms et 236 requêtes
+    // pour `networkidle`. Ce test dispose de 30 s pour TOUT — connexion,
+    // amorçage de l'immeuble et de ses titulaires, navigation, génération —
+    // et `networkidle` y consommait une part qui ne prouve rien.
+    //
+    // Ce n'est pas un délai relâché : la précondition réelle du geste est
+    // que le bouton de génération soit là, et c'est elle qu'on attend
+    // désormais. Playwright déconseille lui-même `networkidle`, qui dépend
+    // de tout ce que la page charge par ailleurs.
     await page.goto(`/reports?buildingId=${buildingId}`, {
-      waitUntil: "networkidle",
+      waitUntil: "load",
     });
+    await expect(page.getByTestId("financial-reports-generate")).toBeVisible();
 
     const [resp] = await Promise.all([
       page.waitForResponse(
