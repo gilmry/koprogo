@@ -1,5 +1,4 @@
 import { test, expect, type Page } from "@playwright/test";
-import { randomUUID } from "node:crypto";
 import { uiLoginWithRetry, adminLogin, ensureAcp } from "./helpers/auth";
 import { seedBuildingWithUnitsViaPage } from "./helpers/building";
 import { failOnPageErrors } from "./helpers/pageErrors";
@@ -344,7 +343,30 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     page,
   }) => {
     const ctx = await loginAsAccountant(page, "parcours-6-budget");
-    await immeubleConforme(page, ctx);
+    const buildingId = await immeubleConforme(page, ctx);
+
+    // Une VRAIE assemblée, pas un UUID inventé.
+    //
+    // `budgets.approved_by_meeting_id` porte une clé étrangère vers
+    // `meetings(id)`. Un `randomUUID()` la viole, le dépôt remonte une
+    // erreur base, et le gestionnaire la rend en **400** — indiscernable
+    // d'un refus métier. Le test lisait donc « approbation refusée » là où
+    // la base disait « cette AG n'existe pas ».
+    //
+    // C'est aussi ce que le métier veut dire : un budget est approuvé PAR
+    // une assemblée. Lui en inventer une n'a pas de sens.
+    const agResp = await page.request.post(`${API_BASE}/meetings`, {
+      data: {
+        building_id: buildingId,
+        organization_id: ctx.orgId,
+        title: `AG d'approbation du budget ${Date.now()}`,
+        scheduled_date: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+        meeting_type: "Ordinary",
+        location: "Salle communale",
+      },
+      headers: { Authorization: `Bearer ${ctx.token}` },
+    });
+    const ag = await amorce(agResp, "seed:ag pour approbation du budget");
 
     await page.goto("/budgets", { waitUntil: "networkidle" });
     await page.waitForTimeout(500);
@@ -382,9 +404,7 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     expect((await attenteSoumission).status()).toBe(200);
 
     await page.getByTestId("approve-budget-button").click();
-    await page
-      .getByTestId("budget-approve-meeting-id-input")
-      .fill(randomUUID());
+    await page.getByTestId("budget-approve-meeting-id-input").fill(ag.id);
     const [approveResp] = await Promise.all([
       page.waitForResponse(
         (r) => r.url().includes("/approve") && r.request().method() === "PUT",
@@ -412,6 +432,95 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
       headers: { Authorization: `Bearer ${ctx.token}` },
     });
     const expense = await amorce(expenseResp, "seed expense pour répartition");
+
+    // Il faut des PROPRIÉTAIRES pour répartir entre eux.
+    //
+    // `seedBuildingWithUnitsViaPage` crée les lots mais ne les rattache à
+    // personne. Le cas d'usage refuse alors : « No active unit-owner
+    // relationships found for this building » — en 400, comme tous les
+    // refus de cette route, donc indiscernable du précédent.
+    //
+    // La règle est évidente une fois écrite : on ne répartit pas une charge
+    // entre des propriétaires qui n'existent pas. C'est l'amorçage qui était
+    // incomplet.
+    const lots = await amorce(
+      await page.request.get(`${API_BASE}/buildings/${buildingId}/units`, {
+        headers: { Authorization: `Bearer ${ctx.adminToken}` },
+      }),
+      "lecture des lots de l'immeuble",
+    );
+    const listeLots: Array<{ id: string }> = Array.isArray(lots)
+      ? lots
+      : (lots.data ?? lots.items ?? []);
+    expect(listeLots.length).toBeGreaterThan(0);
+
+    const proprietaire = await amorce(
+      await page.request.post(`${API_BASE}/owners`, {
+        data: {
+          organization_id: ctx.orgId,
+          first_name: "Tantieme",
+          last_name: `Proprietaire${Date.now()}`,
+          email: `tantieme-${Date.now()}@test.com`,
+          address: "1 Rue des Tantièmes",
+          city: "Brussels",
+          postal_code: "1000",
+          country: "Belgium",
+        },
+        // Créer une fiche de copropriétaire n'est pas dans les
+        // attributions du comptable (403). L'administration s'en charge,
+        // comme pour le rattachement des lots juste en dessous.
+        headers: { Authorization: `Bearer ${ctx.adminToken}` },
+      }),
+      "seed propriétaire pour répartition",
+    );
+
+    for (const lot of listeLots) {
+      await amorce(
+        await page.request.post(`${API_BASE}/units/${lot.id}/owners`, {
+          // 1 et non 100 : `ownership_percentage` est une FRACTION malgré
+          // son nom. Envoyer 100 fait répondre « adding: 10000% » et
+          // refuser en 400 (Art. 577-2 §4 CC).
+          data: {
+            owner_id: proprietaire.id,
+            ownership_percentage: 1,
+            is_primary_contact: true,
+          },
+          headers: { Authorization: `Bearer ${ctx.adminToken}` },
+        }),
+        `rattachement du lot ${lot.id}`,
+      );
+    }
+
+    // La répartition n'est possible que sur une facture APPROUVÉE.
+    //
+    // `charge_distribution_use_cases.rs:90` refuse sinon : « Cannot
+    // calculate distribution for non-approved invoice (status: Draft) », et
+    // le gestionnaire rend 400. Le test calculait sur une dépense fraîchement
+    // créée, donc `Draft`.
+    //
+    // La règle est juste — répartir une charge que personne n'a approuvée
+    // reviendrait à la faire payer avant de l'avoir validée. C'est donc le
+    // parcours qui sautait deux étapes, et elles sont ajoutées, pas
+    // contournées. `approved_by_user_id` vient du jeton, pas du corps
+    // (`expense_handlers.rs:846`).
+    await amorce(
+      await page.request.put(`${API_BASE}/invoices/${expense.id}/submit`, {
+        data: {},
+        headers: { Authorization: `Bearer ${ctx.token}` },
+      }),
+      "soumission de la dépense",
+    );
+    // Approuvée par l'ADMINISTRATION, pas par le comptable : `check_syndic_role`
+    // ne laisse passer que syndic ou superadmin (403 sinon). C'est une
+    // séparation des rôles — celui qui saisit la dépense ne l'approuve pas —
+    // et le test doit employer le bon acteur, pas contourner la règle.
+    await amorce(
+      await page.request.put(`${API_BASE}/invoices/${expense.id}/approve`, {
+        data: {},
+        headers: { Authorization: `Bearer ${ctx.adminToken}` },
+      }),
+      "approbation de la dépense",
+    );
 
     await page.goto(`/expense-detail?id=${expense.id}`, {
       waitUntil: "networkidle",
