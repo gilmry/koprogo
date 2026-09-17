@@ -481,7 +481,7 @@
   {#if installPromptEvent}
     <button
       type="button"
-      class="mb-4 w-full min-h-[44px] rounded-lg bg-sky-600 px-4 py-2 text-white font-medium hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+      class="mb-4 w-full min-h-[44px] rounded-lg bg-sky-700 px-4 py-2 text-white font-medium hover:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
       data-testid="pwa-install-prompt"
       aria-label="{$_('magicLink.install')} KoproGo Contractor"
       onclick={triggerInstall}
@@ -542,7 +542,7 @@
       <div class="mt-5 flex justify-end">
         <button
           type="button"
-          class="min-h-[44px] min-w-[44px] rounded-lg bg-sky-600 px-5 py-2 text-white font-medium hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+          class="min-h-[44px] min-w-[44px] rounded-lg bg-sky-700 px-5 py-2 text-white font-medium hover:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
           data-testid="pwa-summary-next"
           aria-label={actionVerb}
           onclick={goToAction}
@@ -737,7 +737,7 @@
           </button>
           <button
             type="submit"
-            class="min-h-[44px] rounded-lg bg-sky-600 px-5 py-2 text-white font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+            class="min-h-[44px] rounded-lg bg-sky-700 px-5 py-2 text-white font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
             data-testid="pwa-action-submit"
             disabled={submitDisabled}
             aria-label="Envoyer la réponse au syndic"

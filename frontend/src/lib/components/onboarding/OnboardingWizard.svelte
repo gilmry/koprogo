@@ -1,3 +1,15 @@
+<!--
+  Contraste : `sky-700` et non `sky-600` pour le fond des boutons pleins.
+
+  Texte blanc sur `sky-600` (#0084d1) donne **4,02:1**, sous le seuil de
+  4,5:1 exigé par WCAG 2.1 AA pour du texte de taille normale. axe-core le
+  relevait sur les étapes 1 et 2 de cet assistant. `sky-700` (#0369a1) donne
+  5,93:1. Le survol suit d'un cran, vers `sky-800`.
+
+  Même correction que `SyndicDashboard` (orange-600 → orange-700) : la
+  palette Tailwind au niveau 600 ne passe pas AA sur fond blanc pour du
+  texte normal, quelle que soit la teinte.
+-->
 <script lang="ts">
   // Story 5.7 — OnboardingWizard : mise en service d'une nouvelle ACP en 5
   // étapes (profil → recommandation → activation → démo → confirmation).
@@ -50,11 +62,7 @@
    * sont les modules métier optionnels de la plateforme.
    */
   export type OnboardingModule =
-    | "identity"
-    | "community"
-    | "accounting"
-    | "governance"
-    | "ticketing";
+    "identity" | "community" | "accounting" | "governance" | "ticketing";
 
   const ALL_MODULES: OnboardingModule[] = [
     "identity",
@@ -166,7 +174,9 @@
   // à la fois ; sans ces dérivés, un lecteur d'écran entendrait l'alerte
   // mais jamais lequel des quatre champs est en cause (cf. le pattern par
   // champ de MandateIssueForm.svelte).
-  let nameInvalid = $derived(profileError !== null && profile.name.trim() === "");
+  let nameInvalid = $derived(
+    profileError !== null && profile.name.trim() === "",
+  );
   let streetInvalid = $derived(
     profileError !== null && profile.addressStreet.trim() === "",
   );
@@ -546,14 +556,15 @@
     // Se relit à chaque changement d'étape.
     const etape = step;
     if (typeof document === "undefined") return;
-    const heading = document.getElementById(
-      `onboarding-step-${etape}-heading`,
-    );
+    const heading = document.getElementById(`onboarding-step-${etape}-heading`);
     heading?.focus();
   });
 </script>
 
-<div class="onboarding-wizard max-w-2xl mx-auto px-4 py-6" data-testid="onboarding-wizard-root">
+<div
+  class="onboarding-wizard max-w-2xl mx-auto px-4 py-6"
+  data-testid="onboarding-wizard-root"
+>
   {#if authPending}
     <!-- Rôle pas encore résolu (silent-refresh en cours) : ni le wizard ni
          le refus d'accès ne seraient corrects ici — l'un montrerait une
@@ -613,7 +624,10 @@
     {/if}
 
     {#if step === 1}
-      <section data-testid="onboarding-step-1" aria-labelledby="onboarding-step-1-heading">
+      <section
+        data-testid="onboarding-step-1"
+        aria-labelledby="onboarding-step-1-heading"
+      >
         <h1
           id="onboarding-step-1-heading"
           tabindex="-1"
@@ -624,7 +638,10 @@
 
         <div class="space-y-4">
           <div>
-            <label for="onboarding-name" class="block text-sm font-medium text-gray-800 mb-1">
+            <label
+              for="onboarding-name"
+              class="block text-sm font-medium text-gray-800 mb-1"
+            >
               {$_("onboarding.nameLabel") || "Nom de l'ACP"}
             </label>
             <input
@@ -636,12 +653,17 @@
               required
               aria-required="true"
               aria-invalid={nameInvalid || undefined}
-              aria-describedby={nameInvalid ? "onboarding-profile-error" : undefined}
+              aria-describedby={nameInvalid
+                ? "onboarding-profile-error"
+                : undefined}
             />
           </div>
 
           <div>
-            <label for="onboarding-street" class="block text-sm font-medium text-gray-800 mb-1">
+            <label
+              for="onboarding-street"
+              class="block text-sm font-medium text-gray-800 mb-1"
+            >
               {$_("onboarding.streetLabel") || "Rue et numéro"}
             </label>
             <input
@@ -653,13 +675,18 @@
               required
               aria-required="true"
               aria-invalid={streetInvalid || undefined}
-              aria-describedby={streetInvalid ? "onboarding-profile-error" : undefined}
+              aria-describedby={streetInvalid
+                ? "onboarding-profile-error"
+                : undefined}
             />
           </div>
 
           <div class="flex gap-3">
             <div class="flex-1">
-              <label for="onboarding-postal-code" class="block text-sm font-medium text-gray-800 mb-1">
+              <label
+                for="onboarding-postal-code"
+                class="block text-sm font-medium text-gray-800 mb-1"
+              >
                 {$_("onboarding.postalCodeLabel") || "Code postal"}
               </label>
               <input
@@ -677,7 +704,10 @@
               />
             </div>
             <div class="flex-[2]">
-              <label for="onboarding-city" class="block text-sm font-medium text-gray-800 mb-1">
+              <label
+                for="onboarding-city"
+                class="block text-sm font-medium text-gray-800 mb-1"
+              >
                 {$_("onboarding.cityLabel") || "Commune"}
               </label>
               <input
@@ -689,13 +719,18 @@
                 required
                 aria-required="true"
                 aria-invalid={cityInvalid || undefined}
-                aria-describedby={cityInvalid ? "onboarding-profile-error" : undefined}
+                aria-describedby={cityInvalid
+                  ? "onboarding-profile-error"
+                  : undefined}
               />
             </div>
           </div>
 
           <div>
-            <label for="onboarding-units-count" class="block text-sm font-medium text-gray-800 mb-1">
+            <label
+              for="onboarding-units-count"
+              class="block text-sm font-medium text-gray-800 mb-1"
+            >
               {$_("onboarding.unitsCountLabel") || "Nombre de lots"}
             </label>
             <input
@@ -737,7 +772,7 @@
           <div class="flex justify-end">
             <button
               type="button"
-              class="min-h-[44px] rounded-lg bg-sky-600 px-5 py-2 text-white font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-sky-700"
+              class="min-h-[44px] rounded-lg bg-sky-700 px-5 py-2 text-white font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-sky-800"
               data-testid="onboarding-next"
               disabled={creatingAcp}
               onclick={() => void goToRecommendation()}
@@ -752,7 +787,10 @@
     {/if}
 
     {#if step === 2}
-      <section data-testid="onboarding-step-2" aria-labelledby="onboarding-step-2-heading">
+      <section
+        data-testid="onboarding-step-2"
+        aria-labelledby="onboarding-step-2-heading"
+      >
         <h1
           id="onboarding-step-2-heading"
           tabindex="-1"
@@ -767,7 +805,9 @@
 
         <ul class="space-y-2 mb-4">
           {#each ALL_MODULES as module (module)}
-            <li class="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2">
+            <li
+              class="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2"
+            >
               <input
                 id={`onboarding-module-${module}`}
                 type="checkbox"
@@ -777,7 +817,10 @@
                 disabled={module === "identity"}
                 onchange={() => toggleModule(module)}
               />
-              <label for={`onboarding-module-${module}`} class="flex-1 text-sm text-gray-800">
+              <label
+                for={`onboarding-module-${module}`}
+                class="flex-1 text-sm text-gray-800"
+              >
                 {$_(`onboarding.module.${module}`) || module}
               </label>
               {#if recommendedModules.includes(module)}
@@ -809,7 +852,7 @@
             </button>
             <button
               type="button"
-              class="min-h-[44px] rounded-lg bg-sky-600 px-5 py-2 text-white font-medium hover:bg-sky-700"
+              class="min-h-[44px] rounded-lg bg-sky-700 px-5 py-2 text-white font-medium hover:bg-sky-800"
               data-testid="onboarding-next"
               onclick={confirmRecommendation}
             >
@@ -821,7 +864,10 @@
     {/if}
 
     {#if step === 3}
-      <section data-testid="onboarding-step-3" aria-labelledby="onboarding-step-3-heading">
+      <section
+        data-testid="onboarding-step-3"
+        aria-labelledby="onboarding-step-3-heading"
+      >
         <h1
           id="onboarding-step-3-heading"
           tabindex="-1"
@@ -856,21 +902,25 @@
           </button>
           <button
             type="button"
-            class="min-h-[44px] rounded-lg bg-sky-600 px-5 py-2 text-white font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-sky-700"
+            class="min-h-[44px] rounded-lg bg-sky-700 px-5 py-2 text-white font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-sky-800"
             data-testid="onboarding-activate-submit"
             disabled={activating}
             onclick={() => void activateModules()}
           >
             {activating
               ? $_("onboarding.activating") || "Activation en cours…"
-              : $_("onboarding.activateSubmit") || "Activer les modules sélectionnés"}
+              : $_("onboarding.activateSubmit") ||
+                "Activer les modules sélectionnés"}
           </button>
         </div>
       </section>
     {/if}
 
     {#if step === 4}
-      <section data-testid="onboarding-step-4" aria-labelledby="onboarding-step-4-heading">
+      <section
+        data-testid="onboarding-step-4"
+        aria-labelledby="onboarding-step-4-heading"
+      >
         <h1
           id="onboarding-step-4-heading"
           tabindex="-1"
@@ -889,7 +939,7 @@
         <div class="flex justify-end">
           <button
             type="button"
-            class="min-h-[44px] rounded-lg bg-sky-600 px-5 py-2 text-white font-medium hover:bg-sky-700"
+            class="min-h-[44px] rounded-lg bg-sky-700 px-5 py-2 text-white font-medium hover:bg-sky-800"
             data-testid="onboarding-demo-next"
             onclick={finishDemo}
           >
@@ -900,7 +950,10 @@
     {/if}
 
     {#if step === 5}
-      <section data-testid="onboarding-step-5" aria-labelledby="onboarding-step-5-heading">
+      <section
+        data-testid="onboarding-step-5"
+        aria-labelledby="onboarding-step-5-heading"
+      >
         <h1
           id="onboarding-step-5-heading"
           tabindex="-1"
@@ -909,7 +962,10 @@
           {$_("onboarding.confirmationTitle") || "Mise en service terminée"}
         </h1>
 
-        <p class="text-sm text-gray-800 mb-1" data-testid="onboarding-elapsed-time">
+        <p
+          class="text-sm text-gray-800 mb-1"
+          data-testid="onboarding-elapsed-time"
+        >
           {$_("onboarding.elapsedTime") || "Temps écoulé :"}
           {formatElapsed(elapsedMsAtConfirmation)}
         </p>
@@ -918,8 +974,10 @@
           data-testid="onboarding-kpi-status"
         >
           {underTarget
-            ? $_("onboarding.kpiUnderTarget") || "Objectif atteint (moins de 5 minutes)"
-            : $_("onboarding.kpiOverTarget") || "Au-delà de l'objectif de 5 minutes"}
+            ? $_("onboarding.kpiUnderTarget") ||
+              "Objectif atteint (moins de 5 minutes)"
+            : $_("onboarding.kpiOverTarget") ||
+              "Au-delà de l'objectif de 5 minutes"}
         </p>
 
         <div class="flex justify-end">
