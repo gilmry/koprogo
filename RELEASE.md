@@ -119,7 +119,7 @@ appelle une signature et non une validation.
   | Gate | État |
   |---|---|
   | `integration` | 🟢 mesuré, et vert en CI sur `main` |
-  | `e2e` parcours | 🟢 308 ✓ / 0 ✘, code 0 |
+  | `e2e` parcours | 🟡 | `CI=1 make test-e2e` | **341 ✓ / 1 ✘ / 0 instable / 14 sautés**, mesuré le 2026-09-17, backend stable (**zéro redémarrage**). Le départ de cette session était « 308 ✓ / 0 ✘ » daté du 2026-09-13, soit AVANT la fusion des cinquante-et-une branches — la campagne compte désormais 356 tests contre 322. L'unique échec (`Gdpr.spec.ts`, ménage par l'interface épuisant le budget) a été corrigé APRÈS cette mesure : le fichier rend 4 ✓ + 1 instable au niveau spec, mais la campagne complète n'a pas été relancée depuis. Reste 🟡 et non 🟢 pour cette raison. ⚠️ Sans `CI=1`, la campagne n'est pas comparable |
 
   Il reste **trois 🔴, tous du ressort du PO** : `ACTIX_WORKERS: 1` sur la
   démo, le banc de recette en hot reload (#880), et le type du jeton
@@ -383,6 +383,19 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
   jamais. Corrigé aussi : **aucune modale ne se fermait au clavier**
   (`ui/Modal.svelte`, employé par quatorze composants) — Échap était avalé
   par le `stopPropagation` du piège de focus.
+
+- 2026-09-17 — **341 ✓ / 1 ✘, et les quatre arbitrages du PO livrés.** Le
+  semis passe de 44 s à 20,7 s (bcrypt menés de front, coût inchangé), le
+  parcours comptable dit désormais que l'approbation n'est pas la sienne,
+  plus aucun texte blanc n'est sous 4,5:1, et `/organizations` pagine avec
+  recherche serveur — `/admin/acps` de **8 201 ms à 1 438 ms**.
+
+  Trois pièges valent d'être retenus, parce que chacun aurait fait perdre
+  quelque chose en silence : la recherche serveur ne couvrait pas le
+  `contact_email` que le filtre client cherchait déjà ; `TAILLE_ORGANISATIONS`
+  à 5000, contournement d'hier, annulait la pagination du jour ; et un test
+  qui choisissait une organisation dans une liste complète ne la trouvait
+  plus dans une page de cinquante — il doit la chercher, comme l'utilisateur.
 
 - 2026-09-17 — **Campagne complète : 332 ✓ / 7 ✘, zéro redémarrage.** Le gate
   e2e repasse de 🔴 à 🟡. Pas 🟢 : sept tests restent rouges, mais aucun
