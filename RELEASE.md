@@ -352,6 +352,18 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 
 ## Journal (chronologie courte)
 
+- 2026-09-17 — **Les 502 des campagnes n'étaient pas du produit.**
+  `UPLOAD_DIR` valait `/app/uploads`, or `/app` EST le code source monté et
+  `cargo watch` surveille tout le crate : chaque document envoyé faisait
+  redémarrer le backend. Mesuré — 2 redémarrages pour 100 s de campagne,
+  0 sur cinq minutes à vide, 0 après correction. J'avais avancé deux autres
+  explications, le semis bcrypt puis le cron de déploiement ; **les deux ont
+  été démenties par la mesure**, et je les avais données comme
+  vraisemblables. Le journal disait la vérité depuis le début : une
+  compilation en 0,8 s signifie que rien n'a été recompilé, donc qu'un
+  fichier non-source a bougé. `journeys/coproprietaire` passe de 4 échecs à
+  **6 tests verts**.
+
 - 2026-09-17 — **Le gate e2e passe de 🟢 à 🔴, et c'est un progrès.**
 
   Le 308 ✓ / 0 ✘ était sincère et daté du 2026-09-13, donc antérieur à la
