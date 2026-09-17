@@ -93,9 +93,16 @@ test.describe("Comptable — Rapports PCMN, parcours rempli jusqu'au bout", () =
 
   test("génère le bilan comptable de bout en bout", async ({ page }) => {
     const { buildingId } = await loginAsAccountant(page, "journey-reports");
+    // `load` et non `networkidle`, puis attente de l'élément réellement
+    // attendu. Mesuré sur `/reports` : 427 ms pour `load`, 2000 ms et 236
+    // requêtes pour `networkidle` — une part du budget de 30 s du test
+    // consommée sans rien prouver. La précondition réelle du geste est que
+    // le bouton de génération soit là. Même correction que le test « bilan »
+    // du parcours comptable.
     await page.goto(`/reports?buildingId=${buildingId}`, {
-      waitUntil: "networkidle",
+      waitUntil: "load",
     });
+    await expect(page.getByTestId("financial-reports-generate")).toBeVisible();
 
     const [resp] = await Promise.all([
       page.waitForResponse(
