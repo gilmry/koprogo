@@ -86,13 +86,64 @@ async function immeubleConforme(
   page: Page,
   ctx: ComptableContext,
 ): Promise<string> {
-  const { buildingId } = await seedBuildingWithUnitsViaPage(
+  const { buildingId, unitIds } = await seedBuildingWithUnitsViaPage(
     page,
     ctx.adminToken,
     ctx.orgId,
     4,
     1000,
   );
+
+  // Des lots QUI APPARTIENNENT À QUELQU'UN.
+  //
+  // `seedBuildingWithUnitsViaPage` crée les lots et s'arrête là. Un immeuble
+  // dont aucun lot n'a de titulaire n'est pas un immeuble réaliste, et deux
+  // parcours s'y cassaient — tous deux en 400, donc indiscernables l'un de
+  // l'autre sans lire le corps :
+  //
+  //   « No active unit-owner relationships found for this building »
+  //     → la répartition par tantièmes
+  //   « Unit has no active owners »
+  //     → l'état daté
+  //
+  // Le rattachement vit ici plutôt que dans chaque test : c'est une
+  // propriété de « l'immeuble conforme », pas une étape du geste comptable.
+  const proprietaire = await amorce(
+    await page.request.post(`${API_BASE}/owners`, {
+      data: {
+        organization_id: ctx.orgId,
+        first_name: "Titulaire",
+        last_name: `Lots${Date.now()}`,
+        email: `titulaire-${Date.now()}-${Math.round(performance.now())}@test.com`,
+        address: "1 Rue des Titulaires",
+        city: "Brussels",
+        postal_code: "1000",
+        country: "Belgium",
+      },
+      // Créer une fiche de copropriétaire n'est pas dans les attributions du
+      // comptable (403) : l'administration s'en charge.
+      headers: { Authorization: `Bearer ${ctx.adminToken}` },
+    }),
+    "seed titulaire des lots",
+  );
+
+  for (const unitId of unitIds) {
+    await amorce(
+      await page.request.post(`${API_BASE}/units/${unitId}/owners`, {
+        // 1 et non 100 : `ownership_percentage` est une FRACTION malgré son
+        // nom. Envoyer 100 fait répondre « adding: 10000% » et refuser en
+        // 400 (Art. 577-2 §4 CC).
+        data: {
+          owner_id: proprietaire.id,
+          ownership_percentage: 1,
+          is_primary_contact: true,
+        },
+        headers: { Authorization: `Bearer ${ctx.adminToken}` },
+      }),
+      `rattachement du lot ${unitId}`,
+    );
+  }
+
   return buildingId;
 }
 
@@ -433,76 +484,14 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     });
     const expense = await amorce(expenseResp, "seed expense pour répartition");
 
-    // Il faut des PROPRIÉTAIRES pour répartir entre eux.
-    //
-    // `seedBuildingWithUnitsViaPage` crée les lots mais ne les rattache à
-    // personne. Le cas d'usage refuse alors : « No active unit-owner
-    // relationships found for this building » — en 400, comme tous les
-    // refus de cette route, donc indiscernable du précédent.
-    //
-    // La règle est évidente une fois écrite : on ne répartit pas une charge
-    // entre des propriétaires qui n'existent pas. C'est l'amorçage qui était
-    // incomplet.
-    const lots = await amorce(
-      await page.request.get(`${API_BASE}/buildings/${buildingId}/units`, {
-        headers: { Authorization: `Bearer ${ctx.adminToken}` },
-      }),
-      "lecture des lots de l'immeuble",
-    );
-    const listeLots: Array<{ id: string }> = Array.isArray(lots)
-      ? lots
-      : (lots.data ?? lots.items ?? []);
-    expect(listeLots.length).toBeGreaterThan(0);
-
-    const proprietaire = await amorce(
-      await page.request.post(`${API_BASE}/owners`, {
-        data: {
-          organization_id: ctx.orgId,
-          first_name: "Tantieme",
-          last_name: `Proprietaire${Date.now()}`,
-          email: `tantieme-${Date.now()}@test.com`,
-          address: "1 Rue des Tantièmes",
-          city: "Brussels",
-          postal_code: "1000",
-          country: "Belgium",
-        },
-        // Créer une fiche de copropriétaire n'est pas dans les
-        // attributions du comptable (403). L'administration s'en charge,
-        // comme pour le rattachement des lots juste en dessous.
-        headers: { Authorization: `Bearer ${ctx.adminToken}` },
-      }),
-      "seed propriétaire pour répartition",
-    );
-
-    for (const lot of listeLots) {
-      await amorce(
-        await page.request.post(`${API_BASE}/units/${lot.id}/owners`, {
-          // 1 et non 100 : `ownership_percentage` est une FRACTION malgré
-          // son nom. Envoyer 100 fait répondre « adding: 10000% » et
-          // refuser en 400 (Art. 577-2 §4 CC).
-          data: {
-            owner_id: proprietaire.id,
-            ownership_percentage: 1,
-            is_primary_contact: true,
-          },
-          headers: { Authorization: `Bearer ${ctx.adminToken}` },
-        }),
-        `rattachement du lot ${lot.id}`,
-      );
-    }
-
     // La répartition n'est possible que sur une facture APPROUVÉE.
     //
     // `charge_distribution_use_cases.rs:90` refuse sinon : « Cannot
-    // calculate distribution for non-approved invoice (status: Draft) », et
-    // le gestionnaire rend 400. Le test calculait sur une dépense fraîchement
-    // créée, donc `Draft`.
-    //
-    // La règle est juste — répartir une charge que personne n'a approuvée
-    // reviendrait à la faire payer avant de l'avoir validée. C'est donc le
-    // parcours qui sautait deux étapes, et elles sont ajoutées, pas
-    // contournées. `approved_by_user_id` vient du jeton, pas du corps
-    // (`expense_handlers.rs:846`).
+    // calculate distribution for non-approved invoice (status: Draft) », en
+    // 400 — indiscernable des autres refus de cette route sans lire le
+    // corps. Répartir une charge que personne n'a approuvée reviendrait à la
+    // faire payer avant de l'avoir validée : les deux étapes sont ajoutées,
+    // pas contournées.
     await amorce(
       await page.request.put(`${API_BASE}/invoices/${expense.id}/submit`, {
         data: {},
@@ -510,13 +499,11 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
       }),
       "soumission de la dépense",
     );
-    // Approuvée par l'ADMINISTRATION, pas par le comptable : `check_syndic_role`
-    // ne laisse passer que syndic ou superadmin (403 sinon). C'est une
-    // séparation des rôles — celui qui saisit la dépense ne l'approuve pas —
-    // et le test doit employer le bon acteur, pas contourner la règle.
     await amorce(
       await page.request.put(`${API_BASE}/invoices/${expense.id}/approve`, {
         data: {},
+        // `check_syndic_role` ne laisse passer que syndic ou superadmin :
+        // qui saisit la dépense ne l'approuve pas.
         headers: { Authorization: `Bearer ${ctx.adminToken}` },
       }),
       "approbation de la dépense",
@@ -629,6 +616,12 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     await immeubleConforme(page, ctx);
 
     await page.goto("/etats-dates", { waitUntil: "networkidle" });
+    // Le formulaire est replié : `EtatDateList.svelte:143` ne le monte que
+    // si `showCreateForm`, et c'est le bouton ci-dessous qui bascule. Le
+    // test attendait donc un formulaire que personne n'avait ouvert, et
+    // expirait — un échec qui ressemble à un écran cassé alors que c'est
+    // une étape du geste qui manquait.
+    await page.getByTestId("etats-dates-create-toggle-button").click();
     await page.getByTestId("etat-date-create-form").waitFor();
 
     await page.getByTestId("building").selectOption({ index: 1 });
