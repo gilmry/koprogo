@@ -230,7 +230,7 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
 | `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré en local le 2026-09-13**. ⚠️ #877 reste OUVERTE : son premier critère dit « vert EN CI », et la CI ne l'a pas vu — les commits ne sont pas poussés |
 | `bdd` | 🟢 | suites `bdd_*.rs` | `bdd_acp` remesuré le 2026-09-16 : **17 scénarios / 78 étapes, code 0**. Était rouge à 17 sur 17 avant #939, sans que personne le sache — le vert du 2026-09-12 datait d'avant la fusion qui a créé la collision |
-| `e2e` parcours | 🔴 | `CI=1 make test-e2e` | **Remesuré le 2026-09-17 et il n'est PAS vert.** Le 308 ✓ / 0 ✘ du 2026-09-13 était antérieur à la fusion des cinquante-et-une branches. Quatre campagnes ont rendu **dix** échecs restants (#942), après correction de sept défauts réels — `Resolutions`, `Bookings` et `ConvocationRecipientSelector` sont repassés verts et vérifiés, dont quatre colonnes/tables absentes de la base (#941) qui cassaient résolutions, votes, réaffectations de fonds et réservations **en production**. Backend stable (témoin #880, aucun redémarrage) : ce sont de vrais constats. ⚠️ Une campagne lancée SANS `CI=1` n'est pas comparable — `playwright.config.ts:44` met 1 worker en CI et la moitié des cœurs en local, d'où des 502 de saturation qui ressemblent à des régressions |
+| `e2e` parcours | 🟡 | `CI=1 make test-e2e` | **332 ✓ / 7 ✘ / 2 instables / 14 sautés**, mesuré le 2026-09-17, backend stable (témoin #880, **zéro redémarrage**). Comparer au 308 ✓ / 0 ✘ du 2026-09-13 serait trompeur : cette campagne compte 355 tests contre 322, les branches fusionnées en ayant ajouté. Les 7 restants sont inventoriés en #942 et **aucun n'est un défaut à corriger** : 4 expirent parce que `POST /seed/scenario/world` prend 44 s et monopolise le pool bloquant (arbitrage : paralléliser les hachages ou abaisser le coût bcrypt des fixtures), 1 est un parcours de persona qui décrit une approbation que le produit refuse au comptable (arbitrage), 2 sont des constats d'accessibilité non instruits. ⚠️ Sans `CI=1`, la campagne n'est pas comparable (1 worker en CI, la moitié des cœurs en local) |
 | `visuel` | ⚪ | — | pas de goldens |
 | `doc-vivante` | 🟢 | `make vitrine` | le PARCOURS : complet, 10 chapitres, 81 s, `interrompu: None`, artefact de 79 Mo publié (run 34764114133). ⚠️ Les douze `.scenario.ts` du même job rendent **10 ✓ / 2 ✘** et ne peuvent PAS rougir le job : `continue-on-error: true` depuis le 2026-06-15, avec une condition de retrait jamais rouverte |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
@@ -351,6 +351,13 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 | **PR #879** | **relancer pour qu'elle ait ses gates** avant la revue. La chronométrer sans preuve mesurerait autre chose que ce que #875 cherche | Gilles Maury | 2026-09-13 | #875, run `34764114133` |
 
 ## Journal (chronologie courte)
+
+- 2026-09-17 — **Campagne complète : 332 ✓ / 7 ✘, zéro redémarrage.** Le gate
+  e2e repasse de 🔴 à 🟡. Pas 🟢 : sept tests restent rouges, mais aucun
+  n'est un défaut à corriger — quatre butent sur le coût du semis, deux sont
+  des constats d'accessibilité non instruits, un est un parcours de persona
+  qui contredit le produit. Les trois questions ouvertes sont des
+  **décisions**, pas du travail, et elles sont posées en #942.
 
 - 2026-09-17 — **Les 502 des campagnes n'étaient pas du produit.**
   `UPLOAD_DIR` valait `/app/uploads`, or `/app` EST le code source monté et
