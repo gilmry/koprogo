@@ -1421,8 +1421,28 @@ impl DatabaseSeeder {
         role: &str,
         organization_id: Option<Uuid>,
     ) -> Result<Uuid, String> {
-        let password_hash =
-            hash(password, DEFAULT_COST).map_err(|e| format!("Failed to hash password: {}", e))?;
+        // Haché HORS des threads de travail Actix, comme #718 l'a fait pour
+        // l'authentification.
+        //
+        // Ce semeur crée vingt-six comptes, chacun avec un bcrypt à
+        // `DEFAULT_COST`. Mesuré sur la recette le 2026-09-17 :
+        // `POST /seed/scenario/world` prend **45 secondes**. Tant que le
+        // hachage se faisait sur le fil de la requête, il gelait un worker
+        // pendant tout ce temps — et avec `ACTIX_WORKERS: 1`, c'est l'API
+        // ENTIÈRE qui ne répondait plus.
+        //
+        // C'est la meilleure explication que j'aie des `502 Bad Gateway`
+        // intermittents qui parsèment les campagnes e2e : ils tombent quand
+        // une requête arrive pendant qu'un semis hache.
+        //
+        // La durée totale ne change pas : ce n'est pas le but. Ce qui change,
+        // c'est que le reste de l'API continue de répondre pendant ce
+        // temps-là.
+        let mot_de_passe = password.to_string();
+        let password_hash = tokio::task::spawn_blocking(move || hash(&mot_de_passe, DEFAULT_COST))
+            .await
+            .map_err(|e| format!("Hachage interrompu : {e}"))?
+            .map_err(|e| format!("Failed to hash password: {}", e))?;
 
         let user_id = Uuid::new_v4();
         let now = Utc::now();
