@@ -243,8 +243,13 @@ export const coproprietaire: Parcours = {
         organization_id: org.id,
       },
     });
-    const syndic = await assertOk<{ token: string }>(syndicResp, "seed:syndic");
+    const syndic = await assertOk<{
+      token: string;
+      user?: { id?: string };
+      id?: string;
+    }>(syndicResp, "seed:syndic");
     const syndicToken = syndic.token;
+    const syndicUserId = syndic.user?.id ?? syndic.id ?? "";
 
     // Amorcées avec le jeton du SYNDIC, pas celui de l'admin global.
     //
@@ -338,6 +343,45 @@ export const coproprietaire: Parcours = {
       headers: { Authorization: `Bearer ${syndicToken}` },
     });
     const meeting = await assertOk<{ id: string }>(meetingResp, "seed:meeting");
+
+    // Un procès-verbal rattaché à l'assemblée.
+    //
+    // `MeetingDocuments.svelte:251` ne monte `meeting-documents-list` que
+    // si la liste n'est PAS vide : sans document, l'écran affiche son état
+    // vide et l'étape « consulter le procès-verbal » n'a rien à montrer.
+    //
+    // Le rattachement se fait en DEUX temps, et c'est la seule voie : le
+    // formulaire d'envoi (`UploadForm`) n'a pas de champ `meeting_id`, la
+    // colonne s'appelle `related_meeting_id`, et c'est
+    // `PUT /documents/{id}/link-meeting` qui l'écrit.
+    const pvResp = await api.post(`${API_BASE}/documents`, {
+      multipart: {
+        file: {
+          name: "proces-verbal.txt",
+          mimeType: "text/plain",
+          buffer: Buffer.from(
+            "Procès-verbal de l'assemblée générale — parcours copropriétaire.",
+          ),
+        },
+        building_id: acpErables.buildingId,
+        // « MeetingMinutes » — procès-verbal. La liste exacte est dans
+        // `domain/copropriete/document.rs:7` ; un autre nom rend 400
+        // « Invalid document_type ».
+        document_type: "MeetingMinutes",
+        title: `Procès-verbal ${horodatage}`,
+        uploaded_by: syndicUserId,
+      },
+      headers: { Authorization: `Bearer ${syndicToken}` },
+    });
+    const pv = await assertOk<{ id: string }>(pvResp, "seed:proces-verbal");
+
+    await assertOk(
+      await api.put(`${API_BASE}/documents/${pv.id}/link-meeting`, {
+        data: { meeting_id: meeting.id },
+        headers: { Authorization: `Bearer ${syndicToken}` },
+      }),
+      "seed:rattachement du procès-verbal",
+    );
 
     const agendaResp = await api.post(
       `${API_BASE}/meetings/${meeting.id}/agenda`,
