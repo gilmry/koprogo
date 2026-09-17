@@ -224,13 +224,13 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | Gate | Statut | Commande | Note |
 |---|---|---|---|
 | `plancher` secrets | 🟢 | `.claude/hooks/stop-leak-scan.sh` | bloquant, 3 hooks sur 8 bloquent vraiment |
-| `plancher` migrations | 🟡 | `kcargo test --test garde_versions_de_migration` | **Passe de ⚪ à 🟡 le 2026-09-16.** Un gate existe enfin, né d'un vrai dégât (#939) : deux migrations au même horodatage faisaient échouer TOUTE base neuve en 23505. Il vérifie désormais la collision de version (dur) et le nombre de montantes sans `.down.sql` (cliquet à **93 sur 138**, mesuré). Reste 🟡 et non 🟢 : la réversibilité elle-même n'est toujours pas *exécutée*, seulement l'existence du fichier |
+| `plancher` migrations | 🟡 | `kcargo test --test garde_versions_de_migration` | **Passe de ⚪ à 🟡 le 2026-09-16.** Un gate existe enfin, né d'un vrai dégât (#939) : deux migrations au même horodatage faisaient échouer TOUTE base neuve en 23505. Il vérifie désormais la collision de version (dur) et le nombre de montantes sans `.down.sql` (cliquet à **93 sur 138**, mesuré). S'y ajoute le 2026-09-17 `garde_colonnes_declarees` (#941) : toute colonne d'un `INSERT INTO` doit exister dans les migrations — il a fallu quatre stories cassées en production pour que cet instrument existe. Reste 🟡 et non 🟢 : la réversibilité elle-même n'est toujours pas *exécutée*, seulement l'existence du fichier |
 | `verify` structurel | 🟢 | `kcargo test --test architecture` + 15 gardes | 16 suites vertes |
 | `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée. **Remesuré le 2026-09-16** : la couverture était ROUGE depuis la fusion (417 routes non annotées contre un cliquet à 410) et bloquait le déploiement. Huit routes annotées et enregistrées, dix DTO passés à `ToSchema`, cliquet resserré à **409** — la valeur mesurée, pas celle d'avant. `api.d.ts` passe de 161 à 173 schémas sans en perdre un |
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
 | `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré en local le 2026-09-13**. ⚠️ #877 reste OUVERTE : son premier critère dit « vert EN CI », et la CI ne l'a pas vu — les commits ne sont pas poussés |
 | `bdd` | 🟢 | suites `bdd_*.rs` | `bdd_acp` remesuré le 2026-09-16 : **17 scénarios / 78 étapes, code 0**. Était rouge à 17 sur 17 avant #939, sans que personne le sache — le vert du 2026-09-12 datait d'avant la fusion qui a créé la collision |
-| `e2e` parcours | 🟢 | `make test-e2e` | **308 ✓ / 0 ✘ / 14 sautés — CODE 0**, le 2026-09-13 après le correctif de #718 (`40eb8edd`). Aucun redémarrage pendant (`SIGTERM` 4 avant, 4 après). Même chiffre qu'en CI |
+| `e2e` parcours | 🔴 | `CI=1 make test-e2e` | **Remesuré le 2026-09-17 et il n'est PAS vert.** Le 308 ✓ / 0 ✘ du 2026-09-13 était antérieur à la fusion des cinquante-et-une branches. Trois campagnes ont rendu 24 tests distincts en échec et **six défauts réels**, dont quatre colonnes/tables absentes de la base (#941) qui cassaient résolutions, votes, réaffectations de fonds et réservations **en production**. Backend stable (témoin #880, aucun redémarrage) : ce sont de vrais constats. ⚠️ Une campagne lancée SANS `CI=1` n'est pas comparable — `playwright.config.ts:44` met 1 worker en CI et la moitié des cœurs en local, d'où des 502 de saturation qui ressemblent à des régressions |
 | `visuel` | ⚪ | — | pas de goldens |
 | `doc-vivante` | 🟢 | `make vitrine` | le PARCOURS : complet, 10 chapitres, 81 s, `interrompu: None`, artefact de 79 Mo publié (run 34764114133). ⚠️ Les douze `.scenario.ts` du même job rendent **10 ✓ / 2 ✘** et ne peuvent PAS rougir le job : `continue-on-error: true` depuis le 2026-06-15, avec une condition de retrait jamais rouverte |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
@@ -351,6 +351,30 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
 | **PR #879** | **relancer pour qu'elle ait ses gates** avant la revue. La chronométrer sans preuve mesurerait autre chose que ce que #875 cherche | Gilles Maury | 2026-09-13 | #875, run `34764114133` |
 
 ## Journal (chronologie courte)
+
+- 2026-09-17 — **Le gate e2e passe de 🟢 à 🔴, et c'est un progrès.**
+
+  Le 308 ✓ / 0 ✘ était sincère et daté du 2026-09-13, donc antérieur à la
+  fusion des cinquante-et-une branches. Relancé, il rend six défauts réels.
+  Quatre d'entre eux sont des **colonnes ou des tables qu'aucune migration ne
+  crée** (#941) : `resolutions.kind`, `votes.auth_method`, la table
+  `fund_reassignments` entière, et trois colonnes de `resource_bookings`.
+  Résolutions, votes, réaffectations de fonds et réservations étaient cassés
+  **en production**, sur la démo comme ailleurs.
+
+  Aucun outil ne pouvait le dire : ces quatre dépôts emploient
+  `sqlx::query(...)`, vérifié à l'exécution. Le compilateur ne lit pas ces
+  chaînes. Deux des quatre ont été trouvés par hasard ; les deux autres par
+  une battue lancée parce que le hasard avait frappé deux fois.
+  `garde_colonnes_declarees` remplace le hasard, et il a été vérifié qu'il
+  **mord** avant d'être déclaré vert.
+
+  Deux leçons de méthode s'ajoutent au registre. La première : une campagne
+  e2e lancée sans `CI=1` n'est **pas** comparable à celle de la CI (1 worker
+  contre la moitié des cœurs) — les 502 de saturation ressemblent à des
+  régressions et coûtent une enquête pour rien. La seconde : la branche
+  déployée n'exécute que 7 des 113 fichiers de specs (#940), ce qui explique
+  qu'un gate 🟢 ait pu vieillir quatre jours sans que personne le sache.
 
 - 2026-09-16 — **CI verte sur `eff6e6ab`, déploiement compris.** Le workflow
   « VPS ecosolva » était rouge depuis au moins trois commits. Il ne l'était pas
