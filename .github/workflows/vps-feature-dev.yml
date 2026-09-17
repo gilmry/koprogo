@@ -162,6 +162,7 @@ jobs:
             --test garde_taxonomie_des_tests \
             --test garde_harnais_executes \
             --test garde_versions_de_migration \
+            --test garde_colonnes_declarees \
             --test garde_identite_sans_decision \
             --test garde_skips_justifies
 

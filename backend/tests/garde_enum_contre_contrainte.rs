@@ -66,6 +66,13 @@ const PAIRES: &[(&str, &str, &str)] = &[
         "ResolutionKind",
         "resolutions_kind_check",
     ),
+    // Story 4.2 (#48) — même défaut que ci-dessus, trouvé dans la même
+    // campagne : l'enum livré, la colonne jamais créée.
+    (
+        "src/domain/copropriete/vote.rs",
+        "VoteAuthMethod",
+        "votes_auth_method_check",
+    ),
 ];
 
 fn racine() -> PathBuf {

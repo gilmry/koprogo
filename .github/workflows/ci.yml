@@ -185,6 +185,7 @@ jobs:
             --test garde_identite_jetee \
             --test garde_enum_contre_contrainte \
             --test garde_versions_de_migration \
+            --test garde_colonnes_declarees \
             --test garde_paniques_en_production \
             --test garde_perimetre_wbs \
             --test garde_schema_mort \
