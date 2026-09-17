@@ -57,6 +57,15 @@ const PAIRES: &[(&str, &str, &str)] = &[
         "Module",
         "acp_enabled_modules_module_check",
     ),
+    // Story 4.6 (#581) — l'enum a vécu six jours SANS sa colonne. Le dépôt
+    // de résolutions emploie des requêtes vérifiées à l'exécution : rien ne
+    // pouvait le dire avant qu'un appel réel échoue. Cette paire est le
+    // rattrapage.
+    (
+        "src/domain/copropriete/resolution.rs",
+        "ResolutionKind",
+        "resolutions_kind_check",
+    ),
 ];
 
 fn racine() -> PathBuf {
