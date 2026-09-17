@@ -229,6 +229,20 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     const form = page.getByTestId("acp-create-form");
     await expect(form).toBeVisible();
     await form.getByTestId("acp-form-name").fill(`S2 ACP ${ts}`);
+
+    // On CHERCHE l'organisation avant de la choisir.
+    //
+    // Le sélecteur ne charge plus les 3006 organisations de la base mais une
+    // page de cinquante, triée par nom (#943). Celle que ce test vient de
+    // créer — « s2happy2 Org <horodatage> » — n'y est pas, et
+    // `selectOption` échouait sur « did not find some options ».
+    //
+    // Ce n'est pas un contournement : c'est le geste réel depuis que
+    // l'écran cherche côté serveur. Un administrateur tape le nom.
+    await form.getByTestId("acp-form-org-search").fill(`s2happy2-${ts}`);
+    await expect(
+      form.getByTestId("acp-form-org-id").locator(`option[value="${org.id}"]`),
+    ).toHaveCount(1, { timeout: 10_000 });
     await form.getByTestId("acp-form-org-id").selectOption(org.id);
     await form.getByTestId("acp-form-street").fill("1 Rue Test");
     await form.getByTestId("acp-form-postal").fill("1000");
