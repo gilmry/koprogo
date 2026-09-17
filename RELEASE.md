@@ -289,6 +289,24 @@ un défaut de structure. Seul l'ordre des capacités est repris.
 
 ## Arbitrages
 
+### Les cinq décisions qui restent avant la revue (2026-09-17)
+
+Aucune n'est du travail d'agent : ce sont des choix de produit ou de
+conception, chacun posé avec sa mesure.
+
+| # | Décision | Mesure qui l'appelle |
+|---|---|---|
+| #942 | Le comptable doit-il pouvoir approuver une facture ? `docs/personas/accountant.md` décrit cette chaîne comme la sienne ; l'UI et l'API la lui refusent (séparation des rôles) | 1 test e2e |
+| #942 | Le semis du monde coûte 44 s (26 bcrypts en série). Paralléliser (4 cœurs → ~11 s) ou abaisser le coût bcrypt des fixtures ? | bloque 7 tests d'accessibilité en campagne |
+| #942 / #876 | Qui POSSÈDE le monde de scénario ? Aucun `globalSetup` déclaré, quatorze teardowns le supprimaient | corrigé à moitié : plus personne ne le supprime |
+| #943 | `GET /organizations` ignore `per_page` et rend la table (2743 lignes). Paginer change un contrat consommé ailleurs | 8,2 s sur `/admin/acps`, 1 test e2e |
+| #942 | Cinq couples de contraste sous 4,5:1 (`green-600` 3,30, `amber-600` 3,18, `yellow-600` 2,94, `red-500` 3,81, `orange-600` 3,60). Les corriger fonce l'application sur de nombreux écrans | cliquet posé, ne peut plus empirer |
+
+Les défauts, eux, sont corrigés et leurs issues fermées : #939 (migrations à
+la même version), #941 (quatre colonnes absentes de la base), #937 (reclassé
+en #585).
+
+
 ### 🔴 En attente (le PO doit trancher une MODALITÉ)
 
 **Retiré le 2026-09-16 — il n'y avait pas d'arbitrage.**
