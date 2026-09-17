@@ -38,8 +38,7 @@
   } from "../../stores/enabled_modules.svelte";
   import { isKnownModule, UnknownModuleError } from "../../lib/api/modules";
 
-  let { module, children }: { module: string; children?: Snippet } =
-    $props();
+  let { module, children }: { module: string; children?: Snippet } = $props();
 
   /** ACP en cours de fetch — évite un re-fetch concurrent pour le même id. */
   let inFlightAcpId: string | null = null;

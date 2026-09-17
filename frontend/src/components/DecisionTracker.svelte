@@ -284,7 +284,7 @@
                 <button
                   data-testid="decision-complete-button"
                   onclick={() => completeDecision(decision.id)}
-                  class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md"
+                  class="px-3 py-1.5 text-sm font-medium text-white bg-green-700 hover:bg-green-800 rounded-md"
                 >
                   {$_("board.finish")}
                 </button>

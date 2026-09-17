@@ -288,7 +288,7 @@
                 data-testid="profile-edit-save"
                 on:click={saveProfile}
                 disabled={saving}
-                class="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors"
+                class="px-4 py-2 bg-amber-700 text-white rounded-lg text-sm font-medium hover:bg-amber-800 disabled:opacity-50 transition-colors"
               >
                 {saving ? "Enregistrement..." : "Enregistrer"}
               </button>
@@ -486,7 +486,7 @@
             data-testid="profile-gdpr-restrict"
             on:click={handleRestrictProcessing}
             disabled={gdprRestricting}
-            class="ml-4 px-3 py-1.5 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+            class="ml-4 px-3 py-1.5 bg-yellow-700 text-white rounded-lg text-sm font-medium hover:bg-yellow-800 disabled:opacity-50 transition-colors whitespace-nowrap"
           >
             {gdprRestricting ? "En cours..." : "Restreindre"}
           </button>

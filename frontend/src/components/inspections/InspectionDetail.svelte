@@ -249,7 +249,7 @@
                 data-testid="inspection-mark-completed-button"
                 onclick={() =>
                   quickStatusUpdate(InspectionStatus.Completed, true)}
-                class="px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition"
+                class="px-3 py-1.5 text-xs bg-green-700 text-white rounded hover:bg-green-800 transition"
               >
                 ✅ {$_("inspections.compliant")}
               </button>
@@ -257,7 +257,7 @@
                 data-testid="inspection-mark-remarks-button"
                 onclick={() =>
                   quickStatusUpdate(InspectionStatus.PassedWithRemarks, true)}
-                class="px-3 py-1.5 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700 transition"
+                class="px-3 py-1.5 text-xs bg-yellow-700 text-white rounded hover:bg-yellow-800 transition"
               >
                 ⚠️ {$_("inspections.compliantWithRemarks")}
               </button>

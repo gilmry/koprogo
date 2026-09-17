@@ -368,7 +368,7 @@
           data-testid="seed-generate-button"
           on:click={generateSeed}
           disabled={loading}
-          class="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg shadow-md"
+          class="w-full bg-green-700 text-white py-3 px-6 rounded-lg hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg shadow-md"
         >
           {loading ? $_("seed.generating") : `🚀 ${$_("seed.generate")}`}
         </button>

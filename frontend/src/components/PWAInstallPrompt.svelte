@@ -88,7 +88,7 @@
             <button
               data-testid="pwa-install-button"
               on:click={handleInstall}
-              class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              class="flex-1 bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
               {$_("pwa.install")}
             </button>

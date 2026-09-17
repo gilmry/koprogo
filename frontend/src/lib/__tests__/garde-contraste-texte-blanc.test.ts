@@ -136,23 +136,20 @@ function couplesSousTexteBlanc(): Map<string, Set<string>> {
 }
 
 /**
- * Couples encore fautifs au 2026-09-17. Mesuré, pas souhaité.
+ * Couples tolérés sous le seuil AA. **La liste est VIDE**, et c'est le but.
  *
- * Les corriger revient à foncer d'un cran (`-600` → `-700`) dans 35
- * endroits, ce qui change l'aspect de l'application sur de nombreux écrans.
- * C'est une décision de conception, posée en #942 — pas quelque chose à
- * glisser dans une passe de tests.
+ * Elle comptait cinq entrées au 2026-09-17 — `green-600` 3,30:1,
+ * `amber-600` 3,18, `yellow-600` 2,94, `red-500` 3,81, `orange-600` 3,60 —
+ * héritées et mesurées. Le PO a tranché le jour même : corriger, d'un cran.
+ * 45 remplacements dans 25 fichiers, uniquement dans les attributs portant
+ * `text-white` et uniquement à l'état au repos.
  *
- * Ce nombre ne doit que DESCENDRE.
+ * Plus aucun texte blanc de cette application n'est sous 4,5:1.
+ *
+ * Y ajouter une entrée demande une raison écrite ET son ratio mesuré. Le
+ * défaut, désormais, est de refuser.
  */
-const COUPLES_FAUTIFS_AU_2026_09_17 = [
-  // teinte-niveau     ratio mesuré     où
-  "green-600", //      3,30:1           22 emplois
-  "amber-600", //      3,18:1           13 emplois
-  "yellow-600", //     2,94:1           ProfilePanel, BudgetDetail, EtatDateDetail, InspectionDetail…
-  "red-500", //        3,81:1           SyndicDashboard, EtatDateDetail, EtatDateList…
-  "orange-600", //     3,60:1           PaymentReminderDetail, SkillOfferDetail
-];
+const COUPLES_FAUTIFS_AU_2026_09_17: string[] = [];
 
 describe("contraste du texte blanc sur fond de couleur (WCAG 2.1 AA)", () => {
   it("le_cliquet_lit_bien_quelque_chose", () => {

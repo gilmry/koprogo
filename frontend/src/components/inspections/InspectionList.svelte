@@ -308,7 +308,7 @@
       <div class="mt-3 flex gap-2">
         <button
           onclick={createInspection}
-          class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+          class="px-4 py-1.5 bg-green-700 text-white text-sm rounded hover:bg-green-800"
           data-testid="submit-inspection-button">{$_("common.create")}</button
         >
         <button

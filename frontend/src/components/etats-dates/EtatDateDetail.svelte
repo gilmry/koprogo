@@ -158,7 +158,7 @@
             <EtatDateStatusBadge status={etatDate.status} />
             {#if etatDate.is_overdue}
               <span
-                class="px-2 py-1 bg-red-500 text-white text-xs rounded-full font-bold"
+                class="px-2 py-1 bg-red-600 text-white text-xs rounded-full font-bold"
                 >{$_("etatsDate.overdue")}</span
               >
             {/if}
@@ -368,7 +368,7 @@
           <button
             on:click={markInProgress}
             disabled={actionLoading}
-            class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition disabled:opacity-50"
+            class="px-4 py-2 bg-yellow-700 text-white rounded-lg hover:bg-yellow-800 transition disabled:opacity-50"
             data-testid="mark-in-progress-button"
           >
             {$_("etatsDate.actions.startProcessing")}
@@ -379,7 +379,7 @@
           <button
             on:click={markGenerated}
             disabled={actionLoading}
-            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+            class="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 transition disabled:opacity-50"
             data-testid="mark-generated-button"
           >
             {$_("etatsDate.actions.markAsGenerated")}

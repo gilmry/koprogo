@@ -368,7 +368,7 @@
           data-testid="quote-submit-button"
           onclick={handleSubmitQuote}
           disabled={actionLoading}
-          class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors"
+          class="px-3 py-1.5 bg-amber-700 text-white rounded-lg text-sm font-medium hover:bg-amber-800 disabled:opacity-50 transition-colors"
         >
           {actionLoading
             ? $_("quotes.detail.submitting")
@@ -395,7 +395,7 @@
         onclick={() => (showSubmitForm = !showSubmitForm)}
         disabled={actionLoading}
         data-testid="submit-quote-button"
-        class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors"
+        class="px-3 py-1.5 bg-amber-700 text-white rounded-lg text-sm font-medium hover:bg-amber-800 disabled:opacity-50 transition-colors"
       >
         {$_("quotes.detail.submitQuote")}
       </button>
@@ -429,7 +429,7 @@
         onclick={handleAccept}
         disabled={actionLoading}
         data-testid="accept-quote-button"
-        class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+        class="px-3 py-1.5 bg-green-700 text-white rounded-lg text-sm font-medium hover:bg-green-800 disabled:opacity-50 transition-colors"
       >
         {$_("quotes.detail.accept")}
       </button>

@@ -523,7 +523,7 @@
               >
               {#if openTicketsCount > 0}
                 <span
-                  class="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full"
+                  class="absolute top-2 right-2 px-1.5 py-0.5 bg-red-600 text-white text-xs font-bold rounded-full"
                   >{openTicketsCount}</span
                 >
               {/if}
@@ -565,7 +565,7 @@
               >
               {#if unreadNotifCount > 0}
                 <span
-                  class="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full"
+                  class="absolute top-2 right-2 px-1.5 py-0.5 bg-red-600 text-white text-xs font-bold rounded-full"
                   >{unreadNotifCount}</span
                 >
               {/if}

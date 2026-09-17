@@ -358,7 +358,7 @@
             onclick={handleSend}
             disabled={actionLoading}
             data-testid="convocation-detail-btn-send"
-            class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
+            class="px-4 py-2 bg-green-700 text-white text-sm font-medium rounded-md hover:bg-green-800 disabled:opacity-50"
           >
             {$_("convocations.actions.sendNow")}
           </button>
@@ -377,7 +377,7 @@
             onclick={handleSend}
             disabled={actionLoading}
             data-testid="convocation-detail-btn-send"
-            class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
+            class="px-4 py-2 bg-green-700 text-white text-sm font-medium rounded-md hover:bg-green-800 disabled:opacity-50"
           >
             {$_("convocations.actions.sendNow")}
           </button>
@@ -396,7 +396,7 @@
             onclick={handleSendReminders}
             disabled={actionLoading}
             data-testid="convocation-detail-btn-send-reminders"
-            class="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 disabled:opacity-50"
+            class="px-4 py-2 bg-amber-700 text-white text-sm font-medium rounded-md hover:bg-amber-800 disabled:opacity-50"
           >
             {$_("convocations.actions.sendReminders")}
           </button>
