@@ -100,15 +100,23 @@ test.describe("Audit WCAG AA — écrans authentifiés, comptes de recette réel
     await amorceToleree(seedResp, "POST /seed/scenario/world");
   });
 
-  test.afterAll(async ({ request }) => {
-    const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
-    });
-    const admin = await amorce(adminResp, "POST /auth/login (admin, cleanup)");
-    await request.delete(`${API_BASE}/seed/scenario/world`, {
-      headers: { Authorization: `Bearer ${admin.token}` },
-    });
-  });
+  // PAS de suppression du monde de scénario.
+  //
+  // Il est PARTAGÉ : huit fichiers le sèment, dix emploient ses comptes, et
+  // ce même bloc de teardown était copié dans QUATORZE d'entre eux. Chacun
+  // détruisait donc la précondition des autres.
+  //
+  // Le semer coûte 44 s, le supprimer une seconde. Pendant une campagne, la
+  // spec suivante devait le reconstruire contre un plafond de requête de
+  // 10 s : elle échouait, et ses tests en série étaient sautés. C'est ce qui
+  // rendait `AccessibiliteEcransAuthentifies` inexécutable, alors que son
+  // propre `beforeAll` est tolérant et dit même que le monde « peut déjà
+  // exister, semé par un autre fichier de la même campagne ».
+  //
+  // Le monde est un scénario FIXE (« Résidence du Parc Royal ») : le laisser
+  // en place n'accumule rien. Le nettoyage, si on en veut un, appartient à un
+  // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
+  // Cf. #942 et #876.
 
   test("@happy tableau de bord syndic — WCAG_AA_TAGS complet, aucune violation", async ({
     page,
@@ -179,7 +187,8 @@ test.describe("Audit WCAG AA — écrans authentifiés, comptes de recette réel
     // `inert` rend l'arrière-plan INEXISTANT pour un lecteur d'écran, pas
     // seulement hors d'atteinte au Tab (Navigation.svelte, #831).
     const fondInerte = await page.evaluate(
-      () => document.getElementById("app-content")?.hasAttribute("inert") ?? false,
+      () =>
+        document.getElementById("app-content")?.hasAttribute("inert") ?? false,
     );
     expect(
       fondInerte,
@@ -192,12 +201,13 @@ test.describe("Audit WCAG AA — écrans authentifiés, comptes de recette réel
     // Tabuler jusqu'au dernier élément focalisable du tiroir doit y RESTER —
     // pas s'échapper derrière l'overlay, dans une page qu'on ne voit pas
     // (c'est le finding #794 que `piegerLeFocus` corrige).
-    const nbFocalisables = await tiroir.evaluate((el) =>
-      Array.from(
-        el.querySelectorAll(
-          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((n) => (n as HTMLElement).offsetParent !== null).length,
+    const nbFocalisables = await tiroir.evaluate(
+      (el) =>
+        Array.from(
+          el.querySelectorAll(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter((n) => (n as HTMLElement).offsetParent !== null).length,
     );
     expect(
       nbFocalisables,
@@ -208,7 +218,9 @@ test.describe("Audit WCAG AA — écrans authentifiés, comptes de recette réel
       await page.keyboard.press("Tab");
     }
     const resteDansLeTiroir = await page.evaluate(
-      () => document.activeElement?.closest('[data-testid="mobile-drawer"]') !== null,
+      () =>
+        document.activeElement?.closest('[data-testid="mobile-drawer"]') !==
+        null,
     );
     expect(
       resteDansLeTiroir,

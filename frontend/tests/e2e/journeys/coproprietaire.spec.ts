@@ -103,7 +103,9 @@ test.describe(`Parcours de référence — ${parcours.titre}`, () => {
       // route, réservée SYNDIC/ACCOUNTANT (`frontend/src/lib/guards.ts`). Le
       // garde renvoie tout copropriétaire vers `/owner` — c'est ce qui se
       // passe RÉELLEMENT, documenté ici plutôt que supposé.
-      await page.goto("/owner-contributions", { waitUntil: "domcontentloaded" });
+      await page.goto("/owner-contributions", {
+        waitUntil: "domcontentloaded",
+      });
       await page.waitForURL(/\/owner$/, { timeout: 10_000 });
       await expect(
         page.getByTestId("owner-contribution-payment-form"),

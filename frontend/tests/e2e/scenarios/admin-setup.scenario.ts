@@ -54,15 +54,23 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
     }
   });
 
-  test.afterAll(async ({ request }) => {
-    const adminResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: "admin@koprogo.com", password: ADMIN_PASSWORD },
-    });
-    const admin = await adminResp.json();
-    await request.delete(`${API_BASE}/seed/scenario/world`, {
-      headers: { Authorization: `Bearer ${admin.token}` },
-    });
-  });
+  // PAS de suppression du monde de scénario.
+  //
+  // Il est PARTAGÉ : huit fichiers le sèment, dix emploient ses comptes, et
+  // ce même bloc de teardown était copié dans QUATORZE d'entre eux. Chacun
+  // détruisait donc la précondition des autres.
+  //
+  // Le semer coûte 44 s, le supprimer une seconde. Pendant une campagne, la
+  // spec suivante devait le reconstruire contre un plafond de requête de
+  // 10 s : elle échouait, et ses tests en série étaient sautés. C'est ce qui
+  // rendait `AccessibiliteEcransAuthentifies` inexécutable, alors que son
+  // propre `beforeAll` est tolérant et dit même que le monde « peut déjà
+  // exister, semé par un autre fichier de la même campagne ».
+  //
+  // Le monde est un scénario FIXE (« Résidence du Parc Royal ») : le laisser
+  // en place n'accumule rien. Le nettoyage, si on en veut un, appartient à un
+  // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
+  // Cf. #942 et #876.
 
   test("Le SuperAdmin consulte organisations, immeubles et utilisateurs", async ({
     page,
