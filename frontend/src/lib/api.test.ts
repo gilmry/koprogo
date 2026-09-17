@@ -37,7 +37,33 @@ vi.mock("../lib/db", () => ({
   },
 }));
 
+// Le bouchon doit couvrir TOUT ce que `lib/i18n.ts` importe, pas seulement
+// ce dont ce fichier se sert directement.
+//
+// Il ne posait que `locale`. Tant que rien dans la chaîne d'`api.ts`
+// n'atteignait `lib/i18n`, l'absence ne se voyait pas. Le jour où le toast
+// narratif de non-conformité y est entré, huit tests sont tombés sur
+// « No "addMessages" export is defined » — un échec qui accuse le code testé
+// alors qu'il accuse le bouchon.
 vi.mock("svelte-i18n", () => ({
+  init: () => {},
+  getLocaleFromNavigator: () => "fr",
+  addMessages: () => {},
+  waitLocale: async () => {},
+  isLoading: {
+    subscribe: (fn: any) => {
+      fn(false);
+      return () => {};
+    },
+  },
+  // `_` est un store de fonction : `get(_)` doit rendre une fonction de
+  // traduction, sinon le toast narratif ne peut pas composer son message.
+  _: {
+    subscribe: (fn: any) => {
+      fn((cle: string) => cle);
+      return () => {};
+    },
+  },
   locale: {
     subscribe: (fn: any) => {
       fn("fr");

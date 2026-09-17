@@ -232,12 +232,35 @@ export async function apiFetch<T = any>(
           "Accès refusé. Vous n'avez pas les permissions nécessaires.",
         );
       } else if (response.status >= 400) {
-        // Le détail du serveur en seconde ligne : c'est lui qui nomme le
-        // champ fautif. `toastEmis` évite le doublon avec
-        // `withErrorHandling`, qui émettait un second toast au libellé
-        // différent — la déduplication du store ne les fusionnait pas.
-        toast.error(errorMessage, 7000, detailsPresentables(errorBody));
-        toastEmis = true;
+        // Un refus pour NON-CONFORMITÉ a son récit, et il passe avant le
+        // message générique (Track H, `docs/personas/accountant.md` §
+        // Cas dégradé : « Calcul bloqué — Immeuble non conforme »).
+        //
+        // Ici plutôt que chez l'appelant, pour une raison précise : ce bloc
+        // a DÉJÀ émis un toast et posé `__toastEmis`. Un appelant qui
+        // ajouterait le sien en afficherait deux, au libellé différent, que
+        // la déduplication du store ne fusionne pas — exactement ce que le
+        // commentaire ci-dessous met en garde. Le récit remplace donc le
+        // message générique au lieu de s'y ajouter.
+        //
+        // `showConformityToast` rend `false` si l'erreur n'en est pas une :
+        // le comportement par défaut est inchangé pour tout le reste.
+        // Import DYNAMIQUE, et pas par élégance : `utils/conformity` tire
+        // `svelte-i18n`, que `api.test.ts` ne bouchonne que partiellement.
+        // Un import statique faisait échouer huit tests de ce fichier sur
+        // un `addMessages` absent du mock. Le motif est déjà celui de
+        // `CallForFundsList`.
+        const { showConformityToast } = await import("./utils/conformity");
+        if (showConformityToast(errorBody)) {
+          toastEmis = true;
+        } else {
+          // Le détail du serveur en seconde ligne : c'est lui qui nomme le
+          // champ fautif. `toastEmis` évite le doublon avec
+          // `withErrorHandling`, qui émettait un second toast au libellé
+          // différent — la déduplication du store ne les fusionnait pas.
+          toast.error(errorMessage, 7000, detailsPresentables(errorBody));
+          toastEmis = true;
+        }
       }
     } else if (response.status === 401 && typeof window !== "undefined") {
       // Silent 401 : on clear quand même le token périmé (cohérence session)

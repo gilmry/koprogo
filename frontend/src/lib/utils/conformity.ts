@@ -14,7 +14,7 @@ import { _ } from "../i18n";
 import { toast } from "../../stores/toast";
 import type {
   BuildingNotConformantErrorBody,
-  BuildingNotConformantPayload,
+  ConformityPayload,
   ConformityStatus,
 } from "../types/conformity";
 
@@ -41,11 +41,22 @@ export function isConformityError(
   return !!wrapped && looksLikeBody(wrapped);
 }
 
+/**
+ * Les deux formes du même constat : l'immeuble (Story H1) ou la copropriété
+ * entière (Story H5). Reconnaître la première seule laissait la seconde
+ * passer SANS toast ni bannière — l'utilisateur voyait un 422 nu (#942).
+ */
+const CONSTATS_DE_NON_CONFORMITE: ReadonlyArray<[string, string]> = [
+  ["building_not_conformant", "BUILDING_NOT_CONFORMANT"],
+  ["acp_not_conformant", "ACP_NOT_CONFORMANT"],
+];
+
 function looksLikeBody(o: Record<string, unknown>): boolean {
-  if (o.kind !== "building_not_conformant") return false;
   const details = o.details as Record<string, unknown> | undefined;
   if (!details) return false;
-  return details.code === "BUILDING_NOT_CONFORMANT";
+  return CONSTATS_DE_NON_CONFORMITE.some(
+    ([kind, code]) => o.kind === kind && details.code === code,
+  );
 }
 
 /**
@@ -54,17 +65,18 @@ function looksLikeBody(o: Record<string, unknown>): boolean {
  */
 export function extractConformityPayload(
   err: BuildingNotConformantErrorBody | Record<string, unknown>,
-): BuildingNotConformantPayload | null {
+): ConformityPayload | null {
   const candidate =
-    (err as { details?: BuildingNotConformantPayload }).details ??
-    (err as { body?: { details?: BuildingNotConformantPayload } }).body
-      ?.details ??
+    (err as { details?: ConformityPayload }).details ??
+    (err as { body?: { details?: ConformityPayload } }).body?.details ??
     (
       err as {
-        response?: { data?: { details?: BuildingNotConformantPayload } };
+        response?: { data?: { details?: ConformityPayload } };
       }
     ).response?.data?.details;
-  return candidate && candidate.code === "BUILDING_NOT_CONFORMANT"
+  if (!candidate) return null;
+  // Les deux codes portent les mêmes trois champs lus par le toast.
+  return CONSTATS_DE_NON_CONFORMITE.some(([, code]) => candidate.code === code)
     ? candidate
     : null;
 }

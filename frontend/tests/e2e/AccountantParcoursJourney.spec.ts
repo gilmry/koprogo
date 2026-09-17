@@ -214,7 +214,32 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     // pas conforme à son acte de base (Σ quotités ≠ total_tantiemes), #770.
     expect(resp.status()).toBe(422);
     const body = await resp.json();
-    expect(JSON.stringify(body)).toContain("BUILDING_NOT_CONFORMANT");
+
+    // DEUX codes valent ici, et ce n'est pas un relâchement.
+    //
+    // Story H1 pose le constat au niveau IMMEUBLE, Story H5 au niveau
+    // COPROPRIÉTÉ. Les deux sont légitimes et portent le même récit ; le
+    // serveur choisit selon le niveau où la non-conformité se constate. Ce
+    // test exigeait le code immeuble et échouait donc dès que le constat
+    // remontait d'un cran — sans que rien ne soit cassé.
+    //
+    // Ce qui compte pour l'utilisateur n'est pas LEQUEL des deux revient,
+    // c'est que le refus soit NARRATIF : `isConformityError` reconnaît
+    // désormais les deux et déclenche le toast. Avant le 2026-09-17 il n'en
+    // connaissait qu'un, et un refus au niveau ACP s'affichait en 422 nu
+    // (#942). C'est ce contrat-là qu'on vérifie.
+    const texte = JSON.stringify(body);
+    expect(
+      texte.includes("BUILDING_NOT_CONFORMANT") ||
+        texte.includes("ACP_NOT_CONFORMANT"),
+    ).toBe(true);
+    // Le payload narratif doit porter de quoi écrire le message, quel que
+    // soit le niveau : sans ces champs, le toast ne peut rien dire.
+    expect(body.details).toMatchObject({
+      units_delta: expect.any(Number),
+      quota_basis: expect.any(Number),
+    });
+    expect(typeof body.details.quota_delta).toBe("string");
   });
 
   test("4. @happy suivre le workflow d'une facture, brouillon → soumission → approbation → paiement", async ({
@@ -474,12 +499,20 @@ test.describe("Comptable — parcours documenté (docs/personas/accountant.md, #
     ]);
     expect(resp.status()).toBe(422);
     // Le toast narratif documenté (docs/personas/accountant.md, § Cas
-    // dégradé) : "Calcul bloqué — Immeuble non conforme".
-    // Le badge de conformité porte son ancre : chercher « non conforme »
-    // serait un pari sur la langue résolue (#803).
-    await expect(
-      page.getByTestId("building-conformity-badge").first(),
-    ).toBeVisible();
+    // dégradé) : « Calcul bloqué — Immeuble non conforme ».
+    //
+    // L'ancre était `building-conformity-badge`, mais ce badge est un AUTRE
+    // composant : il vit dans `BuildingDetail` et `ContextBanner`, pas sur
+    // cet écran. Le test attendait donc un élément qui n'y est jamais, et
+    // l'échec se lisait comme « pas de retour à l'utilisateur » alors que
+    // c'était l'ancre qui visait à côté.
+    //
+    // `toast-error` est l'ancre du toast lui-même
+    // (`ToastContainer.svelte:32`), indépendante de la langue comme le
+    // voulait #803. Et le récit part maintenant pour de bon : avant le
+    // 2026-09-17, `isConformityError` ne reconnaissait pas le constat au
+    // niveau ACP et l'utilisateur recevait un 422 nu (#942).
+    await expect(page.getByTestId("toast-error").first()).toBeVisible();
   });
 
   test("9. @happy produire un état daté", async ({ page }) => {
