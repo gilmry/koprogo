@@ -68,4 +68,12 @@ RUN mkdir -p src tests tests/integration benches && \
 # Source code will be mounted via volume
 
 # Hot reload command: watch for changes and rebuild
-CMD cargo watch -x "run --bin koprogo-api"
+#
+# `--ignore uploads` est une CEINTURE, pas la correction.
+#
+# La correction est dans `docker-compose.yml` : `UPLOAD_DIR` pointe désormais
+# hors de `/app`. Mais si quelqu'un le ramène un jour dans l'arbre monté, le
+# symptôme serait de nouveau des `502 Bad Gateway` apparemment aléatoires au
+# milieu des campagnes — un backend qui redémarre à chaque envoi de document.
+# Le diagnostic coûte cher ; cette ligne le rend impossible.
+CMD cargo watch --ignore uploads -x "run --bin koprogo-api"
