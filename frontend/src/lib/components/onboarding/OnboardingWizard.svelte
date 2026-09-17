@@ -983,7 +983,7 @@
         <div class="flex justify-end">
           <button
             type="button"
-            class="min-h-[44px] rounded-lg bg-emerald-600 px-5 py-2 text-white font-medium hover:bg-emerald-700"
+            class="min-h-[44px] rounded-lg bg-emerald-700 px-5 py-2 text-white font-medium hover:bg-emerald-800"
             data-testid="onboarding-finish-submit"
             onclick={() => void finish()}
           >
