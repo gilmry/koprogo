@@ -213,7 +213,7 @@ Méthode 1 : Playwright Codegen (⭐ Recommandé)
 
    # Lancer l'enregistrement interactif (avec Traefik)
    npm run codegen
-   # OU: npx playwright codegen http://localhost
+   # OU: npx playwright codegen http://localhost:8090   # la RECETTE, pas la démo
 
    # Playwright ouvre un navigateur et enregistre vos actions :
    # → Naviguez, cliquez, remplissez des formulaires

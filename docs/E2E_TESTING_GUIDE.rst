@@ -473,7 +473,7 @@ Le navigateur s'affiche pendant l'exécution des tests.
 .. code-block:: bash
 
    # Vérifier que les services tournent — sur le port de la RECETTE.
-   # Un curl sur http://localhost interrogerait la démo et répondrait 200,
+   # Un curl sur le port 80 nu interrogerait la démo et répondrait 200,
    # ce qui ferait croire que votre pile tourne alors qu'elle est éteinte.
    curl http://localhost:8090
    curl http://localhost:8090/api/v1/health
