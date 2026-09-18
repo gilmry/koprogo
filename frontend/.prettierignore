@@ -1,0 +1,5 @@
+
+# Le monde de scénario, écrit par globalSetup à chaque campagne (#955).
+# Git l'ignore déjà (tests/e2e/.gitignore) ; prettier ne le savait pas, et
+# `prettier --check .` est ce que la CI lance.
+tests/e2e/.test-world.json
