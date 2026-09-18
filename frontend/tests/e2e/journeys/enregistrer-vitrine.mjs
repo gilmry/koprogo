@@ -56,6 +56,7 @@ const PARCOURS_A_FILMER = [
   { fichier: "perimetre-multi-role.journey.ts", export: "perimetreMultiRole" },
   { fichier: "coproprietaire.journey.ts", export: "coproprietaire" },
   { fichier: "comptable.journey.ts", export: "comptable" },
+  { fichier: "administration.journey.ts", export: "administration" },
 ];
 
 if (!existsSync(DOSSIER_VIDEOS)) mkdirSync(DOSSIER_VIDEOS, { recursive: true });
