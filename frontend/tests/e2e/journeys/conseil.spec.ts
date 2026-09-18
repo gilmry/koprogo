@@ -131,15 +131,32 @@ test.describe(`Parcours de référence — ${parcours.titre}`, () => {
       const { token } = await connexion.json();
 
       // Le compte existe et a une fiche de copropriétaire, mais AUCUNE
-      // élection n'a eu lieu dans l'amorçage. Il ne doit donc être membre
-      // d'aucun conseil : un mandat se reçoit de l'assemblée.
-      const conseils = await page.request.get(`${API_BASE}/board-members`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // élection n'a eu lieu dans l'amorçage. Il ne doit donc détenir aucun
+      // mandat : un mandat se reçoit de l'assemblée, il ne s'obtient pas en
+      // étant copropriétaire.
+      //
+      // `GET /board-members/my-mandates` est la route qui répond à « quels
+      // mandats ai-je ? ». Mon premier jet interrogeait `GET /board-members`,
+      // que le serveur NE SERT PAS — il n'expose que le POST. La garde
+      // `garde-routes-des-recettes` (#832) l'a refusé, et elle avait raison :
+      // un appel sur une route absente rend 404, et le test aurait conclu
+      // « aucun mandat » en n'ayant rien demandé.
+      const mandats = await page.request.get(
+        `${API_BASE}/board-members/my-mandates`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
       expect(
-        conseils.status(),
-        "consulter les membres du conseil ne doit jamais rendre 500",
-      ).not.toBe(500);
+        mandats.ok(),
+        "un copropriétaire doit pouvoir consulter ses propres mandats",
+      ).toBeTruthy();
+
+      const corps = await mandats.json();
+      const liste = Array.isArray(corps) ? corps : (corps.data ?? []);
+      expect(
+        liste.length,
+        "aucune élection n'a eu lieu : ce copropriétaire ne doit détenir " +
+          "aucun mandat",
+      ).toBe(0);
     },
   );
 
