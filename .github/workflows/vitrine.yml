@@ -54,10 +54,6 @@ jobs:
     # parcours en local ; plafond large pour absorber la variance d'un
     # exécuteur, sans laisser un job pendu six heures.
     timeout-minutes: 45
-    # Observé 44 min le 2026-09-07 ; plafond à ~2x pour absorber la
-    # variance d'un runner sans laisser un job pendu six heures.
-    timeout-minutes: 90
-    needs: [frontend-check]
     services:
       postgres:
         image: postgres:16
