@@ -369,8 +369,16 @@ async fn create_extra_unit(
 #[serial]
 async fn test_create_resolution_success() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id, _token_owner2) =
-        create_test_fixtures(&app_state, org_id).await;
+    let (
+        token,
+        _org_id,
+        _building_id,
+        meeting_id,
+        _owner1_id,
+        _owner2_id,
+        _unit1_id,
+        _token_owner2,
+    ) = create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -408,8 +416,16 @@ async fn test_create_resolution_success() {
 #[serial]
 async fn test_create_resolution_without_auth_fails() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (_token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id, _token_owner2) =
-        create_test_fixtures(&app_state, org_id).await;
+    let (
+        _token,
+        _org_id,
+        _building_id,
+        meeting_id,
+        _owner1_id,
+        _owner2_id,
+        _unit1_id,
+        _token_owner2,
+    ) = create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -438,8 +454,16 @@ async fn test_create_resolution_without_auth_fails() {
 #[serial]
 async fn test_get_resolution_success() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id, _token_owner2) =
-        create_test_fixtures(&app_state, org_id).await;
+    let (
+        token,
+        _org_id,
+        _building_id,
+        meeting_id,
+        _owner1_id,
+        _owner2_id,
+        _unit1_id,
+        _token_owner2,
+    ) = create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -512,8 +536,16 @@ async fn test_get_resolution_not_found() {
 #[serial]
 async fn test_list_meeting_resolutions() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id, _token_owner2) =
-        create_test_fixtures(&app_state, org_id).await;
+    let (
+        token,
+        _org_id,
+        _building_id,
+        meeting_id,
+        _owner1_id,
+        _owner2_id,
+        _unit1_id,
+        _token_owner2,
+    ) = create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -562,8 +594,16 @@ async fn test_list_meeting_resolutions() {
 #[serial]
 async fn test_delete_resolution_success() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id, _token_owner2) =
-        create_test_fixtures(&app_state, org_id).await;
+    let (
+        token,
+        _org_id,
+        _building_id,
+        meeting_id,
+        _owner1_id,
+        _owner2_id,
+        _unit1_id,
+        _token_owner2,
+    ) = create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
