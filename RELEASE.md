@@ -268,7 +268,7 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | `visuel` | ⚪ | — | pas de goldens |
 | `doc-vivante` | 🟢 | `make vitrine` | artefact `vitrine` du run `34764114133` **téléchargé et vérifié le 2026-09-18** : 83 601 608 octets, code de sortie 0, **315 vidéos**, galerie autonome de 6 120 octets sans aucune ressource externe, chapitres horodatés (`interrompu: null`). #873 et #876 fermées sur cette preuve. ⚠️ Les douze `.scenario.ts` du même job rendent **10 ✓ / 2 ✘** et ne peuvent PAS rougir le job : `continue-on-error: true` depuis le 2026-06-15 |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
-| front tests | 🟢 | `npx vitest run` | **767 tests, 133 fichiers, 0 échec** le 2026-09-18. `npx prettier --check .` rend **code 0** — cinq fichiers le faisaient rougir en CI depuis plusieurs jours |
+| front tests | 🟢 | `npx vitest run` | **772 tests, 133 fichiers, 0 échec** le 2026-09-18. `npx prettier --check .` rend **code 0** — cinq fichiers le faisaient rougir en CI depuis plusieurs jours |
 
 > ⚠️ **« Le socle est vert le 2026-09-13 » — cette phrase a été retirée le
 > 2026-09-18, parce qu'elle n'était pas vraie.**
