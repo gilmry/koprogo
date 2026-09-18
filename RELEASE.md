@@ -132,16 +132,20 @@ appelle une signature et non une validation.
 - **⚠️ Trois portails étaient rouges sans que personne les regarde**, retrouvés
   le 2026-09-18 :
 
-  | Portail | Depuis | Cause |
-  |---|---|---|
-  | Barrage VPS (déploiement) | 2026-09-17 13:07, **8 passages** | `garde_paniques_en_production` : 42 contre un cliquet à 39. Les trois points ajoutés sont les `.lock().expect()` du cache d'empreintes bcrypt, commit `44342148` |
-  | `docs.yml` (site de documentation) | 2026-09-15 | `cargo doc` refuse **17 avertissements** rustdoc, `build.warnings = deny` |
-  | `CI Pipeline` — Frontend Check | plusieurs jours | `npx prettier --check .` rougit sur **5 fichiers** |
+  | Portail | Depuis | Cause | État |
+  |---|---|---|---|
+  | Barrage VPS (déploiement) | 2026-09-17 13:07, **8 passages** | `garde_paniques_en_production` : 42 contre un cliquet à 39. Les trois points ajoutés sont les `.lock()` du cache d'empreintes bcrypt, commit `44342148` | ✅ **VERT** au 9ᵉ passage (run `35328448433`). La démo tourne sur `sha-d0d192d`, les deux conteneurs `healthy`, `api.koprogo.com` et `koprogo.com` en 200 |
+  | `docs.yml` (site de documentation) | 2026-09-15 | `cargo doc` refuse **17 avertissements** rustdoc, `build.warnings = deny` | corrigé, à confirmer au prochain run |
+  | `CI Pipeline` — Frontend Check | plusieurs jours | `npx prettier --check .` rougit sur **5 fichiers** | corrigé, `--check` rend code 0 |
 
-  Rien n'a donc été **construit ni déployé depuis le 2026-09-17**. Le
-  déploiement étant épinglé au hash du commit, la démo n'a pas régressé : elle
-  est restée sur l'image d'avant. Elle a vieilli en silence, ce qui est le bon
-  comportement — mais personne ne l'a su.
+  Rien n'a été **construit ni déployé pendant vingt heures**. Le déploiement
+  étant épinglé au hash du commit, la démo n'a pas régressé : elle est restée
+  sur l'image d'avant. Elle a vieilli en silence, ce qui est le bon
+  comportement — **et c'est précisément ce qui rend le défaut invisible**.
+
+  Aucune alerte n'existe sur ce portail : ni courriel, ni notification, rien
+  dans le dépôt. La seule façon de le savoir est de le regarder. À ajouter à
+  la routine d'après-poussée.
 
 - **Prochaine action attendue** : **relire les sept branches vertes et
   chronométrer** (#875). Tout le reste est débloqué.
@@ -259,10 +263,10 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 |---|---|---|---|
 | `plancher` secrets | 🟢 | `.claude/hooks/stop-leak-scan.sh` | bloquant, 3 hooks sur 8 bloquent vraiment |
 | `plancher` migrations | 🟡 | `kcargo test --test garde_versions_de_migration` | **Passe de ⚪ à 🟡 le 2026-09-16.** Un gate existe enfin, né d'un vrai dégât (#939) : deux migrations au même horodatage faisaient échouer TOUTE base neuve en 23505. Il vérifie la collision de version (dur) et le nombre de montantes sans `.down.sql` (cliquet à **93 sur 138**). S'y ajoute `garde_colonnes_declarees` (#941). Reste 🟡 : la réversibilité n'est toujours pas *exécutée*, seulement l'existence du fichier |
-| `verify` structurel | 🟡 | `kcargo test --test architecture` + les gardes | **Passe de 🟢 à 🟡 le 2026-09-18.** Le dépôt porte **23** harnais `garde_*.rs`. `ci.yml` les cite tous les 23 ; le barrage de déploiement n'en cite que **18**. Or `ci.yml` ne tourne pas sur `feature/dev` (exclusion explicite) : cinq cliquets — dont `garde_identite_jetee`, qui plafonne la dette de #882 — **ne s'exécutent jamais sur la branche déployée**. `garde_harnais_executes`, qui existe pour empêcher exactement ça, ne lit que `ci.yml` (#956) |
+| `verify` structurel | 🟢 | `kcargo test --test architecture` + les 23 gardes | **🟢 → 🟡 → 🟢 le 2026-09-18, réparé.** Les cinq gardes absentes du barrage y sont, et `garde_harnais_executes` porte une seconde règle qui vise nommément le portail de déploiement — témoin vérifié. Le constat qui l'avait fait passer 🟡 : Le dépôt porte **23** harnais `garde_*.rs`. `ci.yml` les cite tous les 23 ; le barrage de déploiement n'en cite que **18**. Or `ci.yml` ne tourne pas sur `feature/dev` (exclusion explicite) : cinq cliquets — dont `garde_identite_jetee`, qui plafonne la dette de #882 — **ne s'exécutent jamais sur la branche déployée**. `garde_harnais_executes`, qui existe pour empêcher exactement ça, ne lit que `ci.yml` (#956) |
 | `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée. Cliquet à **409** routes non annotées, valeur mesurée. `api.d.ts` à 173 schémas. Vert en CI le 2026-09-18 (run `35323764342`) |
 | `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests. ⚠️ Le job `Unit Tests` de la CI est rouge, mais sur son étape **gardes**, pas sur `--lib` : `garde_paniques_en_production` comptait 42 points de panique contre un cliquet à 39 |
-| `integration` | 🔴 | suites `e2e_*.rs` (testcontainers) | **Passe de 🟢 à 🔴 le 2026-09-18, et le 🟢 était faux.** Il reposait sur une mesure **locale** du 2026-09-13. Première exécution en CI (run `35323764342`) : `e2e_resolutions.rs` rend **12 réussis / 7 échoués**, tous en `403` au lieu de `201` sur la mise au vote — c'est-à-dire sur le **noyau légal** (mise au vote, changement de vote, clôture à la majorité absolue, cycle complet). Ce n'est pas une régression : #850 résout désormais le votant depuis l'utilisateur authentifié, et les sept montages votent avec un jeton sans fiche de copropriétaire. Ce sont les harnais qui datent — #957. `storage_s3` rend en revanche `s3_storage_roundtrip ... ok` **en CI**, ce qui ferme #877 |
+| `integration` | 🟡 | suites `e2e_*.rs` (testcontainers) | **🟢 → 🔴 → 🟡 dans la même journée, et le 🟢 de départ était faux.** Il reposait sur une mesure **locale** du 2026-09-13. Première exécution en CI (run `35323764342`) : `e2e_resolutions.rs` rend **12 réussis / 7 échoués**, tous en `403` au lieu de `201` sur la mise au vote — c'est-à-dire sur le **noyau légal** (mise au vote, changement de vote, clôture à la majorité absolue, cycle complet). Ce n'est pas une régression : #850 résout désormais le votant depuis l'utilisateur authentifié, et les sept montages votent avec un jeton sans fiche de copropriétaire. Ce sont les harnais qui datent — #957, **corrigé le jour même** : le montage rend deux jetons, un par copropriétaire, et `e2e_resolutions` rend **19 réussis / 0 échoué, code 0, en 294 s**. Reste 🟡 et non 🟢 : c'est une mesure LOCALE, et c'est exactement l'erreur qui a produit le faux 🟢 de départ. Il passera 🟢 quand la CI l'aura vu. `storage_s3` rend `s3_storage_roundtrip ... ok` **en CI**, ce qui ferme #877 |
 | `bdd` | 🟢 | suites `bdd_*.rs` | `bdd_acp` : 17 scénarios / 78 étapes, code 0. **Vert en CI le 2026-09-18** (run `35323764342`) — première confirmation hors mesure locale |
 | `e2e` parcours | 🟡 | `CI=1 make test-e2e` | **340 ✓ / 2 ✘ / 0 instable / 14 sautés en 1 h 06**, mesuré le 2026-09-18, backend **stable, zéro redémarrage**. La veille : 341 ✓ / 1 ✘. L'échec de la veille (`Gdpr.spec.ts`) est réparé et vert ; **deux nouveaux sont apparus sur du code inchangé**, et les deux ouvrent `/admin/users` — `AuditRegressions.spec.ts:117` (37,5 s puis 36,9 s) et `story1-admin-buttons.spec.ts:69` (32,6 s puis 43,2 s). Cause mesurée et unique : `GET /users` rend la table entière, **2 399 187 octets en 667 ms** contre 6 190 octets en 18,8 ms pour `/organizations` paginée la veille (#953) — sur une base de recette qui a grossi de **2 026 organisations** depuis hier (#954). ⚠️ Sans `CI=1`, la campagne n'est pas comparable |
 | `visuel` | ⚪ | — | pas de goldens |
