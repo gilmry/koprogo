@@ -60,7 +60,7 @@ pub trait UnitOwnerRepository: Send + Sync {
 
     /// Quotes-parts de CHARGE des détenteurs actifs d'un immeuble.
     ///
-    /// Renvoie `(unit_id, owner_id, part)` où `part` est la fraction [0,1] du
+    /// Renvoie `(unit_id, owner_id, part)` où `part` est la fraction `[0, 1]` du
     /// montant total qui incombe à ce copropriétaire :
     ///
     /// ```text

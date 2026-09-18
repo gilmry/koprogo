@@ -1,7 +1,7 @@
 //! PostgreSQL implementation of [`SyndicResponseRepository`] (Story 3.7 —
 //! FR32 INV-23).
 //!
-//! Append-only by construction: only [`Self::save`] writes new rows. There
+//! Append-only by construction: only `save` writes new rows. There
 //! is no `update` / `delete` method on the trait. The DB trigger
 //! `syndic_responses_no_update` (cf. migration `20260605050000`) ensures
 //! the same guarantee at the SQL boundary.

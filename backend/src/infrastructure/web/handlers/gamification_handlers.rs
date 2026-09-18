@@ -343,8 +343,8 @@ pub async fn get_recent_achievements(
 /// - title: String (3-100 chars)
 /// - description: String (10-1000 chars)
 /// - icon: String
-/// - start_date: DateTime<Utc>
-/// - end_date: DateTime<Utc>
+/// - start_date: `DateTime<Utc>`
+/// - end_date: `DateTime<Utc>`
 /// - target_metric: String (e.g., "bookings_created")
 /// - target_value: i32
 /// - reward_points: i32 (0-10000)
@@ -847,7 +847,7 @@ pub async fn get_gamification_user_stats(
 
 /// Get leaderboard for organization or building
 ///
-/// GET /organizations/:organization_id/gamification/leaderboard?building_id=<uuid>&limit=10
+/// GET /organizations/:organization_id/gamification/leaderboard?building_id=`<uuid>`&limit=10
 ///
 /// # Query Parameters
 /// - building_id: `Option<UUID>` (filter by building)

@@ -207,7 +207,7 @@ impl ChargeDistribution {
     /// - `× ownership_percentage` = part du **copropriétaire** dans le lot
     ///   (indivision / démembrement — `unit_owners`).
     ///
-    /// Retourne la fraction [0,1] à appliquer au montant total de la charge.
+    /// Retourne la fraction `[0, 1]` à appliquer au montant total de la charge.
     pub fn resolve_owner_quota(
         unit_quota: Decimal,
         total_tantiemes: Decimal,

@@ -1,7 +1,8 @@
 //! ContractorEvaluation — append-only rating of a contractor's prestation
-//! on an approved [`TechnicalSpec`] (Story 3.9 — FR34 FR35 INV-21 INV-24).
+//! on an approved `TechnicalSpec` (Story 3.9 — FR34 FR35 INV-21 INV-24).
 //!
-//! Distinct from [`ContractEvaluation`](super::contract_evaluation::ContractEvaluation),
+//! Distinct from `ContractEvaluation` (module retiré depuis ; la distinction
+//! reste utile, le lien ne pointait plus nulle part),
 //! which is the legacy marketplace-rating entity (Issue #276). The two live
 //! side-by-side intentionally: Story 3.9 only introduces the new audit-grade
 //! flow gated by a signed TechnicalSpec; the legacy free-form rating remains
@@ -10,7 +11,7 @@
 //! # Workflow
 //!
 //! 1. A syndic (or a mandated owner) opens an evaluation against a
-//!    contractor user once a [`TechnicalSpec`] has reached
+//!    contractor user once a `TechnicalSpec` has reached
 //!    [`TechnicalSpecStatus::Approved`](super::technical_spec::TechnicalSpecStatus::Approved).
 //! 2. The evaluator fills the 5 scores ([`EvaluationScores`]) and writes a
 //!    comment.

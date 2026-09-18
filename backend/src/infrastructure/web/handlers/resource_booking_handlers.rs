@@ -19,8 +19,8 @@ use uuid::Uuid;
 /// - building_id: UUID
 /// - resource_type: ResourceType (MeetingRoom, LaundryRoom, Gym, etc.)
 /// - resource_name: String (e.g., "Meeting Room A")
-/// - start_time: DateTime<Utc>
-/// - end_time: DateTime<Utc>
+/// - start_time: `DateTime<Utc>`
+/// - end_time: `DateTime<Utc>`
 /// - notes: `Option<String>`
 /// - recurring_pattern: RecurringPattern (default: None)
 /// - recurrence_end_date: `Option<DateTime<Utc>>`

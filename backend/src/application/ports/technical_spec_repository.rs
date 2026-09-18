@@ -4,7 +4,7 @@
 //! All methods return `Result<_, AppError>` natively — no legacy `String`
 //! error debt to migrate later (CRITICAL.md #4 / #555).
 //!
-//! Signatures are append-only — the repository exposes only [`save_signature`]
+//! Signatures are append-only — the repository exposes only `save_signature`
 //! and a few read methods; mutation guards are enforced at the DB trigger
 //! level (cf. migration `20260605060000_create_technical_specs.sql`).
 
@@ -22,7 +22,7 @@ pub trait TechnicalSpecRepository: Send + Sync {
     /// Used by the workflow transitions (`submit`, `mark_approved`).
     /// The repository implementation MUST NOT allow title / description /
     /// version edits — those happen exclusively via `bump_version` which
-    /// goes through [`save`] on a brand-new row.
+    /// goes through `save` on a brand-new row.
     async fn update_status(
         &self,
         spec_id: Uuid,

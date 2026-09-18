@@ -80,6 +80,25 @@ impl DatabaseSeeder {
         }
     }
 
+    /// Le cache d'empreintes, en reprenant la main sur un verrou empoisonné.
+    ///
+    /// Ce cache n'est qu'une optimisation : si une panique ailleurs a
+    /// empoisonné le verrou, s'arrêter ici ne protégerait rien et ferait
+    /// échouer un semis pour une raison sans rapport. Au pire une empreinte
+    /// manque, et `create_demo_user` la recalcule.
+    ///
+    /// C'est aussi ce qui garde `garde_paniques_en_production` à sa place :
+    /// trois points de panique ajoutés ici le 2026-09-17 avaient suffi à
+    /// faire passer son compte de 39 à 42, et le barrage de déploiement à
+    /// rougir pendant huit passages sans que personne le remarque.
+    fn cache_empreintes(
+        &self,
+    ) -> std::sync::MutexGuard<'_, std::collections::HashMap<String, String>> {
+        self.empreintes
+            .lock()
+            .unwrap_or_else(|verrou_empoisonne| verrou_empoisonne.into_inner())
+    }
+
     /// Hache d'avance, EN PARALLÈLE, les mots de passe qui vont servir.
     ///
     /// Sans cela, chaque `create_demo_user` attend son propre bcrypt avant
@@ -90,7 +109,7 @@ impl DatabaseSeeder {
     /// Idempotent : un mot de passe déjà connu n'est pas rehaché.
     async fn precalculer_empreintes(&self, mots_de_passe: &[&str]) {
         let a_faire: Vec<String> = {
-            let connues = self.empreintes.lock().expect("empreintes lisibles");
+            let connues = self.cache_empreintes();
             let mut vus = std::collections::HashSet::new();
             mots_de_passe
                 .iter()
@@ -114,10 +133,7 @@ impl DatabaseSeeder {
             // retombera sur le calcul direct. On ne masque rien, on ne
             // bloque pas le semis pour autant.
             if let Ok((mot, Ok(empreinte))) = issue {
-                self.empreintes
-                    .lock()
-                    .expect("empreintes inscriptibles")
-                    .insert(mot, empreinte);
+                self.cache_empreintes().insert(mot, empreinte);
             }
         }
     }
@@ -1486,12 +1502,7 @@ impl DatabaseSeeder {
         // Dans les deux cas le hachage sort des threads de travail Actix,
         // comme #718 l'a fait pour l'authentification : sinon un semis gèle
         // l'API entière quand `ACTIX_WORKERS` vaut 1.
-        let deja_connue = self
-            .empreintes
-            .lock()
-            .expect("empreintes lisibles")
-            .get(password)
-            .cloned();
+        let deja_connue = self.cache_empreintes().get(password).cloned();
         let password_hash = match deja_connue {
             Some(empreinte) => empreinte,
             None => {
