@@ -713,7 +713,7 @@ mod tests {
                 .collect();
             // Le vrai dépôt ordonne par `created_at DESC` : un double au
             // hasard rendrait les tests de pagination non reproductibles.
-            retenus.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+            retenus.sort_by_key(|u| std::cmp::Reverse(u.created_at));
             retenus
         }
 

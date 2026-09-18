@@ -609,7 +609,7 @@ mod tests {
         // qui doublait le coût du défaut mesuré en #953.
         let un = make_user(Uuid::new_v4());
         let deux = make_user(Uuid::new_v4());
-        let attendus = vec![un.id, deux.id];
+        let attendus = [un.id, deux.id];
 
         let mut mock_user = MockUserRepo::new();
         mock_user
