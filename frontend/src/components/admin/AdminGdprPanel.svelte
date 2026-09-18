@@ -3,6 +3,7 @@
   import { _ } from "../../lib/i18n";
   import { authStore } from "../../stores/auth";
   import { api } from "../../lib/api";
+  import { chercherUtilisateurs } from "../../lib/api/utilisateurs-recherche";
   import { formatDateTime } from "../../lib/utils/date.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
   import { UserRole } from "../../lib/types";
@@ -22,28 +23,41 @@
   let showAuditLogs = false;
   let auditLogsPage = 1;
   let auditLogsTotalPages = 1;
+  /** Le total CORRESPONDANT à la recherche, rendu par le serveur. */
+  let totalFiltre = 0;
+  /** `true` s'il existe des utilisateurs au-delà de la page affichée. */
+  let listeIncomplete = false;
+  let minuterieRecherche: ReturnType<typeof setTimeout> | undefined;
 
   onMount(async () => {
     await authStore.init();
     await loadUsers();
   });
 
-  $: {
-    if (searchQuery) {
-      filteredUsers = users.filter(
-        (u) =>
-          u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          u.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          u.last_name.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-    } else {
-      filteredUsers = users;
-    }
+  // Le serveur a déjà appliqué la recherche. La rejouer ici cacherait toute
+  // divergence entre ce qu'il comprend et ce que l'écran croit demander.
+  $: filteredUsers = users;
+
+  /** Relance la recherche après une pause de frappe. */
+  function surSaisieRecherche(): void {
+    clearTimeout(minuterieRecherche);
+    minuterieRecherche = setTimeout(() => void loadUsers(), 250);
   }
 
   async function loadUsers() {
     const responseData = await withErrorHandling({
-      action: () => api.get<{ data: User[] }>("/users"),
+      // Une borne, là où il n'y en avait aucune.
+      //
+      // Cet écran demandait `/users` nu : il recevait les 4 120 lignes de la
+      // recette pour remplir une liste de sélection (#953). La route pagine
+      // désormais ; ce panneau prend la première page et cherche côté
+      // serveur, comme l'écran d'administration.
+      action: () =>
+        chercherUtilisateurs<User>(searchQuery).then((page) => {
+          listeIncomplete = page.incomplete;
+          totalFiltre = page.total;
+          return { data: page.elements };
+        }),
       setLoading: (v) => (loading = v),
       errorMessage: $_("admin.errors.failedToLoadUsers"),
     });
@@ -164,9 +178,10 @@
       <label for="user-search" class="sr-only">{$_("common.searchUsers")}</label
       >
       <input
-        type="text"
+        type="search"
         id="user-search"
         bind:value={searchQuery}
+        on:input={surSaisieRecherche}
         data-testid="admin-gdpr-search"
         placeholder={$_("admin.gdpr.searchPlaceholder")}
         class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
@@ -182,6 +197,16 @@
     <div class="px-6 py-4 border-b border-gray-200">
       <h3 class="text-lg font-medium text-gray-900">
         {$_("common.users")} ({filteredUsers.length})
+        {#if listeIncomplete}
+          <span
+            class="ml-2 text-sm font-normal text-gray-600"
+            data-testid="admin-gdpr-reste"
+          >
+            {$_("admin.users.usersMore", {
+              values: { affichees: filteredUsers.length, total: totalFiltre },
+            })}
+          </span>
+        {/if}
       </h3>
     </div>
 

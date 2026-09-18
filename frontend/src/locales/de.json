@@ -283,7 +283,8 @@
       "toggleSuccess": "Benutzer {action}",
       "user": "Benutzer",
       "userCount": "Benutzer",
-      "usersCount": "Benutzer"
+      "usersCount": "Benutzer",
+      "usersMore": "{affichees} von {total} angezeigt. Verfeinern Sie die Suche für die übrigen."
     }
   },
   "agSession": {

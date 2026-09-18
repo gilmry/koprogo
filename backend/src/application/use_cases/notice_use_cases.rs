@@ -680,6 +680,43 @@ mod tests {
     }
 
     impl MockUserRepo {
+        /// Le filtre du vrai dépôt, reproduit : recherche sur le courriel, le
+        /// prénom et le nom, puis rôle exact. `all` et le vide ne filtrent
+        /// pas.
+        fn filtrer(
+            store: &HashMap<Uuid, User>,
+            recherche: Option<String>,
+            role: Option<String>,
+        ) -> Vec<User> {
+            let terme = recherche
+                .map(|r| r.trim().to_lowercase())
+                .filter(|r| !r.is_empty());
+            let role = role
+                .map(|r| r.trim().to_string())
+                .filter(|r| !r.is_empty() && r != "all");
+
+            let mut retenus: Vec<User> = store
+                .values()
+                .filter(|u| match &terme {
+                    None => true,
+                    Some(t) => {
+                        u.email.to_lowercase().contains(t)
+                            || u.first_name.to_lowercase().contains(t)
+                            || u.last_name.to_lowercase().contains(t)
+                    }
+                })
+                .filter(|u| match &role {
+                    None => true,
+                    Some(r) => u.role.to_string() == *r,
+                })
+                .cloned()
+                .collect();
+            // Le vrai dépôt ordonne par `created_at DESC` : un double au
+            // hasard rendrait les tests de pagination non reproductibles.
+            retenus.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+            retenus
+        }
+
         fn new() -> Self {
             Self {
                 users: Mutex::new(HashMap::new()),
@@ -701,6 +738,33 @@ mod tests {
             let mut store = self.users.lock().unwrap();
             store.insert(user.id, user.clone());
             Ok(user.clone())
+        }
+
+        // Le double reproduit le filtre du vrai dépôt plutôt que de rendre
+        // tout : un double plus permissif que la production fait passer des
+        // tests qui échoueraient contre elle.
+        async fn find_page(
+            &self,
+            recherche: Option<String>,
+            role: Option<String>,
+            limit: i64,
+            offset: i64,
+        ) -> Result<Vec<User>, String> {
+            let retenus = Self::filtrer(&self.users.lock().unwrap(), recherche, role);
+            Ok(retenus
+                .into_iter()
+                .skip(offset.max(0) as usize)
+                .take(limit.max(0) as usize)
+                .collect())
+        }
+
+        async fn count_matching(
+            &self,
+            recherche: Option<String>,
+            role: Option<String>,
+        ) -> Result<i64, String> {
+            let retenus = Self::filtrer(&self.users.lock().unwrap(), recherche, role);
+            Ok(retenus.len() as i64)
         }
 
         async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, String> {

@@ -36,6 +36,7 @@
     type AssignRoleRequest,
   } from "../../api/role_assignments";
   import { api } from "../../api";
+  import { chercherUtilisateurs } from "../../api/utilisateurs-recherche";
   import { _ } from "../../i18n";
 
   // ---------------------------------------------------------------------------
@@ -70,6 +71,10 @@
   }
 
   let users = $state<UserOption[]>([]);
+  /** `true` si la liste ne contient pas tous les utilisateurs. */
+  let utilisateursTronques = $state(false);
+  /** Le total rendu par le serveur, pour le dire au lieu de le deviner. */
+  let totalUtilisateurs = $state(0);
   let orgs = $state<OrgOption[]>([]);
   let loadingOptions = $state(true);
 
@@ -111,11 +116,20 @@
   async function loadOptions(): Promise<void> {
     loadingOptions = true;
     try {
-      const [usersResp, orgsResp] = await Promise.all([
-        api.get<{ data: UserOption[] }>("/users?per_page=1000"),
+      // Les deux routes paginent désormais, et `per_page` compte enfin.
+      //
+      // Cet appel demandait déjà `per_page=1000` à `/users`, qui l'ignorait :
+      // il recevait les 4 120 lignes de la recette (#953). Le risque change
+      // de nature — ce n'est plus la lenteur, c'est une coupure à mille qui
+      // ne se verrait pas. D'où `incomplete`, rendu par le serveur à partir
+      // du total réel.
+      const [pageUtilisateurs, orgsResp] = await Promise.all([
+        chercherUtilisateurs<UserOption>("", { taille: 1000 }),
         api.get<{ data: OrgOption[] }>("/organizations?per_page=1000"),
       ]);
-      users = usersResp.data ?? [];
+      users = pageUtilisateurs.elements;
+      utilisateursTronques = pageUtilisateurs.incomplete;
+      totalUtilisateurs = pageUtilisateurs.total;
       orgs = orgsResp.data ?? [];
     } catch {
       // Toast déjà géré par api.ts. On laisse les listes vides ;
@@ -328,6 +342,21 @@
               </option>
             {/each}
           </select>
+          <!--
+            Le dire, plutôt que de laisser le sélecteur paraître exhaustif.
+            Cet appel recevait la table entière jusqu'au 2026-09-18 ; depuis
+            que la route pagine, une coupure est possible (#953).
+          -->
+          {#if utilisateursTronques}
+            <p
+              class="mt-1 text-xs text-gray-600"
+              data-testid="role-assignment-users-reste"
+            >
+              {$_("admin.users.usersMore", {
+                values: { affichees: users.length, total: totalUtilisateurs },
+              })}
+            </p>
+          {/if}
           {#if errors.user}
             <p
               id="role-assignment-error-user"

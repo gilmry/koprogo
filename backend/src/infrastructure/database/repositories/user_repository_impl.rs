@@ -123,6 +123,93 @@ impl UserRepository for PostgresUserRepository {
         Ok(users)
     }
 
+    async fn find_page(
+        &self,
+        recherche: Option<String>,
+        role: Option<String>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<User>, String> {
+        // `ILIKE` sur le courriel, le prénom ET le nom : un administrateur
+        // cherche l'un des trois sans savoir lequel il a sous les yeux. Même
+        // choix que pour les organisations (#943), et pour la même raison —
+        // s'en tenir au courriel rétrécirait en silence ce qu'il peut
+        // trouver.
+        //
+        // Le motif est LIÉ, jamais concaténé : une recherche est une donnée
+        // d'utilisateur.
+        let motif = recherche
+            .map(|r| r.trim().to_string())
+            .filter(|r| !r.is_empty())
+            .map(|r| format!("%{r}%"));
+
+        // Le rôle est un SECOND filtre, porté par le serveur lui aussi.
+        //
+        // Le laisser côté client aurait montré « les syndics parmi les
+        // cinquante premiers » en les présentant comme « les syndics » : un
+        // rétrécissement silencieux, et exactement ce que la pagination est
+        // censée cesser de faire.
+        let role = role
+            .map(|r| r.trim().to_string())
+            .filter(|r| !r.is_empty() && r != "all");
+
+        let sql = format!(
+            "SELECT {USER_COLUMNS} FROM users \
+             WHERE ($1::text IS NULL \
+                    OR email ILIKE $1 OR first_name ILIKE $1 OR last_name ILIKE $1) \
+               AND ($2::text IS NULL OR role = $2) \
+             ORDER BY created_at DESC \
+             LIMIT $3 OFFSET $4"
+        );
+        let rows = sqlx::query(&sql)
+            .bind(motif.as_deref())
+            .bind(role.as_deref())
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to fetch users page: {e}"))?;
+
+        let mut users = Vec::new();
+        for row in &rows {
+            if let Ok(user) = row_to_user(row) {
+                users.push(user);
+            }
+        }
+
+        Ok(users)
+    }
+
+    async fn count_matching(
+        &self,
+        recherche: Option<String>,
+        role: Option<String>,
+    ) -> Result<i64, String> {
+        let motif = recherche
+            .map(|r| r.trim().to_string())
+            .filter(|r| !r.is_empty())
+            .map(|r| format!("%{r}%"));
+        let role = role
+            .map(|r| r.trim().to_string())
+            .filter(|r| !r.is_empty() && r != "all");
+
+        // Le total DOIT porter les deux mêmes filtres que la page, sans quoi
+        // l'écran annonce « 50 sur 4 120 » alors qu'il en existe douze.
+        let total: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM users \
+             WHERE ($1::text IS NULL \
+                    OR email ILIKE $1 OR first_name ILIKE $1 OR last_name ILIKE $1) \
+               AND ($2::text IS NULL OR role = $2)",
+        )
+        .bind(motif.as_deref())
+        .bind(role.as_deref())
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to count users: {e}"))?;
+
+        Ok(total)
+    }
+
     async fn find_by_organization(&self, org_id: Uuid) -> Result<Vec<User>, String> {
         let sql = format!(
             "SELECT {} FROM users WHERE organization_id = $1 ORDER BY created_at DESC",
