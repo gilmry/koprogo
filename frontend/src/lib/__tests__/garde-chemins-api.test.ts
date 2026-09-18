@@ -162,8 +162,25 @@ describe("le frontend n'invente pas de routes (#779)", () => {
  * La bonne façon d'appeler l'API depuis un composant est de passer par un
  * module de `src/lib/api/` : le chemin y devient visible à la garde, et
  * l'appel devient testable sans monter le composant.
+ *
+ * ── Ce cliquet a lui-même sous-compté, le jour de sa naissance ────────────
+ *
+ * Posé à **79** le matin du 2026-09-18, remesuré à **166** le soir : son
+ * motif exigeait une parenthèse immédiatement après `api.get`, et ratait
+ * donc tout appel typé — `api.get<{ data: User[] }>(…)`, c'est-à-dire la
+ * moitié d'entre eux.
+ *
+ * Écart : **87 appels invisibles**, dans une garde écrite quelques heures
+ * plus tôt pour dénoncer exactement ce défaut (#938). Un détecteur textuel
+ * se trompe par défaut, jamais par excès, et un chiffre qui sous-compte se
+ * lit comme un accord sur ce qu'il n'a pas vu.
+ *
+ * La leçon n'est pas « mieux écrire les motifs » : c'est qu'un cliquet doit
+ * être **confronté à un comptage indépendant** avant d'être posé. Ici, le
+ * comptage indépendant a tenu en trois lignes de Python et a divisé le
+ * chiffre par deux.
  */
-const APPELS_DEPUIS_LES_COMPOSANTS_AU_2026_09_18 = 79;
+const APPELS_DEPUIS_LES_COMPOSANTS_AU_2026_09_18 = 166;
 
 function appelsDirectsDepuisLesComposants(): string[] {
   const racines = [
@@ -179,8 +196,16 @@ function appelsDirectsDepuisLesComposants(): string[] {
         parcourir(chemin);
       } else if (/\.(svelte|astro)$/.test(entree.name)) {
         const contenu = readFileSync(chemin, "utf8");
+        // Le paramètre de type est facultatif et peut contenir n'importe
+        // quoi SAUF des parenthèses : `api.get<{ data: Owner[]; pagination:
+        // any }>(...)` en est un cas réel.
+        //
+        // La première version exigeait une parenthèse immédiatement après
+        // `api.get`. Elle comptait 79 appels là où il y en a 166 — elle
+        // ratait tous les appels typés, c'est-à-dire la moitié. Voir plus
+        // bas ce que cet écart enseigne.
         for (const m of contenu.matchAll(
-          /\bapi\.(get|post|put|patch|delete)\s*\(/g,
+          /\bapi\.(get|post|put|patch|delete)\s*(?:<[^()]*?>)?\s*\(/g,
         )) {
           trouves.push(
             `${chemin.replace(process.cwd() + "/", "")} — api.${m[1]}`,
