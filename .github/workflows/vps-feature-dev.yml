@@ -103,6 +103,22 @@ jobs:
       - name: Gate OpenAPI — annotation et enregistrement
         run: ./scripts/check-openapi-coverage.sh
 
+      # Le garde-fou de #854 existait depuis le 2026-09-16 et n'était cité
+      # par AUCUN portail — ni ici, ni dans `ci.yml`. C'est exactement le
+      # motif que le commentaire des gardes Rust plus bas décrit : « un
+      # cliquet que rien n'exécute ne freine rien, il décore ».
+      #
+      # Son témoin est joué avec lui : un garde-fou dont la batterie n'est
+      # pas exécutée peut devenir permissif sans que personne ne le voie. Sa
+      # première version du cas @security montait un fichier piégé dont le
+      # nom contenait un `/` — `touch` échouait, le `|| true` avalait
+      # l'échec, et l'assertion accusait la garde d'un défaut qu'elle
+      # n'avait pas.
+      - name: Gate docs — aucun markdown orphelin à la racine de docs/ (#854)
+        run: |
+          bash ./scripts/check-docs-root-orphans.test.sh
+          bash ./scripts/check-docs-root-orphans.sh
+
       - name: cargo fmt
         working-directory: backend
         run: cargo fmt --all -- --check

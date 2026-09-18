@@ -104,20 +104,49 @@ test_edge_missing_root_is_usage_error() {
 # --- @security -----------------------------------------------------------
 # Un nom de fichier hostile (métacaractères shell) ne doit ni casser le
 # script ni être exécuté — seulement lu comme un nom de fichier littéral.
+#
+# ── Ce test n'a rien testé pendant des semaines ───────────────────────────
+#
+# Sa première version construisait le nom `$(touch /chemin/absolu/MARQUEUR).md`.
+# Ce nom contient des `/` : `touch` le lit comme un CHEMIN, cherche des
+# répertoires qui n'existent pas, et échoue avec « No such file or directory ».
+# Le `|| true` avalait l'échec. Le répertoire de test restait donc propre, la
+# garde répondait « OK » à juste titre, et l'assertion échouait en accusant
+# la garde d'un défaut qu'elle n'avait pas.
+#
+# D'où les deux corrections : un nom hostile SANS séparateur de chemin, et
+# une vérification que le fichier piégé a bien été créé. Un montage de test
+# qui échoue en silence rend le test vide sans jamais le dire.
 test_security_hostile_filename_no_command_injection() {
-  local dir output rc marker
+  local dir output rc piege
   dir="$(fixture_dir)"
-  marker="${dir}/PWNED_MARKER"
   : > "${dir}/WBS_v0_1_0.md"
-  # Un nom de fichier qui ressemblerait à une substitution de commande si
-  # le script interpolait sans discipline de quoting.
-  touch "${dir}/\$(touch ${marker}).md" 2>/dev/null || true
-  output="$(bash "${GUARD}" --root "${dir}" 2>&1)"; rc=$?
-  assert_exit_code "@security nom de fichier hostile → toujours détecté comme orphelin (exit 1)" 1 "${rc}"
+
+  # Pas de `/` dans ce nom : la substitution, si elle avait lieu, poserait
+  # son marqueur dans le répertoire courant du processus qui interpole.
+  piege='$(touch PWNED_MARKER).md'
+  touch "${dir}/${piege}"
+
+  # Sans ce contrôle, un montage qui rate rend les deux assertions suivantes
+  # vides — et vertes.
   TESTS_RUN=$((TESTS_RUN + 1))
-  if [[ -e "${marker}" ]]; then
+  if [[ -e "${dir}/${piege}" ]]; then
+    echo "ok   — @security le fichier piégé existe réellement dans la fixture"
+  else
+    echo "FAIL — @security le fichier piégé n'a pas pu être créé : le test serait vide"
+    FAILURES=$((FAILURES + 1))
+    rm -rf "${dir}"
+    return
+  fi
+
+  output="$(cd "${dir}" && bash "${GUARD}" --root "${dir}" 2>&1)"; rc=$?
+  assert_exit_code "@security nom de fichier hostile → toujours détecté comme orphelin (exit 1)" 1 "${rc}"
+
+  TESTS_RUN=$((TESTS_RUN + 1))
+  if [[ -e "${dir}/PWNED_MARKER" || -e "./PWNED_MARKER" ]]; then
     echo "FAIL — @security le nom de fichier hostile a été exécuté (injection de commande)"
     FAILURES=$((FAILURES + 1))
+    rm -f ./PWNED_MARKER
   else
     echo "ok   — @security aucune exécution de commande via le nom de fichier"
   fi
