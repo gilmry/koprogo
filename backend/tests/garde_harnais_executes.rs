@@ -124,3 +124,87 @@ fn chaque_harnais_est_execute_quelque_part() {
         jamais.join("\n  ")
     );
 }
+
+/// Les cibles citées par un `--test <nom>` dans UN workflow précis.
+///
+/// ── Pourquoi « cité quelque part » ne suffit pas (#956) ───────────────────
+///
+/// La règle ci-dessus lit **tous** les `.yml` et demande que chaque harnais
+/// soit cité par au moins un. C'était la bonne règle pour le défaut qu'elle
+/// visait : un fichier ajouté dans `tests/` et oublié partout.
+///
+/// Elle est aveugle à un défaut voisin et plus coûteux. `ci.yml` **ne tourne
+/// pas** sur `feature/dev` — son filtre l'exclut explicitement, parce qu'il
+/// prend 95 minutes et que le VPS déploie en continu. Or `feature/dev` est la
+/// branche déployée. Un cliquet cité seulement par `ci.yml` est donc vert au
+/// sens de la règle ci-dessus, et **ne freine rien sur le seul chemin qui
+/// mène en production**.
+///
+/// Mesuré le 2026-09-18 : 23 harnais `garde_*`, 23 cités par `ci.yml`, **18**
+/// cités par le barrage. Les cinq absents comprenaient `garde_identite_jetee`,
+/// celui qui plafonne à quatre les routes jetant leur identité — donc celui
+/// qui empêche le retour des dix-huit de #882.
+///
+/// ── Pourquoi seulement les `garde_*` ──────────────────────────────────────
+///
+/// Les harnais `e2e_*` montent chacun une base en conteneur. Les exiger ici
+/// ferait du barrage une seconde CI complète, et le barrage existe justement
+/// pour être court. Les gardes, elles, sont **statiques** : elles lisent des
+/// sources, des migrations et des `.feature`, sans base. Leur coût est celui
+/// de la compilation des harnais, pas de leur exécution — quelques secondes
+/// pour les vingt-trois.
+fn citees_par(fichier: &str) -> BTreeSet<String> {
+    let chemin = racine_du_depot().join(".github/workflows").join(fichier);
+    let texte = fs::read_to_string(&chemin)
+        .unwrap_or_else(|e| panic!("{fichier} doit être lisible : {e}"));
+    let mut vues = BTreeSet::new();
+    for morceau in texte.split("--test") {
+        if let Some(nom) = morceau.split_whitespace().next() {
+            if !nom.is_empty()
+                && nom
+                    .chars()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+            {
+                vues.insert(nom.to_string());
+            }
+        }
+    }
+    vues
+}
+
+const PORTAIL_DEPLOIEMENT: &str = "vps-feature-dev.yml";
+
+#[test]
+fn security_chaque_garde_tourne_sur_la_branche_deployee() {
+    let gardes: BTreeSet<String> = cibles()
+        .into_iter()
+        .filter(|c| c.starts_with("garde_"))
+        .collect();
+    let citees = citees_par(PORTAIL_DEPLOIEMENT);
+    let absentes: Vec<String> = gardes.difference(&citees).cloned().collect();
+
+    assert!(
+        absentes.is_empty(),
+        "Ces gardes ne sont pas citées par {PORTAIL_DEPLOIEMENT}, donc elles \
+         ne s'exécutent JAMAIS sur la branche que le VPS déploie :\n  {}\n\n\
+         Être citée par `ci.yml` ne suffit pas : `ci.yml` exclut explicitement \
+         `feature/dev`. Un cliquet qui ne tourne pas sur le chemin de la \
+         production ne freine rien, il décore.\n\n\
+         Les gardes sont statiques et coûtent quelques secondes : ajoutez-les \
+         au bloc `cargo test --no-fail-fast --test …` du barrage.",
+        absentes.join("\n  ")
+    );
+}
+
+#[test]
+fn le_cliquet_du_portail_lit_bien_quelque_chose() {
+    // Même garde-fou que plus haut : un nom de fichier qui change rendrait la
+    // règle vraie sur un ensemble vide.
+    let citees = citees_par(PORTAIL_DEPLOIEMENT);
+    assert!(
+        citees.len() > 15,
+        "Seulement {} cibles citées par {PORTAIL_DEPLOIEMENT}. Le fichier a dû \
+         être renommé, ou le motif `--test <nom>` ne correspond plus.",
+        citees.len()
+    );
+}
