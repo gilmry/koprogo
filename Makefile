@@ -438,7 +438,7 @@ adr-new: ## 📝 Créer nouvel ADR (usage: make adr-new TITLE="mon-titre")
 	echo "$(GREEN)✅ ADR créé: $$NEW_FILE$(NC)"; \
 	echo "$(YELLOW)📝 Éditer le fichier et compléter les sections$(NC)"
 
-docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (tests ralentis 1s)
+docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (vitrine en cadence + gate à la vitesse)
 	@echo "$(GREEN)🎥 Génération docs avec vidéos E2E...$(NC)"
 	@echo ""
 	@echo "0️⃣ Vérification des services (Traefik + backend + frontend)..."

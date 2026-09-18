@@ -729,8 +729,8 @@ Si vous voyez des erreurs `Connection refused (os error 111)` :
 export SQLX_OFFLINE=true
 make ci
 
-# Option 2 : Démarrer PostgreSQL
-make docker-up
+# Option 2 : Démarrer la pile de développement
+make up
 # Attendre 5 secondes
 make ci
 ```

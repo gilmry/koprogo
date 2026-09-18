@@ -434,8 +434,8 @@ koprogo/
 git clone https://github.com/gilmry/koprogo.git
 cd koprogo
 
-# 2. Démarrer PostgreSQL avec Docker
-make docker-up
+# 2. Démarrer la pile de développement (Traefik + backend + frontend + PostgreSQL)
+make up
 
 # 3. Configuration de l'environnement
 cp backend/.env.example backend/.env
@@ -480,10 +480,7 @@ make coverage
 
 ```bash
 # Tests d'intégration avec PostgreSQL (testcontainers)
-cargo test --test integration
-
-# Ou via Makefile
-make test-integration
+make test-e2e-backend
 ```
 
 ### Tests BDD (Behavior-Driven Development)

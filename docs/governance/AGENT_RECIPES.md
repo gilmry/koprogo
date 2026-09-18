@@ -50,14 +50,17 @@ lancer l'agent évite de refaire une enquête déjà menée.
 
 ## 3. Les scripts d'appui
 
-`.claude/scripts/` — sept scripts, dont le rôle n'est pas devinable au nom :
+`.claude/scripts/` — quatre scripts, dont le rôle n'est pas devinable au nom :
 
 - `sync-playwright-videos.sh` et `copy-videos.sh` — récupèrent les
   enregistrements de la documentation vivante ;
 - `generate-video-rst.py` — en produit les pages ;
-- `slow-down-tests.sh` / `restore-test-speed.sh` — ralentissent les parcours
-  pour que les vidéos soient lisibles par un humain, puis rétablissent ;
 - `sync-docs-structure.sh` — aligne l'arborescence documentaire.
+
+`slow-down-tests.sh` et `restore-test-speed.sh` **ne sont plus là** : ils
+ralentissaient les parcours en **modifiant les fichiers du gate**, ce que la
+Méthode Foyer nomme comme l'anti-patron de la documentation vivante (#876).
+La cadence est désormais une constante d'un harnais séparé — `make vitrine`.
 
 ## 4. Les gardes du dépôt, et ce qu'elles gardent
 

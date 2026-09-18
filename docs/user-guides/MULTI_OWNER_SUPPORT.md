@@ -167,7 +167,7 @@ Pour valider manuellement :
 ```bash
 # Rejouer la batterie de tests liée
 make test-unit                # inclut les tests domaine
-make test-integration         # exécute integration_unit_owner.rs
+make test-e2e-backend         # exécute integration_unit_owner.rs
 make test-bdd                 # scénarios Cucumber
 ```
 

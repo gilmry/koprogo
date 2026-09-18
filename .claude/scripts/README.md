@@ -95,16 +95,13 @@ Remplacé par un **harnais séparé** qui ne touche à aucun fichier du gate :
 `frontend/tests/e2e/journeys/` (`make vitrine`). Cf. #876.
 
 
-### `restore-test-speed.sh` ⭐ (Nouveau)
+### `restore-test-speed.sh` — RETIRÉ le 2026-09-12, avec son jumeau
 
-Retire toutes les pauses ajoutées par `slow-down-tests.sh` pour revenir à la vitesse normale.
+Il n'avait de raison d'être que de défaire ce que `slow-down-tests.sh`
+faisait. Les deux sont partis ensemble, ainsi que les cibles
+`make test-e2e-slow` et `make test-e2e-restore-speed`.
 
-**Usage :**
-```bash
-bash .claude/scripts/restore-test-speed.sh
-# OU
-make test-e2e-restore-speed
-```
+Pour une vidéo lisible par un humain : `make vitrine`.
 
 ### `sync-playwright-videos.sh` (Ancien - Complexe)
 
@@ -145,12 +142,11 @@ npm run test:e2e
 # Étape 2 : Synchroniser les vidéos
 npm run docs:videos
 
-# Étape 3 : Générer la doc Sphinx
-cd ../docs
-make html
+# Étape 3 : Générer la doc Sphinx (depuis la racine du dépôt)
+make docs-sphinx
 
 # Étape 4 : Prévisualiser
-cd _build/html
+cd docs/_build/html
 python3 -m http.server 8000
 # Ouvrir http://localhost:8000/e2e-videos.html
 ```

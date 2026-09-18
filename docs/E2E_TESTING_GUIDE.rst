@@ -168,36 +168,49 @@ Si vous préférez écrire le code directement :
    # Lancer
    npm run test:e2e -- mon-test.spec.ts
 
-🐌 Créer des Vidéos Plus Lisibles
-==================================
+🎬 Créer des Vidéos Lisibles — la vitrine
+==========================================
 
-Pour que les vidéos soient plus faciles à suivre, utilisez le **mode ralenti** :
-
-.. code-block:: bash
-
-   make test-e2e-slow
-
-**Ce qui se passe automatiquement :**
-
-1. ✅ Ajoute ``await page.waitForTimeout(1000)`` après chaque action (click, fill, etc.)
-2. ✅ Lance les tests E2E
-3. ✅ Génère les vidéos localement (1 seconde entre chaque action = plus lisible !)
-4. ✅ Restaure automatiquement la vitesse normale après
-
-**Délai personnalisé :**
+Les vidéos du **gate** sont enregistrées à la vitesse des tests : elles
+servent au diagnostic d'un échec, pas à raconter le produit. Pour une vidéo
+qu'un humain suit, on passe par la **vitrine**, qui est un harnais
+**séparé** :
 
 .. code-block:: bash
 
-   # 2 secondes entre chaque action
-   bash .claude/scripts/slow-down-tests.sh 2000
-   cd frontend && npm run test:e2e
-   bash .claude/scripts/restore-test-speed.sh
+   make vitrine
 
-**Restaurer manuellement :**
+Elle rejoue le parcours de référence en cadence, incruste la narration dans
+la page pendant l'enregistrement, et assemble une galerie autonome :
+
+.. code-block:: text
+
+   frontend/tests/e2e/journeys/vitrine/index.html
+
+**Ce qui se passe :**
+
+1. ``enregistrer-vitrine.mjs`` rejoue ``tests/e2e/journeys/parcours.ts`` à
+   raison d'une action par seconde (``CADENCE_MS``, dans ``scene.ts``)
+2. Chaque étape est **racontée à l'écran**, donc visible dans la vidéo
+3. ``assembler-vitrine.mjs`` produit la galerie et les **chapitres
+   horodatés** (``videos/<parcours>.json``), pour sauter à une étape au lieu
+   de regarder le film en entier
+4. La CI publie le tout dans l'artefact ``vitrine`` (``ci.yml``, #873)
+
+**Changer la cadence :**
 
 .. code-block:: bash
 
-   make test-e2e-restore-speed
+   VITRINE_CADENCE_MS=2000 make vitrine
+
+.. warning::
+
+   Il a existé jusqu'au 2026-09-12 un ``make test-e2e-slow`` qui **modifiait
+   les fichiers du gate** pour y insérer des pauses, puis les restaurait.
+   La cible, les deux scripts et leurs commandes **n'existent plus** : muter
+   les specs du gate pour enregistrer confie au gate une responsabilité qui
+   n'est pas la sienne, et la Méthode Foyer le nomme comme l'anti-patron à
+   éviter (#876). Le harnais de valeur ne touche à aucun fichier du gate.
 
 📚 Ajouter les Vidéos dans la Documentation
 ===========================================
