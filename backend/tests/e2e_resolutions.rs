@@ -56,10 +56,24 @@ fn assert_decimal_field(value: &serde_json::Value, expected: rust_decimal::Decim
 }
 
 /// Helper: Create test fixtures (organization, building, meeting, owners, units)
+///
+/// ── Deux comptes, et c'est le produit qui l'exige (#850, #957) ────────────
+///
+/// `POST /resolutions/{id}/vote` résout le votant depuis l'utilisateur
+/// authentifié depuis #850 : un jeton ne peut voter que pour SA fiche de
+/// copropriétaire, ou comme mandataire déclaré. Un seul jeton ne peut donc
+/// plus déposer les voix de deux personnes, et c'est exactement ce qu'on
+/// veut — sans cela, n'importe quel authentifié votait au nom de n'importe
+/// qui, avec la puissance de vote qu'il déclarait.
+///
+/// Les sept harnais de vote datent d'avant, et échouaient en 403
+/// `owner_not_linked` (run CI 35323764342 : 12 réussis / 7 échoués). Le
+/// montage rend maintenant **deux** jetons, un par copropriétaire, ce qui
+/// est le geste réel : chacun vote depuis son compte.
 async fn create_test_fixtures(
     app_state: &actix_web::web::Data<AppState>,
     org_id: Uuid,
-) -> (String, Uuid, Uuid, Uuid, Uuid, Uuid, Uuid) {
+) -> (String, Uuid, Uuid, Uuid, Uuid, Uuid, Uuid, String) {
     // 1. Register user and get token
     let email = format!("resolution-test-{}@example.com", Uuid::new_v4());
     let register_req = RegisterRequest {
@@ -71,11 +85,16 @@ async fn create_test_fixtures(
         organization_id: Some(org_id),
     };
 
-    let _user = app_state
+    // L'identifiant est retenu : depuis #850, `POST /resolutions/{id}/vote`
+    // résout le votant depuis l'utilisateur authentifié et refuse en 403
+    // (`owner_not_linked`) un compte sans fiche de copropriétaire. Un jeton
+    // qui n'est rattaché à personne ne peut plus voter — ce qui est le but.
+    let utilisateur = app_state
         .auth_use_cases
         .register(register_req)
         .await
         .expect("Failed to register user");
+    let user_id = utilisateur.user.id;
 
     let login_req = LoginRequest {
         email,
@@ -182,7 +201,8 @@ async fn create_test_fixtures(
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
-        user_id: None,
+        // Rattaché au compte du jeton : c'est LUI qui votera pour lui-même.
+        user_id: Some(user_id.to_string()),
     };
 
     let owner1 = app_state
@@ -192,6 +212,31 @@ async fn create_test_fixtures(
         .expect("Failed to create owner 1");
 
     let owner1_id = Uuid::parse_str(&owner1.id).expect("Failed to parse owner1 id");
+
+    // Le second copropriétaire a SON compte : il votera depuis son jeton.
+    let email2 = format!("resolution-owner2-{}@example.com", Uuid::new_v4());
+    let utilisateur2 = app_state
+        .auth_use_cases
+        .register(RegisterRequest {
+            email: email2.clone(),
+            password: "SecurePass123!".to_string(),
+            first_name: "Owner".to_string(),
+            last_name: "Two".to_string(),
+            role: "owner".to_string(),
+            organization_id: Some(org_id),
+        })
+        .await
+        .expect("Failed to register owner2 user");
+    let user2_id = utilisateur2.user.id;
+    let token_owner2 = app_state
+        .auth_use_cases
+        .login(LoginRequest {
+            email: email2,
+            password: "SecurePass123!".to_string(),
+        })
+        .await
+        .expect("Failed to login owner2")
+        .token;
 
     let owner2_dto = CreateOwnerDto {
         organization_id: org_id.to_string(),
@@ -203,7 +248,7 @@ async fn create_test_fixtures(
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
-        user_id: None,
+        user_id: Some(user2_id.to_string()),
     };
 
     let owner2 = app_state
@@ -272,6 +317,7 @@ async fn create_test_fixtures(
         owner1_id,
         owner2_id,
         unit1_id,
+        token_owner2,
     )
 }
 
@@ -323,7 +369,7 @@ async fn create_extra_unit(
 #[serial]
 async fn test_create_resolution_success() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id) =
+    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id, _token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -362,7 +408,7 @@ async fn test_create_resolution_success() {
 #[serial]
 async fn test_create_resolution_without_auth_fails() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (_token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id) =
+    let (_token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id, _token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -392,7 +438,7 @@ async fn test_create_resolution_without_auth_fails() {
 #[serial]
 async fn test_get_resolution_success() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id) =
+    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id, _token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -466,7 +512,7 @@ async fn test_get_resolution_not_found() {
 #[serial]
 async fn test_list_meeting_resolutions() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id) =
+    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id, _token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -516,7 +562,7 @@ async fn test_list_meeting_resolutions() {
 #[serial]
 async fn test_delete_resolution_success() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id) =
+    let (token, _org_id, _building_id, meeting_id, _owner1_id, _owner2_id, _unit1_id, _token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -569,7 +615,7 @@ async fn test_delete_resolution_success() {
 #[serial]
 async fn test_cast_vote_pour_success() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, _building_id, meeting_id, owner1_id, _owner2_id, unit1_id) =
+    let (token, _org_id, _building_id, meeting_id, owner1_id, _owner2_id, unit1_id, _token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -623,7 +669,7 @@ async fn test_cast_vote_pour_success() {
 #[serial]
 async fn test_cast_vote_contre_and_abstention() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id) =
+    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id, token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -675,7 +721,7 @@ async fn test_cast_vote_contre_and_abstention() {
     // Vote "Abstention" with owner2
     let req2 = test::TestRequest::post()
         .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
-        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_owner2)))
         .set_json(json!({
             "owner_id": owner2_id.to_string(),
             "unit_id": unit2_id.to_string(),
@@ -695,7 +741,7 @@ async fn test_cast_vote_contre_and_abstention() {
 #[serial]
 async fn test_list_resolution_votes() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id) =
+    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id, token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -726,14 +772,18 @@ async fn test_list_resolution_votes() {
     let resolution: serde_json::Value = test::read_body_json(create_resp).await;
     let resolution_id = resolution["id"].as_str().unwrap();
 
-    // Cast 2 votes
-    for (owner_id, unit_id, choice, power) in [
-        (owner1_id, unit1_id, "pour", 0.4),
-        (owner2_id, unit2_id, "contre", 0.6),
+    // Deux votes, et CHACUN depuis le jeton de son copropriétaire.
+    //
+    // Le jeton voyage avec la ligne : depuis #850, voter pour autrui rend 403
+    // `owner_not_linked`. Un seul jeton pour les deux lignes déposait une voix
+    // sur deux, en silence.
+    for (jeton, owner_id, unit_id, choice, power) in [
+        (&token, owner1_id, unit1_id, "pour", 0.4),
+        (&token_owner2, owner2_id, unit2_id, "contre", 0.6),
     ] {
         let req = test::TestRequest::post()
             .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
-            .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", jeton)))
             .set_json(json!({
                 "owner_id": owner_id.to_string(),
                 "unit_id": unit_id.to_string(),
@@ -743,7 +793,17 @@ async fn test_list_resolution_votes() {
             }))
             .to_request();
 
-        test::call_service(&app, req).await;
+        // Le code de chaque dépôt est vérifié, et c'est le vrai correctif de
+        // ce test. Sans cette ligne, un vote REFUSÉ ne se voyait pas : il
+        // ressortait vingt lignes plus bas en « attendu 2, obtenu 1 », un
+        // écart de comptage qui ne dit ni lequel a échoué ni pourquoi.
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(
+            resp.status(),
+            201,
+            "le vote de {owner_id} a été refusé : {:?}",
+            resp.status()
+        );
     }
 
     // List all votes for resolution
@@ -764,7 +824,7 @@ async fn test_list_resolution_votes() {
 #[serial]
 async fn test_change_vote_success() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, _building_id, meeting_id, owner1_id, _owner2_id, unit1_id) =
+    let (token, _org_id, _building_id, meeting_id, owner1_id, _owner2_id, unit1_id, _token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -832,7 +892,7 @@ async fn test_change_vote_success() {
 #[serial]
 async fn test_close_voting_simple_majority() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id) =
+    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id, token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -880,7 +940,7 @@ async fn test_close_voting_simple_majority() {
 
     let vote2_req = test::TestRequest::post()
         .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
-        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_owner2)))
         .set_json(json!({
             "owner_id": owner2_id.to_string(),
             "unit_id": unit2_id.to_string(),
@@ -935,7 +995,7 @@ async fn test_close_voting_simple_majority() {
 #[serial]
 async fn test_close_voting_absolute_majority() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, building_id, meeting_id, _owner1_id, owner2_id, _unit1_id) =
+    let (token, _org_id, building_id, meeting_id, _owner1_id, owner2_id, _unit1_id, token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -969,7 +1029,7 @@ async fn test_close_voting_absolute_majority() {
     // Cast only one vote "Pour" with 60% power
     let vote_req = test::TestRequest::post()
         .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
-        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_owner2)))
         .set_json(json!({
             "owner_id": owner2_id.to_string(),
             "unit_id": unit2_id.to_string(),
@@ -1004,7 +1064,7 @@ async fn test_close_voting_absolute_majority() {
 #[serial]
 async fn test_close_voting_qualified_majority() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id) =
+    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id, token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -1051,7 +1111,7 @@ async fn test_close_voting_qualified_majority() {
 
     let vote2_req = test::TestRequest::post()
         .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
-        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_owner2)))
         .set_json(json!({
             "owner_id": owner2_id.to_string(),
             "unit_id": unit2_id.to_string(),
@@ -1086,7 +1146,7 @@ async fn test_close_voting_qualified_majority() {
 #[serial]
 async fn test_get_meeting_vote_summary() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id) =
+    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id, _token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -1176,7 +1236,7 @@ async fn test_get_meeting_vote_summary() {
 #[serial]
 async fn test_complete_voting_lifecycle() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id) =
+    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id, token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -1241,7 +1301,7 @@ async fn test_complete_voting_lifecycle() {
     // 4. Cast second vote
     let vote2_req = test::TestRequest::post()
         .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
-        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_owner2)))
         .set_json(json!({
             "owner_id": owner2_id.to_string(),
             "unit_id": unit2_id.to_string(),
@@ -1328,7 +1388,7 @@ async fn test_complete_voting_lifecycle() {
 #[serial]
 async fn security_les_resolutions_dune_ag_ne_fuient_pas_vers_une_autre_organisation() {
     let (app_state, _container, org_a) = setup_app().await;
-    let (_token_a, _org, _building, meeting_id, _o1, _o2, _u1) =
+    let (_token_a, _org, _building, meeting_id, _o1, _o2, _u1, _token_owner2) =
         create_test_fixtures(&app_state, org_a).await;
 
     // Un syndic d'une organisation étrangère.
@@ -1360,7 +1420,7 @@ async fn security_les_resolutions_dune_ag_ne_fuient_pas_vers_une_autre_organisat
 #[serial]
 async fn security_les_votes_dune_resolution_ne_fuient_pas_vers_une_autre_organisation() {
     let (app_state, _container, org_a) = setup_app().await;
-    let (token_a, _org, _building, meeting_id, _o1, _o2, _u1) =
+    let (token_a, _org, _building, meeting_id, _o1, _o2, _u1, _token_owner2) =
         create_test_fixtures(&app_state, org_a).await;
 
     let app = test::init_service(
@@ -1436,7 +1496,7 @@ async fn security_les_votes_dune_resolution_ne_fuient_pas_vers_une_autre_organis
 #[serial]
 async fn test_cloturer_le_vote_accepte_un_corps_vide_comme_le_frontend() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (token, _org, _building, meeting_id, _o1, _o2, _u1) =
+    let (token, _org, _building, meeting_id, _o1, _o2, _u1, _token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
 
     let app = test::init_service(
@@ -1495,7 +1555,7 @@ async fn test_cloturer_le_vote_accepte_un_corps_vide_comme_le_frontend() {
 #[serial]
 async fn security_close_voting_refuse_pour_un_coproprietaire() {
     let (app_state, _container, org_id) = setup_app().await;
-    let (syndic_token, _org, _building, meeting_id, _o1, _o2, _u1) =
+    let (syndic_token, _org, _building, meeting_id, _o1, _o2, _u1, _token_owner2) =
         create_test_fixtures(&app_state, org_id).await;
     let owner_token = common::register_and_login_with_role(&app_state, org_id, "owner").await;
 
