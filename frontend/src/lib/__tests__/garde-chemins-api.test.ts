@@ -182,7 +182,9 @@ function appelsDirectsDepuisLesComposants(): string[] {
         for (const m of contenu.matchAll(
           /\bapi\.(get|post|put|patch|delete)\s*\(/g,
         )) {
-          trouves.push(`${chemin.replace(process.cwd() + "/", "")} — api.${m[1]}`);
+          trouves.push(
+            `${chemin.replace(process.cwd() + "/", "")} — api.${m[1]}`,
+          );
         }
       }
     }

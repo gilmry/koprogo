@@ -150,7 +150,9 @@ function violationsSkip(lignes: string[]): Violation[] {
 describe("détection des skips non justifiés (unité, sans I/O)", () => {
   it("signale un test.skip sans commentaire ni raison en argument", () => {
     const lignes = ['test.skip("un truc cassé", async () => {', "});"];
-    expect(violationsSkip(lignes)).toEqual([{ ligne: 1, titre: "un truc cassé" }]);
+    expect(violationsSkip(lignes)).toEqual([
+      { ligne: 1, titre: "un truc cassé" },
+    ]);
   });
 
   it("ne signale rien pour un test.skip dont un commentaire immédiat justifie le skip", () => {
@@ -181,7 +183,10 @@ describe("détection des skips non justifiés (unité, sans I/O)", () => {
       "});",
     ];
     expect(violationsSkip(lignes)).toEqual([
-      { ligne: 1, titre: "should create, edit, and delete organization using test IDs" },
+      {
+        ligne: 1,
+        titre: "should create, edit, and delete organization using test IDs",
+      },
     ]);
   });
 
@@ -201,12 +206,20 @@ describe("détection des skips non justifiés (unité, sans I/O)", () => {
       "});",
       "// Skip: raison arrivée trop tard pour compter",
     ];
-    expect(violationsSkip(lignes)).toEqual([{ ligne: 1, titre: "un truc cassé" }]);
+    expect(violationsSkip(lignes)).toEqual([
+      { ligne: 1, titre: "un truc cassé" },
+    ]);
   });
 
   it("ignore un commentaire qui ne mentionne ni skip ni fixme", () => {
-    const lignes = ["// TODO plus tard", 'test.skip("un truc cassé", async () => {', "});"];
-    expect(violationsSkip(lignes)).toEqual([{ ligne: 2, titre: "un truc cassé" }]);
+    const lignes = [
+      "// TODO plus tard",
+      'test.skip("un truc cassé", async () => {',
+      "});",
+    ];
+    expect(violationsSkip(lignes)).toEqual([
+      { ligne: 2, titre: "un truc cassé" },
+    ]);
   });
 
   it("reconnaît « skipped » (participe passé), pas seulement « skip »", () => {

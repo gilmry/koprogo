@@ -160,7 +160,9 @@ export const convocationsApi = {
    * silencieusement tous les copropriétaires actifs sans que le syndic
    * puisse le voir ni le corriger.
    */
-  async getEligibleRecipients(buildingId: string): Promise<EligibleRecipient[]> {
+  async getEligibleRecipients(
+    buildingId: string,
+  ): Promise<EligibleRecipient[]> {
     return api.get(`/buildings/${buildingId}/eligible-convocation-recipients`);
   },
 

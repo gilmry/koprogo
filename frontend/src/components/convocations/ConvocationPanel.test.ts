@@ -53,8 +53,7 @@ vi.mock("../../lib/api/convocations", async () => {
       getByMeetingId: (...args: any[]) => getByMeetingId(...args),
       create: (...args: any[]) => create(...args),
       send: (...args: any[]) => send(...args),
-      getEligibleRecipients: (...args: any[]) =>
-        getEligibleRecipients(...args),
+      getEligibleRecipients: (...args: any[]) => getEligibleRecipients(...args),
       cancel: vi.fn(),
       sendReminders: vi.fn(),
       delete: vi.fn(),

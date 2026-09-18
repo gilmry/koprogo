@@ -92,9 +92,9 @@ function ciblesDuMakefile(): Set<string> {
 /** Les blocs de commandes d'un document — pas ses mentions en ligne. */
 function blocsDeCommandes(texte: string, extension: string): string[] {
   if (extension === "md") {
-    return [...texte.matchAll(/```(?:bash|sh|shell|console)\n([\s\S]*?)```/g)].map(
-      (m) => m[1],
-    );
+    return [
+      ...texte.matchAll(/```(?:bash|sh|shell|console)\n([\s\S]*?)```/g),
+    ].map((m) => m[1]);
   }
   return [
     ...texte.matchAll(
@@ -122,7 +122,9 @@ function citations(): Citation[] {
     const texte = readFileSync(chemin, "utf8");
     const extension = chemin.endsWith(".md") ? "md" : "rst";
     for (const bloc of blocsDeCommandes(texte, extension)) {
-      for (const m of bloc.matchAll(/^\s*(?:\$ )?make\s+([a-z][a-z0-9-]{2,})/gm)) {
+      for (const m of bloc.matchAll(
+        /^\s*(?:\$ )?make\s+([a-z][a-z0-9-]{2,})/gm,
+      )) {
         trouvees.push({ fichier: relative(RACINE, chemin), cible: m[1] });
       }
     }
@@ -169,7 +171,8 @@ describe("la documentation ne cite que des commandes qui existent", () => {
     // La garde ne doit pas pousser à effacer l'histoire. Une phrase qui dit
     // « `make test-e2e-slow` a été retiré » est de la documentation ; seule
     // l'INSTRUCTION de la lancer est refusée.
-    const prose = "La cible ``make test-e2e-slow`` a été retirée le 2026-09-12.";
+    const prose =
+      "La cible ``make test-e2e-slow`` a été retirée le 2026-09-12.";
     expect(blocsDeCommandes(prose, "rst")).toEqual([]);
   });
 });
