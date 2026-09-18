@@ -107,13 +107,42 @@ export default async function globalSetup() {
   });
   const building = await buildingResp.json();
 
-  // 6. Create 3 units
-  const units: Array<{ id: string; unitNumber: string; floor: number }> = [];
-  for (const [num, floor] of [
+  // 6. Trois lots dont les quotités somment EXACTEMENT à l'acte de base.
+  //
+  // ── Le monde de scénario n'a jamais été conforme ─────────────────────────
+  //
+  // Les trois lots portaient `quota: 333.33`. Somme : 999,99 sur une base de
+  // 1000, soit un `quota_delta` de 0,01. Le serveur refusait donc en 422
+  // `ACP_NOT_CONFORMANT` toute dépense, toute répartition, tout appel de
+  // fonds et tout état daté fondés sur ce monde (ADR-0010).
+  //
+  // Ça n'a jamais rougi, pour deux raisons qui se sont additionnées :
+  // ce fichier n'était exécuté par personne (`globalSetup` n'était pas
+  // déclaré, #955), et ses créations d'entités avalent leurs échecs en
+  // `console.warn`. Au premier lancement réel, le 2026-09-18, six entités
+  // sur quatorze manquaient à l'appel.
+  //
+  // Le dernier lot absorbe le reste : c'est la seule façon d'atteindre la
+  // somme exacte quand la base ne se divise pas rondement. 1000 / 3 ne
+  // tombe pas juste, et un acte de base ne tolère pas l'à-peu-près.
+  const BASE_TANTIEMES = 1000;
+  const REPARTITION = [
     ["1A", 1],
     ["2A", 2],
     ["3A", 3],
-  ] as const) {
+  ] as const;
+  const quotaCourant =
+    Math.floor((BASE_TANTIEMES / REPARTITION.length) * 100) / 100;
+
+  const units: Array<{ id: string; unitNumber: string; floor: number }> = [];
+  for (const [index, [num, floor]] of REPARTITION.entries()) {
+    const dernier = index === REPARTITION.length - 1;
+    const quota = dernier
+      ? Number(
+          (BASE_TANTIEMES - quotaCourant * (REPARTITION.length - 1)).toFixed(2),
+        )
+      : quotaCourant;
+
     const unitResp = await ctx.post(`${API_BASE}/units`, {
       data: {
         building_id: building.id,
@@ -121,15 +150,47 @@ export default async function globalSetup() {
         unit_type: "Apartment",
         floor,
         surface_area: 75.0,
-        quota: 333.33,
+        quota,
       },
       headers: adminHeaders,
     });
+    if (!unitResp.ok()) {
+      // Un lot qui manque rend le monde non conforme, et tout ce qui suit
+      // échouera en 422 sans qu'on sache pourquoi. Celui-ci ne s'avale pas.
+      throw new Error(
+        `global-setup : lot ${num} (quota ${quota}) refusé en ` +
+          `HTTP ${unitResp.status()} — ${(await unitResp.text()).slice(0, 200)}`,
+      );
+    }
     const unit = await unitResp.json();
     units.push({ id: unit.id, unitNumber: num, floor });
   }
 
-  // 7. Create an owner record and assign to unit 1A
+  // 7. La fiche de copropriétaire, LIÉE au compte, puis rattachée au lot 1A.
+  //
+  // ── Sans `user_id`, trois modules communautaires ne se sèment pas ────────
+  //
+  // La fiche était créée sans lien vers le compte. Le serveur ne trouvait
+  // donc aucune fiche derrière l'utilisateur, et refusait en 403
+  // `owner_profile_required` la création d'un échange, d'une compétence et
+  // d'un objet partagé :
+  //
+  //   « Cette action est réservée aux copropriétaires : elle engage une
+  //     personne, pas la copropriété. »
+  //
+  // Le refus est JUSTE — c'est le produit qui a raison. C'était le monde de
+  // scénario qui prétendait avoir un copropriétaire sans lui en donner
+  // l'identité.
+  const ownerUserId =
+    ownerData.user?.id ?? ownerData.id ?? ownerData.user_id ?? null;
+  if (!ownerUserId) {
+    throw new Error(
+      "global-setup : impossible de lire l'identifiant du compte " +
+        "copropriétaire. Sans lui, sa fiche reste non liée et les modules " +
+        "communautaires ne se sèment pas.",
+    );
+  }
+
   const ownerRecordResp = await ctx.post(`${API_BASE}/owners`, {
     data: {
       organization_id: org.id,
@@ -140,6 +201,7 @@ export default async function globalSetup() {
       city: "Brussels",
       postal_code: "1000",
       country: "Belgium",
+      user_id: ownerUserId,
     },
     headers: { Authorization: `Bearer ${syndicData.token}` },
   });
@@ -265,7 +327,7 @@ export default async function globalSetup() {
         description: "Cours cuisine belge",
         credits: 2,
       },
-      headers: syndicHeaders,
+      headers: ownerHeaders,
     }),
   );
 
@@ -280,7 +342,7 @@ export default async function globalSetup() {
         description: "Aide informatique",
         is_available_for_help: true,
       },
-      headers: syndicHeaders,
+      headers: ownerHeaders,
     }),
   );
 
@@ -295,7 +357,7 @@ export default async function globalSetup() {
         condition: "Good",
         is_available: true,
       },
-      headers: syndicHeaders,
+      headers: ownerHeaders,
     }),
   );
 
@@ -331,7 +393,13 @@ export default async function globalSetup() {
         project_title: `Rénovation façade ${ts}`,
         project_description: "Ravalement façade",
         amount_excl_vat: 250.0,
-        vat_rate: 21.0,
+        // `vat_rate DECIMAL(5, 4)` : la colonne stocke une FRACTION, pas un
+        // pourcentage — 21 % s'écrit 0,2100, et le commentaire de la
+        // migration `20251120150000_create_quotes.sql:25` le dit. Envoyer
+        // 21.0 dépassait la capacité de la colonne, et le devis ne se semait
+        // pas : « numeric field overflow », un message qui ne nomme ni le
+        // champ ni la convention.
+        vat_rate: 0.21,
         estimated_duration_days: 30,
         warranty_years: 10,
         validity_date: new Date(Date.now() + 30 * 86400000).toISOString(),

@@ -43,7 +43,11 @@ const JOURNEYS = resolve(RACINE, "tests/e2e/journeys");
 // n'affaiblit RIEN : l'invariant reste que l'union des parcours rejoués par
 // le gate égale celle de la vitrine. Un parcours filmé que le gate ne rejoue
 // pas resterait refusé, et c'est tout ce qu'on lui demande.
-const HARNAIS_GATE = ["parcours.spec.ts", "coproprietaire.spec.ts"] as const;
+const HARNAIS_GATE = [
+  "parcours.spec.ts",
+  "coproprietaire.spec.ts",
+  "comptable.spec.ts",
+] as const;
 const HARNAIS_VITRINE = ["enregistrer-vitrine.mjs"] as const;
 
 const HARNAIS = [

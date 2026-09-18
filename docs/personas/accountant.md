@@ -71,9 +71,22 @@ question de support la plus fréquente du produit.
    Le parcours e2e vérifie désormais cette absence comme une PROPRIÉTÉ, pas
    comme une gêne à contourner.
 5. Passer une écriture au journal (ACH/VEN/FIN/ODS), en partie double →
-   `/journal-entries` : `journal-entry-form`,
+   `/journal-entries` : `journal-entry-panel`,
    `journal-entry-description-input`, une ligne par code de compte PCMN
    (débit/crédit), `submit-journal-entry-button`.
+
+   **Deux corrections du 2026-09-18**, trouvées en filmant le parcours
+   (#808) :
+
+   - L'ancre annoncée ici était `journal-entry-form`. Elle n'existe pas :
+     `JournalEntryForm.svelte:181` expose **`journal-entry-panel`**,
+     renommée parce que l'ancienne résolvait DEUX éléments. Ce document
+     n'avait pas suivi — et rien ne l'y obligeait, aucune garde ne confronte
+     les ancres des personas au code.
+   - L'écran ne s'ouvre pas sur le formulaire : il s'ouvre sur « choisissez
+     un immeuble » (`journal-entries-no-building`), parce que le périmètre
+     est nul au chargement de chacun des douze écrans qui le lisent
+     (**#841**). Le parcours filmé le montre tel quel.
 6. Établir un budget (brouillon), le soumettre à l'assemblée, puis
    l'approuver → `/budgets` : `create-budget-button`,
    `budget-building-select`, `budget-ordinary-amount`,

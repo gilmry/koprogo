@@ -426,7 +426,7 @@ export async function ensureAcp(
  * building. Rounding error (if any) is balanced on the last unit so the sum
  * is exact.
  */
-async function seedConformantUnits(
+export async function seedConformantUnits(
   page: Page,
   adminToken: string,
   acpId: string,
