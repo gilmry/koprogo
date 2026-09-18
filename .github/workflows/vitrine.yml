@@ -1,0 +1,227 @@
+# La VITRINE sur la branche déployée.
+#
+# ── Pourquoi un workflow à part ──────────────────────────────────────────
+#
+# La vitrine ne vivait que dans `ci.yml`, et `ci.yml` exclut explicitement
+# `feature/dev` — son filtre porte `- "!feature/dev"`, parce qu'il prend
+# 95 minutes et que le VPS déploie en continu.
+#
+# Conséquence : la preuve de valeur existait sur les branches de story, et
+# JAMAIS sur la branche que koprogo.com sert. L'arbitre de promotion pouvait
+# la regarder ; personne ne pouvait la regarder pour ce qui est en ligne.
+#
+# ── Pourquoi pas dans le barrage ─────────────────────────────────────────
+#
+# Le barrage existe pour être « le plus court possible entre un push et
+# quelque chose de déployé » (son propre en-tête). Y ajouter cinq parcours
+# joués en cadence — une action par seconde — allongerait de dix minutes le
+# chemin de la production, pour une preuve qui n'est PAS un verdict.
+#
+# La documentation vivante est « non bloquante mais non facultative » : elle
+# a donc son portail, qui ne retient rien et ne bloque personne.
+#
+# ── Ce qu'elle produit ───────────────────────────────────────────────────
+#
+# Cinq parcours narrés — syndic et copropriétaire, comptable (#808),
+# administration (#809), conseil de copropriété (#816) — et la galerie
+# autonome à chapitres horodatés qui les rassemble.
+#
+# Deux acteurs du type `Acteur` restent hors champ, et c'est écrit plutôt
+# que tu : le PRESTATAIRE attend la story 3.2 (`POST /magic-links` n'existe
+# pas, et `issueMagicLink` lève délibérément plutôt que de fabriquer un faux
+# jeton), et le MODÉRATEUR COMMUNAUTÉ est un rôle prévu, non construit —
+# aucune interface de modération, aucune ancre dans le contrat gelé.
+
+name: Vitrine (feature/dev)
+
+on:
+  push:
+    branches:
+      - feature/dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  vitrine:
+    name: Enregistrer la vitrine
+    runs-on: ubuntu-latest
+    # Cinq parcours en cadence d'une action par seconde. Observé ~2 min par
+    # parcours en local ; plafond large pour absorber la variance d'un
+    # exécuteur, sans laisser un job pendu six heures.
+    timeout-minutes: 45
+    # Observé 44 min le 2026-09-07 ; plafond à ~2x pour absorber la
+    # variance d'un runner sans laisser un job pendu six heures.
+    timeout-minutes: 90
+    needs: [frontend-check]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: koprogo_test
+        # --shm-size : le defaut Docker est 64 Mo, et PostgreSQL y alloue ses
+        # segments de memoire partagee. La migration
+        # `20260826000000_alter_payment_reminders_to_numeric` fait un
+        # `ALTER COLUMN TYPE` sur trois colonnes, donc une reecriture de table
+        # que PostgreSQL parallelise. Sous charge, la demande depasse les
+        # 64 Mo :
+        #
+        #   could not resize shared memory segment to 33554432 bytes:
+        #   No space left on device                        (SQLSTATE 53100)
+        #
+        # Constate le 2026-08-27 sur la base de test locale, sous une charge
+        # que mes propres campagnes paralleles avaient creee. Le risque en CI
+        # est faible mais reel, et le durcissement ne coute rien.
+        options: >-
+          --shm-size=256m
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd frontend
+          npx playwright install chromium --with-deps
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: actions/cache@v6
+        with:
+          path: backend/target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build and start backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
+          JWT_SECRET: ci-test-jwt-secret-for-playwright-minimum-32-chars
+          TOTP_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          SERVER_HOST: 127.0.0.1
+          SERVER_PORT: 8080
+          UPLOAD_DIR: ./uploads
+          CORS_ALLOWED_ORIGINS: http://localhost:3000
+          ENABLE_RATE_LIMITING: false
+          SMTP_ENABLED: false
+          RUST_LOG: warn
+          # WP-FE1 : ce job lance le backend en HTTP direct (cargo run, pas
+          # docker-compose). Le défaut sûr COOKIE_SECURE=true poserait le
+          # cookie refresh `Secure`, rejeté par le navigateur sur http://
+          # → silent-refresh 401 → toute la suite auth E2E échoue.
+          COOKIE_SECURE: "false"
+        run: |
+          cd backend
+          cargo install sqlx-cli --no-default-features --features postgres
+          sqlx migrate run
+          cargo build
+          cargo run &
+          # Wait for backend to be ready (health check instead of fixed sleep)
+          echo "Waiting for backend to start..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/api/v1/health > /dev/null 2>&1; then
+              echo "Backend is ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "Backend failed to start within 60s"
+              exit 1
+            fi
+            sleep 5
+          done
+
+      - name: Start frontend dev server
+        env:
+          PUBLIC_API_URL: http://localhost:8080/api/v1
+          # Retire la barre d'outils de développement d'Astro : elle injecte
+          # ses propres `<h1>` (« Audit », « Settings »), ce qui fait échouer
+          # les sélecteurs en mode strict, et elle apparaît au bas de chaque
+          # vidéo de documentation vivante.
+          PLAYWRIGHT: "1"
+        run: |
+          cd frontend
+          node scripts/generate-config.js
+          npx astro dev --port 3000 &
+          # Wait for frontend to be ready
+          echo "Waiting for frontend to start..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "Frontend is ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Frontend failed to start within 30s"
+              exit 1
+            fi
+            sleep 2
+          done
+
+      # Nom rectifié 2026-08-26 : ce step s'intitulait « Run Playwright smoke
+      # tests » alors qu'il lance le projet `chromium`, dont la config porte
+      # `testIgnore: [/smoke\//, /scenarios\//, /characterization\//]` — il
+      # EXCLUT donc précisément smoke. Les 98 tests du projet `smoke` n'ont
+      # jamais tourné, et le diagnostic de #696 (« 109 échecs sur la smoke
+      # suite ») portait en réalité sur les specs de la racine.
+      # CHAQUE invocation écrit dans SON dossier.
+      #
+      # Playwright vide `test-results/` et écrase `playwright-report/` à
+      # chaque exécution. Le job en lance trois : les captures d'écran et les
+      # traces de `chromium` étaient donc détruites par `smoke`, puis par
+      # `scenarios`. Le rapport téléversé ne contenait que le dernier.
+      #
+      # Constaté le 2026-09-09 : douze échecs `chromium` annonçaient chacun
+      # « attachment #1: screenshot », et l'artefact ne contenait que les
+      # douze vidéos des scénarios. Or ce sont les captures qui ont permis de
+      # résoudre les scénarios — modale non confirmée, barre d'outils d'Astro,
+      # table vide sous un bandeau rouge. On jetait l'outil qui marche.
+      - name: Enregistrer les cinq parcours, en cadence
+        # `continue-on-error` n'est pas une précaution : c'est l'élément 3 du
+        # skill `documentation-vivante`. « La preuve de valeur n'est PAS un
+        # test : elle ne doit pas faire tomber le build » (#876). Lui confier
+        # le verdict finirait par la faire couper du pipeline.
+        continue-on-error: true
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
+        run: |
+          cd frontend
+          node tests/e2e/journeys/enregistrer-vitrine.mjs || true
+          node tests/e2e/journeys/assembler-vitrine.mjs || true
+
+      - name: Publier la galerie
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vitrine-feature-dev
+          path: |
+            frontend/tests/e2e/journeys/vitrine/
+          # Un run sans vidéo n'est pas une faute : il arrive qu'un parcours
+          # soit ignoré. Échouer ici masquerait le vrai résultat derrière un
+          # artefact manquant.
+          if-no-files-found: warn
+          # Alignée sur les autres artefacts du dépôt. Des vidéos 1280x720
+          # conservées longtemps remplissent le quota sans que personne ne
+          # s'en aperçoive avant le blocage.
+          retention-days: 7
