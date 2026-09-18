@@ -148,7 +148,7 @@ jobs:
             sleep 5
           done
 
-      - name: Start frontend dev server
+      - name: Construire et servir le frontend (pas le serveur de dev)
         env:
           PUBLIC_API_URL: http://localhost:8080/api/v1
           # Retire la barre d'outils de développement d'Astro : elle injecte
@@ -159,7 +159,39 @@ jobs:
         run: |
           cd frontend
           node scripts/generate-config.js
-          npx astro dev --port 3000 &
+
+          # ── Pourquoi `build` + `preview`, et pas `astro dev` ─────────────
+          #
+          # Le serveur de développement de Vite découvre ses dépendances à la
+          # première visite, puis les RÉ-OPTIMISE — ce qui invalide les URL
+          # de modules déjà demandées. Mesuré le 2026-09-18, capturé par la
+          # console de la vitrine :
+          #
+          #   504 (Outdated Optimize Dep)
+          #   GET /node_modules/.vite/deps/svelte_internal_client.js
+          #       — net::ERR_ABORTED
+          #   [astro-island] Error hydrating … Failed to fetch dynamically
+          #       imported module
+          #
+          # Aucun îlot Svelte ne s'hydratait. `RouteGuard` ne s'exécutait
+          # donc PAS, son `isChecking` restait à sa valeur initiale, et le
+          # voile couvrait l'écran de connexion pour toujours. Trois
+          # correctifs sont partis sur des hypothèses avant que la console ne
+          # le dise (#873).
+          #
+          # L'attente `curl` ci-dessous ne pouvait rien y faire : elle prouve
+          # que le serveur RÉPOND, pas qu'il a fini d'optimiser.
+          #
+          # Mais le vrai argument n'est pas la stabilité : **la vitrine doit
+          # filmer ce qui est LIVRÉ.** Un bundle de production n'a pas de
+          # pré-optimisation, pas de HMR, pas de barre d'outils — c'est ce
+          # qu'un utilisateur reçoit. Filmer le serveur de développement
+          # revenait à montrer un produit que personne n'utilise.
+          #
+          # `astro build` directement, sans passer par `npm run build` : ce
+          # dernier enchaîne `astro check`, que le barrage exécute déjà.
+          npx astro build
+          npx astro preview --port 3000 &
           # Wait for frontend to be ready
           echo "Waiting for frontend to start..."
           for i in $(seq 1 30); do
