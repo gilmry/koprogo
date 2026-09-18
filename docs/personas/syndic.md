@@ -49,6 +49,19 @@ inventaire, à compléter par la story de parcours qui détaillera ce document
 - Ne peut pas être **mandataire en assemblée générale, ni membre du conseil
   de copropriété** pendant son mandat — conflit d'intérêt écarté par la loi
   (Art. 3.89 § 9).
+
+  **Conséquence, tranchée par le PO le 2026-09-18 et désormais testée** : ne
+  pouvant recevoir aucun mandat, le syndic ne dépose **aucune voix**. Ni la
+  sienne — il n'a pas de lot —, ni celle d'un autre, ce serait un mandat.
+  `POST /resolutions/{id}/vote` rend `403 owner_not_linked` à un compte de
+  syndic, et le harnais
+  `e2e_resolutions::security_le_syndic_ne_peut_deposer_aucune_voix` le
+  vérifie sur les deux chemins : le vote direct et la déclaration de
+  procuration.
+
+  Si l'usage exige un jour que le syndic **saisisse** les voix en séance, ce
+  n'est pas ce refus qu'il faut lever : c'est une route dédiée, journalisée
+  comme saisie pour compte de tiers, qui reste à concevoir.
 - Ne peut pas exercer son mandat **au-delà de trois ans** sans
   renouvellement explicite par l'assemblée (Art. 3.89 § 1er).
 

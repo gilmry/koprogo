@@ -12,6 +12,31 @@ const useTraefik = !process.env.PLAYWRIGHT_BASE_URL; // false in CI (no Traefik)
 export default defineConfig({
   testDir: "./tests/e2e",
 
+  /**
+   * Le monde de scénario, semé une fois avant la campagne.
+   *
+   * ── Ce fichier a existé six mois sans être exécuté ─────────────────────
+   *
+   * `tests/e2e/global-setup.ts` fait 521 lignes, il est complet, et RIEN ne
+   * l'appelait : cette clé n'était pas déclarée. `helpers/test-world.ts`
+   * levait donc « TestWorld not found. Run global-setup first », un conseil
+   * qui demandait de lancer un setup que la configuration ne connaissait
+   * pas. Il a déjà coûté une enquête (#876) et une issue (#955).
+   *
+   * Les 356 specs ne s'en apercevaient pas : chacune amorce son propre
+   * monde. C'est ce qui les rend indépendantes, et ça ne change pas.
+   *
+   * ── Ce que le câblage apporte, maintenant que la base est neuve ────────
+   *
+   * Depuis #954, `scripts/recette-base-neuve.sh` rend une base VIERGE avant
+   * chaque campagne. Une base vierge a besoin de quelqu'un pour la peupler,
+   * et c'est précisément ce que ce fichier attendait. Les deux décisions se
+   * répondent : l'une vide, l'autre sème.
+   *
+   * Arbitrage du PO du 2026-09-18 : « il faut câbler ».
+   */
+  globalSetup: "./tests/e2e/global-setup.ts",
+
   /* Run tests in files in parallel */
   fullyParallel: false,
 

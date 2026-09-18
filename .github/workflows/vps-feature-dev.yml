@@ -119,6 +119,17 @@ jobs:
           bash ./scripts/check-docs-root-orphans.test.sh
           bash ./scripts/check-docs-root-orphans.sh
 
+      # Seul le TÉMOIN tourne ici, jamais le script lui-même : il recrée une
+      # base, et un exécuteur de CI n'a pas de pile de recette à recréer.
+      #
+      # Ce qu'on garde est le garde-fou de CIBLE. `recette-base-neuve.sh`
+      # agit à côté d'une démo vivante ; ses refus doivent être éprouvés à
+      # chaque commit, pas relus dans un commentaire. La cible `reset-db`
+      # qu'il remplace nommait `koprogo_postgres_data` — le volume de la
+      # DÉMO, à un caractère près de celui de la recette (#954).
+      - name: Gate recette — le garde-fou de cible refuse la démo (#954)
+        run: bash ./scripts/recette-base-neuve.test.sh
+
       - name: cargo fmt
         working-directory: backend
         run: cargo fmt --all -- --check

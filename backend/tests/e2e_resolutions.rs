@@ -651,6 +651,132 @@ async fn test_delete_resolution_success() {
 
 // ==================== Vote Tests ====================
 
+/// Le syndic ne vote pas, et ce n'est pas un défaut d'implémentation.
+///
+/// ── La règle, et d'où elle vient ──────────────────────────────────────────
+///
+/// Art. 3.89 § 9 : le syndic ne peut être **mandataire en assemblée
+/// générale** pendant son mandat. Le conflit d'intérêt est écarté par la loi
+/// elle-même, pas par une politique produit.
+///
+/// La conséquence se déduit et elle est stricte : ne pouvant recevoir aucun
+/// mandat, le syndic ne peut déposer **aucune** voix — ni la sienne, il n'a
+/// pas de lot, ni celle d'un autre, ce serait un mandat.
+///
+/// ── Pourquoi ce test existe alors que le code le fait déjà ────────────────
+///
+/// Il le faisait par CONSÉQUENCE, pas par intention : `cast_vote` refuse un
+/// compte sans fiche de copropriétaire (#850), et il se trouve qu'un syndic
+/// n'en a pas. Rien n'empêchait qu'on « répare » un jour ce 403 en le prenant
+/// pour une gêne, et on aurait rouvert la porte que l'Art. 3.89 § 9 ferme.
+///
+/// Arbitrage du PO du 2026-09-18 : « un syndic ne peut pas recevoir un
+/// mandat, donc il ne peut pas voter ». Ce test le grave.
+///
+/// Si l'usage exige un jour que le syndic SAISISSE les voix en séance, ce
+/// n'est pas ce refus qu'il faut lever : c'est une route dédiée, journalisée
+/// comme saisie pour compte de tiers, qui reste à concevoir.
+#[actix_web::test]
+#[serial]
+async fn security_le_syndic_ne_peut_deposer_aucune_voix() {
+    let (app_state, _container, org_id) = setup_app().await;
+    let (token, _org_id, _building_id, meeting_id, owner1_id, _owner2_id, unit1_id, _t2) =
+        create_test_fixtures(&app_state, org_id).await;
+
+    // Un compte de syndic : aucune fiche de copropriétaire ne lui est
+    // rattachée, exactement comme dans la vraie vie.
+    let email_syndic = format!("syndic-{}@syndic-leroy.be", Uuid::new_v4());
+    app_state
+        .auth_use_cases
+        .register(RegisterRequest {
+            email: email_syndic.clone(),
+            password: "SecurePass123!".to_string(),
+            first_name: "François".to_string(),
+            last_name: "Leroy".to_string(),
+            role: "syndic".to_string(),
+            organization_id: Some(org_id),
+        })
+        .await
+        .expect("Failed to register syndic");
+    let jeton_syndic = app_state
+        .auth_use_cases
+        .login(LoginRequest {
+            email: email_syndic,
+            password: "SecurePass123!".to_string(),
+        })
+        .await
+        .expect("Failed to login syndic")
+        .token;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let create_req = test::TestRequest::post()
+        .uri(&format!("/api/v1/meetings/{}/resolutions", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "meeting_id": meeting_id.to_string(),
+            "title": "Resolution Art. 3.89 §9",
+            "description": "Le syndic ne peut pas voter dessus",
+            "resolution_type": "ordinary",
+            "majority_required": "absolute",
+            "agenda_item_index": 0
+        }))
+        .to_request();
+    let resolution: serde_json::Value =
+        test::read_body_json(test::call_service(&app, create_req).await).await;
+    let resolution_id = resolution["id"].as_str().unwrap();
+
+    // 1. Il ne peut pas voter POUR LUI-MÊME : il n'a pas de lot.
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", jeton_syndic)))
+        .set_json(json!({
+            "owner_id": owner1_id.to_string(),
+            "unit_id": unit1_id.to_string(),
+            "vote_choice": "pour",
+            "auth_method": "presence"
+        }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        403,
+        "Art. 3.89 § 9 : le syndic ne peut pas déposer de voix"
+    );
+
+    let corps: serde_json::Value = test::read_body_json(resp).await;
+    assert_eq!(
+        corps["kind"], "owner_not_linked",
+        "le refus doit être MOTIVÉ : un 403 muet laisse croire à un défaut \
+         de droits, alors que c'est la loi qui parle"
+    );
+
+    // 2. Il ne peut pas non plus se déclarer MANDATAIRE d'un copropriétaire.
+    //    C'est le cœur de l'Art. 3.89 § 9, et le chemin par lequel on
+    //    contournerait le refus ci-dessus sans y penser.
+    let req_proxy = test::TestRequest::post()
+        .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", jeton_syndic)))
+        .set_json(json!({
+            "owner_id": owner1_id.to_string(),
+            "unit_id": unit1_id.to_string(),
+            "vote_choice": "pour",
+            "proxy_owner_id": owner1_id.to_string(),
+            "auth_method": "presence"
+        }))
+        .to_request();
+    assert_eq!(
+        test::call_service(&app, req_proxy).await.status(),
+        403,
+        "le syndic ne peut pas se déclarer mandataire : Art. 3.89 § 9"
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_cast_vote_pour_success() {

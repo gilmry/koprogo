@@ -97,7 +97,7 @@ test-bdd: ## 🥒 Tests BDD/Cucumber (backend)
 	@echo "$(GREEN)🥒 Tests BDD...$(NC)"
 	cd backend && SQLX_OFFLINE=true cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
 
-test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend), encadrés du témoin d'interruption backend (#880)
+test-e2e: base-neuve ## 🌐 Tests E2E Playwright, sur une base NEUVE (#954)
 	@echo "$(GREEN)🌐 Tests E2E...$(NC)"
 	@# La pile de recette tourne sous cargo-watch (backend/Dockerfile.dev:71) :
 	@# une recompilation en cours de campagne coupe le backend ~90s, et sans
@@ -107,6 +107,12 @@ test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend), encadrés du témoi
 	@# exit 75 (EX_TEMPFAIL) signifie « non mesuré », pas « rouge ».
 	KOPROGO_E2E_ARTIFACT_DIR=frontend/test-results \
 	bash scripts/e2e-guarded.sh -- bash -c 'cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) PLAYWRIGHT_API_BASE=$(RECETTE)/api/v1 npm run test:e2e'
+
+base-neuve: ## 🧼 Rend à la recette une base VIERGE (précondition de test-e2e, #954)
+	@bash ./scripts/recette-base-neuve.sh
+
+base-neuve-test: ## 🧪 Tests 4-cat du garde-fou de cible de base-neuve (#954)
+	@bash ./scripts/recette-base-neuve.test.sh
 
 e2e-guard-test: ## 🧪 Tests 4-cat du témoin d'interruption backend e2e (#880)
 	@bash ./scripts/e2e-backend-watch.test.sh

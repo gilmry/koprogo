@@ -42,6 +42,17 @@ name: koprogo-dev
 services:
   # Traefik Reverse Proxy (HTTP only for dev)
   traefik:
+    # Sans cette ligne, un redémarrage du démon Docker tue la recette et
+    # RIEN ne la relève. Arrivé le 2026-09-18 à 17:24:59 : les cinq
+    # conteneurs sont morts dix secondes après, code 255, et la pile est
+    # restée éteinte quatre heures sans que personne le remarque.
+    #
+    # La démo, elle, est revenue seule : elle porte `unless-stopped`
+    # depuis toujours. L'écart entre les deux piles n'était pas un choix,
+    # c'était un oubli — et il rend une campagne impossible à lancer au
+    # moment où on en a besoin, avec une erreur qui ressemble à une
+    # régression du produit (#954).
+    restart: unless-stopped
     image: traefik:latest
     container_name: koprogo-dev-traefik
     command:
@@ -61,6 +72,7 @@ services:
 
   # PostgreSQL Database
   postgres:
+    restart: unless-stopped
     image: postgres:15-alpine
     container_name: koprogo-dev-postgres
     environment:
@@ -82,6 +94,7 @@ services:
 
   # Backend (Rust + Actix) with HOT RELOAD via cargo-watch
   backend:
+    restart: unless-stopped
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
@@ -160,6 +173,7 @@ services:
 
   # Frontend (Astro + Svelte) with HOT RELOAD
   frontend:
+    restart: unless-stopped
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
@@ -188,6 +202,7 @@ services:
 
   # MinIO for local S3-compatible storage
   minio:
+    restart: unless-stopped
   # ── Registre : quay.io, PAS docker.io (#877) ─────────────────────────────
   #
   # `docker.io/minio/minio` a disparu ENTIÈREMENT le 2026-09 — `:latest`
