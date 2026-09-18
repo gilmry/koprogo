@@ -12,6 +12,7 @@
  * 3. See the result (page update, spinner, navigation)
  */
 import type { Page, Locator } from "@playwright/test";
+import { attendreFinDuGardeDeRoute } from "./garde-de-route";
 
 // ---------------------------------------------------------------------------
 // Timing constants (milliseconds) - tune for comfortable YouTube viewing
@@ -232,6 +233,30 @@ export async function humanLogin(
 ): Promise<void> {
   await setupContainerApiUrl(page);
   await humanGoto(page, "/login");
+
+  // ── Attendre que le voile de `RouteGuard` se retire ──────────────────────
+  //
+  // `RouteGuard.svelte` couvre l'écran d'un `div.fixed.inset-0.bg-white.z-50`
+  // pendant qu'il vérifie les accès. Le bouton `login-submit` est DESSOUS :
+  // Playwright le voit « visible, enabled et stable », clique, et le voile
+  // intercepte le pointeur. Le clic est rejoué pendant trente secondes, puis
+  // abandonne.
+  //
+  // Mesuré le 2026-09-18 sur le premier run CI de `vitrine.yml` : les CINQ
+  // parcours interrompus au même endroit, `interrompu` portant
+  // « subtree intercepts pointer events ». La galerie publiait donc cinq
+  // vidéos d'un écran de connexion qui ne s'ouvre pas — exactement ce que
+  // #876 reprochait à la vitrine d'avant.
+  //
+  // En local, rien ne se voyait : le serveur de développement est déjà
+  // chaud, le voile passe en quelques millisecondes. C'est la CI, à froid,
+  // qui l'a révélé.
+  //
+  // Le gate e2e avait le même défaut, corrigé le matin même dans trois specs
+  // par `attendreFinDuGardeDeRoute`. La vitrine ne l'avait pas, parce qu'elle
+  // passe par ce helper-ci et non par les specs.
+  await attendreFinDuGardeDeRoute(page);
+
   await humanFill(page, "login-email", email);
   await humanFill(page, "login-password", password);
   await humanClick(page, "login-submit");

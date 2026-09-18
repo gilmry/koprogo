@@ -10,6 +10,7 @@ import { ADMIN_PASSWORD } from "./identifiants";
 import type { APIRequestContext, Page } from "@playwright/test";
 
 import { API_BASE } from "./adresses";
+import { attendreFinDuGardeDeRoute } from "./garde-de-route";
 
 // ---------------------------------------------------------------------------
 // Connexion admin mutualisée (anti-429)
@@ -1059,6 +1060,13 @@ export async function uiLoginWithRetry(
   for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
     try {
       await page.goto("/login", { waitUntil: "networkidle" });
+      // Le voile de `RouteGuard` couvre le bouton pendant qu'il vérifie les
+      // accès. Sans cette attente, le clic est intercepté et rejoué trente
+      // secondes avant d'abandonner — trois fois, soit une minute et demie
+      // perdue par connexion. Les reprises le MASQUAIENT plus qu'elles ne le
+      // réparaient. Mesuré le 2026-09-18 sur le premier run de `vitrine.yml`,
+      // où les cinq parcours ont échoué dessus (#873).
+      await attendreFinDuGardeDeRoute(page);
       await page.getByTestId("login-email").fill(email);
       await page.getByTestId("login-password").fill(password);
       await page.getByTestId("login-submit").click();
