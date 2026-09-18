@@ -82,6 +82,39 @@ for (const { fichier, export: nomExport } of PARCOURS_A_FILMER) {
   });
   const page = await contexte.newPage();
 
+  // ── La console du navigateur, retenue avec le parcours ───────────────────
+  //
+  // Un parcours interrompu dit OÙ il s'est arrêté, jamais POURQUOI.
+  //
+  // Le 2026-09-18, les cinq parcours ont buté sur le voile de `RouteGuard` au
+  // premier run de `vitrine.yml`, et TROIS correctifs successifs sont partis
+  // sur des hypothèses — le délai du clic, puis celui de l'attente, puis la
+  // logique du composant — parce que rien ne rapportait ce que la page disait
+  // d'elle-même. Instrumenter coûte dix lignes ; deviner a coûté trois runs.
+  //
+  // On garde les erreurs, les avertissements et les requêtes échouées. Pas
+  // les `log`, qui noieraient le signal. Trente entrées suffisent : ce qui
+  // compte est le DÉBUT de la panne, pas sa répétition.
+  const journalConsole = [];
+  const PLAFOND_JOURNAL = 30;
+  const retenir = (entree) => {
+    if (journalConsole.length < PLAFOND_JOURNAL) journalConsole.push(entree);
+  };
+  page.on("console", (msg) => {
+    if (msg.type() === "error" || msg.type() === "warning") {
+      retenir(`[${msg.type()}] ${msg.text().slice(0, 300)}`);
+    }
+  });
+  page.on("pageerror", (err) =>
+    retenir(`[pageerror] ${String(err).slice(0, 300)}`),
+  );
+  page.on("requestfailed", (req) =>
+    retenir(
+      `[requestfailed] ${req.method()} ${req.url().slice(0, 160)} — ` +
+        `${req.failure()?.errorText ?? "?"}`,
+    ),
+  );
+
   let echec = null;
   let scene = new Scene(page);
   try {
@@ -128,6 +161,8 @@ for (const { fichier, export: nomExport } of PARCOURS_A_FILMER) {
         propos: parcours.propos,
         acteurs: [...new Set(parcours.etapes.map((e) => e.acteur))],
         interrompu: echec ? String(echec.message) : null,
+        // Ce que la PAGE a dit pendant le parcours. Vide quand tout va bien.
+        console: journalConsole,
         narration: scene.narration,
       },
       null,
