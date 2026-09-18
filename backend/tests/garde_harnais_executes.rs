@@ -155,8 +155,8 @@ fn chaque_harnais_est_execute_quelque_part() {
 /// pour les vingt-trois.
 fn citees_par(fichier: &str) -> BTreeSet<String> {
     let chemin = racine_du_depot().join(".github/workflows").join(fichier);
-    let texte = fs::read_to_string(&chemin)
-        .unwrap_or_else(|e| panic!("{fichier} doit être lisible : {e}"));
+    let texte =
+        fs::read_to_string(&chemin).unwrap_or_else(|e| panic!("{fichier} doit être lisible : {e}"));
     let mut vues = BTreeSet::new();
     for morceau in texte.split("--test") {
         if let Some(nom) = morceau.split_whitespace().next() {
