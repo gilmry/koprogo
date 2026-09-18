@@ -17,6 +17,10 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
+- **Dernière mise à jour** : 2026-09-18 (par : Claude — **la barrière du Gantt
+  est levée** : #873, #876 et #874 fermées sur preuve mesurée, donc les vagues
+  V4 à V7 sont formellement ouvertes. Et trois portails rouges retrouvés, dont
+  le barrage de déploiement, muet depuis huit passages)
 - **Dernière mise à jour** : 2026-09-15 (par : Claude — le Gantt DÉROULÉ,
   cinq créneaux, 26 branches d'agent, socle vert et promu sur `main`)
 - **Dernière mise à jour** : 2026-09-13 (par : Claude — #864 relu : 40 → 32
@@ -109,6 +113,36 @@ appelle une signature et non une validation.
   `Host(localhost)` ne sert que nos deux conteneurs — contrôlé par l'API de
   Traefik, pas supposé.
 
+- **✅ La barrière du Gantt est levée le 2026-09-18.** Les vagues V1 à V3
+  étaient les trois habilitantes `cap:C7.3`, et les trois sont fermées sur
+  mesure, pas sur lecture :
+
+  | Story | Ce qui la ferme |
+  |---|---|
+  | **#873** | artefact `vitrine` du run `34764114133` **téléchargé** : 83 601 608 octets, 315 vidéos, galerie autonome, chapitres horodatés |
+  | **#876** | les six points de sa DoD un par un, dont l'invariant anti-dette **et son témoin** — retirer un parcours de la vitrine fait bien rougir la garde |
+  | **#874** | l'issue disait « n'a jamais tourné » : **33 runs** (28 réussis), **53 PR de story** portant le label `agent`, permissions `write`, secret présent |
+
+  Les vagues V4 à V7 sont donc formellement ouvertes. **Mais 50 branches
+  d'agent sont déjà fusionnées dans `feature/dev` avec leurs issues restées
+  ouvertes** : le travail a atterri, la clôture n'a jamais été instruite. C'est
+  l'écart réel entre le Gantt et son état, et il se solde issue par issue, sur
+  preuve.
+
+- **⚠️ Trois portails étaient rouges sans que personne les regarde**, retrouvés
+  le 2026-09-18 :
+
+  | Portail | Depuis | Cause |
+  |---|---|---|
+  | Barrage VPS (déploiement) | 2026-09-17 13:07, **8 passages** | `garde_paniques_en_production` : 42 contre un cliquet à 39. Les trois points ajoutés sont les `.lock().expect()` du cache d'empreintes bcrypt, commit `44342148` |
+  | `docs.yml` (site de documentation) | 2026-09-15 | `cargo doc` refuse **17 avertissements** rustdoc, `build.warnings = deny` |
+  | `CI Pipeline` — Frontend Check | plusieurs jours | `npx prettier --check .` rougit sur **5 fichiers** |
+
+  Rien n'a donc été **construit ni déployé depuis le 2026-09-17**. Le
+  déploiement étant épinglé au hash du commit, la démo n'a pas régressé : elle
+  est restée sur l'image d'avant. Elle a vieilli en silence, ce qui est le bon
+  comportement — mais personne ne l'a su.
+
 - **Prochaine action attendue** : **relire les sept branches vertes et
   chronométrer** (#875). Tout le reste est débloqué.
 
@@ -119,7 +153,7 @@ appelle une signature et non une validation.
   | Gate | État |
   |---|---|
   | `integration` | 🟢 mesuré, et vert en CI sur `main` |
-  | `e2e` parcours | 🟡 | `CI=1 make test-e2e` | **341 ✓ / 1 ✘ / 0 instable / 14 sautés**, mesuré le 2026-09-17, backend stable (**zéro redémarrage**). Le départ de cette session était « 308 ✓ / 0 ✘ » daté du 2026-09-13, soit AVANT la fusion des cinquante-et-une branches — la campagne compte désormais 356 tests contre 322. L'unique échec (`Gdpr.spec.ts`, ménage par l'interface épuisant le budget) a été corrigé APRÈS cette mesure : le fichier rend 4 ✓ + 1 instable au niveau spec, mais la campagne complète n'a pas été relancée depuis. Reste 🟡 et non 🟢 pour cette raison. ⚠️ Sans `CI=1`, la campagne n'est pas comparable |
+  | `e2e` parcours | 🟡 | **340 ✓ / 2 ✘ / 0 instable / 14 sautés en 1 h 06**, mesuré le 2026-09-18. Voir le tableau des gates plus bas : les deux échecs ouvrent le même écran, `/admin/users`, et tiennent à une seule cause mesurée (#953) |
 
   Il reste **trois 🔴, tous du ressort du PO** : `ACTIX_WORKERS: 1` sur la
   démo, le banc de recette en hot reload (#880), et le type du jeton
@@ -224,25 +258,42 @@ issues tiennent chacune une file — **#803** en débloque 11, **#805** dix,
 | Gate | Statut | Commande | Note |
 |---|---|---|---|
 | `plancher` secrets | 🟢 | `.claude/hooks/stop-leak-scan.sh` | bloquant, 3 hooks sur 8 bloquent vraiment |
-| `plancher` migrations | 🟡 | `kcargo test --test garde_versions_de_migration` | **Passe de ⚪ à 🟡 le 2026-09-16.** Un gate existe enfin, né d'un vrai dégât (#939) : deux migrations au même horodatage faisaient échouer TOUTE base neuve en 23505. Il vérifie désormais la collision de version (dur) et le nombre de montantes sans `.down.sql` (cliquet à **93 sur 138**, mesuré). S'y ajoute le 2026-09-17 `garde_colonnes_declarees` (#941) : toute colonne d'un `INSERT INTO` doit exister dans les migrations — il a fallu quatre stories cassées en production pour que cet instrument existe. Reste 🟡 et non 🟢 : la réversibilité elle-même n'est toujours pas *exécutée*, seulement l'existence du fichier |
-| `verify` structurel | 🟢 | `kcargo test --test architecture` + 15 gardes | 16 suites vertes |
-| `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée. **Remesuré le 2026-09-16** : la couverture était ROUGE depuis la fusion (417 routes non annotées contre un cliquet à 410) et bloquait le déploiement. Huit routes annotées et enregistrées, dix DTO passés à `ToSchema`, cliquet resserré à **409** — la valeur mesurée, pas celle d'avant. `api.d.ts` passe de 161 à 173 schémas sans en perdre un |
-| `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests |
-| `integration` | 🟢 | suites `e2e_*.rs` (testcontainers) | `storage_s3` rend `1 passed`, code 0, contre `quay.io`. **Mesuré en local le 2026-09-13**. ⚠️ #877 reste OUVERTE : son premier critère dit « vert EN CI », et la CI ne l'a pas vu — les commits ne sont pas poussés |
-| `bdd` | 🟢 | suites `bdd_*.rs` | `bdd_acp` remesuré le 2026-09-16 : **17 scénarios / 78 étapes, code 0**. Était rouge à 17 sur 17 avant #939, sans que personne le sache — le vert du 2026-09-12 datait d'avant la fusion qui a créé la collision |
-| `e2e` parcours | 🟡 | `CI=1 make test-e2e` | **338 ✓ / 1 ✘ / 3 instables / 14 sautés**, mesuré le 2026-09-17 après les trois arbitrages du PO, backend stable (**zéro redémarrage**). L'échec ET les trois instables sont des dépassements de 30 s sur des écrans `/admin/*`, tous remontant à **#943** : `GET /organizations` ignore `per_page` et rend 2743 lignes, d'où 8,2 s sur `/admin/acps` contre 1,9 s sur `/admin/users`. **Une seule cause reste, identifiée et mesurée.** ⚠️ Sans `CI=1`, la campagne n'est pas comparable |
+| `plancher` migrations | 🟡 | `kcargo test --test garde_versions_de_migration` | **Passe de ⚪ à 🟡 le 2026-09-16.** Un gate existe enfin, né d'un vrai dégât (#939) : deux migrations au même horodatage faisaient échouer TOUTE base neuve en 23505. Il vérifie la collision de version (dur) et le nombre de montantes sans `.down.sql` (cliquet à **93 sur 138**). S'y ajoute `garde_colonnes_declarees` (#941). Reste 🟡 : la réversibilité n'est toujours pas *exécutée*, seulement l'existence du fichier |
+| `verify` structurel | 🟡 | `kcargo test --test architecture` + les gardes | **Passe de 🟢 à 🟡 le 2026-09-18.** Le dépôt porte **23** harnais `garde_*.rs`. `ci.yml` les cite tous les 23 ; le barrage de déploiement n'en cite que **18**. Or `ci.yml` ne tourne pas sur `feature/dev` (exclusion explicite) : cinq cliquets — dont `garde_identite_jetee`, qui plafonne la dette de #882 — **ne s'exécutent jamais sur la branche déployée**. `garde_harnais_executes`, qui existe pour empêcher exactement ça, ne lit que `ci.yml` (#956) |
+| `contrat` anti-drift | 🟢 | gate OpenAPI + `oasdiff` en CI | #765 fermée. Cliquet à **409** routes non annotées, valeur mesurée. `api.d.ts` à 173 schémas. Vert en CI le 2026-09-18 (run `35323764342`) |
+| `unit` domaine | 🟢 | `kcargo test --lib` | 1989 tests. ⚠️ Le job `Unit Tests` de la CI est rouge, mais sur son étape **gardes**, pas sur `--lib` : `garde_paniques_en_production` comptait 42 points de panique contre un cliquet à 39 |
+| `integration` | 🔴 | suites `e2e_*.rs` (testcontainers) | **Passe de 🟢 à 🔴 le 2026-09-18, et le 🟢 était faux.** Il reposait sur une mesure **locale** du 2026-09-13. Première exécution en CI (run `35323764342`) : `e2e_resolutions.rs` rend **12 réussis / 7 échoués**, tous en `403` au lieu de `201` sur la mise au vote — c'est-à-dire sur le **noyau légal** (mise au vote, changement de vote, clôture à la majorité absolue, cycle complet). Ce n'est pas une régression : #850 résout désormais le votant depuis l'utilisateur authentifié, et les sept montages votent avec un jeton sans fiche de copropriétaire. Ce sont les harnais qui datent — #957. `storage_s3` rend en revanche `s3_storage_roundtrip ... ok` **en CI**, ce qui ferme #877 |
+| `bdd` | 🟢 | suites `bdd_*.rs` | `bdd_acp` : 17 scénarios / 78 étapes, code 0. **Vert en CI le 2026-09-18** (run `35323764342`) — première confirmation hors mesure locale |
+| `e2e` parcours | 🟡 | `CI=1 make test-e2e` | **340 ✓ / 2 ✘ / 0 instable / 14 sautés en 1 h 06**, mesuré le 2026-09-18, backend **stable, zéro redémarrage**. La veille : 341 ✓ / 1 ✘. L'échec de la veille (`Gdpr.spec.ts`) est réparé et vert ; **deux nouveaux sont apparus sur du code inchangé**, et les deux ouvrent `/admin/users` — `AuditRegressions.spec.ts:117` (37,5 s puis 36,9 s) et `story1-admin-buttons.spec.ts:69` (32,6 s puis 43,2 s). Cause mesurée et unique : `GET /users` rend la table entière, **2 399 187 octets en 667 ms** contre 6 190 octets en 18,8 ms pour `/organizations` paginée la veille (#953) — sur une base de recette qui a grossi de **2 026 organisations** depuis hier (#954). ⚠️ Sans `CI=1`, la campagne n'est pas comparable |
 | `visuel` | ⚪ | — | pas de goldens |
-| `doc-vivante` | 🟢 | `make vitrine` | le PARCOURS : complet, 10 chapitres, 81 s, `interrompu: None`, artefact de 79 Mo publié (run 34764114133). ⚠️ Les douze `.scenario.ts` du même job rendent **10 ✓ / 2 ✘** et ne peuvent PAS rougir le job : `continue-on-error: true` depuis le 2026-06-15, avec une condition de retrait jamais rouverte |
+| `doc-vivante` | 🟢 | `make vitrine` | artefact `vitrine` du run `34764114133` **téléchargé et vérifié le 2026-09-18** : 83 601 608 octets, code de sortie 0, **315 vidéos**, galerie autonome de 6 120 octets sans aucune ressource externe, chapitres horodatés (`interrompu: null`). #873 et #876 fermées sur cette preuve. ⚠️ Les douze `.scenario.ts` du même job rendent **10 ✓ / 2 ✘** et ne peuvent PAS rougir le job : `continue-on-error: true` depuis le 2026-06-15 |
 | front typecheck | 🟢 | `npx svelte-check --threshold error` | 0 erreur |
-| front tests | 🟢 | `npx vitest run` | **756 tests, 131 fichiers, 0 échec** le 2026-09-16 |
+| front tests | 🟢 | `npx vitest run` | **767 tests, 133 fichiers, 0 échec** le 2026-09-18. `npx prettier --check .` rend **code 0** — cinq fichiers le faisaient rougir en CI depuis plusieurs jours |
 
-**Le socle est vert le 2026-09-13**, `plancher migrations` et `visuel` mis à
-part, qui restent ⚪ faute de gate. Il l'est sur des exécutions, pas sur des
-lectures de diff : chaque 🟢 du tableau ci-dessus porte un code de sortie.
+> ⚠️ **« Le socle est vert le 2026-09-13 » — cette phrase a été retirée le
+> 2026-09-18, parce qu'elle n'était pas vraie.**
+>
+> Elle reposait sur des exécutions **locales**. Le 2026-09-18, la CI complète
+> a été lancée sur `feature/dev` pour la première fois depuis le 2026-09-16
+> (run `35323764342`), et deux gates ont changé de couleur dans le mauvais
+> sens :
+>
+> - `integration` était inscrit 🟢 sur une mesure locale. En CI il rend
+>   **12 réussis / 7 échoués** sur `e2e_resolutions.rs`, c'est-à-dire sur le
+>   **noyau légal** — mise au vote, changement de vote, clôture à la majorité
+>   absolue, cycle complet (#957).
+> - `verify` structurel comptait « 15 gardes ». Le dépôt en porte **23**, et
+>   le barrage de déploiement n'en cite que **18** (#956).
+>
+> Aucun des deux écarts ne vient d'une régression. Les deux viennent de la
+> même chose : **un gate déclaré vert sur une exécution qui n'a pas eu lieu
+> là où elle compte.** C'est la forme la plus coûteuse du défaut que ce
+> registre traque depuis le début, parce qu'elle survit à la relecture.
 
 Le dernier à céder aura été `e2e`, et il n'a pas cédé parce qu'on a réparé
 dix specs — il a cédé parce qu'on a trouvé **une** cause à ses dix échecs.
-C'est la leçon de la journée, et elle vaut d'être écrite : instruire dix
+C'est la leçon du 2026-09-16, et elle s'est vérifiée deux fois depuis : le
+2026-09-17 avec `/organizations`, le 2026-09-18 avec `/users`. Instruire dix
 symptômes un par un aurait coûté des jours et n'aurait rien réparé.
 
 **Ce que le premier passage a coûté, et qui reste vrai.** La pile de
@@ -304,12 +355,25 @@ conception, chacun posé avec sa mesure.
 
 | # | Décision | Mesure qui l'appelle |
 |---|---|---|
-| #943 | `GET /organizations` ignore `per_page` et rend la table (2743 lignes). Paginer change un contrat consommé ailleurs | 8,2 s sur `/admin/acps` — **la seule cause des 4 tests encore fragiles** |
-| #876 | Qui POSSÈDE le monde de scénario ? Aucun `globalSetup` déclaré | corrigé à moitié : plus personne ne le supprime |
+| #954 | Que fait le harnais de ses données ? La recette a grossi de **2 026 organisations le 2026-09-17** et n'en retire aucune | deux campagnes du même code ne sont plus comparables ; c'est ce qui a fait échouer `AuditRegressions` aujourd'hui |
+| #955 | 630 lignes de monde de scénario que **personne n'importe**, et dont le message d'erreur renvoie vers une commande qui n'existe pas | supprimer, ou câbler. Le code dit déjà que c'est le parcours qui amorce |
+| #850 | Le syndic doit-il pouvoir saisir des votes en séance ? Le correctif de #850 l'en empêche, et le commentaire du code le dit | en assemblée réelle, c'est lui qui tient la feuille de vote |
+| #869 | Les parcours **multi-rôles** à 393 px : le banc mobile n'a ni compte ni base, il ne peut pas les jouer | trois critères sur quatre tenus ; celui-là demande une autre pile |
 
-Les défauts, eux, sont corrigés et leurs issues fermées : #939 (migrations à
-la même version), #941 (quatre colonnes absentes de la base), #937 (reclassé
-en #585).
+**#943 est soldée** : `/organizations` pagine, cherche côté serveur, et rend
+**6 190 octets en 18,8 ms** au lieu de la table entière. Le défaut jumeau est
+ouvert et mesuré — #953, `GET /users` rend **2 399 187 octets en 667 ms**. Ce
+n'est plus un arbitrage : le PO a tranché la modalité le 2026-09-17, l'appliquer
+à la route jumelle est de l'exécution.
+
+Les défauts corrigés et leurs issues fermées : #939 (migrations à la même
+version), #941 (quatre colonnes absentes de la base), #937 (reclassé en #585),
+et le 2026-09-18 : **#873** (la vitrine, artefact téléchargé et vérifié),
+**#876** (les quatre éléments Foyer, invariant et témoin compris), **#874** (le
+fan-out, prouvé sur 33 runs et 53 PR), **#870** (identifiants de recette, 12
+assertions), **#865** (accessibilité des écrans authentifiés, 7 tests verts
+dans la campagne), **#877** (MinIO, vert EN CI cette fois), **#882** (identités
+jetées : 18 → 4, les deux routes critiques cloisonnées à la signature).
 
 
 ### 🔴 En attente (le PO doit trancher une MODALITÉ)
@@ -383,6 +447,43 @@ du défaut avec un témoin d'interruption (le minimum, déjà décrit dans #880)
   jamais. Corrigé aussi : **aucune modale ne se fermait au clavier**
   (`ui/Modal.svelte`, employé par quatorze composants) — Échap était avalé
   par le `stopPropagation` du piège de focus.
+
+- 2026-09-18 — **La barrière du Gantt est levée, et trois portails étaient
+  rouges sans que personne les regarde.**
+
+  Les trois habilitantes `cap:C7.3` sont fermées **sur mesure** : #873
+  (artefact `vitrine` téléchargé, 83 601 608 octets, 315 vidéos, chapitres
+  horodatés), #876 (les six points de sa DoD, invariant et témoin compris),
+  #874 (l'issue disait « n'a jamais tourné » — 33 runs, 53 PR de story). Les
+  vagues V4 à V7 sont formellement ouvertes. S'y ajoutent #870, #865, #877 et
+  #882, fermées le même jour, chacune avec sa commande et son chiffre.
+
+  **Le barrage de déploiement était rouge depuis huit passages**, et la cause
+  est mon propre commit de la veille : les trois `.lock().expect()` du cache
+  d'empreintes bcrypt ont fait passer `garde_paniques_en_production` de 39 à
+  42. Rien n'avait été construit ni déployé depuis. Le cliquet a fait
+  exactement son travail — c'est le fait que personne ne l'ait lu qui a coûté
+  une journée de déploiement.
+
+  **Le gate `integration` était inscrit 🟢 et il est rouge en CI** : sept
+  tests de vote en assemblée générale refusés en 403, sur le noyau légal. Ce
+  n'est pas une régression — #850 résout désormais le votant depuis
+  l'utilisateur authentifié, et les sept montages votent avec un jeton sans
+  fiche de copropriétaire. La campagne Playwright du même jour rend les mêmes
+  gestes **verts** contre la recette, ce qui tranche la question (#957).
+
+  **La campagne rend 340 ✓ / 2 ✘ contre 341 ✓ / 1 ✘ la veille, sur du code
+  inchangé.** L'échec de la veille est réparé ; deux nouveaux sont apparus, et
+  les deux ouvrent `/admin/users`. Mesuré : `GET /users` rend **2 399 187
+  octets en 667 ms** (#953), sur une base de recette qui a pris **2 026
+  organisations** en un jour (#954). Un gate qui se dégrade tout seul accuse
+  le dernier changement, quel qu'il soit — c'est le mode de défaillance le
+  plus coûteux qu'on puisse avoir.
+
+  Cinq cliquets ne s'exécutent jamais sur la branche déployée, et la garde
+  censée l'empêcher ne lit qu'un portail sur deux (#956). Le plan de revue
+  humaine de G1, lui, envoyait le relecteur sur `http://localhost` nu —
+  c'est-à-dire sur la démo — avec un mot de passe qui ne marche plus.
 
 - 2026-09-17 — **341 ✓ / 1 ✘, et les quatre arbitrages du PO livrés.** Le
   semis passe de 44 s à 20,7 s (bcrypt menés de front, coût inchangé), le
