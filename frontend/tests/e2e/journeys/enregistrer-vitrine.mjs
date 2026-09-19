@@ -21,7 +21,6 @@ import { chromium } from "playwright";
 import {
   mkdirSync,
   existsSync,
-  readdirSync,
   renameSync,
   writeFileSync,
 } from "node:fs";
@@ -140,19 +139,32 @@ for (const { fichier, export: nomExport } of PARCOURS_A_FILMER) {
     console.error(`  ⚠️  ${parcours.slug} interrompu : ${e.message}`);
   }
 
+  // Le chemin de la vidéo se DEMANDE à Playwright, avant la fermeture du
+  // contexte : `video()` est attaché à la page, et c'est la seule source qui
+  // désigne le bon fichier à coup sûr.
+  //
+  // Ce qu'il remplace, et pourquoi (constaté le 2026-09-19) : l'ancien code
+  // listait les `.webm` du dossier, écartait le slug courant, triait et
+  // prenait le DERNIER. Or Playwright nomme ses fichiers `page@<hash>.webm`,
+  // et deux slugs trient APRÈS `page@` — `perimetre-multi-role` et
+  // `prestataire` (« pe » et « pr » > « pa »). Le parcours suivant attrapait
+  // donc une vidéo DÉJÀ renommée au lieu de la brute, et l'écrasait.
+  //
+  // Résultat mesuré sur la branche `vitrine-publiee` : cinq vidéos sur sept,
+  // deux `page@<hash>.webm` orphelines, et un `index.html` pointant vers
+  // deux fichiers inexistants. Le tri ne peut pas distinguer une brute d'une
+  // renommée — il ne fallait pas le lui demander.
+  const source = page.video();
   await contexte.close(); // déclenche l'écriture de la vidéo
 
-  // Playwright nomme les vidéos aléatoirement : on fixe un slug stable pour
-  // que la galerie et les chapitres se retrouvent. Un contexte par parcours
-  // (ci-dessus) garantit qu'un seul `.webm` neuf apparaît ici.
-  const brutes = readdirSync(DOSSIER_VIDEOS).filter((f) => f.endsWith(".webm"));
-  const derniere = brutes
-    .map((f) => resolve(DOSSIER_VIDEOS, f))
-    .filter((f) => !f.endsWith(`${parcours.slug}.webm`))
-    .sort()
-    .pop();
   const cible = resolve(DOSSIER_VIDEOS, `${parcours.slug}.webm`);
-  if (derniere) renameSync(derniere, cible);
+  const brute = source ? await source.path() : null;
+  if (brute && brute !== cible) renameSync(brute, cible);
+  if (!existsSync(cible)) {
+    console.error(
+      `  ⚠️  ${parcours.slug} : aucune vidéo écrite (${brute ?? "pas de source"})`,
+    );
+  }
 
   writeFileSync(
     resolve(DOSSIER_VIDEOS, `${parcours.slug}.json`),

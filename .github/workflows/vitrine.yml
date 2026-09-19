@@ -312,21 +312,31 @@ jobs:
           ATTENDUS=$(find frontend/tests/e2e/journeys -maxdepth 1 -name '*.journey.ts' | wc -l)
           OBTENUS=$(find "$VIDEOS" -maxdepth 1 -name '*.json' 2>/dev/null | wc -l)
 
-          INTERROMPUS=$(node -e '
-            const { readdirSync, readFileSync } = require("node:fs");
+          # Deux refus, pas un seul. Compter les JSON ne dit RIEN de la
+          # galerie : le 2026-09-19, `vitrine-publiee` portait sept JSON, sept
+          # chapitrages, aucun `interrompu` — et cinq videos sur sept. Deux
+          # `page@<hash>.webm` etaient restees sous leur nom brut, et
+          # l'`index.html` pointait vers deux fichiers inexistants. Le garde a
+          # dit « complet » sur une vitrine a deux lecteurs casses.
+          #
+          # Une vitrine se mesure donc sur ce qu'elle SERT, pas sur ce qu'elle
+          # decrit.
+          PROBLEMES=$(node -e '
+            const { readdirSync, readFileSync, existsSync } = require("node:fs");
             const d = process.argv[1];
-            const ko = readdirSync(d)
-              .filter((f) => f.endsWith(".json"))
-              .map((f) => JSON.parse(readFileSync(d + "/" + f, "utf8")))
-              .filter((m) => m.interrompu)
-              .map((m) => m.slug + " (" + m.interrompu + ")");
+            const ko = [];
+            for (const f of readdirSync(d).filter((x) => x.endsWith(".json"))) {
+              const m = JSON.parse(readFileSync(d + "/" + f, "utf8"));
+              if (m.interrompu) ko.push(m.slug + " interrompu (" + m.interrompu + ")");
+              if (!existsSync(d + "/" + m.slug + ".webm")) ko.push(m.slug + " SANS VIDEO");
+            }
             process.stdout.write(ko.join(", "));
           ' "$VIDEOS")
 
           echo "parcours attendus : $ATTENDUS — tournés : $OBTENUS"
 
-          if [ "$OBTENUS" -ne "$ATTENDUS" ] || [ -n "$INTERROMPUS" ]; then
-            echo "::warning::Vitrine incomplète : $OBTENUS/$ATTENDUS parcours, interrompus : ${INTERROMPUS:-aucun}. La branche vitrine-publiee garde la dernière vitrine valide."
+          if [ "$OBTENUS" -ne "$ATTENDUS" ] || [ -n "$PROBLEMES" ]; then
+            echo "::warning::Vitrine incomplète : $OBTENUS/$ATTENDUS parcours, défauts : ${PROBLEMES:-aucun}. La branche vitrine-publiee garde la dernière vitrine valide."
             exit 0
           fi
 
