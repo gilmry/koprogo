@@ -55,7 +55,13 @@ jobs:
     # Cinq parcours en cadence d'une action par seconde. Observé ~2 min par
     # parcours en local ; plafond large pour absorber la variance d'un
     # exécuteur, sans laisser un job pendu six heures.
-    timeout-minutes: 45
+    # 45 min suffisaient aux sept parcours métier, qui prennent ~10 min
+    # (mesuré le 2026-09-19 : tournage de 12:18:04 à 12:28:22). Les quatre
+    # balayages ajoutent ~6 min chacun — 95 écrans à ~3 s — soit ~35 min au
+    # total. Le plafond doit EXCÉDER la mesure, pas la frôler : un plafond
+    # égal à la durée observée transforme la moindre lenteur de runner en
+    # tournage perdu, et un tournage perdu ne publie rien.
+    timeout-minutes: 75
     services:
       postgres:
         image: postgres:16

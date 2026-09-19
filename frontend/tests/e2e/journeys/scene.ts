@@ -163,6 +163,34 @@ export class Scene {
     await this.tempo();
   }
 
+  /**
+   * Ouvrir un écran à l'allure d'un CONSTAT, pas d'une démonstration.
+   *
+   * `aller()` impose 2,5 s d'attente pure par page — 1,5 s après navigation
+   * plus la cadence — parce qu'un spectateur doit avoir le temps de lire.
+   * Le balayage en ouvre 95 par rôle : la même allure lui coûterait quatre
+   * minutes d'attente immobile par rôle, sans rien montrer de plus.
+   *
+   * ── Pourquoi pas simplement un délai plus court ────────────────────────
+   *
+   * Parce que le balayage MESURE ce que l'écran rend. Raccourcir à l'aveugle
+   * le ferait mesurer la page avant l'hydratation de ses îlots, et conclure
+   * « écran vide » sur des écrans pleins : l'instrument mentirait, et dans le
+   * sens le plus coûteux — celui qui fabrique des défauts inexistants.
+   *
+   * On attend donc le RÉSEAU, pas une horloge. Le plafond est une sécurité,
+   * pas une cible : une page qui se calme en 300 ms repart en 300 ms.
+   */
+  async survoler(url: string): Promise<void> {
+    await this.page.goto(url, { waitUntil: "domcontentloaded" });
+    await this.page
+      .waitForLoadState("networkidle", { timeout: 4000 })
+      .catch(() => {
+        // Un écran qui n'atteint jamais le repos réseau (sondage, flux) ne
+        // doit pas faire tomber le balayage : on le mesure tel qu'il est.
+      });
+  }
+
   async saisir(testId: string, valeur: string): Promise<void> {
     await humanFill(this.page, testId, valeur);
     await this.tempo();

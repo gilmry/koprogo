@@ -54,6 +54,21 @@ const PARCOURS_A_FILMER = [
   { fichier: "conseil.journey.ts", export: "conseil" },
   { fichier: "prestataire.journey.ts", export: "prestataire" },
   { fichier: "moderation.journey.ts", export: "moderation" },
+
+  // ── Les balayages, après les parcours métier ────────────────────────────
+  //
+  // L'ordre compte pour qui regarde la galerie : les sept premiers RACONTENT
+  // le produit, les quatre suivants le CONSTATENT. Mettre un état des lieux
+  // en tête donnerait à un visiteur l'impression que le produit se résume à
+  // une liste d'écrans.
+  //
+  // Ils sont ici parce que 72 des 95 écrans n'avaient jamais été ouverts par
+  // un navigateur dans ce dépôt. Ils ne rendent aucun verdict : arbitrage du
+  // PO du 2026-09-19, « décrire, ne rien casser ».
+  { fichier: "balayage-syndic.journey.ts", export: "parcours" },
+  { fichier: "balayage-coproprietaire.journey.ts", export: "parcours" },
+  { fichier: "balayage-comptable.journey.ts", export: "parcours" },
+  { fichier: "balayage-administrateur.journey.ts", export: "parcours" },
 ];
 
 if (!existsSync(DOSSIER_VIDEOS)) mkdirSync(DOSSIER_VIDEOS, { recursive: true });

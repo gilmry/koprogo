@@ -51,6 +51,10 @@ const HARNAIS_GATE = [
   "conseil.spec.ts",
   "prestataire.spec.ts",
   "moderation.spec.ts",
+  // Les quatre balayages tiennent dans UNE spec : ils partagent le même
+  // mécanisme (`balayage.ts`) et ne diffèrent que par le rôle. Les répartir
+  // en quatre fichiers n'aurait ajouté que de la place où diverger.
+  "balayage.spec.ts",
 ] as const;
 const HARNAIS_VITRINE = ["enregistrer-vitrine.mjs"] as const;
 
