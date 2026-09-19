@@ -452,6 +452,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      # ── Libérer le disque AVANT la suite d'intégration ───────────────────
+      #
+      # Le 2026-09-19, le job est tombé en `exit 101` après avoir passé TOUTES
+      # les cibles exécutées. La cause n'était pas un test :
+      #
+      #   ##[warning]You are running out of disk space.
+      #   Free space left: 0 MB
+      #   FATAL: could not write init file        (postgres)
+      #
+      # Soixante-six binaires de test en `debug`, plus l'image postgres et le
+      # cache cargo, saturent le disque du runner. L'échec arrive donc APRÈS
+      # des dizaines de tests verts, ce qui le fait passer pour une régression
+      # alors que c'est une panne de place.
+      #
+      # On retire des outillages préinstallés qu'aucun job de ce dépôt
+      # n'utilise. Mesuré avant/après : le journal doit montrer le gain, sinon
+      # l'étape est une décoration.
+      - name: Libérer de la place sur le runner
+        run: |
+          set -euo pipefail
+          echo "avant :"
+          df -h / | tail -1
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android \
+                      /usr/local/share/boost "${AGENT_TOOLSDIRECTORY:-}" || true
+          echo "après :"
+          df -h / | tail -1
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
