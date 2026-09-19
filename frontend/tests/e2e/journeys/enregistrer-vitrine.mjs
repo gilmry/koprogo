@@ -18,12 +18,7 @@
 //
 // Sortie : vitrine/videos/<slug>.webm + <slug>.json (les chapitres).
 import { chromium } from "playwright";
-import {
-  mkdirSync,
-  existsSync,
-  renameSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, existsSync, renameSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 
