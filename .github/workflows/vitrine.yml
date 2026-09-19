@@ -290,8 +290,27 @@ jobs:
           # Le nombre attendu se LIT dans le code, il ne se recopie pas : un
           # parcours ajouté sans tournage doit faire échouer la complétude,
           # pas passer inaperçu parce qu'une constante est restée à 7.
-          ATTENDUS=$(ls frontend/tests/e2e/journeys/*.journey.ts | wc -l)
-          OBTENUS=$(ls "$DOSSIER"/*.json 2>/dev/null | wc -l)
+          #
+          # `find`, pas `ls` : sous `set -e`, un `ls` sans correspondance
+          # renvoie 2 et TUE l'étape avant le contrôle de complétude. Le
+          # 2026-09-19, l'absence de mesure s'est donc affichée comme une
+          # panne de l'étape au lieu du refus explicite prévu.
+          #
+          # Et les métadonnées sont dans `vitrine/videos/`, pas `vitrine/` :
+          # l'assembleur écrit `vitrine/index.html` en lisant
+          # `vitrine/videos/*.json` (assembler-vitrine.mjs:19-20).
+          VIDEOS="$DOSSIER/videos"
+
+          # Barré explicitement : sous `pipefail`, un `find` sur un dossier
+          # absent fait échouer le pipeline malgré le `2>/dev/null`, et on
+          # retombe sur la panne d'étape au lieu du refus lisible.
+          if [ ! -d "$VIDEOS" ]; then
+            echo "::warning::Aucune video enregistree. La branche vitrine-publiee est laissee intacte."
+            exit 0
+          fi
+
+          ATTENDUS=$(find frontend/tests/e2e/journeys -maxdepth 1 -name '*.journey.ts' | wc -l)
+          OBTENUS=$(find "$VIDEOS" -maxdepth 1 -name '*.json' 2>/dev/null | wc -l)
 
           INTERROMPUS=$(node -e '
             const { readdirSync, readFileSync } = require("node:fs");
@@ -302,7 +321,7 @@ jobs:
               .filter((m) => m.interrompu)
               .map((m) => m.slug + " (" + m.interrompu + ")");
             process.stdout.write(ko.join(", "));
-          ' "$DOSSIER")
+          ' "$VIDEOS")
 
           echo "parcours attendus : $ATTENDUS — tournés : $OBTENUS"
 
