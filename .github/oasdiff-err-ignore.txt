@@ -5,3 +5,5 @@ POST /resolutions/{resolution_id}/vote the `voting_power` request property `type
 POST /buildings added the new required request property `acp_id`
 POST /owner-contributions added the new required request property `unit_id`
 DELETE /gdpr/erase added required request body
+POST /owner-contributions the request property `unit_id` became not nullable
+POST /owner-contributions the request property `unit_id` became required
