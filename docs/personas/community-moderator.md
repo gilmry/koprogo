@@ -43,6 +43,29 @@ document sera complété quand une story lui donnera un contenu réel
   `owner` aujourd'hui — le rôle existe dans le type `Role` mais son
   différentiel fonctionnel n'est pas encore implémenté.
 
+  **Correction du 2026-09-19, et elle est plus sévère.** Cette phrase était
+  optimiste : il ne dispose pas non plus des actions d'un `owner`. Mesuré en
+  écrivant son parcours filmé (#805), sur un compte réel :
+
+  ```
+  [RouteGuard] Access denied to /notices for role community.moderator
+  ```
+
+  **Les sept routes du groupe `communaute` le refusent** — `/exchanges`,
+  `/polls`, `/notices`, `/bookings`, `/sharing`, `/skills`,
+  `/energy-campaigns`. Vérifié une par une par
+  `moderation.spec.ts::@security`.
+
+  `permissions.ts:212` annonce pourtant « community.moderator → comme owner
+  pour `communaute` », et pilote les MENUS. `guards.ts` pilote l'ACCÈS, et
+  ses sept entrées ne listent que superadmin, syndic, comptable et
+  copropriétaire. **Le rôle voit une porte qu'il ne peut pas franchir**
+  (#962).
+
+  Ce n'est donc pas « un rôle prévu, non construit » : c'est un rôle
+  construit dans un fichier et oublié dans l'autre. Le backend, lui, le
+  délivre bien — inscription en 201.
+
 ## Références légales
 
 Aucune : la modération des modules communautaires est une fonctionnalité

@@ -49,6 +49,8 @@ const HARNAIS_GATE = [
   "comptable.spec.ts",
   "administration.spec.ts",
   "conseil.spec.ts",
+  "prestataire.spec.ts",
+  "moderation.spec.ts",
 ] as const;
 const HARNAIS_VITRINE = ["enregistrer-vitrine.mjs"] as const;
 

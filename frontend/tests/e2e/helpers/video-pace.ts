@@ -261,7 +261,29 @@ export async function humanLogin(
   await humanFill(page, "login-password", password);
   await humanClick(page, "login-submit");
   await waitForSpinner(page);
-  await page.waitForURL(/\/(syndic|owner|accountant|admin)/, {
+
+  // ── Quatre destinations ne suffisent plus ────────────────────────────────
+  //
+  // Ce motif n'acceptait que `syndic`, `owner`, `accountant` et `admin`.
+  // `getDefaultRedirect` (`guards.ts:129`) ne connaît en effet que ces
+  // quatre-là — et renvoie `/` pour TOUS les autres, délibérément : son
+  // commentaire dit que les rôles sans écran dédié « retombent sur `/`, d'où
+  // la navigation dira ce qu'ils peuvent faire — ou qu'aucun écran ne leur
+  // est destiné ».
+  //
+  // Le produit porte quinze rôles. Le prestataire, l'avocat, le notaire,
+  // l'AMO, l'architecte, le bureau d'études et le concierge atterrissent
+  // donc sur `/`, et ce helper les y attendait en vain pendant quinze
+  // secondes avant d'abandonner.
+  //
+  // Constaté le 2026-09-18 en filmant le prestataire (#815) : connexion
+  // réussie, session ouverte, et le harnais qui échoue parce qu'il ne
+  // reconnaît pas l'endroit où le produit l'a mené.
+  //
+  // On attend donc « n'importe où sauf l'écran de connexion » : c'est la
+  // vraie condition de succès d'une connexion, et elle ne présume pas du
+  // nombre de rôles.
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"), {
     timeout: 15000,
   });
   await page.waitForTimeout(PACE.AFTER_NAVIGATION);

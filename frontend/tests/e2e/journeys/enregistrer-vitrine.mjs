@@ -58,6 +58,8 @@ const PARCOURS_A_FILMER = [
   { fichier: "comptable.journey.ts", export: "comptable" },
   { fichier: "administration.journey.ts", export: "administration" },
   { fichier: "conseil.journey.ts", export: "conseil" },
+  { fichier: "prestataire.journey.ts", export: "prestataire" },
+  { fichier: "moderation.journey.ts", export: "moderation" },
 ];
 
 if (!existsSync(DOSSIER_VIDEOS)) mkdirSync(DOSSIER_VIDEOS, { recursive: true });

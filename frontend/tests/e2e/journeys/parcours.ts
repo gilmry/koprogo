@@ -37,7 +37,12 @@ export type Acteur =
   | "comptable"
   | "administrateur"
   | "conseil"
-  | "prestataire";
+  | "prestataire"
+  // Le modérateur communauté. Distinct des sept rôles de
+  // `ROLES_SANS_INTERFACE` : lui VOIT des menus — `communaute`, comme un
+  // copropriétaire (`permissions.ts:212`). Son différentiel de modération
+  // n'est pas construit, et c'est précisément ce que son parcours montre.
+  | "modérateur";
 
 export interface Etape {
   /** Identifiant stable, pour retrouver l'étape dans un rapport. */
