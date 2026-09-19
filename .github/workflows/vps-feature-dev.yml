@@ -218,7 +218,7 @@ jobs:
             --test garde_identite_jetee \
             --test garde_ordre_des_routes
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
