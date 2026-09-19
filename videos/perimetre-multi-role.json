@@ -1,0 +1,73 @@
+{
+  "slug": "perimetre-multi-role",
+  "title": "Chacun voit son périmètre — le syndic, puis le copropriétaire",
+  "propos": "Démontre que deux rôles se relaient sur la même copropriété et que l'écran d'accueil de chacun reflète ce qu'il a le droit de voir.",
+  "acteurs": [
+    "syndic",
+    "copropriétaire"
+  ],
+  "interrompu": null,
+  "console": [
+    "[warning] Unrecognized feature: 'web-share'.",
+    "[error] Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "[warning] Ignoring Event: localhost",
+    "[warning] No available adapters.",
+    "[warning] Ignoring Event: localhost",
+    "[error] Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Démontre que deux rôles se relaient sur la même copropriété et que l'écran d'accueil de chacun reflète ce qu'il a le droit de voir."
+    },
+    {
+      "t": 6,
+      "texte": "KoproGo — gestion de copropriété. Deux rôles vont se relayer : le syndic qui administre, puis un copropriétaire qui consulte.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 15,
+      "texte": "Le syndic se connecte. C'est le mandataire de l'ACP au sens de l'Art. 3.89 : il convoque, préside et exécute.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 21,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 36,
+      "texte": "Son tableau de bord s'ouvre sur les immeubles qu'il gère. Il voit l'administration ; il ne voit pas les lots d'un copropriétaire.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 45,
+      "texte": "Le syndic se retire. Un copropriétaire se connecte — titulaire d'un droit réel, il vote, paie et consulte ses quotes-parts.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 51,
+      "texte": "Le syndic se déconnecte. C'est au tour du copropriétaire."
+    },
+    {
+      "t": 56,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 72,
+      "texte": "Son écran est différent : « Mes lots » et « Communauté », pas l'administration. Le cloisonnement se voit, il ne se déduit pas.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 81,
+      "texte": "Parcours terminé. Le même parcours sert de gate E2E (correctness) et de preuve de valeur (cette vidéo) — écrit une seule fois.",
+      "acteur": "copropriétaire"
+    }
+  ]
+}

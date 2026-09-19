@@ -1,0 +1,61 @@
+{
+  "slug": "conseil",
+  "title": "Le conseil de copropriété, obligatoire au-delà de vingt lots",
+  "propos": "Montre une élection à deux voix : le syndic élit un copropriétaire au conseil, et l'élu découvre son mandat. Le conseil surveille le syndic — ce n'est pas un comité de plus, c'est un contre-pouvoir que la loi impose aux grandes copropriétés.",
+  "acteurs": [
+    "syndic",
+    "conseil"
+  ],
+  "interrompu": null,
+  "console": [
+    "[error] Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Montre une élection à deux voix : le syndic élit un copropriétaire au conseil, et l'élu découvre son mandat. Le conseil surveille le syndic — ce n'est pas un comité de plus, c'est un contre-pouvoir que la loi impose aux grandes copropriétés."
+    },
+    {
+      "t": 6,
+      "texte": "KoproGo — le conseil de copropriété. Au-delà de vingt lots, la loi belge l'impose : un contre-pouvoir élu qui surveille le syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 33,
+      "texte": "Élire un membre. Le syndic propose, mais c'est l'assemblée qui élit — le formulaire demande d'ailleurs par QUELLE assemblée le mandat a été conféré.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 42,
+      "texte": "Au tour de l'élue. Elle n'a rien demandé : un mandat se reçoit de l'assemblée, il ne se prend pas. C'est ce qui distingue le conseil d'un comité de volontaires.",
+      "acteur": "conseil"
+    },
+    {
+      "t": 48,
+      "texte": "Le syndic se déconnecte. C'est au tour du conseil."
+    },
+    {
+      "t": 52,
+      "texte": "Connexion en tant que conseil.",
+      "acteur": "conseil"
+    },
+    {
+      "t": 68,
+      "texte": "Le tableau du conseil : les décisions de l'assemblée et leur suivi. Surveiller le syndic, c'est d'abord savoir ce qui a été décidé et ce qui ne l'a pas encore été fait.",
+      "acteur": "conseil"
+    }
+  ]
+}

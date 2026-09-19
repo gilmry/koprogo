@@ -1,0 +1,78 @@
+{
+  "slug": "comptable",
+  "title": "Le comptable tient les comptes, et n'approuve pas ce qu'il saisit",
+  "propos": "Montre le rôle le mieux cadré du produit : de la saisie d'une dépense au bilan, en passant par l'écriture en partie double et l'appel de fonds. Et démontre la séparation des rôles — le bouton « approuver » n'existe pas pour lui.",
+  "acteurs": [
+    "comptable"
+  ],
+  "interrompu": null,
+  "console": [
+    "[error] Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Montre le rôle le mieux cadré du produit : de la saisie d'une dépense au bilan, en passant par l'écriture en partie double et l'appel de fonds. Et démontre la séparation des rôles — le bouton « approuver » n'existe pas pour lui."
+    },
+    {
+      "t": 6,
+      "texte": "KoproGo — le parcours du comptable. Il tient les comptes de la copropriété sans en être membre : écritures, PCMN, rapports.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que comptable.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 27,
+      "texte": "Il arrive sur SON périmètre, jamais sur un tableau de bord générique. Immeubles, dépenses, factures, rapports : l'ADR-0052 lui donne « compta », et rien d'autre.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 36,
+      "texte": "Saisir une dépense. Le serveur vérifie d'abord que l'immeuble est conforme à son acte de base : Σ des quotités contre le total déclaré. C'est la question de support la plus fréquente du produit.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 48,
+      "texte": "Le workflow de la facture. Il la saisit et la soumet — puis il s'arrête. Qui saisit une dépense ne l'approuve pas : c'est le syndic qui approuve, et le bouton n'existe pas pour le comptable.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 60,
+      "texte": "L'écriture au journal, en partie double, sur le plan comptable belge PCMN — conforme à l'arrêté royal du 12 juillet 2012. L'écran demande d'abord de choisir un immeuble : le périmètre ne survit pas à la navigation (#841).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 71,
+      "texte": "Le budget de l'exercice, en brouillon. Il le prépare ; c'est l'assemblée qui l'adopte. Le comptable propose, il ne décide pas.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 83,
+      "texte": "Répartir une charge entre les lots, au prorata des quotités de l'acte de base. C'est le calcul que l'Art. 3.86 impose, et celui que le verrou de conformité protège.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 94,
+      "texte": "L'appel de fonds collectif : ce que chaque copropriétaire devra verser, ventilé par ses quotités. Rien n'est envoyé tant que l'immeuble n'est pas conforme.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 106,
+      "texte": "Et le bilan, pour finir : l'actif d'un côté, le passif de l'autre, et l'équilibre entre les deux. C'est ce document que l'assemblée générale regardera.",
+      "acteur": "comptable"
+    }
+  ]
+}

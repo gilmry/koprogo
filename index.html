@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vitrine KoproGo — preuve de valeur</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.5 system-ui, sans-serif; margin: 0; background: #f6f7f9; color: #111827; }
+  header { background: #111827; color: #fff; padding: 24px; }
+  header h1 { margin: 0 0 6px; font-size: 22px; }
+  header p { margin: 0; opacity: .82; font-size: 14px; max-width: 70ch; }
+  main { max-width: 920px; margin: 24px auto; padding: 0 16px; display: grid; gap: 24px; }
+  .carte { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 16px; }
+  .carte h2 { margin: 0 0 6px; font-size: 18px; }
+  .propos { margin: 0 0 10px; color: #4b5563; font-size: 14px; }
+  .badge { display: inline-block; background: #eef2ff; color: #3730a3; border-radius: 999px;
+           padding: 2px 10px; font-size: 12px; margin-right: 6px; }
+  .alerte { background: #fef2f2; color: #991b1b; border-left: 3px solid #dc2626;
+            padding: 8px 12px; font-size: 14px; border-radius: 4px; }
+  video { width: 100%; border-radius: 8px; background: #000; margin-top: 10px; }
+  .chapitres { margin: 12px 0 0; padding: 0; list-style: none; }
+  .chapitres button { display: flex; gap: 10px; align-items: baseline; width: 100%;
+                      text-align: left; background: none; border: 0; padding: 5px 6px;
+                      font: inherit; font-size: 14px; color: #374151; cursor: pointer;
+                      border-radius: 6px; }
+  .chapitres button:hover, .chapitres button:focus { background: #f3f4f6; }
+  .chapitres .t { color: #6b7280; font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+  .chapitres .acteur { color: #3730a3; flex: 0 0 auto; font-size: 12px; }
+  footer { text-align: center; color: #6b7280; font-size: 13px; padding: 24px; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0b0f19; color: #e5e7eb; }
+    .carte { background: #111827; box-shadow: none; }
+    .propos, .chapitres button { color: #9ca3af; }
+    .chapitres button:hover, .chapitres button:focus { background: #1f2937; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Vitrine KoproGo — preuve de valeur</h1>
+  <p>Le parcours de référence, rejoué en cadence et narré. Ce n'est pas un
+     verdict : le vert et le rouge viennent des gates. Ceci répond à l'autre
+     question — à quoi ça ressemble pour un humain.</p>
+</header>
+<main>
+      <article class="carte">
+        <h2>L&#39;administration de la plateforme, au-dessus du multi-tenant</h2>
+        <p class="propos">Montre la chaîne de provisionnement — organisation, ACP, comptes — qui précède tous les autres parcours. Et la contrainte qui la borne : le superadmin n&#39;appartient à aucune organisation.</p>
+        <p class="acteurs"><span class="badge">administrateur</span></p>
+        
+        <video controls preload="metadata" src="videos/administration.webm"></video>
+        <ol class="chapitres"><li><button type="button" data-t="0"><span class="t">000s</span><span class="txt">Montre la chaîne de provisionnement — organisation, ACP, comptes — qui précède tous les autres parcours. Et la contrainte qui la borne : le superadmin n&#39;appartient à aucune organisation.</span></button></li><li><button type="button" data-t="6"><span class="t">006s</span><span class="acteur">administrateur</span><span class="txt">KoproGo — l&#39;administration de la plateforme. C&#39;est le seul rôle qui opère AU-DESSUS du multi-tenant : il crée les organisations plutôt que d&#39;appartenir à l&#39;une d&#39;elles.</span></button></li><li><button type="button" data-t="12"><span class="t">012s</span><span class="acteur">administrateur</span><span class="txt">Connexion en tant que administrateur.</span></button></li><li><button type="button" data-t="28"><span class="t">028s</span><span class="acteur">administrateur</span><span class="txt">Les organisations : chaque cabinet de syndic en est une, et chacune est étanche aux autres. C&#39;est le premier maillon de la chaîne — sans organisation, aucune copropriété.</span></button></li><li><button type="button" data-t="39"><span class="t">039s</span><span class="acteur">administrateur</span><span class="txt">Les ACP — les associations de copropriétaires. Le superadmin les provisionne ; c&#39;est le syndic mandaté qui retranscrira ensuite leur acte de base. Provisionner n&#39;est pas gérer.</span></button></li><li><button type="button" data-t="51"><span class="t">051s</span><span class="acteur">administrateur</span><span class="txt">Les comptes, et les rôles qu&#39;ils portent. Chaque rôle ouvre un périmètre différent : le comptable ne voit pas ce que voit le syndic, et aucun des deux ne voit les autres copropriétés.</span></button></li><li><button type="button" data-t="62"><span class="t">062s</span><span class="acteur">administrateur</span><span class="txt">Le registre RGPD : exporter ce qu&#39;on détient d&#39;une personne, ou l&#39;effacer. Chaque geste y est journalisé — c&#39;est une obligation, pas une commodité.</span></button></li></ol>
+      </article>
+      <article class="carte">
+        <h2>Le comptable tient les comptes, et n&#39;approuve pas ce qu&#39;il saisit</h2>
+        <p class="propos">Montre le rôle le mieux cadré du produit : de la saisie d&#39;une dépense au bilan, en passant par l&#39;écriture en partie double et l&#39;appel de fonds. Et démontre la séparation des rôles — le bouton « approuver » n&#39;existe pas pour lui.</p>
+        <p class="acteurs"><span class="badge">comptable</span></p>
+        
+        <video controls preload="metadata" src="videos/comptable.webm"></video>
+        <ol class="chapitres"><li><button type="button" data-t="0"><span class="t">000s</span><span class="txt">Montre le rôle le mieux cadré du produit : de la saisie d&#39;une dépense au bilan, en passant par l&#39;écriture en partie double et l&#39;appel de fonds. Et démontre la séparation des rôles — le bouton « approuver » n&#39;existe pas pour lui.</span></button></li><li><button type="button" data-t="6"><span class="t">006s</span><span class="acteur">comptable</span><span class="txt">KoproGo — le parcours du comptable. Il tient les comptes de la copropriété sans en être membre : écritures, PCMN, rapports.</span></button></li><li><button type="button" data-t="12"><span class="t">012s</span><span class="acteur">comptable</span><span class="txt">Connexion en tant que comptable.</span></button></li><li><button type="button" data-t="27"><span class="t">027s</span><span class="acteur">comptable</span><span class="txt">Il arrive sur SON périmètre, jamais sur un tableau de bord générique. Immeubles, dépenses, factures, rapports : l&#39;ADR-0052 lui donne « compta », et rien d&#39;autre.</span></button></li><li><button type="button" data-t="36"><span class="t">036s</span><span class="acteur">comptable</span><span class="txt">Saisir une dépense. Le serveur vérifie d&#39;abord que l&#39;immeuble est conforme à son acte de base : Σ des quotités contre le total déclaré. C&#39;est la question de support la plus fréquente du produit.</span></button></li><li><button type="button" data-t="48"><span class="t">048s</span><span class="acteur">comptable</span><span class="txt">Le workflow de la facture. Il la saisit et la soumet — puis il s&#39;arrête. Qui saisit une dépense ne l&#39;approuve pas : c&#39;est le syndic qui approuve, et le bouton n&#39;existe pas pour le comptable.</span></button></li><li><button type="button" data-t="60"><span class="t">060s</span><span class="acteur">comptable</span><span class="txt">L&#39;écriture au journal, en partie double, sur le plan comptable belge PCMN — conforme à l&#39;arrêté royal du 12 juillet 2012. L&#39;écran demande d&#39;abord de choisir un immeuble : le périmètre ne survit pas à la navigation (#841).</span></button></li><li><button type="button" data-t="71"><span class="t">071s</span><span class="acteur">comptable</span><span class="txt">Le budget de l&#39;exercice, en brouillon. Il le prépare ; c&#39;est l&#39;assemblée qui l&#39;adopte. Le comptable propose, il ne décide pas.</span></button></li><li><button type="button" data-t="83"><span class="t">083s</span><span class="acteur">comptable</span><span class="txt">Répartir une charge entre les lots, au prorata des quotités de l&#39;acte de base. C&#39;est le calcul que l&#39;Art. 3.86 impose, et celui que le verrou de conformité protège.</span></button></li><li><button type="button" data-t="94"><span class="t">094s</span><span class="acteur">comptable</span><span class="txt">L&#39;appel de fonds collectif : ce que chaque copropriétaire devra verser, ventilé par ses quotités. Rien n&#39;est envoyé tant que l&#39;immeuble n&#39;est pas conforme.</span></button></li><li><button type="button" data-t="106"><span class="t">106s</span><span class="acteur">comptable</span><span class="txt">Et le bilan, pour finir : l&#39;actif d&#39;un côté, le passif de l&#39;autre, et l&#39;équilibre entre les deux. C&#39;est ce document que l&#39;assemblée générale regardera.</span></button></li></ol>
+      </article>
+      <article class="carte">
+        <h2>Le conseil de copropriété, obligatoire au-delà de vingt lots</h2>
+        <p class="propos">Montre une élection à deux voix : le syndic élit un copropriétaire au conseil, et l&#39;élu découvre son mandat. Le conseil surveille le syndic — ce n&#39;est pas un comité de plus, c&#39;est un contre-pouvoir que la loi impose aux grandes copropriétés.</p>
+        <p class="acteurs"><span class="badge">syndic</span><span class="badge">conseil</span></p>
+        
+        <video controls preload="metadata" src="videos/conseil.webm"></video>
+        <ol class="chapitres"><li><button type="button" data-t="0"><span class="t">000s</span><span class="txt">Montre une élection à deux voix : le syndic élit un copropriétaire au conseil, et l&#39;élu découvre son mandat. Le conseil surveille le syndic — ce n&#39;est pas un comité de plus, c&#39;est un contre-pouvoir que la loi impose aux grandes copropriétés.</span></button></li><li><button type="button" data-t="6"><span class="t">006s</span><span class="acteur">syndic</span><span class="txt">KoproGo — le conseil de copropriété. Au-delà de vingt lots, la loi belge l&#39;impose : un contre-pouvoir élu qui surveille le syndic.</span></button></li><li><button type="button" data-t="12"><span class="t">012s</span><span class="acteur">syndic</span><span class="txt">Connexion en tant que syndic.</span></button></li><li><button type="button" data-t="33"><span class="t">033s</span><span class="acteur">syndic</span><span class="txt">Élire un membre. Le syndic propose, mais c&#39;est l&#39;assemblée qui élit — le formulaire demande d&#39;ailleurs par QUELLE assemblée le mandat a été conféré.</span></button></li><li><button type="button" data-t="42"><span class="t">042s</span><span class="acteur">conseil</span><span class="txt">Au tour de l&#39;élue. Elle n&#39;a rien demandé : un mandat se reçoit de l&#39;assemblée, il ne se prend pas. C&#39;est ce qui distingue le conseil d&#39;un comité de volontaires.</span></button></li><li><button type="button" data-t="48"><span class="t">048s</span><span class="txt">Le syndic se déconnecte. C&#39;est au tour du conseil.</span></button></li><li><button type="button" data-t="52"><span class="t">052s</span><span class="acteur">conseil</span><span class="txt">Connexion en tant que conseil.</span></button></li><li><button type="button" data-t="68"><span class="t">068s</span><span class="acteur">conseil</span><span class="txt">Le tableau du conseil : les décisions de l&#39;assemblée et leur suivi. Surveiller le syndic, c&#39;est d&#39;abord savoir ce qui a été décidé et ce qui ne l&#39;a pas encore été fait.</span></button></li></ol>
+      </article>
+      <article class="carte">
+        <h2>Le copropriétaire, dix étapes — de la connexion au paiement d&#39;un appel de fonds</h2>
+        <p class="propos">Démontre le parcours du rôle le plus peuplé et le moins éprouvé du produit (#807) : ses lots agrégés sur deux ACP, le vote en assemblée, et les deux points où l&#39;écran casse aujourd&#39;hui (#807, #779).</p>
+        <p class="acteurs"><span class="badge">copropriétaire</span></p>
+        
+        <video controls preload="metadata" src="videos/coproprietaire.webm"></video>
+        <ol class="chapitres"><li><button type="button" data-t="0"><span class="t">000s</span><span class="txt">Démontre le parcours du rôle le plus peuplé et le moins éprouvé du produit (#807) : ses lots agrégés sur deux ACP, le vote en assemblée, et les deux points où l&#39;écran casse aujourd&#39;hui (#807, #779).</span></button></li><li><button type="button" data-t="6"><span class="t">006s</span><span class="acteur">copropriétaire</span><span class="txt">KoproGo — le parcours du copropriétaire, le rôle le plus nombreux en base et le seul que cinq recettes n&#39;ont jamais éprouvé (#807).</span></button></li><li><button type="button" data-t="12"><span class="t">012s</span><span class="acteur">copropriétaire</span><span class="txt">Connexion en tant que copropriétaire.</span></button></li><li><button type="button" data-t="28"><span class="t">028s</span><span class="acteur">copropriétaire</span><span class="txt">Ses lots, dans deux copropriétés distinctes. Le total consolidé informe ; le paiement, lui, se fera ACP par ACP — chacune a son propre compte bancaire (Art. 3.86 § 1er et § 3).</span></button></li><li><button type="button" data-t="37"><span class="t">037s</span><span class="acteur">copropriétaire</span><span class="txt">Sa quote-part se calcule ainsi : quotité du lot ÷ total des tantièmes de l&#39;immeuble (1000, Art. 3.85 § 1er al. 2) × montant de la charge. Un lot à 120/1000 doit 12 % d&#39;une charge, pas 100 %.</span></button></li><li><button type="button" data-t="46"><span class="t">046s</span><span class="acteur">copropriétaire</span><span class="txt">Les charges de son immeuble, en lecture seule — pas de bouton « Créer », réservé au syndic et au comptable.</span></button></li><li><button type="button" data-t="54"><span class="t">054s</span><span class="acteur">copropriétaire</span><span class="txt">Il tente de payer. Le bouton « Payer » de son tableau de bord mène à un historique en lecture seule : aucun formulaire de paiement ne s&#39;y trouve. C&#39;est une étape rouge, documentée (#807).</span></button></li><li><button type="button" data-t="66"><span class="t">066s</span><span class="acteur">copropriétaire</span><span class="txt">La convocation à l&#39;assemblée des Erables, envoyée par le syndic (#784 côté envoi). Il la lit depuis son propre compte.</span></button></li><li><button type="button" data-t="74"><span class="t">074s</span><span class="acteur">copropriétaire</span><span class="txt">Il vote « pour » l&#39;approbation des comptes, avec le lot dont il est titulaire. Le mécanisme de procuration existe pour un copropriétaire absent (`vote-proxy-input`) — vérifié séparément.</span></button></li><li><button type="button" data-t="93"><span class="t">093s</span><span class="acteur">copropriétaire</span><span class="txt">Une fois le vote clôturé par le syndic, le décompte est visible et plafonné correctement — vérifié par la suite de tests des résolutions (`Resolutions.spec.ts`).</span></button></li><li><button type="button" data-t="102"><span class="t">102s</span><span class="acteur">copropriétaire</span><span class="txt">Les documents de la réunion, procès-verbal compris, sur ce même écran — accessible au copropriétaire (`guards.ts` : SYNDIC + OWNER).</span></button></li><li><button type="button" data-t="111"><span class="t">111s</span><span class="acteur">copropriétaire</span><span class="txt">Offrir une compétence — ce que le syndic ne peut pas faire en son nom (#781, tranchée ici par l&#39;observation : ça marche, pour le bon acteur).</span></button></li></ol>
+      </article>
+      <article class="carte">
+        <h2>Le modérateur communauté, et la porte qu&#39;il ne peut pas franchir</h2>
+        <p class="propos">Montre ce que vit quelqu&#39;un à qui on a donné un rôle que le produit ne sert pas encore. Le compte existe, la connexion aboutit, et chaque module communautaire le renvoie à l&#39;accueil.</p>
+        <p class="acteurs"><span class="badge">modérateur</span></p>
+        
+        <video controls preload="metadata" src="videos/moderation.webm"></video>
+        <ol class="chapitres"><li><button type="button" data-t="0"><span class="t">000s</span><span class="txt">Montre ce que vit quelqu&#39;un à qui on a donné un rôle que le produit ne sert pas encore. Le compte existe, la connexion aboutit, et chaque module communautaire le renvoie à l&#39;accueil.</span></button></li><li><button type="button" data-t="6"><span class="t">006s</span><span class="acteur">modérateur</span><span class="txt">KoproGo — le modérateur communauté. Celui qui veille sur les échanges entre voisins : le SEL, les annonces, les objets prêtés. Le serveur délivre bien ce rôle, et la connexion aboutit.</span></button></li><li><button type="button" data-t="12"><span class="t">012s</span><span class="acteur">modérateur</span><span class="txt">Connexion en tant que modérateur.</span></button></li><li><button type="button" data-t="28"><span class="t">028s</span><span class="acteur">modérateur</span><span class="txt">Les annonces de la copropriété — ce qu&#39;il est censé modérer. L&#39;écran ne s&#39;ouvre pas : il est renvoyé à l&#39;accueil, sans un mot.</span></button></li><li><button type="button" data-t="39"><span class="t">039s</span><span class="acteur">modérateur</span><span class="txt">Les sondages : même porte, même refus. Ce n&#39;est pas un écran cassé, c&#39;est un rôle que deux fichiers décrivent différemment.</span></button></li><li><button type="button" data-t="51"><span class="t">051s</span><span class="acteur">modérateur</span><span class="txt">Un rôle qu&#39;on attribue et qui ne donne accès à rien coûte plus qu&#39;un rôle absent : la personne croit pouvoir agir, et cherche l&#39;erreur chez elle.</span></button></li></ol>
+      </article>
+      <article class="carte">
+        <h2>Chacun voit son périmètre — le syndic, puis le copropriétaire</h2>
+        <p class="propos">Démontre que deux rôles se relaient sur la même copropriété et que l&#39;écran d&#39;accueil de chacun reflète ce qu&#39;il a le droit de voir.</p>
+        <p class="acteurs"><span class="badge">syndic</span><span class="badge">copropriétaire</span></p>
+        
+        <video controls preload="metadata" src="videos/perimetre-multi-role.webm"></video>
+        <ol class="chapitres"><li><button type="button" data-t="0"><span class="t">000s</span><span class="txt">Démontre que deux rôles se relaient sur la même copropriété et que l&#39;écran d&#39;accueil de chacun reflète ce qu&#39;il a le droit de voir.</span></button></li><li><button type="button" data-t="6"><span class="t">006s</span><span class="acteur">syndic</span><span class="txt">KoproGo — gestion de copropriété. Deux rôles vont se relayer : le syndic qui administre, puis un copropriétaire qui consulte.</span></button></li><li><button type="button" data-t="15"><span class="t">015s</span><span class="acteur">syndic</span><span class="txt">Le syndic se connecte. C&#39;est le mandataire de l&#39;ACP au sens de l&#39;Art. 3.89 : il convoque, préside et exécute.</span></button></li><li><button type="button" data-t="21"><span class="t">021s</span><span class="acteur">syndic</span><span class="txt">Connexion en tant que syndic.</span></button></li><li><button type="button" data-t="36"><span class="t">036s</span><span class="acteur">syndic</span><span class="txt">Son tableau de bord s&#39;ouvre sur les immeubles qu&#39;il gère. Il voit l&#39;administration ; il ne voit pas les lots d&#39;un copropriétaire.</span></button></li><li><button type="button" data-t="45"><span class="t">045s</span><span class="acteur">copropriétaire</span><span class="txt">Le syndic se retire. Un copropriétaire se connecte — titulaire d&#39;un droit réel, il vote, paie et consulte ses quotes-parts.</span></button></li><li><button type="button" data-t="51"><span class="t">051s</span><span class="txt">Le syndic se déconnecte. C&#39;est au tour du copropriétaire.</span></button></li><li><button type="button" data-t="56"><span class="t">056s</span><span class="acteur">copropriétaire</span><span class="txt">Connexion en tant que copropriétaire.</span></button></li><li><button type="button" data-t="72"><span class="t">072s</span><span class="acteur">copropriétaire</span><span class="txt">Son écran est différent : « Mes lots » et « Communauté », pas l&#39;administration. Le cloisonnement se voit, il ne se déduit pas.</span></button></li><li><button type="button" data-t="81"><span class="t">081s</span><span class="acteur">copropriétaire</span><span class="txt">Parcours terminé. Le même parcours sert de gate E2E (correctness) et de preuve de valeur (cette vidéo) — écrit une seule fois.</span></button></li></ol>
+      </article>
+      <article class="carte">
+        <h2>Le prestataire : un rôle réel, et un écran qu&#39;il n&#39;a pas encore</h2>
+        <p class="propos">Montre ce qu&#39;un produit honnête fait d&#39;un rôle qu&#39;il connaît sans encore le servir : il le dit. Le prestataire s&#39;inscrit, se connecte, et reçoit une phrase plutôt qu&#39;une barre de navigation vide.</p>
+        <p class="acteurs"><span class="badge">prestataire</span></p>
+        
+        <video controls preload="metadata" src="videos/prestataire.webm"></video>
+        <ol class="chapitres"><li><button type="button" data-t="0"><span class="t">000s</span><span class="txt">Montre ce qu&#39;un produit honnête fait d&#39;un rôle qu&#39;il connaît sans encore le servir : il le dit. Le prestataire s&#39;inscrit, se connecte, et reçoit une phrase plutôt qu&#39;une barre de navigation vide.</span></button></li><li><button type="button" data-t="6"><span class="t">006s</span><span class="acteur">prestataire</span><span class="txt">KoproGo — le prestataire. Le plombier, l&#39;électricien, celui qui vient réparer. Le serveur connaît ce rôle : le compte existe et la connexion aboutit.</span></button></li><li><button type="button" data-t="12"><span class="t">012s</span><span class="acteur">prestataire</span><span class="txt">Connexion en tant que prestataire.</span></button></li><li><button type="button" data-t="28"><span class="t">028s</span><span class="acteur">prestataire</span><span class="txt">Et là, rien ne lui est dit. La page lui propose de se connecter et de s&#39;inscrire — alors qu&#39;il vient de le faire. Le produit se comporte comme s&#39;il était un visiteur.</span></button></li><li><button type="button" data-t="37"><span class="t">037s</span><span class="acteur">prestataire</span><span class="txt">Son entrée prévue n&#39;est pas un mot de passe : c&#39;est un lien que le syndic lui envoie, portant sa seule mission. Le serveur ne sait pas encore l&#39;émettre — et le harnais refuse d&#39;en inventer un.</span></button></li></ol>
+      </article></main>
+<footer>Généré par <code>assembler-vitrine.mjs</code> — Méthode Foyer,
+        documentation vivante. 7 parcours.</footer>
+<script>
+  // Les chapitres déplacent la lecture. C'est ce qui rend la preuve bon
+  // marché à lire : l'arbitre saute à l'étape au lieu de tout regarder.
+  document.querySelectorAll(".carte").forEach((carte) => {
+    const video = carte.querySelector("video");
+    carte.querySelectorAll(".chapitres button").forEach((b) => {
+      b.addEventListener("click", () => {
+        video.currentTime = Number(b.dataset.t) || 0;
+        video.play();
+      });
+    });
+  });
+</script>
+</body>
+</html>

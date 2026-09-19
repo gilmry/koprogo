@@ -1,0 +1,88 @@
+{
+  "slug": "coproprietaire",
+  "title": "Le copropriétaire, dix étapes — de la connexion au paiement d'un appel de fonds",
+  "propos": "Démontre le parcours du rôle le plus peuplé et le moins éprouvé du produit (#807) : ses lots agrégés sur deux ACP, le vote en assemblée, et les deux points où l'écran casse aujourd'hui (#807, #779).",
+  "acteurs": [
+    "copropriétaire"
+  ],
+  "interrompu": null,
+  "console": [
+    "[error] Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] [RouteGuard] Access denied to /owner-contributions for role owner",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[error] Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "[error] Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost",
+    "[warning] Ignoring Event: localhost"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Démontre le parcours du rôle le plus peuplé et le moins éprouvé du produit (#807) : ses lots agrégés sur deux ACP, le vote en assemblée, et les deux points où l'écran casse aujourd'hui (#807, #779)."
+    },
+    {
+      "t": 6,
+      "texte": "KoproGo — le parcours du copropriétaire, le rôle le plus nombreux en base et le seul que cinq recettes n'ont jamais éprouvé (#807).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 28,
+      "texte": "Ses lots, dans deux copropriétés distinctes. Le total consolidé informe ; le paiement, lui, se fera ACP par ACP — chacune a son propre compte bancaire (Art. 3.86 § 1er et § 3).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 37,
+      "texte": "Sa quote-part se calcule ainsi : quotité du lot ÷ total des tantièmes de l'immeuble (1000, Art. 3.85 § 1er al. 2) × montant de la charge. Un lot à 120/1000 doit 12 % d'une charge, pas 100 %.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 46,
+      "texte": "Les charges de son immeuble, en lecture seule — pas de bouton « Créer », réservé au syndic et au comptable.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 54,
+      "texte": "Il tente de payer. Le bouton « Payer » de son tableau de bord mène à un historique en lecture seule : aucun formulaire de paiement ne s'y trouve. C'est une étape rouge, documentée (#807).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 66,
+      "texte": "La convocation à l'assemblée des Erables, envoyée par le syndic (#784 côté envoi). Il la lit depuis son propre compte.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 74,
+      "texte": "Il vote « pour » l'approbation des comptes, avec le lot dont il est titulaire. Le mécanisme de procuration existe pour un copropriétaire absent (`vote-proxy-input`) — vérifié séparément.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 93,
+      "texte": "Une fois le vote clôturé par le syndic, le décompte est visible et plafonné correctement — vérifié par la suite de tests des résolutions (`Resolutions.spec.ts`).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 102,
+      "texte": "Les documents de la réunion, procès-verbal compris, sur ce même écran — accessible au copropriétaire (`guards.ts` : SYNDIC + OWNER).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 111,
+      "texte": "Offrir une compétence — ce que le syndic ne peut pas faire en son nom (#781, tranchée ici par l'observation : ça marche, pour le bon acteur).",
+      "acteur": "copropriétaire"
+    }
+  ]
+}
