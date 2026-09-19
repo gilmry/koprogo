@@ -245,6 +245,29 @@ jobs:
           </html>
           EOF
 
+          # ── La banniere ne doit jamais promettre une vitrine absente ─────
+          #
+          # Le telechargement est en `if_no_artifact_found: warn` : quand
+          # l'artefact a expire (retention 7 jours), l'etape passe au vert et
+          # le site part sans vitrine. La banniere, elle, est ecrite en dur
+          # par le heredoc ci-dessus. Sans ce retrait, la premiere page
+          # renverrait un 404 en silence, ce qui est precisement la
+          # degradation muette que le projet s'interdit.
+          if [ ! -f _site/vitrine/index.html ]; then
+            echo "::error::Vitrine absente : banniere retiree de la page d accueil. Relancer vitrine.yml sur feature/dev, puis cette publication."
+            grep -q 'class="vitrine-hero"' _site/index.html || {
+              echo "::error::Banniere introuvable dans index.html : le retrait ne peut pas etre verifie."
+              exit 1
+            }
+            sed -i '/<a href="vitrine\/index.html" class="vitrine-hero">/,/^ *<\/a>$/c\
+              <p style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:1rem;margin:2rem 0;">La vitrine est indisponible pour cette publication. Elle figure habituellement en tete de cette page.</p>' _site/index.html
+            grep -q 'class="vitrine-hero"' _site/index.html && {
+              echo "::error::Le retrait de la banniere a echoue : elle est toujours la."
+              exit 1
+            }
+            echo "Banniere retiree : aucun lien mort vers la vitrine."
+          fi
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
