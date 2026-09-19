@@ -43,7 +43,7 @@
     "svelte": "^5.57.0",
     "svelte-i18n": "^4.0.1",
     "tailwindcss": "^4.2.2",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vite": "^8.0.13"
   },
   "devDependencies": {
