@@ -2,7 +2,7 @@
 feature: sweep-all-screens
 phase: Brief court (audit systématique, pas une nouvelle capacité)
 status: SIGNED v1.0 par @gilmry 2026-08-09
-date: 2026-08-09
+date: "2026-08-09"
 authors: [Claude Sonnet 5 (drafting)]
 related_issues: []
 parent_maury: suite de docs/maury/fix-admin-buttons-acp (#697/#698)

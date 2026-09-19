@@ -4,7 +4,7 @@ role_code: null
 statut: publie
 population_recette: null
 eprouve: null
-date: 2026-09-13
+date: "2026-09-13"
 version: "0.1"
 superviseur: null
 signature_humaine: null

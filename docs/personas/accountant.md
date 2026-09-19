@@ -4,7 +4,7 @@ role_code: "accountant"
 statut: brouillon
 population_recette: 2
 eprouve: true
-date: 2026-09-16
+date: "2026-09-16"
 version: "0.2"
 superviseur: null
 signature_humaine: null

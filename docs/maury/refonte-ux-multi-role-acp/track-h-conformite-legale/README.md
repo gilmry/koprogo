@@ -2,7 +2,7 @@
 feature: refonte-ux-multi-role-acp/track-h-conformite-legale
 phase: index
 status: SIGNED v1.0 par @gilmry 2026-06-15 — Phase 6 exécution débloquée
-date: 2026-06-15
+date: "2026-06-15"
 authors: [Claude Opus 4.8 (drafting), @gilmry (signature 2026-06-15)]
 related_issues: [553, 554, 561, 580, 584, 618]
 parent_maury: refonte-ux-multi-role-acp (validation v1.0 signée 2026-05-20)

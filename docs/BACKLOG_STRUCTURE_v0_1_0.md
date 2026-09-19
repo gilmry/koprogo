@@ -4,7 +4,7 @@ projet: KoproGo
 jalon: v0.1.0
 genere_par: scripts/backlog-structure.py
 signature_humaine:
-  date: 2026-09-12
+  date: "2026-09-12"
   nom: Gilles Maury
   role: Product Owner / superviseur
   etat: SIGNÉ — 87/87 issues « Agent IA Ready », préparation close

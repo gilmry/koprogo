@@ -1,7 +1,7 @@
 ---
 workflow: "Le cycle de vie d'une assemblée générale"
 statut: brouillon
-date: 2026-09-16
+date: "2026-09-16"
 version: "0.1"
 superviseur: null
 signature_humaine: null

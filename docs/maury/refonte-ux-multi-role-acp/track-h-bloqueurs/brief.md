@@ -2,7 +2,7 @@
 feature: refonte-ux-multi-role-acp/track-h-bloqueurs
 phase: A (Vision TOGAF)
 status: SIGNED v1.0 par @gilmry 2026-06-15
-date: 2026-06-15
+date: "2026-06-15"
 authors: [Claude Opus 4.7 (drafting), @gilmry (signature 2026-06-15)]
 related_issues: [553, 554]
 parent_maury: refonte-ux-multi-role-acp (brief signé 2026-05-20)

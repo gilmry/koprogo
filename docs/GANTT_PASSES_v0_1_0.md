@@ -4,7 +4,7 @@ projet: KoproGo
 jalon: v0.1.0
 genere_par: scripts/gantt-passes.py
 signature_humaine:
-  date: 2026-09-12
+  date: "2026-09-12"
   nom: Gilles Maury
   role: Product Owner / superviseur
   etat: VALIDÉ — avec amendement d'orchestration multiagent

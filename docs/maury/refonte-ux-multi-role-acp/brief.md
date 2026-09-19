@@ -4,10 +4,10 @@ phase: brief
 phase_togaf: A (Vision)
 agent_bmad: Mary (Analyste TOGAF)
 authors: [Gilles Maury, Farah Maury]
-date: 2026-05-20
+date: "2026-05-20"
 version: 1.0
 status: Signed by @gilmry 2026-05-20
-signed_at: 2026-05-20
+signed_at: "2026-05-20"
 signed_by: "@gilmry"
 changelog:
   - "1.0 (2026-05-20) — SIGNÉ par @gilmry. Phase 1 verrouillée, Phase 2 (PRD John) débloquée. 13 personas, 22 capacités (C1-C22), 8 BC, 27 invariants (INV-1 à INV-27), 19 critères succès (SC1-SC19), 9 mémoires d'agent appliquées."

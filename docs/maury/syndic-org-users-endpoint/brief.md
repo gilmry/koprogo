@@ -2,7 +2,7 @@
 feature: syndic-org-users-endpoint
 phase: A (Vision TOGAF)
 status: SIGNED v1.0 par @gilmry 2026-08-07
-date: 2026-08-06
+date: "2026-08-06"
 authors: [Claude Sonnet 5 (drafting)]
 related_issues: [617]
 parent_maury: none — trouvé en investiguant #617 Phase C (C2/C3/C8)

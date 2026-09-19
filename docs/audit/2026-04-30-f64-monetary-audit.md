@@ -1,6 +1,6 @@
 ---
 audit: f64 monetary usage
-date: 2026-04-30
+date: "2026-04-30"
 auditor: rust-expert (Claude)
 story: EXP-002
 status: complete

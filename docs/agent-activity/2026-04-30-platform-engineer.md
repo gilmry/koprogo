@@ -1,5 +1,5 @@
 ---
-date: 2026-04-30
+date: "2026-04-30"
 persona: platform-engineer
 session: PR-A (chore/gitops-cluster-profiles)
 tier: 2  # proposal via PR ; merge = Tier 1 humain

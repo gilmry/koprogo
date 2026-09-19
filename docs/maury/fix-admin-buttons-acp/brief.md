@@ -2,7 +2,7 @@
 feature: fix-admin-buttons-acp
 phase: Brief court (fix mécanique + fix modèle de données, pas de nouvelle capacité)
 status: SIGNED v1.0 par @gilmry 2026-08-08
-date: 2026-08-08
+date: "2026-08-08"
 authors: [Claude Sonnet 5 (drafting)]
 related_issues: [697, 698]
 parent_maury: none — trouvé en testant interactivement l'admin au navigateur ("on est dans testing pur")

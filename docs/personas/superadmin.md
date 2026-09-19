@@ -4,7 +4,7 @@ role_code: "superadmin"
 statut: brouillon
 population_recette: 1
 eprouve: true
-date: 2026-09-13
+date: "2026-09-13"
 version: "0.1"
 superviseur: null
 signature_humaine: null

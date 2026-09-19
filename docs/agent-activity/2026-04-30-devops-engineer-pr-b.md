@@ -1,5 +1,5 @@
 ---
-date: 2026-04-30
+date: "2026-04-30"
 persona: devops-engineer
 session: PR-B (chore/gitops-bootstrap-script)
 tier: 2

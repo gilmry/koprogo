@@ -4,7 +4,7 @@ role_code: "owner"
 statut: brouillon
 population_recette: 5
 eprouve: true
-date: 2026-09-15
+date: "2026-09-15"
 version: "0.2"
 superviseur: null
 signature_humaine: null

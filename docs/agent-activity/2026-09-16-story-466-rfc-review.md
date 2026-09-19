@@ -1,5 +1,5 @@
 ---
-date: 2026-09-16
+date: "2026-09-16"
 persona: platform-engineer
 session: story-466-rfc-topology-review
 tier: 2 # diagnostic + proposal écrit dans la RFC ; aucune mutation, aucun push

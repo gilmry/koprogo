@@ -162,17 +162,64 @@ jobs:
                       color: #666;
                       margin-bottom: 0;
                   }
+                  /* La vitrine passe devant : c'est ce qu'on montre en
+                     premier pour faire comprendre un produit. Les guides
+                     viennent après, pour ceux qui ont déjà vu. */
+                  .vitrine-hero {
+                      display: block;
+                      text-decoration: none;
+                      color: inherit;
+                      background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+                      border-radius: 12px;
+                      padding: 2rem;
+                      margin: 2rem 0;
+                      transition: transform 0.2s, box-shadow 0.2s;
+                  }
+                  .vitrine-hero:hover {
+                      transform: translateY(-3px);
+                      box-shadow: 0 8px 24px rgba(30,58,95,0.3);
+                  }
+                  .vitrine-hero h2 {
+                      margin: 0.35rem 0 0.75rem;
+                      color: #ffffff;
+                      font-size: 1.6rem;
+                  }
+                  .vitrine-hero p {
+                      color: #dbe7f3;
+                      margin: 0 0 0.6rem;
+                      line-height: 1.55;
+                  }
+                  .vitrine-note {
+                      font-size: 0.92rem;
+                      color: #b9cde3 !important;
+                      margin-bottom: 0 !important;
+                  }
+                  .vitrine-kicker {
+                      display: inline-block;
+                      font-size: 0.78rem;
+                      letter-spacing: 0.09em;
+                      text-transform: uppercase;
+                      color: #90cdf4;
+                      font-weight: 700;
+                  }
               </style>
           </head>
           <body>
               <h1>📚 KoproGo Documentation</h1>
               <p>Bienvenue sur la documentation du projet KoproGo - Plateforme SaaS de gestion de copropriétés</p>
 
+              <a href="vitrine/index.html" class="vitrine-hero">
+                  <span class="vitrine-kicker">Commencez par ici</span>
+                  <h2>🎬 La vitrine — le produit en vidéo</h2>
+                  <p>Sept parcours narrés, un par rôle : le syndic, le copropriétaire,
+                     le comptable, l'administration, le conseil de copropriété, le
+                     prestataire et le modérateur.</p>
+                  <p class="vitrine-note">Chapitres horodatés — on saute à l'étape
+                     plutôt que de regarder le film. Chaque parcours est rejoué par le
+                     gate de tests : ce que vous voyez est ce qui passe.</p>
+              </a>
+
               <div class="docs-links">
-                  <a href="vitrine/index.html" class="doc-card">
-                      <h2>🎬 La vitrine — le produit en vidéo</h2>
-                      <p>Sept parcours narrés, un par rôle : le syndic, le copropriétaire, le comptable, l'administration, le conseil de copropriété, le prestataire et le modérateur. Chapitres horodatés — on saute à l'étape plutôt que de regarder le film.</p>
-                  </a>
 
                   <a href="docs/index.html" class="doc-card">
                       <h2>📖 Documentation Générale</h2>
