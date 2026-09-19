@@ -14,7 +14,8 @@ use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
 use koprogo_api::infrastructure::web::{
-    configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig, SecurityHeaders,
+    configure_routes, AppState, CommunityAccessGuard, ConcurrencyLimitConfig, GdprRateLimit,
+    GdprRateLimitConfig, RequestConcurrencyLimit, SecurityHeaders,
 };
 use koprogo_api::infrastructure::LinkyApiClientImpl;
 use std::env;
@@ -154,6 +155,7 @@ async fn main() -> std::io::Result<()> {
     let budget_repo = Arc::new(PostgresBudgetRepository::new(pool.clone()));
     let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
     let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
+    let board_alert_repo = Arc::new(PostgresBoardAlertRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
     let gdpr_art30_repo = Arc::new(PostgresGdprArt30Repository::new(pool.clone()));
     let gdpr_art30_use_cases = GdprArt30UseCases::new(gdpr_art30_repo);
@@ -219,6 +221,14 @@ async fn main() -> std::io::Result<()> {
     // Story 3.2 — generic MagicLink for public-access tokens (contractor / tiers).
     let magic_link_repo: Arc<dyn koprogo_api::application::ports::MagicLinkRepository> =
         Arc::new(PostgresMagicLinkRepository::new(pool.clone()));
+    // #845 / ADR 0051 — notary link (signed, renewable, revocable access to
+    // a single état daté).
+    let lien_notaire_repo: Arc<dyn koprogo_api::application::ports::LienNotaireRepository> =
+        Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresLienNotaireRepository::new(
+                pool.clone(),
+            ),
+        );
     // Story 3.4 — Mandate (delegation to external professionals).
     let mandate_repo: Arc<dyn koprogo_api::application::ports::MandateRepository> = Arc::new(
         koprogo_api::infrastructure::database::repositories::PostgresMandateRepository::new(
@@ -384,6 +394,12 @@ async fn main() -> std::io::Result<()> {
         building_repo.clone(),
         meeting_repo.clone(),
     );
+    // Story 4.7 (#582) — clone avant le move de `board_member_repo` ci-dessous.
+    let cdc_use_cases = CdcUseCases::new(
+        board_alert_repo,
+        board_member_repo.clone(),
+        meeting_repo.clone(),
+    );
     let board_dashboard_use_cases = BoardDashboardUseCases::new(
         board_member_repo,
         board_decision_repo,
@@ -453,9 +469,14 @@ async fn main() -> std::io::Result<()> {
         AgSessionUseCases::new(ag_session_repo.clone(), meeting_repo.clone());
     let age_request_use_cases = AgeRequestUseCases::new(age_request_repo.clone());
     let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo.clone())
-        .with_payment_support(quote_repo.clone(), payment_use_cases_arc.clone());
+        .with_payment_support(quote_repo.clone(), payment_use_cases_arc.clone())
+        // #835 — absorbe le second système de liens magiques (scope ContractorReport).
+        .with_magic_link_support(Arc::new(MagicLinkUseCases::new(magic_link_repo.clone())));
     // Story 3.2 — MagicLink use cases (public-access tokens for contractors/tiers).
     let magic_link_use_cases = MagicLinkUseCases::new(magic_link_repo.clone());
+    // #845 / ADR 0051 — notary link use cases.
+    let lien_notaire_use_cases =
+        koprogo_api::application::use_cases::LienNotaireUseCases::new(lien_notaire_repo.clone());
     // Story 3.4 — Mandate use cases (juridical delegation tracker).
     let mandate_use_cases =
         koprogo_api::application::use_cases::MandateUseCases::new(mandate_repo.clone());
@@ -575,6 +596,7 @@ async fn main() -> std::io::Result<()> {
         linky_use_cases,
         board_member_use_cases,
         board_decision_use_cases,
+        cdc_use_cases,
         board_dashboard_use_cases,
         dashboard_use_cases,
         financial_report_use_cases,
@@ -598,6 +620,7 @@ async fn main() -> std::io::Result<()> {
         boinc_use_cases,
         user_use_cases,
         magic_link_use_cases,
+        lien_notaire_use_cases,
         mandate_use_cases,
         role_delegation_use_cases,
         syndic_response_use_cases,
@@ -624,6 +647,13 @@ async fn main() -> std::io::Result<()> {
         }
     };
     let gdpr_rate_limit = GdprRateLimit::new(gdpr_rate_limit_config);
+
+    // Load-shedding sous rafale (issue #718) : refuse en 429 explicite
+    // au-delà de `max_concurrent` requêtes en vol, plutôt que de laisser le
+    // pool sqlx faire attendre jusqu'à `acquire_timeout` (30s) et finir en
+    // 502 en amont. Cf. commentaire de `RequestConcurrencyLimit` pour le
+    // détail du raisonnement et ses limites.
+    let request_concurrency_limit = RequestConcurrencyLimit::new(ConcurrencyLimitConfig::default());
 
     HttpServer::new(move || {
         // Configure CORS with allowed origins from environment
@@ -673,6 +703,8 @@ async fn main() -> std::io::Result<()> {
                 .into()
             }))
             .wrap(gdpr_rate_limit.clone())
+            .wrap(request_concurrency_limit.clone())
+            .wrap(CommunityAccessGuard::new()) // Story 5.5 — comptable exclu de /community/* (ADR 0052, INV-6)
             .wrap(cors)
             .wrap(SecurityHeaders) // Security headers for all responses
             .wrap(middleware::Logger::default())

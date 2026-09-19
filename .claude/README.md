@@ -93,7 +93,7 @@ make ci              # Vérifications CI complètes
 ### Tests
 ```bash
 make test-unit       # Tests unitaires (domain)
-make test-int        # Tests d'intégration
+make test-e2e-backend # Tests d'intégration (testcontainers)
 make test-bdd        # Tests BDD/Cucumber
 cargo test --lib test_name  # Un test spécifique
 ```

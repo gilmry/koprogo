@@ -32,7 +32,7 @@ fn default_mandate_duration_days() -> i64 {
 }
 
 /// DTO pour la réponse API d'un membre du conseil
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct BoardMemberResponseDto {
     pub id: String,
     pub owner_id: String, // ID du copropriétaire (Owner)

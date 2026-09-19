@@ -2,6 +2,11 @@
 pub mod scope_guard;
 pub use scope_guard::{AcpScope, ScopeGuard, ScopeGuardError};
 
+// Story 5.5 — middleware community_access_guard (comptable exclu de
+// /community/* sauf cumul owner, cf. ADR 0052 / INV-6).
+pub mod community_access_guard;
+pub use community_access_guard::CommunityAccessGuard;
+
 use crate::infrastructure::web::app_state::AppState;
 use actix_web::{
     body::MessageBody,
@@ -376,6 +381,166 @@ where
 // Middleware CRD in infrastructure/_shared/kustomize/base/ingress.yaml.
 // GdprRateLimit above remains application-side because it is per
 // authenticated user (JWT identity), which Traefik cannot see.
+
+// ========================================
+// Request Concurrency Limit (Issue #718)
+// ========================================
+//
+// Constat #718 : sous rafale (2 workers Playwright créant des lots en
+// séquence via `seedConformantUnits()`), une partie des `POST /units` et
+// `GET /acps` sur la démo prod remontait en 502 Bad Gateway ou en timeout
+// client 10-30s. Le pool sqlx (`DB_POOL_MAX_CONNECTIONS=10`,
+// `acquire_timeout=30s`, cf. `infrastructure/database/pool.rs`) absorbe une
+// pointe en faisant *attendre* les requêtes en excès jusqu'à 30s avant
+// d'échouer — un délai qui colle exactement à la fenêtre observée, et qui ne
+// dit rien à l'appelant : a-t-il été pris en compte ou non ?
+//
+// Ce middleware ferme la porte plus tôt et plus clairement : au-delà de
+// `max_concurrent` requêtes en vol simultanément (toutes routes confondues,
+// tous workers Actix confondus puisque le sémaphore est partagé), les
+// suivantes reçoivent un 429 immédiat avec `Retry-After`, plutôt que
+// d'attendre une connexion de pool qui n'arrivera peut-être jamais à temps.
+//
+// Ce n'est ni un remplacement du rate-limit Traefik par IP (abus / brute
+// force), ni du rate-limit GDPR par utilisateur : ce middleware protège la
+// ressource partagée (le pool de connexions, le seul vCPU de la VPS), pas
+// l'identité de l'appelant — d'où son application uniforme, sans
+// distinction d'IP ni de JWT. Le refus est transitoire : dès qu'un slot se
+// libère, la requête suivante repasse — ce n'est pas un bannissement (celui
+// de CrowdSec du 2026-09-01 reste seul juge de l'abus).
+//
+// `/health` est explicitement exclu : une sonde de vivacité étouffée par la
+// charge applicative ferait déclarer le conteneur unhealthy et le ferait
+// redémarrer (`restart: unless-stopped`) — ce qui aggraverait l'incident
+// au lieu de l'absorber.
+//
+// Défaut conservateur (`DEFAULT_MAX_CONCURRENT_REQUESTS`), configurable via
+// `MAX_CONCURRENT_REQUESTS` — à ajuster une fois le rejeu du scénario fait
+// sur la pile de recette (ADR 0050, cf. DoD #718 : « la cause nommée avant
+// tout correctif »). Ce middleware ne tranche pas contention d'hôte vs
+// applicatif ; il rend le refus déterministe quel que soit le verdict, et
+// n'a desserré aucune limite existante (Traefik, GDPR) pour l'obtenir.
+
+/// Conservative starting point: comfortably above the sqlx pool's
+/// `max_connections` default (10, cf. `DB_POOL_MAX_CONNECTIONS`) since a
+/// single request typically issues several short, sequential queries rather
+/// than holding one connection for its whole lifetime — see
+/// `unit_repository_impl.rs`, which acquires per-call via `&self.pool`.
+pub const DEFAULT_MAX_CONCURRENT_REQUESTS: usize = 20;
+
+/// Configuration for [`RequestConcurrencyLimit`].
+#[derive(Clone, Copy, Debug)]
+pub struct ConcurrencyLimitConfig {
+    /// Maximum number of requests allowed in flight at once, across all
+    /// Actix workers.
+    pub max_concurrent: usize,
+    /// Value advertised in the `Retry-After` header when shedding a request.
+    pub retry_after_secs: u64,
+}
+
+impl Default for ConcurrencyLimitConfig {
+    fn default() -> Self {
+        let max_concurrent = std::env::var("MAX_CONCURRENT_REQUESTS")
+            .ok()
+            .and_then(|v| v.parse::<usize>().ok())
+            .filter(|v| *v > 0)
+            .unwrap_or(DEFAULT_MAX_CONCURRENT_REQUESTS);
+        Self {
+            max_concurrent,
+            retry_after_secs: 1,
+        }
+    }
+}
+
+/// Load-shedding middleware: bounds the number of requests in flight and
+/// rejects the excess with an explicit `429 Too Many Requests` +
+/// `Retry-After`, instead of letting them queue silently on the DB pool
+/// until a client timeout or an upstream 502 (see module docs above).
+#[derive(Clone)]
+pub struct RequestConcurrencyLimit {
+    semaphore: Arc<tokio::sync::Semaphore>,
+    retry_after_secs: u64,
+}
+
+impl RequestConcurrencyLimit {
+    pub fn new(config: ConcurrencyLimitConfig) -> Self {
+        Self {
+            semaphore: Arc::new(tokio::sync::Semaphore::new(config.max_concurrent)),
+            retry_after_secs: config.retry_after_secs,
+        }
+    }
+}
+
+impl<S, B> Transform<S, ServiceRequest> for RequestConcurrencyLimit
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S::Future: 'static,
+    B: MessageBody + 'static,
+{
+    type Response = ServiceResponse<actix_web::body::EitherBody<B>>;
+    type Error = Error;
+    type InitError = ();
+    type Transform = RequestConcurrencyLimitMiddleware<S>;
+    type Future = Ready<Result<Self::Transform, Self::InitError>>;
+
+    fn new_transform(&self, service: S) -> Self::Future {
+        ready(Ok(RequestConcurrencyLimitMiddleware {
+            service: Arc::new(service),
+            semaphore: self.semaphore.clone(),
+            retry_after_secs: self.retry_after_secs,
+        }))
+    }
+}
+
+pub struct RequestConcurrencyLimitMiddleware<S> {
+    service: Arc<S>,
+    semaphore: Arc<tokio::sync::Semaphore>,
+    retry_after_secs: u64,
+}
+
+impl<S, B> Service<ServiceRequest> for RequestConcurrencyLimitMiddleware<S>
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S::Future: 'static,
+    B: MessageBody + 'static,
+{
+    type Response = ServiceResponse<actix_web::body::EitherBody<B>>;
+    type Error = Error;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
+
+    forward_ready!(service);
+
+    fn call(&self, req: ServiceRequest) -> Self::Future {
+        // Liveness probe: never shed (see module docs — an unhealthy
+        // container restarts, which turns backpressure into an outage).
+        if req.path().ends_with("/health") {
+            let fut = self.service.call(req);
+            return Box::pin(async move { fut.await.map(|res| res.map_into_left_body()) });
+        }
+
+        match self.semaphore.clone().try_acquire_owned() {
+            Ok(permit) => {
+                let fut = self.service.call(req);
+                Box::pin(async move {
+                    let res = fut.await;
+                    drop(permit); // frees the slot as soon as the response is ready
+                    res.map(|r| r.map_into_left_body())
+                })
+            }
+            Err(_) => {
+                let retry_after = self.retry_after_secs.to_string();
+                let response = HttpResponse::build(StatusCode::TOO_MANY_REQUESTS)
+                    .insert_header(("Retry-After", retry_after))
+                    .json(serde_json::json!({
+                        "error": "server_busy",
+                        "message": "Trop de requêtes en cours de traitement, réessayez sous peu.",
+                        "retry_after_seconds": self.retry_after_secs,
+                    }));
+                Box::pin(async move { Ok(req.into_response(response).map_into_right_body()) })
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

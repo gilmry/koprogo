@@ -1,5 +1,5 @@
 ---
-date: 2026-05-01
+date: "2026-05-01"
 persona: platform-engineer
 session: gitops-multi-env-strategy-discovery
 tier: 2 # diagnostic + proposals + comments only ; merges = Tier 1 humain

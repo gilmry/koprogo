@@ -133,6 +133,45 @@ impl UserUseCases {
             .collect())
     }
 
+    /// Une page d'utilisateurs avec leurs rôles, et le total qui va avec.
+    ///
+    /// Le total n'est pas un ornement : sans lui, l'appelant reçoit un
+    /// fragment sans savoir la taille du tout, et c'est exactement ainsi
+    /// qu'une liste tronquée passe pour complète.
+    ///
+    /// `list_all` reste pour les appelants internes qui ont réellement besoin
+    /// de tout le monde. Ce qui n'en avait pas besoin, c'est l'écran
+    /// d'administration : il recevait 4 120 lignes pour en afficher vingt.
+    pub async fn list_page(
+        &self,
+        recherche: Option<String>,
+        role: Option<String>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<(Vec<UserResponse>, i64), String> {
+        let users = self
+            .user_repo
+            .find_page(recherche.clone(), role.clone(), limit, offset)
+            .await?;
+        let total = self.user_repo.count_matching(recherche, role).await?;
+
+        // Les rôles sont chargés pour la PAGE seulement. `list_all` les
+        // chargeait pour la table entière, ce qui doublait le coût du défaut.
+        let user_ids: Vec<Uuid> = users.iter().map(|u| u.id).collect();
+        let mut roles_map: HashMap<Uuid, Vec<UserRoleAssignment>> =
+            self.role_repo.list_for_users(&user_ids).await?;
+
+        let page = users
+            .into_iter()
+            .map(|user| {
+                let assignments = roles_map.remove(&user.id).unwrap_or_default();
+                Self::build_response(user, assignments)
+            })
+            .collect();
+
+        Ok((page, total))
+    }
+
     /// List users belonging to a given organization, with their roles.
     ///
     /// Authorization (syndic/accountant own org, superadmin any org) is
@@ -472,6 +511,122 @@ mod tests {
         let result = uc.list_all().await.unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].email, "alice@example.com");
+    }
+
+    // ── `list_page` — les quatre classes (#953) ───────────────────────────
+    //
+    // Ce que ces tests gardent n'est pas « la pagination marche » : c'est que
+    // les DEUX filtres voyagent jusqu'au dépôt, et que le total en porte les
+    // mêmes. Un total calculé sans le filtre annoncerait « 50 sur 4 120 »
+    // alors qu'il en existe douze, et l'écran mentirait à chaque rendu.
+
+    #[tokio::test]
+    async fn happy_list_page_transmet_recherche_role_et_bornes() {
+        let user = make_user(Uuid::new_v4());
+
+        let mut mock_user = MockUserRepo::new();
+        mock_user
+            .expect_find_page()
+            .withf(|recherche, role, limit, offset| {
+                recherche.as_deref() == Some("ali")
+                    && role.as_deref() == Some("syndic")
+                    && *limit == 50
+                    && *offset == 100
+            })
+            .returning(move |_, _, _, _| Ok(vec![user.clone()]));
+        mock_user
+            .expect_count_matching()
+            .withf(|recherche, role| {
+                recherche.as_deref() == Some("ali") && role.as_deref() == Some("syndic")
+            })
+            .returning(|_, _| Ok(4120));
+
+        let mut mock_role = MockUserRoleRepo::new();
+        mock_role
+            .expect_list_for_users()
+            .returning(|_| Ok(std::collections::HashMap::new()));
+
+        let uc = UserUseCases::new(Arc::new(mock_user), Arc::new(mock_role));
+        let (page, total) = uc
+            .list_page(Some("ali".to_string()), Some("syndic".to_string()), 50, 100)
+            .await
+            .unwrap();
+
+        assert_eq!(page.len(), 1);
+        assert_eq!(total, 4120, "le total vient du dépôt, pas de la page");
+    }
+
+    #[tokio::test]
+    async fn negative_list_page_remonte_lerreur_du_comptage() {
+        // Un comptage en échec ne doit pas rendre une page « complète ».
+        // Sans total fiable, l'appelant ne peut pas savoir qu'il ne voit
+        // qu'un fragment — et c'est exactement le défaut que #953 corrige.
+        let mut mock_user = MockUserRepo::new();
+        mock_user
+            .expect_find_page()
+            .returning(|_, _, _, _| Ok(Vec::new()));
+        mock_user
+            .expect_count_matching()
+            .returning(|_, _| Err("base injoignable".to_string()));
+
+        let mock_role = MockUserRoleRepo::new();
+        let uc = UserUseCases::new(Arc::new(mock_user), Arc::new(mock_role));
+        let resultat = uc.list_page(None, None, 20, 0).await;
+
+        assert!(resultat.is_err(), "l'erreur de comptage doit remonter");
+    }
+
+    #[tokio::test]
+    async fn edge_list_page_sans_filtre_passe_none_au_depot() {
+        // Une recherche vide n'est pas une recherche : elle ne doit pas
+        // devenir un `%%` qui filtrerait sur rien tout en coûtant un balayage.
+        let mut mock_user = MockUserRepo::new();
+        mock_user
+            .expect_find_page()
+            .withf(|recherche, role, _, _| recherche.is_none() && role.is_none())
+            .returning(|_, _, _, _| Ok(Vec::new()));
+        mock_user
+            .expect_count_matching()
+            .withf(|recherche, role| recherche.is_none() && role.is_none())
+            .returning(|_, _| Ok(0));
+
+        let mut mock_role = MockUserRoleRepo::new();
+        mock_role
+            .expect_list_for_users()
+            .returning(|_| Ok(std::collections::HashMap::new()));
+
+        let uc = UserUseCases::new(Arc::new(mock_user), Arc::new(mock_role));
+        let (page, total) = uc.list_page(None, None, 20, 0).await.unwrap();
+
+        assert!(page.is_empty());
+        assert_eq!(total, 0);
+    }
+
+    #[tokio::test]
+    async fn security_list_page_ne_charge_les_roles_que_de_la_page() {
+        // Les rôles sont chargés pour les identifiants de la PAGE, jamais
+        // pour la table. `list_all` les chargeait pour les 4 120 lignes, ce
+        // qui doublait le coût du défaut mesuré en #953.
+        let un = make_user(Uuid::new_v4());
+        let deux = make_user(Uuid::new_v4());
+        let attendus = [un.id, deux.id];
+
+        let mut mock_user = MockUserRepo::new();
+        mock_user
+            .expect_find_page()
+            .returning(move |_, _, _, _| Ok(vec![un.clone(), deux.clone()]));
+        mock_user.expect_count_matching().returning(|_, _| Ok(4120));
+
+        let mut mock_role = MockUserRoleRepo::new();
+        mock_role
+            .expect_list_for_users()
+            .withf(move |ids: &[Uuid]| ids.len() == 2 && ids.iter().all(|i| attendus.contains(i)))
+            .returning(|_| Ok(std::collections::HashMap::new()));
+
+        let uc = UserUseCases::new(Arc::new(mock_user), Arc::new(mock_role));
+        let (page, _) = uc.list_page(None, None, 50, 0).await.unwrap();
+
+        assert_eq!(page.len(), 2);
     }
 
     #[tokio::test]

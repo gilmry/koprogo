@@ -4,7 +4,7 @@
 //! All `sqlx::Error` paths are wrapped in `AppError::Database(_)` — no
 //! `Result<_, String>` debt (CRITICAL.md #4 / #555).
 //!
-//! Signatures are append-only: only [`save_signature`] writes new rows.
+//! Signatures are append-only: only `save_signature` writes new rows.
 //! The DB trigger `tech_spec_sig_no_mutation` (cf. migration
 //! `20260605060000`) blocks any UPDATE / DELETE at the SQL boundary.
 

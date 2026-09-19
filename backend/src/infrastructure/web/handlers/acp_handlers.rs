@@ -23,7 +23,7 @@ use validator::Validate;
 
 /// Map `AuthenticatedUser` → `AcpCaller` (story 1.1 — sera enrichi en 3.1
 /// quand les sous-rôles accountant.* apparaîtront).
-fn caller_from_user(user: &AuthenticatedUser) -> AcpCaller {
+pub(crate) fn caller_from_user(user: &AuthenticatedUser) -> AcpCaller {
     match user.role.to_lowercase().as_str() {
         "superadmin" => AcpCaller::SuperAdmin,
         "admin" => match user.organization_id {

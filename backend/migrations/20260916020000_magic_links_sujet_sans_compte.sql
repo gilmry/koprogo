@@ -1,0 +1,39 @@
+-- `subject_user_id` devient NULLABLE : le destinataire n'a pas toujours de
+-- compte, et c'est la règle, pas l'exception.
+--
+-- ── Le défaut, et pourquoi il est structurel ──────────────────────────────
+--
+-- La colonne était `NOT NULL REFERENCES users(id)`. Or #815 pose que, pour
+-- un prestataire, « la voie nominale est le lien, pas le compte » — et #835
+-- l'a rendu effectif en émettant les liens de rapport d'intervention avec
+-- `subject_user_id = Uuid::nil()`, un sentinel décrit dans
+-- `contractor_report_use_cases.rs:352` comme « accepté par
+-- `MagicLink::issue` ».
+--
+-- Accepté par le DOMAINE, oui. Refusé par la BASE :
+--
+--     insert or update on table "magic_links" violates foreign key
+--     constraint "magic_links_subject_user_id_fkey"
+--
+-- Le sentinel ne désigne aucun utilisateur ; aucune ligne de `users` ne
+-- porte l'UUID nul. Le domaine disait « pas de sujet » avec un UUID, et le
+-- schéma entendait « ce sujet-là », qui n'existe pas.
+--
+-- ── Pourquoi NULL plutôt qu'un utilisateur fantôme ────────────────────────
+--
+-- La tentation était de créer une ligne `users` d'UUID nul pour satisfaire
+-- la clé. Ce serait pire : un compte fantôme apparaîtrait dans les listes
+-- d'utilisateurs, dans les journaux d'audit, dans les décomptes — et
+-- quelqu'un finirait par lui attribuer un rôle.
+--
+-- `NULL` dit la vérité : **il n'y a pas de sujet**. La clé étrangère reste
+-- pour les cas où il y en a un, et elle continue de garantir qu'il existe.
+--
+-- ── Ce que ça ouvre, et qui était bloqué ──────────────────────────────────
+--
+-- #855 (accès notaire à un état daté) bute sur exactement la même colonne :
+-- un notaire n'a pas de compte non plus, et son lien l'identifie par un
+-- libellé. La branche `story/855` ne pouvait pas passer sans cette
+-- migration.
+
+ALTER TABLE magic_links ALTER COLUMN subject_user_id DROP NOT NULL;

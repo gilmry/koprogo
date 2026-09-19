@@ -73,6 +73,26 @@ pub enum AppError {
     #[error("ACP {acp_id} not found or out of scope")]
     AcpNotInScope { acp_id: uuid::Uuid },
 
+    /// Le module demandé est éteint pour cette ACP. 403 typé, produit par
+    /// `ModuleGuard`, jamais par l'interface seule — Story 5.1 @security
+    /// (ADR-0015). Le nom du module voyage dans l'erreur pour que le
+    /// frontend puisse dire *lequel* sans le deviner depuis l'URL.
+    #[error("Module {module} désactivé pour cette copropriété")]
+    ModuleDisabled { module: String },
+
+    /// Nom de module inconnu (`foobar`). 422 — Story 5.1 @negative.
+    /// Distinct de `ModuleDisabled` : « ce module n'existe pas » n'est pas
+    /// « ce module est éteint », et les confondre apprendrait au client à
+    /// réessayer un nom qui ne marchera jamais.
+    #[error("Module inconnu : {module}")]
+    UnknownModule { module: String },
+
+    /// Tentative d'éteindre un module toujours actif (`identity`). 403 —
+    /// Story 5.1 @negative. Ce n'est pas un défaut de droits de l'appelant,
+    /// c'est une propriété de la capacité : aucun rôle ne peut le faire.
+    #[error("Module {module} toujours actif, sa désactivation est refusée")]
+    ModuleAlwaysOn { module: String },
+
     /// Rate limit exceeded.
     #[error("Rate limit exceeded")]
     RateLimited,
@@ -274,6 +294,76 @@ pub enum AppError {
         "Droit de vote suspendu : lot démembré/indivis sans représentant unique (Art. 3.87 §1 CC)"
     )]
     VotingRightSuspended { unit_id: uuid::Uuid },
+
+    /// Story 4.1 — `Meeting::set_mode()` a échoué : mode distanciel/hybride
+    /// annoncé sans URL de visioconférence configurée. 422 + payload
+    /// `MEETING_MODE_REQUIRES_VIDEOCONF` (FE guide la saisie du champ
+    /// manquant plutôt que de laisser échouer la convocation plus tard).
+    #[error(
+        "Configuration de visioconférence manquante pour ce mode de réunion (Art. 3.87 §1er CC)"
+    )]
+    MeetingModeRequiresVideoconf { mode: String },
+
+    /// #845 / ADR 0051 — lien notaire inconnu, forgé, ou scopé sur un autre
+    /// état daté. Uniforme avec "jeton inconnu" (anti-énumération, même
+    /// rationale que `MagicLinkInvalid`) : un jeton qui ouvre l'état daté A
+    /// ne doit pas distinguablement échouer sur l'état daté B. Returns 403.
+    #[error("Lien notaire invalide")]
+    NotaryLinkInvalid,
+
+    /// #845 / ADR 0051 — le lien notaire a dépassé ses sept jours de
+    /// validité. Le syndic peut le renouveler. Returns 403.
+    #[error("Lien notaire expiré, demandez-en le renouvellement au syndic")]
+    NotaryLinkExpired,
+
+    /// #845 / ADR 0051 — le syndic a révoqué le lien avant terme. Un lien
+    /// révoqué ne se renouvelle pas : il faut en émettre un nouveau.
+    /// Returns 403.
+    #[error("Lien notaire révoqué")]
+    NotaryLinkRevoked,
+    /// Story 4.2 (#48) — `auth_method` absent du bulletin de vote. Un vote ne
+    /// peut pas être enregistré sans savoir comment le votant a été
+    /// authentifié : ni preuve ni contestation ne sont alors possibles.
+    /// Retourne 422 + payload `VOTE_AUTH_METHOD_REQUIRED`.
+    #[error("La méthode d'authentification du vote est obligatoire")]
+    VoteAuthMethodRequired,
+
+    /// Story 4.2 (#48) — Art. 3.87 §1er, §4 CC : le mode de l'AG (remote ou
+    /// hybrid) exige une méthode qui engage réellement le votant (itsme/eID),
+    /// ou une procuration en bonne et due forme. `presence` ne fait
+    /// qu'affirmer une présence que la modalité distancielle ne permet
+    /// justement pas de vérifier — c'est exactement la fraude que
+    /// l'authentification forte doit rendre impossible. Retourne 403 +
+    /// payload `VOTE_AUTH_INSUFFICIENT`.
+    #[error(
+        "Authentification insuffisante pour un vote en mode {mode} : {auth_method} n'engage pas \
+         le votant (Art. 3.87 §1er, §4 CC)"
+    )]
+    VoteAuthInsufficient { mode: String, auth_method: String },
+    /// Story 4.6 (#581) — `Resolution::is_auto_generated()` est vraie : la
+    /// résolution d'évaluation des prestataires générée d'office à toute AGO
+    /// (Art. 3.89 § 5, 12° Code Civil belge) ne peut être ni supprimée ni
+    /// modifiée par le syndic qu'elle évalue. Returns 403 Forbidden.
+    #[error(
+        "Cette résolution générée automatiquement (évaluation des prestataires) ne peut être ni supprimée ni modifiée"
+    )]
+    ResolutionAutoNotRemovable,
+    /// Story 4.7 — élection du conseil de copropriété tentée sur une AG dont
+    /// le statut n'est pas `Completed` : la clôture d'une AG suppose déjà le
+    /// quorum double atteint (`Meeting::assert_can_complete`, Art. 3.87 §5
+    /// CC) — une AG non clôturée n'a donc jamais prouvé son quorum. 422 +
+    /// payload `CDC_ELECTION_QUORUM_NOT_REACHED`.
+    #[error(
+        "L'élection du conseil suppose une assemblée clôturée (quorum validé, Art. 3.90 §3 CC)"
+    )]
+    CdcElectionQuorumNotReached { meeting_id: uuid::Uuid },
+    /// Story 5.4 (#588, INV-5/FR27) — `on_behalf_of_acp = true` sans motif.
+    /// L'exception à l'interdiction de participation personnelle du syndic
+    /// ne se justifie pas d'elle-même : sans motif, elle ne serait pas
+    /// traçable. 422 Unprocessable Entity — la requête est syntaxiquement
+    /// valide, la règle métier la refuse.
+    #[error("Une réservation pour le compte de l'ACP doit porter un motif (AG, prestataire…)")]
+    ReservationMotifRequired,
 }
 
 impl AppError {
@@ -290,10 +380,21 @@ impl AppError {
             AppError::NotFound(_) => "not_found",
             AppError::Conflict(_) => "conflict",
             AppError::AcpNotInScope { .. } => "acp_not_in_scope",
+            // Story 5.1 (#585) — trois `kind` distincts et non un seul
+            // « module_error » : le client doit pouvoir distinguer « éteint »
+            // (réessayer après activation), « inconnu » (ne réessaiera
+            // jamais) et « toujours actif » (aucun rôle ne peut le faire).
+            AppError::ModuleDisabled { .. } => "module_disabled",
+            AppError::UnknownModule { .. } => "unknown_module",
+            AppError::ModuleAlwaysOn { .. } => "module_always_on",
             AppError::MeetingNotCompletable { .. } => "meeting_not_completable",
             AppError::AcpNotConformant { .. } => "acp_not_conformant",
             AppError::ReserveFundInsufficient { .. } => "reserve_fund_insufficient",
             AppError::VotingRightSuspended { .. } => "voting_right_suspended",
+            AppError::MeetingModeRequiresVideoconf { .. } => "meeting_mode_requires_videoconf",
+            AppError::VoteAuthMethodRequired => "vote_auth_method_required",
+            AppError::VoteAuthInsufficient { .. } => "vote_auth_insufficient",
+            AppError::CdcElectionQuorumNotReached { .. } => "cdc_election_quorum_not_reached",
             AppError::RateLimited => "rate_limited",
             AppError::Database(_) => "database",
             AppError::Crypto(_) => "crypto",
@@ -316,6 +417,11 @@ impl AppError {
             AppError::TechnicalSpecRequired => "technical_spec_required",
             AppError::EvaluatorIsContractor => "evaluator_is_contractor",
             AppError::BuildingNotConformant { .. } => "building_not_conformant",
+            AppError::NotaryLinkInvalid => "notary_link_invalid",
+            AppError::NotaryLinkExpired => "notary_link_expired",
+            AppError::NotaryLinkRevoked => "notary_link_revoked",
+            AppError::ResolutionAutoNotRemovable => "resolution_auto_not_removable",
+            AppError::ReservationMotifRequired => "reservation_motif_required",
         }
     }
 }
@@ -339,7 +445,16 @@ impl ResponseError for AppError {
             | AppError::DelegationChainNotAllowed
             | AppError::TicketImmutable
             | AppError::ResponseImmutable
-            | AppError::SignatoryNotAuthorized => StatusCode::FORBIDDEN,
+            | AppError::SignatoryNotAuthorized
+            | AppError::NotaryLinkInvalid
+            | AppError::NotaryLinkExpired
+            | AppError::NotaryLinkRevoked => StatusCode::FORBIDDEN,
+            AppError::VoteAuthInsufficient { .. } => StatusCode::FORBIDDEN,
+            AppError::ModuleDisabled { .. } | AppError::ModuleAlwaysOn { .. } => {
+                StatusCode::FORBIDDEN
+            }
+            AppError::UnknownModule { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            AppError::ResolutionAutoNotRemovable => StatusCode::FORBIDDEN,
             AppError::NotFound(_) | AppError::MandateNotFound => StatusCode::NOT_FOUND,
             AppError::Conflict(_)
             | AppError::RoleAlreadyAssigned { .. }
@@ -352,7 +467,11 @@ impl ResponseError for AppError {
             | AppError::MeetingNotCompletable { .. }
             | AppError::AcpNotConformant { .. }
             | AppError::ReserveFundInsufficient { .. }
-            | AppError::VotingRightSuspended { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            | AppError::VotingRightSuspended { .. }
+            | AppError::MeetingModeRequiresVideoconf { .. }
+            | AppError::VoteAuthMethodRequired => StatusCode::UNPROCESSABLE_ENTITY,
+            AppError::CdcElectionQuorumNotReached { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            AppError::ReservationMotifRequired => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
             AppError::Database(_) | AppError::Crypto(_) | AppError::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -424,6 +543,41 @@ impl ResponseError for AppError {
             AppError::VotingRightSuspended { unit_id } => Some(json!({
                 "code": "VOTING_RIGHT_SUSPENDED",
                 "unit_id": unit_id,
+            })),
+            // Story 5.1 (#585) — payload narratif `MODULE_DISABLED` (403).
+            // `ModuleGate` côté frontend est fail-closed : il doit pouvoir
+            // nommer le module éteint, pas seulement constater un refus.
+            AppError::ModuleDisabled { module } => Some(json!({
+                "code": "MODULE_DISABLED",
+                "module": module,
+            })),
+            AppError::UnknownModule { module } => Some(json!({
+                "code": "UNKNOWN_MODULE",
+                "module": module,
+            })),
+            AppError::ModuleAlwaysOn { module } => Some(json!({
+                "code": "MODULE_ALWAYS_ON",
+                "module": module,
+            })),
+            // Story 4.1 — payload narratif `MEETING_MODE_REQUIRES_VIDEOCONF`
+            // (422). Le FE consomme `details.code` pour focus le champ URL.
+            AppError::MeetingModeRequiresVideoconf { mode } => Some(json!({
+                "code": "MEETING_MODE_REQUIRES_VIDEOCONF",
+                "mode": mode,
+            })),
+            // Story 4.2 — payload narratif `VOTE_AUTH_INSUFFICIENT` (403).
+            // Le FE consomme `details.code` pour orienter vers itsme/eID.
+            AppError::VoteAuthInsufficient { mode, auth_method } => Some(json!({
+                "code": "VOTE_AUTH_INSUFFICIENT",
+                "mode": mode,
+                "auth_method": auth_method,
+            })),
+            // Story 4.7 — payload narratif `CDC_ELECTION_QUORUM_NOT_REACHED`
+            // (422). Le FE consomme `details.code` pour expliquer pourquoi
+            // l'élection est refusée (AG pas encore clôturée).
+            AppError::CdcElectionQuorumNotReached { meeting_id } => Some(json!({
+                "code": "CDC_ELECTION_QUORUM_NOT_REACHED",
+                "meeting_id": meeting_id,
             })),
             // Track H Story H3 — payload narratif pour `MeetingNotCompletable`
             // (422) : le FE consomme `details.code == "MEETING_NOT_COMPLETABLE"`
@@ -588,7 +742,7 @@ impl From<crate::domain::entities::JournalEntryError> for AppError {
 
 impl From<crate::domain::entities::ChargeDistributionError> for AppError {
     /// Une répartition de charges malformée est une erreur d'entrée client
-    /// (quote-part hors [0,1], total négatif, somme des quotités > 100%) →
+    /// (quote-part hors `[0, 1]`, total négatif, somme des quotités > 100%) →
     /// 400 validation, **jamais** 500 Internal (le `From<String>` générique
     /// mappait à tort vers Internal) — #433 / WP-A4 EXP-005.
     fn from(e: crate::domain::entities::ChargeDistributionError) -> Self {
@@ -616,11 +770,29 @@ impl From<crate::domain::entities::OwnerContributionError> for AppError {
     }
 }
 
+impl From<crate::domain::entities::AlerteRefusee> for AppError {
+    /// Une alerte CdC malformée (texte vide) est une erreur d'entrée client
+    /// → 400 validation, jamais 500 Internal (Story 4.7 / #582).
+    fn from(e: crate::domain::entities::AlerteRefusee) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
 impl From<crate::domain::entities::CallForFundsError> for AppError {
     /// Un appel de fonds malformé (montant ≤ 0, titre/description vide,
     /// échéance ≤ appel) est une erreur d'entrée client → 400 validation,
     /// **jamais** 500 Internal (#433 / WP-A6 EXP-008).
     fn from(e: crate::domain::entities::CallForFundsError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
+impl From<crate::domain::entities::FundError> for AppError {
+    /// Issue #635 — un fonds malformé (nom vide, objet/objectif hors fonds
+    /// affecté, majorité insuffisante à la création, dépense hors objet,
+    /// réaffectation non adoptée par l'AG) est une erreur d'entrée client →
+    /// 400 validation, **jamais** 500 Internal.
+    fn from(e: crate::domain::entities::FundError) -> Self {
         AppError::Validation(e.to_string())
     }
 }
@@ -770,6 +942,38 @@ impl From<crate::domain::entities::VotingRightSuspendedError> for String {
 }
 
 // ============================================================================
+// Story #848 — bridge From<VotingRightError> (désignation du représentant)
+// ============================================================================
+
+impl From<crate::domain::entities::VotingRightError> for AppError {
+    /// #848 (Art. 3.87 §1 CC) — refus de désignation. Le contrôle dormant
+    /// `assert_single_voting_representative` (jusqu'ici démontré par
+    /// `tests/bdd_voting_right.rs` mais appelé par aucun code de production)
+    /// est désormais câblé dans `UnitOwnerUseCases::designate_voting_representative`.
+    ///
+    /// `MultipleRepresentatives` → 409 : un second représentant pour le même
+    /// lot est un CONFLIT avec l'état existant, pas une entrée invalide.
+    /// `UnknownOwnershipType` ne devrait pas survenir sur ce chemin (la valeur
+    /// vient d'une colonne déjà contrainte par le CHECK SQL) — narré en
+    /// interne plutôt que masqué.
+    fn from(err: crate::domain::entities::VotingRightError) -> Self {
+        use crate::domain::entities::VotingRightError;
+        match err {
+            VotingRightError::MultipleRepresentatives { unit_id, count } => {
+                AppError::Conflict(format!(
+                    "Le lot {unit_id} a déjà {count} représentant(s) de vote désigné(s) \
+                     après cette désignation : un seul est autorisé (Art. 3.87 §1 CC). \
+                     Retirez d'abord la désignation en place."
+                ))
+            }
+            VotingRightError::UnknownOwnershipType(s) => {
+                AppError::Internal(format!("Type de titularité inconnu : {s}"))
+            }
+        }
+    }
+}
+
+// ============================================================================
 // Track H Story H3 — bridges From<MeetingNotCompletableError>
 // ============================================================================
 
@@ -839,6 +1043,97 @@ impl From<crate::domain::entities::MeetingNotCompletableError> for String {
 }
 
 // ============================================================================
+// Story 4.1 — bridge From<MeetingModeError> (mode hybride/distanciel)
+// ============================================================================
+
+impl From<crate::domain::entities::MeetingModeError> for AppError {
+    /// Story 4.1 — `Meeting::set_mode()` refusé (mode remote/hybrid sans
+    /// URL de visioconférence) → 422 + payload `MEETING_MODE_REQUIRES_VIDEOCONF`.
+    fn from(err: crate::domain::entities::MeetingModeError) -> Self {
+        match err {
+            crate::domain::entities::MeetingModeError::VideoconfUrlRequired { mode } => {
+                AppError::MeetingModeRequiresVideoconf {
+                    mode: mode.to_db_str().to_string(),
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// #845 / ADR 0051 — bridge From<LienNotaireError> (lien notaire)
+// ==============================================================
+
+impl From<crate::domain::entities::LienNotaireError> for AppError {
+    /// Un lien notaire malformé à l'émission (`etat_date_id`/`emis_par` nil)
+    /// est une erreur d'entrée serveur — ces UUID viennent du chemin de la
+    /// requête et de `AuthenticatedUser`, jamais du client → 400 validation.
+    /// `DejaRevoque` est un refus métier (renouveler un lien mort) → 409
+    /// Conflict, distinct des 403 `NotaryLink*` qui sanctionnent la LECTURE.
+    fn from(err: crate::domain::entities::LienNotaireError) -> Self {
+        use crate::domain::entities::LienNotaireError;
+        match err {
+            LienNotaireError::EtatDateIdNul | LienNotaireError::EmisParNul => {
+                AppError::Validation(err.to_string())
+            }
+            LienNotaireError::DejaRevoque => AppError::Conflict(err.to_string()),
+        }
+    }
+}
+
+// ============================================================================
+// Story 4.2 — bridges From<VoteAuthError> (auth_method du vote distant, #48)
+// ============================================================================
+
+impl From<crate::domain::entities::VoteAuthError> for AppError {
+    /// Story 4.2 — `assert_vote_auth_sufficient` refusé : `Missing` → 422
+    /// (`VOTE_AUTH_METHOD_REQUIRED`), `Insufficient` → 403
+    /// (`VOTE_AUTH_INSUFFICIENT`).
+    fn from(err: crate::domain::entities::VoteAuthError) -> Self {
+        use crate::domain::entities::VoteAuthError;
+        match err {
+            VoteAuthError::Missing => AppError::VoteAuthMethodRequired,
+            VoteAuthError::Insufficient { mode, auth_method } => AppError::VoteAuthInsufficient {
+                mode: mode.to_db_str().to_string(),
+                auth_method: auth_method.to_db_str().to_string(),
+            },
+        }
+    }
+}
+
+impl From<crate::domain::entities::VoteAuthError> for String {
+    /// Bridge legacy `Result<_, String>` pour `cast_vote` (cohérence avec
+    /// `VotingRightSuspendedError`). Préfixe parsable par le handler
+    /// (`resolution_handlers.rs::cast_vote`).
+    fn from(err: crate::domain::entities::VoteAuthError) -> Self {
+        use crate::domain::entities::VoteAuthError;
+        match err {
+            VoteAuthError::Missing => "VOTE_AUTH_METHOD_REQUIRED".to_string(),
+            VoteAuthError::Insufficient { mode, auth_method } => format!(
+                "VOTE_AUTH_INSUFFICIENT:{}:{}",
+                mode.to_db_str(),
+                auth_method.to_db_str()
+            ),
+        }
+    }
+}
+
+// ============================================================================
+// Story 5.4 — bridge From<ReservationOnBehalfError> (#588, INV-5/FR27)
+// ============================================================================
+
+impl From<crate::domain::entities::ReservationOnBehalfError> for AppError {
+    /// `on_behalf_of_acp = true` sans motif → 422 `ReservationMotifRequired`.
+    fn from(err: crate::domain::entities::ReservationOnBehalfError) -> Self {
+        match err {
+            crate::domain::entities::ReservationOnBehalfError::MotifRequired => {
+                AppError::ReservationMotifRequired
+            }
+        }
+    }
+}
+
+// ============================================================================
 // Tests — taxonomie 4 catégories obligatoire (cf. CRITICAL.md règle #3, #427)
 // ============================================================================
 
@@ -860,7 +1155,40 @@ pub const REFUS_RESERVE_AUX_COPROPRIETAIRES: &str =
     "Cette action est réservée aux copropriétaires : elle engage une personne, \
      pas la copropriété. Votre compte n'a pas de fiche de copropriétaire dans \
      cette organisation. Si vous êtes syndic et souhaitez agir pour le compte \
-     de l'ACP, cette possibilité n'existe pas encore.";
+     de l'ACP, utilisez l'option « réservation pour le compte de l'ACP ».";
+
+/// Story #588 (INV-5/FR27) — refus opposé à un copropriétaire (ou tout
+/// compte non-syndic) qui tente de positionner `on_behalf_of_acp = true` sur
+/// une réservation. Contient volontairement la sous-chaîne « réservée aux »
+/// déjà reconnue par `classification_erreurs::est_interdit` (403), pour ne
+/// pas dupliquer le lexique bilingue — même raisonnement que
+/// `REFUS_RESERVE_AUX_COPROPRIETAIRES`.
+pub const REFUS_ON_BEHALF_RESERVE_AUX_SYNDICS: &str =
+    "Cette action est réservée aux syndics : seul le syndic peut réserver une \
+     ressource commune pour le compte de l'ACP. Si vous êtes copropriétaire, \
+     réservez en votre nom propre, sans cette option.";
+
+/// Refus opposé à qui n'a pas de fiche de copropriétaire et tente de voter à
+/// une consultation (Poll). Même famille que [`REFUS_RESERVE_AUX_COPROPRIETAIRES`]
+/// mais un module séparé : voter engage un avis personnel, la constante et le
+/// message diffèrent donc légèrement (repris du message déjà affiché côté
+/// handler avant Story 5.3 #587, pour n'avoir plus qu'une seule source).
+pub const REFUS_VOTE_RESERVE_AUX_COPROPRIETAIRES: &str =
+    "Aucune fiche de copropriétaire n'est rattachée à ce compte : le vote à une \
+     consultation est réservé aux copropriétaires.";
+
+/// Refus opposé à une modération communautaire (SEL/Poll/Notice/SharedObject)
+/// tentée sans motif texte.
+///
+/// Story 5.3 (#587), INV-4 — un syndic (ou `community.moderator`) peut
+/// éditer/annuler/supprimer le contenu d'autrui, mais jamais sans motif : le
+/// motif EST la trace d'audit, pas un commentaire optionnel qu'on pourrait
+/// ajouter après coup. Une partie prenante (auteur/participant) qui agit sur
+/// son propre contenu n'est pas concernée par cette exigence : elle n'a pas à
+/// se justifier auprès d'elle-même.
+pub const MOTIF_MODERATION_REQUIS: &str =
+    "Un motif est requis pour modérer ce contenu (édition, annulation ou \
+     suppression) : la modération doit pouvoir être auditée.";
 
 #[cfg(test)]
 mod tests {
@@ -1001,6 +1329,18 @@ mod tests {
         assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
         assert_eq!(e.kind(), "response_immutable");
         assert!(format!("{}", e).contains("ne peut pas"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 4.6 — ResolutionAutoNotRemovable (#581)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn security_resolution_auto_not_removable_maps_to_403() {
+        let e = AppError::ResolutionAutoNotRemovable;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "resolution_auto_not_removable");
+        assert!(format!("{}", e).contains("ne peut être ni supprimée ni modifiée"));
     }
 
     // ------------------------------------------------------------------------
@@ -1311,6 +1651,129 @@ mod tests {
         assert_eq!(e.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
+    // ------------------------------------------------------------------------
+    // Story 4.1 — MeetingModeRequiresVideoconf 4-cat
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_meeting_mode_requires_videoconf_maps_to_422() {
+        let e = AppError::MeetingModeRequiresVideoconf {
+            mode: "hybrid".to_string(),
+        };
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "meeting_mode_requires_videoconf");
+    }
+
+    #[test]
+    fn happy_from_meeting_mode_domain_error_preserves_mode() {
+        use crate::domain::entities::{MeetingMode, MeetingModeError};
+
+        let app_err: AppError = MeetingModeError::VideoconfUrlRequired {
+            mode: MeetingMode::Remote,
+        }
+        .into();
+        match app_err {
+            AppError::MeetingModeRequiresVideoconf { mode } => assert_eq!(mode, "remote"),
+            other => panic!("expected MeetingModeRequiresVideoconf, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn edge_meeting_mode_requires_videoconf_payload_carries_code() {
+        let e = AppError::MeetingModeRequiresVideoconf {
+            mode: "hybrid".to_string(),
+        };
+        let body = e.error_response();
+        assert_eq!(body.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    }
+
+    #[test]
+    fn security_meeting_mode_requires_videoconf_does_not_expose_meeting_id() {
+        // Contrairement à MeetingNotCompletable, cette erreur porte sur une
+        // configuration pas encore persistée : aucun meeting_id à exposer.
+        let e = AppError::MeetingModeRequiresVideoconf {
+            mode: "remote".to_string(),
+        };
+        let s = format!("{}", e);
+        assert!(!s.contains("meeting_id"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 4.2 — VoteAuthMethodRequired / VoteAuthInsufficient (#48)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn negative_vote_auth_method_required_maps_to_422() {
+        let e = AppError::VoteAuthMethodRequired;
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "vote_auth_method_required");
+    }
+
+    #[test]
+    fn security_vote_auth_insufficient_maps_to_403() {
+        let e = AppError::VoteAuthInsufficient {
+            mode: "remote".to_string(),
+            auth_method: "presence".to_string(),
+        };
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "vote_auth_insufficient");
+    }
+
+    #[test]
+    fn happy_from_vote_auth_error_missing_maps_to_required() {
+        use crate::domain::entities::VoteAuthError;
+        let app_err: AppError = VoteAuthError::Missing.into();
+        assert!(matches!(app_err, AppError::VoteAuthMethodRequired));
+    }
+
+    #[test]
+    fn happy_from_vote_auth_error_insufficient_preserves_fields() {
+        use crate::domain::entities::{MeetingMode, VoteAuthError, VoteAuthMethod};
+        let app_err: AppError = VoteAuthError::Insufficient {
+            mode: MeetingMode::Hybrid,
+            auth_method: VoteAuthMethod::Presence,
+        }
+        .into();
+        match app_err {
+            AppError::VoteAuthInsufficient { mode, auth_method } => {
+                assert_eq!(mode, "hybrid");
+                assert_eq!(auth_method, "presence");
+            }
+            other => panic!("expected VoteAuthInsufficient, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn edge_vote_auth_error_string_bridge_is_parsable() {
+        use crate::domain::entities::{MeetingMode, VoteAuthError, VoteAuthMethod};
+        let s: String = VoteAuthError::Missing.into();
+        assert_eq!(s, "VOTE_AUTH_METHOD_REQUIRED");
+
+        let s: String = VoteAuthError::Insufficient {
+            mode: MeetingMode::Remote,
+            auth_method: VoteAuthMethod::Itsme,
+        }
+        .into();
+        assert_eq!(s, "VOTE_AUTH_INSUFFICIENT:remote:itsme");
+    }
+
+    // Story 5.4 — ReservationMotifRequired (#588, INV-5/FR27) 4-cat
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_reservation_motif_required_maps_to_422() {
+        let e = AppError::ReservationMotifRequired;
+        assert_eq!(e.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(e.kind(), "reservation_motif_required");
+    }
+
+    #[test]
+    fn happy_from_reservation_on_behalf_domain_error() {
+        use crate::domain::entities::ReservationOnBehalfError;
+        let app_err: AppError = ReservationOnBehalfError::MotifRequired.into();
+        assert!(matches!(app_err, AppError::ReservationMotifRequired));
+    }
+
     #[test]
     fn negative_display_format_includes_message() {
         // thiserror Display impl must include the wrapped message for logs.
@@ -1321,5 +1784,55 @@ mod tests {
             "Display should include detail: {}",
             s
         );
+    }
+
+    // ------------------------------------------------------------------------
+    // #845 / ADR 0051 — NotaryLink* mapping (4-cat)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_notary_link_invalid_maps_to_403() {
+        let e = AppError::NotaryLinkInvalid;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "notary_link_invalid");
+    }
+
+    #[test]
+    fn edge_notary_link_expired_maps_to_403_not_410() {
+        // Le dépôt n'emploie jamais 410 Gone pour un jeton expiré (cf.
+        // MagicLinkExpired) : cohérence d'idiome plutôt qu'invention locale.
+        let e = AppError::NotaryLinkExpired;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        assert_eq!(e.kind(), "notary_link_expired");
+    }
+
+    #[test]
+    fn security_notary_link_revoked_maps_to_403_and_does_not_leak_who_revoked() {
+        let e = AppError::NotaryLinkRevoked;
+        assert_eq!(e.status_code(), StatusCode::FORBIDDEN);
+        let s = format!("{}", e);
+        assert!(!s.contains("user_id"));
+    }
+
+    #[test]
+    fn negative_domain_deja_revoque_maps_to_409_not_403() {
+        // Renouveler un lien mort est un CONFLIT avec l'état existant (même
+        // acte que l'émission), pas un refus de lecture — distinct des trois
+        // 403 NotaryLink* qui sanctionnent une lecture.
+        use crate::domain::entities::LienNotaireError;
+        let e: AppError = LienNotaireError::DejaRevoque.into();
+        assert_eq!(e.status_code(), StatusCode::CONFLICT);
+    }
+
+    #[test]
+    fn negative_domain_nil_ids_map_to_400_validation() {
+        use crate::domain::entities::LienNotaireError;
+        for err in [
+            LienNotaireError::EtatDateIdNul,
+            LienNotaireError::EmisParNul,
+        ] {
+            let e: AppError = err.into();
+            assert_eq!(e.status_code(), StatusCode::BAD_REQUEST);
+        }
     }
 }

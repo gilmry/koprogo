@@ -1,5 +1,5 @@
 ---
-date: 2026-04-30
+date: "2026-04-30"
 persona: sre-platform
 session: PR-C (chore/gitops-local-env-dev)
 tier: 2  # proposal via PR ; merge + activation = Tier 1 humain

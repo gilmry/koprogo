@@ -118,6 +118,183 @@ async fn test_skills_create() {
     assert_eq!(body["is_available_for_help"], true);
 }
 
+/// Issue #781 (RN-11, recette 4 du 2026-09-06) — @negative + @security.
+///
+/// Un syndic SANS fiche de copropriétaire ne peut pas proposer de compétence
+/// : le refus est LÉGITIME (offrir une compétence engage une personne, pas
+/// la copropriété), mais doit être un 403 lisible, pas un 400 générique.
+/// Avant ce correctif, `create_skill` renvoyait 400 pour ce refus — le
+/// syndic ne pouvait pas distinguer une erreur de saisie d'une règle
+/// métier. Le `kind: "owner_profile_required"` permet au frontend de
+/// traduire le message dans les quatre locales sans dépendre du libellé
+/// français porté par `Result<_, String>` (#555, #762).
+#[actix_web::test]
+#[serial]
+async fn security_skills_create_by_syndic_without_owner_profile_is_forbidden() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    // Syndic authentifié, SANS ligne dans `owners` — le cas de la recette.
+    let token = common::register_and_login_with_role(&app_state, org_id, "syndic").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
+    let building_req = test::TestRequest::post()
+        .uri("/api/v1/buildings")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
+            "name": "Skills Syndic Sans Fiche Building",
+            "address": "25 Skills Street",
+            "city": "Brussels",
+            "postal_code": "1000",
+            "country": "BE",
+            "total_units": 8,
+            "total_tantiemes": 1000
+        }))
+        .to_request();
+    let building_resp = test::call_service(&app, building_req).await;
+    let building_body: serde_json::Value = test::read_body_json(building_resp).await;
+    let building_id = building_body["id"].as_str().unwrap();
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/skills")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "building_id": building_id,
+            "skill_category": "HomeRepair",
+            "skill_name": "Plomberie",
+            "expertise_level": "Intermediate",
+            "description": "Je peux réparer les fuites et les tuyaux.",
+            "is_available_for_help": true,
+            "hourly_rate_credits": 2
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        403,
+        "Le refus opposé à un syndic sans fiche de copropriétaire doit être \
+         un 403 (règle métier), pas un 400 (saisie invalide)"
+    );
+
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    assert_eq!(
+        body["kind"], "owner_profile_required",
+        "kind stable requis pour la traduction frontend (#781)"
+    );
+    let message = body["error"].as_str().unwrap_or_default();
+    assert!(
+        !message.to_lowercase().contains("owner not found"),
+        "le message ne doit plus être le libellé technique anglais : {}",
+        message
+    );
+    assert!(
+        message.contains("copropriétaires"),
+        "le message doit nommer la règle métier en français : {}",
+        message
+    );
+}
+
+/// Issue #781 — @edge. Un utilisateur qui est À LA FOIS syndic ET
+/// copropriétaire (fiche dans `owners`) peut proposer une compétence : le
+/// refus porte sur l'absence de fiche, pas sur le rôle syndic.
+#[actix_web::test]
+#[serial]
+async fn happy_skills_create_by_syndic_who_is_also_owner_succeeds() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let email = format!("syndic-owner-{}@example.com", Uuid::new_v4());
+    let reg = koprogo_api::application::dto::RegisterRequest {
+        email: email.clone(),
+        password: "SecurePass123!".to_string(),
+        first_name: "Syndic".to_string(),
+        last_name: "EtCopropriétaire".to_string(),
+        role: "syndic".to_string(),
+        organization_id: Some(org_id),
+    };
+    let login_resp = app_state
+        .auth_use_cases
+        .register(reg)
+        .await
+        .expect("Failed to register syndic-owner user");
+    let user_id = login_resp.user.id;
+    let token = login_resp.token;
+
+    // La même personne a AUSSI une fiche de copropriétaire.
+    let owner_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO owners (id, organization_id, user_id, first_name, last_name, email,
+           address, city, postal_code, country, created_at, updated_at)
+           VALUES ($1, $2, $3, 'Syndic', 'EtCopropriétaire', $4, '5 Rue Test', 'Brussels', '1000', 'BE', NOW(), NOW())"#,
+    )
+    .bind(owner_id)
+    .bind(org_id)
+    .bind(user_id)
+    .bind(format!("owner-syndic-{}@test.com", Uuid::new_v4()))
+    .execute(&app_state.pool)
+    .await
+    .expect("Failed to insert owner");
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
+    let building_req = test::TestRequest::post()
+        .uri("/api/v1/buildings")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
+            "name": "Skills Syndic Et Owner Building",
+            "address": "26 Skills Street",
+            "city": "Brussels",
+            "postal_code": "1000",
+            "country": "BE",
+            "total_units": 8,
+            "total_tantiemes": 1000
+        }))
+        .to_request();
+    let building_resp = test::call_service(&app, building_req).await;
+    let building_body: serde_json::Value = test::read_body_json(building_resp).await;
+    let building_id = building_body["id"].as_str().unwrap();
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/skills")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "building_id": building_id,
+            "skill_category": "Technology",
+            "skill_name": "Réseaux domestiques",
+            "expertise_level": "Advanced",
+            "description": "Configuration de box et réseaux Wi-Fi.",
+            "is_available_for_help": true
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        201,
+        "Un syndic qui a AUSSI une fiche de copropriétaire doit pouvoir \
+         proposer une compétence : le refus porte sur l'absence de fiche, \
+         pas sur le rôle syndic"
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_skills_get() {

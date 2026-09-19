@@ -18,6 +18,13 @@
   // Tests : voir `__tests__/BuildingSelector.test.ts` (Vitest 4-cat) et
   // `frontend/tests/e2e/refonte-ux/slice-2-selector-banner/building-selector.spec.ts`
   // (Playwright multi-rôle).
+  //
+  // #868 — `../BuildingSelector.svelte` (l'ancien, monté par page) partageait
+  // l'ancre `-empty` avec celui-ci, alors que ce sont deux composants
+  // distincts, potentiellement co-montés sur la même page pour syndic/
+  // accountant/superadmin. Ce contrat (`-empty` incluse) reste stable ici ;
+  // l'ancien a été renommé (`page-building-selector-empty`) plutôt que
+  // celui-ci, qui a une suite de tests dédiée et un contrat déjà documenté.
 
   import { onMount } from "svelte";
   import { _ } from "../../lib/i18n";

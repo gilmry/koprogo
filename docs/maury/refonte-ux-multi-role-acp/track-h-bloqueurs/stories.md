@@ -2,7 +2,7 @@
 feature: refonte-ux-multi-role-acp/track-h-bloqueurs
 phase: D (Stories TOGAF)
 status: SIGNED v1.0 par @gilmry 2026-06-15 — Phase 6 exécution débloquée
-date: 2026-06-15
+date: "2026-06-15"
 authors: [Claude Opus 4.7 (drafting), @gilmry (signature 2026-06-15)]
 depends_on: brief.md (SIGNED v1.0), prd.md (SIGNED v1.0), architecture.md (SIGNED v1.0)
 ---

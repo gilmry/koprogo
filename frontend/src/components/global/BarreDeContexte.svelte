@@ -1,7 +1,51 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { authStore } from "../../stores/auth";
+  import AcpSelector from "./AcpSelector.svelte";
+  import { resoudrePerimetreAuChargement } from "../../stores/scope.svelte";
+  import { getBuilding } from "../../lib/api/buildings";
+  import { listAcps } from "../../lib/api/acps";
   import BuildingSelector from "./BuildingSelector.svelte";
   import ContextBanner from "./ContextBanner.svelte";
+
+  /**
+   * Réhydrate le périmètre à CHAQUE chargement de page (#841).
+   *
+   * ── Pourquoi ici ──────────────────────────────────────────────────────────
+   *
+   * `BarreDeContexte` est le seul composant garanti présent sur toute page
+   * authentifiée (`Layout.astro`), sans la restriction de rôle qui masque
+   * `BuildingSelector` pour les owners — et le périmètre est lu par des
+   * écrans owner aussi (cf. #841).
+   *
+   * ── Pourquoi `void` et pas `await` ────────────────────────────────────────
+   *
+   * Ne bloque pas le montage de la barre : les composants qui lisent le
+   * scope (`ContextBanner`, `JournalEntriesPanel`, etc.) réagissent déjà à
+   * `$state` quand il change, pas besoin d'attendre ici.
+   *
+   * ── Ce qui a cassé la première tentative (393c6ee0 → 7d28bb5e) ──────────
+   *
+   * Un appel équivalent avait fait dépasser trois `networkidle`/`waitForResponse`
+   * Playwright de 10 à 30s. Deux propriétés réduisent le risque cette fois :
+   * `resoudrePerimetreAuChargement` ne fait JAMAIS deux requêtes séquentielles
+   * quand une seule suffit (le défaut n'est même pas tenté si le lien profond a
+   * gagné, ni si un `buildingId` était présent et refusé), et le défaut serveur
+   * (`GET /acps`, déjà utilisé par `BuildingSelector`) ne s'exécute que quand
+   * aucun périmètre n'est encore posé — jamais en boucle, puisqu'il ne
+   * redéclenche rien qui le rappelle.
+   *
+   * Si une régression `networkidle` réapparaît, la première hypothèse à
+   * vérifier est la charge concurrente du montage de page (#718 : un seul
+   * worker actix, bcrypt bloquant), pas un rappel en boucle de cette fonction
+   * — elle ne s'invoque qu'une fois par montage.
+   */
+  onMount(() => {
+    void resoudrePerimetreAuChargement({
+      building: getBuilding,
+      acps: listAcps,
+    });
+  });
 
   /**
    * Une seule barre de contexte, au lieu de deux empilées.
@@ -31,6 +75,16 @@
    * Le contrôle avant l'indication : on choisit sa copropriété, puis on lit ce
    * qu'elle est. L'ordre inverse ferait lire un état avant d'avoir le moyen de
    * le changer.
+   *
+   * ── Story #798 — AcpSelector rejoint la barre, à GAUCHE de BuildingSelector ─
+   *
+   * Le périmètre PRINCIPAL est désormais l'ACP (la personne morale — numéro
+   * BCE, compte, AG, quotités), pas l'immeuble. `BuildingSelector` ne
+   * disparaît pas : il devient le filtre SECONDAIRE, à l'intérieur de l'ACP.
+   * Même raison de méthode que ci-dessus, littéralement : contrôle principal
+   * avant contrôle secondaire avant indication. `building-selector-bar` et
+   * `context-banner` ne bougent pas — `acp-selector-bar` est un NOUVEAU
+   * frère ajouté devant eux, jamais une réécriture des ancrages existants.
    */
   let user = $derived($authStore.user);
 </script>
@@ -49,6 +103,10 @@
     data-testid="barre-de-contexte"
     class="flex min-h-[56px] w-full flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-soft bg-surface px-4 py-2 lg:px-6"
   >
+    <div data-testid="acp-selector-bar" class="min-w-[220px] flex-1">
+      <AcpSelector {user} />
+    </div>
+
     <div data-testid="building-selector-bar" class="min-w-[220px] flex-1">
       <BuildingSelector {user} />
     </div>

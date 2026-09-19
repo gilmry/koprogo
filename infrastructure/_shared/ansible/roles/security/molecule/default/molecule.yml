@@ -1,0 +1,33 @@
+---
+# Molecule scenario for the `security` role (#354 WP-E2), run in isolation
+# — i.e. WITHOUT the `hardening` role applied first. This is deliberate:
+# the only production playbook runs hardening before security and the two
+# roles duplicate several tasks (fail2ban, CrowdSec, Suricata, SSH, sysctl),
+# masking the fact that `security` referenced templates that only existed
+# in `hardening/templates/` (fixed as part of this work — see
+# docs/agent-activity/2026-09-14-wp-e2-iac-tests.md). Testing `security`
+# standalone is the only way to catch that class of bug again.
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: koprogo-security-instance
+    image: "docker.io/geerlingguy/docker-ubuntu2204-ansible:0.17.1"
+    privileged: true
+    pre_build_image: true
+    cgroupns_mode: host
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+provisioner:
+  name: ansible
+  playbooks:
+    converge: converge.yml
+    verify: verify.yml
+  inventory:
+    host_vars:
+      koprogo-security-instance:
+        ansible_python_interpreter: /usr/bin/python3
+verifier:
+  name: ansible

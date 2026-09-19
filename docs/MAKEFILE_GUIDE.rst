@@ -1,234 +1,136 @@
-
 🛠️ Guide des Commandes Make
 ===========================
 
-Ce guide liste toutes les commandes ``make`` disponibles pour KoproGo.
+.. warning::
 
-📋 Voir toutes les commandes
-----------------------------
+   **Ce guide n'est pas la liste des commandes. Le Makefile l'est.**
 
-.. code-block:: bash
+   Ce fichier a listé pendant des mois treize cibles qui n'existaient plus —
+   ``make docker-up``, ``make test-e2e-ui``, ``make dev-all``… Un lecteur qui
+   les tapait recevait ``No rule to make target``, et rien dans le dépôt ne
+   s'en apercevait. Recopier le Makefile dans un ``.rst`` fabrique une
+   seconde source de vérité qui dérive par construction.
 
-   make help
+   La liste complète et à jour est donc **toujours** :
 
-Affiche la liste de toutes les commandes avec leur description.
+   .. code-block:: bash
 
-----
+      make help
 
-🚀 Setup et Installation
-------------------------
-
-Setup complet (première utilisation)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   make setup
-
-Cette commande fait **tout** automatiquement :
-
-
-* ✅ Installe les dépendances npm
-* ✅ Installe Playwright + navigateurs
-* ✅ Démarre PostgreSQL via Docker
-* ✅ Exécute les migrations de base de données
-
-**C'est tout ce dont vous avez besoin pour démarrer!**
-
-Installation manuelle
-^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   make install         # Installe seulement les dépendances npm
-   make install-all     # Installe npm + Playwright
+   Ce qui suit n'en est qu'une **entrée en matière** : les quelques commandes
+   du quotidien, avec ce qu'il faut savoir avant de les taper. La garde
+   ``garde-commandes-documentees`` refuse désormais toute citation d'une
+   cible qui n'existe pas, dans ce fichier comme dans les autres.
 
 ----
 
-💻 Développement
-----------------
-
-Démarrer l'environnement de développement
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+🚀 Démarrer
+-----------
 
 .. code-block:: bash
 
-   make dev             # Backend only (Rust avec hot-reload)
-   make dev-all         # Tous les services (backend + postgres + frontend)
-   make dev-frontend    # Frontend only (Astro + Svelte)
+   make setup   # première fois : dépendances, navigateurs, base, migrations
+   make up      # la pile de développement en hot reload (alias de `make dev`)
+   make ps      # ce qui tourne
+   make down    # tout arrêter
 
-**Workflow recommandé :**
+``make up`` démarre Traefik, le backend et le frontend. Le backend tourne
+sous ``cargo watch`` : une modification d'un fichier de ``backend/`` le
+recompile et le redémarre.
 
-**Terminal 1:**
+.. note::
 
-.. code-block:: bash
-
-   make dev  # Démarre backend + PostgreSQL
-
-**Terminal 2:**
-
-.. code-block:: bash
-
-   make dev-frontend  # Démarre le frontend
-
-Puis ouvrir :
-
-
-* Frontend: http://localhost:3000
-* Backend API: http://localhost:8080
+   Les documents envoyés ne doivent jamais atterrir dans l'arbre surveillé :
+   ``UPLOAD_DIR`` pointe vers un volume dédié, faute de quoi chaque envoi
+   redémarre le backend au milieu d'une campagne (#880).
 
 ----
 
-🧪 Tests
---------
-
-Tests Backend (Rust)
-^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   make test              # Tous les tests backend + E2E complets
-   make test-unit         # Tests unitaires seulement
-   make test-integration  # Tests d'intégration
-   make test-bdd          # Tests BDD (Cucumber)
-   make test-e2e-backend  # Tests E2E backend (Rust/Actix)
-
-Tests E2E Complets (Frontend + Backend) 🎥
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Les tests E2E avec Playwright testent **toute la stack** et permettent d'enregistrer des **vidéos de documentation** à publier dans ``docs/_static/videos/`` (commit requis).
-
-Installation (une seule fois)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-   make test-e2e-install
-
-Installe Playwright et Chromium avec toutes les dépendances.
-
-Lancer les tests
-~~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-   make codegen           # Playwright codegen (DEVICE=mobile pour iPhone 13)
-   make test-e2e-full     # Lance tous les tests E2E + génère les vidéos localement
-   make test-e2e-ui       # Mode UI interactif (recommandé)
-   make test-e2e-headed   # Voir le navigateur en action
-   make test-e2e-debug    # Mode debug pas à pas
-   make test-e2e-report   # Ouvrir le rapport HTML avec vidéos
-
-Workflow recommandé
-~~~~~~~~~~~~~~~~~~~
-
-**Développement:**
-
-.. code-block:: bash
-
-   make test-e2e-ui       # Interface graphique interactive
-
-**CI/CD ou validation finale:**
-
-.. code-block:: bash
-
-   make test-e2e-full     # Génère toutes les vidéos localement
-   make test-e2e-report   # Voir les résultats
-
-   # Après validation, synchroniser et commiter les vidéos :
-   make docs-sync-videos
-
-**Debugging:**
-
-.. code-block:: bash
-
-   make test-e2e-debug    # Mode pas à pas
-
-Tests de Performance
-^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   make bench             # Benchmarks Rust
-
-----
-
-📊 Couverture et Qualité
-------------------------
-
-.. code-block:: bash
-
-   make coverage          # Génère un rapport de couverture
-   make lint              # Vérifie le code (fmt + clippy + build)
-   make format            # Formate le code (Rust + JS/TS)
-   make audit             # Audit de sécurité (Cargo + npm)
-
-----
-
-🏗️ Build
---------
-
-.. code-block:: bash
-
-   make build             # Build release (backend + frontend)
-   make clean             # Nettoie les artefacts de build
-
-----
-
-🐳 Docker
+🧪 Tester
 ---------
 
 .. code-block:: bash
 
-   make docker-up         # Démarre tous les services Docker
-   make docker-down       # Arrête tous les services Docker
-   make docker-build      # Build les images Docker
-   make docker-logs       # Affiche les logs Docker
+   make test-unit          # unitaires backend (domaine)
+   make test-e2e-backend   # intégration backend (testcontainers)
+   make test-bdd           # scénarios Cucumber
+   make test-e2e           # Playwright, encadré du témoin d'interruption (#880)
+   make test               # les trois premiers
 
-----
-
-🏗️ Infrastructure (Déploiement VPS)
------------------------------------
-
-Déploiement automatisé
-^^^^^^^^^^^^^^^^^^^^^^
+``make test-e2e`` vise la **pile de recette**, pas la démo :
 
 .. code-block:: bash
 
-   make setup-infra       # Déploiement complet VPS OVH (Terraform + Ansible + GitOps)
-   make ci                # Pipeline CI complet (format, lint, tests, audit)
+   make test-e2e                              # défaut : http://localhost:8090
+   make test-e2e RECETTE=http://localhost:3000
 
-``make setup-infra`` déploie automatiquement :
+.. danger::
 
+   Ne jamais viser ``http://localhost`` nu. Le port 80 est le Traefik de la
+   **démo** ; la recette est sur 8090 (ADR 0050). Les deux variables
+   ``PLAYWRIGHT_BASE_URL`` et ``PLAYWRIGHT_API_BASE`` sont posées ensemble par
+   la cible — les dissocier enverrait le navigateur d'un côté et l'amorçage du
+   monde de l'autre.
 
-* ✅ Provisionne VPS OVH avec Terraform
-* ✅ Configure serveur avec Ansible (Docker, Firewall, Fail2ban)
-* ✅ Déploie Docker Compose (Traefik + Backend + Frontend + PostgreSQL)
-* ✅ Configure DNS automatique (optionnel)
-* ✅ Active GitOps (auto-update toutes les 3 minutes)
-* ✅ Configure backups PostgreSQL (quotidiens)
+.. note::
 
-**Durée** : ~20-30 minutes
-
-``make ci`` exécute :
-
-
-* ✅ ``make format`` - Formate le code (Rust + Frontend)
-* ✅ ``make lint`` - Vérifie la qualité (clippy + checks)
-* ✅ ``make test`` - Lance tous les tests
-* ✅ ``make audit`` - Audit de sécurité (Cargo + npm)
-
-**Documentation complète** : `docs/deployment/ <deployment/>`_
+   Sans ``CI=1``, Playwright tourne en parallèle et la mesure **n'est pas
+   comparable** à celle de la CI. Pour un chiffre qu'on inscrit quelque part :
+   ``CI=1 make test-e2e``.
 
 ----
 
-🗄️ Base de Données
+🎬 La vitrine — la preuve de valeur
+-----------------------------------
+
+.. code-block:: bash
+
+   make vitrine
+
+Harnais **séparé** du gate : il rejoue le parcours de référence en cadence
+(``CADENCE_MS``), incruste la narration à l'écran, et assemble une galerie
+autonome à chapitres horodatés dans
+``frontend/tests/e2e/journeys/vitrine/index.html``.
+
+Il ne touche **aucun** fichier du gate, et c'est tout le sujet de #876 :
+ralentir les tests en les modifiant confiait au gate une responsabilité qui
+n'est pas la sienne.
+
+----
+
+🗃️ Base de données
 ------------------
 
 .. code-block:: bash
 
-   make migrate           # Exécute les migrations SQLx
-   make seed              # Remplit la base avec des données de test
+   make migrate      # appliquer les migrations
+   make seed         # données de test
+   make seed-clear   # vider le monde de scénario
+   make seed-reset   # le vider puis le recréer (échoue si l'API refuse)
+   make reset-db     # ⚠️ SUPPRIME TOUTES LES DONNÉES
+
+----
+
+🔍 Avant de pousser
+-------------------
+
+.. code-block:: bash
+
+   make format
+   make lint
+   make ci            # les vérifications CI, en conteneurs
+
+Le barrage de déploiement lance en plus **les gardes du dépôt** et le gate
+OpenAPI, qui ne sont pas des cibles ``make`` :
+
+.. code-block:: bash
+
+   cd backend && ~/bin/kcargo test --no-fail-fast --test architecture --test 'garde_*'
+   ./scripts/check-openapi-coverage.sh
+
+Ces gardes portent les **cliquets de dette** : elles n'exigent pas la
+perfection, elles refusent l'aggravation. Une seule qui rougit suffit à ce
+que rien ne soit construit ni déployé.
 
 ----
 
@@ -237,230 +139,36 @@ Déploiement automatisé
 
 .. code-block:: bash
 
-   make docs              # Génère et ouvre la documentation Rust
+   make docs-sphinx        # build Sphinx
+   make docs-serve         # avec live reload
+   make docs-with-videos   # vitrine + gate + galerie + Sphinx
+   make docs-guard         # refuse un markdown non listé à la racine de docs/ (#854)
+   make rfc-new TITLE="mon-titre"
+   make adr-new TITLE="mon-titre"
+
+.. note::
+
+   Une question se pose en **RFC** ou en **issue**, jamais dans un markdown
+   créé pour l'occasion.
 
 ----
 
-🎯 Workflows Courants
+🔐 Sécurité et garde-fous
+-------------------------
+
+.. code-block:: bash
+
+   make secret-scan            # gitleaks sur le diff et l'arbre de travail
+   make secret-scan-history    # tout l'historique (lent)
+   make audit                  # cargo-audit + npm audit
+   make claude-check           # config des garde-fous Claude Code
+   make test-guardrail-hooks   # les hooks bloquent-ils vraiment ? (#429)
+   make iac-lint
+
+----
+
+Et pour tout le reste
 ---------------------
-
-1. Nouvelle installation du projet
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   git clone <repo>
-   cd koprogo
-   make setup             # Setup complet automatique
-   make dev               # Démarrer le développement
-
-2. Développement quotidien
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-**Terminal 1:**
-
-.. code-block:: bash
-
-   make dev               # Backend + PostgreSQL
-
-**Terminal 2:**
-
-.. code-block:: bash
-
-   make dev-frontend      # Frontend avec hot-reload
-
-3. Avant de commit
-^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   make format            # Formater le code
-   make lint              # Vérifier la qualité
-   make test              # Lancer tous les tests
-
-4. Tester une nouvelle fonctionnalité
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   # Développer la feature...
-
-   # Tester
-   make test-e2e-ui       # Tests E2E en mode interactif
-
-   # Générer les vidéos de documentation
-   make test-e2e-full     # Génère les vidéos
-   make test-e2e-report   # Voir les vidéos
-
-5. CI/CD local
-^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   make clean
-   make build
-   make test
-   make test-e2e-full
-   make audit
-
-6. Debugging des tests E2E
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   # Problème dans les tests?
-   make test-e2e-headed   # Voir le navigateur
-
-   # Toujours pas clair?
-   make test-e2e-debug    # Mode debug pas à pas
-
-   # Voir ce qui s'est passé
-   make test-e2e-report   # Voir les vidéos + screenshots
-
-----
-
-📹 Tests E2E - Exemples de Commandes
-------------------------------------
-
-Développement d'un nouveau test
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   # 1. Créer le fichier de test
-   cd frontend/tests/e2e
-   touch ma-feature.spec.ts
-
-   # 2. Développer le test en mode UI
-   make test-e2e-ui
-
-   # 3. Valider et générer la vidéo
-   make test-e2e-full
-
-   # 4. Voir le résultat
-   make test-e2e-report
-
-Démonstration au client
-^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   # Option 1: Lancer les tests en live
-   make test-e2e-headed
-
-   # Option 2: Montrer les vidéos déjà générées
-   make test-e2e-report
-
-Debugging d'un test qui échoue
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   # 1. Voir la vidéo de l'échec
-   make test-e2e-report
-
-   # 2. Debug pas à pas
-   make test-e2e-debug
-
-   # 3. Relancer en voyant le navigateur
-   make test-e2e-headed
-
-----
-
-🎬 Vidéos de Documentation
---------------------------
-
-Les vidéos générées par ``make test-e2e-full`` se trouvent dans :
-
-.. code-block::
-
-   frontend/test-results/
-   ├── auth-Authentication-Flow-should-login-successfully-chromium/
-   │   └── video.webm
-   ├── pwa-offline-PWA-Capabilities-should-work-offline-chromium/
-   │   └── video.webm
-   └── dashboards-Syndic-Dashboard-chromium/
-       └── video.webm
-
-**Pour les voir :**
-
-.. code-block:: bash
-
-   make test-e2e-report
-
-----
-
-🔧 Variables d'Environnement
-----------------------------
-
-Les commandes make utilisent les variables d'environnement définies dans ``.env`` :
-
-.. code-block:: bash
-
-   DATABASE_URL=postgresql://koprogo:koprogo123@localhost:5432/koprogo_db
-   JWT_SECRET=your-secret-key-change-this-in-production
-   SERVER_HOST=127.0.0.1
-   SERVER_PORT=8080
-
-----
-
-💡 Tips
--------
-
-Performances des tests E2E
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   # Tests rapides (headless)
-   make test-e2e-full
-
-   # Tests lents mais visibles (headed)
-   make test-e2e-headed
-
-Nettoyage complet
-^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   make clean
-   make docker-down
-   docker volume prune -f
-
-Réinitialisation de la base de données
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   make docker-down
-   docker volume rm koprogo_postgres_data
-   make docker-up
-   make migrate
-   make seed
-
-----
-
-📖 Documentation Supplémentaire
--------------------------------
-
-
-* {doc}\ ``E2E_TESTING_GUIDE`` - Guide complet des tests E2E
-* {doc}\ ``../frontend/tests/e2e/README`` - Documentation détaillée des tests
-
-----
-
-🆘 Aide
--------
-
-Si une commande échoue :
-
-
-#. **Vérifier les services** : ``make docker-up``
-#. **Vérifier les migrations** : ``make migrate``
-#. **Nettoyer et rebuild** : ``make clean && make build``
-#. **Setup complet** : ``make setup``
-
-Pour voir toutes les commandes disponibles :
 
 .. code-block:: bash
 

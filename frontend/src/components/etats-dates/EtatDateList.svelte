@@ -281,7 +281,7 @@
                   <EtatDateStatusBadge status={ed.status} />
                   {#if ed.is_overdue}
                     <span
-                      class="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-xs rounded"
+                      class="ml-1 px-1.5 py-0.5 bg-red-600 text-white text-xs rounded"
                       >{$_("etatsDate.overdue")}</span
                     >
                   {/if}

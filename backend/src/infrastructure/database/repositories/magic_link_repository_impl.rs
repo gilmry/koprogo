@@ -36,7 +36,31 @@ impl MagicLinkRepository for PostgresMagicLinkRepository {
         )
         .bind(link.id)
         .bind(&link.token_hash)
-        .bind(link.subject_user_id)
+        // ── Le sentinel « pas de sujet » devient NULL à la frontière ───────
+        //
+        // Le domaine dit « ce lien n'a pas de sujet » avec `Uuid::nil()` :
+        // c'est le choix de #815 et #835, documenté dans
+        // `contractor_report_use_cases.rs:352` — « le prestataire n'a souvent
+        // PAS de compte, la voie nominale est le lien ».
+        //
+        // La base, elle, porte `REFERENCES users(id)`. Elle entendait donc
+        // « CE sujet-là », qui n'existe pas :
+        //
+        //     insert or update on table "magic_links" violates foreign key
+        //     constraint "magic_links_subject_user_id_fkey"
+        //
+        // Traduire ici est le rôle d'un adaptateur : le domaine garde son
+        // vocabulaire, le schéma garde son intégrité référentielle pour les
+        // liens qui ONT un sujet, et `NULL` dit la vérité pour les autres.
+        //
+        // L'alternative — créer un utilisateur fantôme d'UUID nul — ferait
+        // apparaître un compte dans les listes, les journaux d'audit et les
+        // décomptes, et quelqu'un finirait par lui attribuer un rôle.
+        .bind(if link.subject_user_id.is_nil() {
+            None
+        } else {
+            Some(link.subject_user_id)
+        })
         .bind(link.scope_kind.to_string())
         .bind(link.scope_id)
         .bind(link.issued_by)
@@ -73,7 +97,13 @@ impl MagicLinkRepository for PostgresMagicLinkRepository {
                 Ok(Some(MagicLink {
                     id: row.get("id"),
                     token_hash: row.get("token_hash"),
-                    subject_user_id: row.get("subject_user_id"),
+                    // Le retour du trajet : `NULL` redevient le sentinel que
+                    // le domaine connaît. La traduction est symétrique, sans
+                    // quoi un lien sans sujet se relirait différemment de ce
+                    // qu'il a été écrit.
+                    subject_user_id: row
+                        .get::<Option<Uuid>, _>("subject_user_id")
+                        .unwrap_or_else(Uuid::nil),
                     scope_kind,
                     scope_id: row.get("scope_id"),
                     issued_by: row.get("issued_by"),

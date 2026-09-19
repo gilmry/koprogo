@@ -273,7 +273,7 @@
       type="submit"
       disabled={saving}
       data-testid="challenge-submit-btn"
-      class="px-4 py-2 text-sm font-medium text-white bg-amber-600 border border-transparent rounded-md hover:bg-amber-700 disabled:opacity-50"
+      class="px-4 py-2 text-sm font-medium text-white bg-amber-700 border border-transparent rounded-md hover:bg-amber-800 disabled:opacity-50"
     >
       {#if saving}
         {$_("common.saving")}

@@ -32,9 +32,31 @@ const RACINE = resolve(__dirname, "../../..");
 const JOURNEYS = resolve(RACINE, "tests/e2e/journeys");
 
 /** Le harnais de correctness et le harnais de valeur. */
+// Le gate E2E est un ENSEMBLE de fichiers, pas un fichier.
+//
+// Il n'en avait qu'un le 2026-09-08 : `parcours.spec.ts`. Depuis, le parcours
+// copropriétaire a reçu son propre `coproprietaire.spec.ts`, et la garde a
+// conclu que « le gate et la vitrine n'importent pas les mêmes parcours » —
+// alors qu'ils les rejouent tous les deux, simplement répartis autrement.
+//
+// C'est le modèle de la garde qui était périmé, pas le harnais. L'élargir
+// n'affaiblit RIEN : l'invariant reste que l'union des parcours rejoués par
+// le gate égale celle de la vitrine. Un parcours filmé que le gate ne rejoue
+// pas resterait refusé, et c'est tout ce qu'on lui demande.
+const HARNAIS_GATE = [
+  "parcours.spec.ts",
+  "coproprietaire.spec.ts",
+  "comptable.spec.ts",
+  "administration.spec.ts",
+  "conseil.spec.ts",
+  "prestataire.spec.ts",
+  "moderation.spec.ts",
+] as const;
+const HARNAIS_VITRINE = ["enregistrer-vitrine.mjs"] as const;
+
 const HARNAIS = [
-  ["gate E2E", "parcours.spec.ts"],
-  ["vitrine", "enregistrer-vitrine.mjs"],
+  ...HARNAIS_GATE.map((f) => ["gate E2E", f] as const),
+  ...HARNAIS_VITRINE.map((f) => ["vitrine", f] as const),
 ] as const;
 
 function lire(fichier: string): string {
@@ -84,7 +106,10 @@ describe("documentation vivante — l'invariant anti-dette", () => {
         ),
       ].sort();
 
-    const [gate, vitrine] = HARNAIS.map(([, f]) => nomDuParcours(lire(f)));
+    const union = (fichiers: readonly string[]) =>
+      [...new Set(fichiers.flatMap((f) => nomDuParcours(lire(f))))].sort();
+    const gate = union(HARNAIS_GATE);
+    const vitrine = union(HARNAIS_VITRINE);
     expect(
       vitrine,
       "Le gate et la vitrine n'importent pas les mêmes parcours. Deux " +

@@ -19,9 +19,11 @@ impl NoticeUseCases {
         }
     }
 
-    /// Check if user has building admin privileges (admin, superadmin, or syndic)
+    /// Check if user has building admin privileges (admin, superadmin, syndic,
+    /// or `community.moderator` — Story 5.3 #587, ce dernier rôle existe
+    /// précisément pour porter cette capacité sans être syndic).
     fn is_building_admin(role: &str) -> bool {
-        role == "admin" || role == "superadmin" || role == "syndic"
+        role == "admin" || role == "superadmin" || role == "syndic" || role == "community.moderator"
     }
 
     /// Resolve user_id to display name via user lookup
@@ -240,13 +242,17 @@ impl NoticeUseCases {
     /// Archive a notice (Published/Expired → Archived)
     ///
     /// # Authorization
-    /// - Only author or building admin can archive
+    /// - Author archives their own notice : self-service, no reason needed.
+    /// - Building admin (syndic, `community.moderator`, admin, superadmin)
+    ///   archiving SOMEONE ELSE's notice : MODÉRATION — a reason is
+    ///   mandatory (audit trail). Story 5.3 (#587), INV-4.
     pub async fn archive_notice(
         &self,
         notice_id: Uuid,
         user_id: Uuid,
         _organization_id: Uuid,
         actor_role: &str,
+        reason: Option<String>,
     ) -> Result<NoticeResponseDto, String> {
         let mut notice = self
             .notice_repo
@@ -262,6 +268,13 @@ impl NoticeUseCases {
             return Err(
                 "Unauthorized: only author or building admin can archive notice".to_string(),
             );
+        }
+
+        // Modération d'un contenu d'autrui : motif obligatoire (audit).
+        if !is_author && is_admin {
+            reason
+                .filter(|r| !r.trim().is_empty())
+                .ok_or_else(|| crate::application::error::MOTIF_MODERATION_REQUIS.to_string())?;
         }
 
         // Archive (domain validates state transition)
@@ -667,6 +680,43 @@ mod tests {
     }
 
     impl MockUserRepo {
+        /// Le filtre du vrai dépôt, reproduit : recherche sur le courriel, le
+        /// prénom et le nom, puis rôle exact. `all` et le vide ne filtrent
+        /// pas.
+        fn filtrer(
+            store: &HashMap<Uuid, User>,
+            recherche: Option<String>,
+            role: Option<String>,
+        ) -> Vec<User> {
+            let terme = recherche
+                .map(|r| r.trim().to_lowercase())
+                .filter(|r| !r.is_empty());
+            let role = role
+                .map(|r| r.trim().to_string())
+                .filter(|r| !r.is_empty() && r != "all");
+
+            let mut retenus: Vec<User> = store
+                .values()
+                .filter(|u| match &terme {
+                    None => true,
+                    Some(t) => {
+                        u.email.to_lowercase().contains(t)
+                            || u.first_name.to_lowercase().contains(t)
+                            || u.last_name.to_lowercase().contains(t)
+                    }
+                })
+                .filter(|u| match &role {
+                    None => true,
+                    Some(r) => u.role.to_string() == *r,
+                })
+                .cloned()
+                .collect();
+            // Le vrai dépôt ordonne par `created_at DESC` : un double au
+            // hasard rendrait les tests de pagination non reproductibles.
+            retenus.sort_by_key(|u| std::cmp::Reverse(u.created_at));
+            retenus
+        }
+
         fn new() -> Self {
             Self {
                 users: Mutex::new(HashMap::new()),
@@ -688,6 +738,33 @@ mod tests {
             let mut store = self.users.lock().unwrap();
             store.insert(user.id, user.clone());
             Ok(user.clone())
+        }
+
+        // Le double reproduit le filtre du vrai dépôt plutôt que de rendre
+        // tout : un double plus permissif que la production fait passer des
+        // tests qui échoueraient contre elle.
+        async fn find_page(
+            &self,
+            recherche: Option<String>,
+            role: Option<String>,
+            limit: i64,
+            offset: i64,
+        ) -> Result<Vec<User>, String> {
+            let retenus = Self::filtrer(&self.users.lock().unwrap(), recherche, role);
+            Ok(retenus
+                .into_iter()
+                .skip(offset.max(0) as usize)
+                .take(limit.max(0) as usize)
+                .collect())
+        }
+
+        async fn count_matching(
+            &self,
+            recherche: Option<String>,
+            role: Option<String>,
+        ) -> Result<i64, String> {
+            let retenus = Self::filtrer(&self.users.lock().unwrap(), recherche, role);
+            Ok(retenus.len() as i64)
         }
 
         async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, String> {
@@ -834,6 +911,51 @@ mod tests {
         assert!(!resp.is_pinned);
     }
 
+    /// Issue #781 (RN-11, recette 4 du 2026-09-06) — @happy, preuve de
+    /// non-régression.
+    ///
+    /// Un syndic SANS fiche de copropriétaire peut créer une annonce : un
+    /// avis émane de la copropriété, pas d'une personne nommée — à la
+    /// différence de skill/shared_object/resource_booking, `create_notice`
+    /// ne résout aucun `Owner` et n'a même pas de dépendance vers
+    /// `OwnerRepository`. C'est la preuve, vérifiée en recette le
+    /// 2026-09-06, que le refus des trois autres modules n'est pas une
+    /// panne générale du produit.
+    #[tokio::test]
+    async fn happy_syndic_sans_fiche_coproprietaire_peut_creer_une_annonce() {
+        let user_id = Uuid::new_v4(); // syndic, aucune fiche `owners` liée
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let mut syndic = make_user(user_id);
+        syndic.role = UserRole::Syndic;
+
+        let uc = NoticeUseCases::new(
+            Arc::new(MockNoticeRepo::new()),
+            Arc::new(MockUserRepo::with_user(syndic)),
+        );
+
+        let dto = CreateNoticeDto {
+            building_id,
+            notice_type: NoticeType::Announcement,
+            category: NoticeCategory::General,
+            title: "Entretien des communs".to_string(),
+            content: "Les communs seront entretenus la semaine prochaine.".to_string(),
+            event_date: None,
+            event_location: None,
+            contact_info: None,
+            expires_at: None,
+        };
+
+        let result = uc.create_notice(user_id, org_id, dto).await;
+        assert!(
+            result.is_ok(),
+            "un syndic sans fiche de copropriétaire doit pouvoir créer une \
+             annonce : {:?}",
+            result.err()
+        );
+        assert_eq!(result.unwrap().author_id, user_id);
+    }
+
     #[tokio::test]
     async fn test_get_notice_success() {
         let user_id = Uuid::new_v4();
@@ -922,7 +1044,9 @@ mod tests {
             Arc::new(MockUserRepo::with_user(user)),
         );
 
-        let result = uc.archive_notice(notice_id, user_id, org_id, "owner").await;
+        let result = uc
+            .archive_notice(notice_id, user_id, org_id, "owner", None)
+            .await;
         assert!(result.is_ok());
         let resp = result.unwrap();
         assert_eq!(resp.status, NoticeStatus::Archived);
@@ -944,9 +1068,18 @@ mod tests {
             Arc::new(MockUserRepo::with_user(admin_user)),
         );
 
-        // Admin (not the author) can archive
+        // Admin (not the author) can archive — Story 5.3 (#587) ajoute un
+        // motif obligatoire dès qu'on modère le contenu d'autrui (audit) :
+        // l'assertion "l'admin peut archiver" reste vraie, elle exige
+        // maintenant ce motif en plus, comme n'importe quelle modération.
         let result = uc
-            .archive_notice(notice_id, admin_id, org_id, "admin")
+            .archive_notice(
+                notice_id,
+                admin_id,
+                org_id,
+                "admin",
+                Some("Contenu obsolète signalé".to_string()),
+            )
             .await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap().status, NoticeStatus::Archived);
@@ -967,12 +1100,89 @@ mod tests {
         );
 
         let result = uc
-            .archive_notice(notice_id, other_user_id, org_id, "owner")
+            .archive_notice(notice_id, other_user_id, org_id, "owner", None)
             .await;
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
             .contains("Unauthorized: only author or building admin can archive notice"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 5.3 (#587), INV-4 — Syndic = community.moderator sur les annonces
+    // ------------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn negative_moderation_dune_annonce_sans_motif_est_refusee() {
+        let author_id = Uuid::new_v4();
+        let syndic_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let notice = make_published_notice(building_id, author_id);
+        let notice_id = notice.id;
+
+        let uc = NoticeUseCases::new(
+            Arc::new(MockNoticeRepo::with_notice(notice)),
+            Arc::new(MockUserRepo::new()),
+        );
+
+        let result = uc
+            .archive_notice(notice_id, syndic_id, org_id, "syndic", None)
+            .await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            crate::application::error::MOTIF_MODERATION_REQUIS
+        );
+
+        let result_blank = uc
+            .archive_notice(
+                notice_id,
+                syndic_id,
+                org_id,
+                "syndic",
+                Some("   ".to_string()),
+            )
+            .await;
+        assert!(result_blank.is_err());
+        assert_eq!(
+            result_blank.unwrap_err(),
+            crate::application::error::MOTIF_MODERATION_REQUIS
+        );
+    }
+
+    #[tokio::test]
+    async fn happy_community_moderator_archive_avec_motif() {
+        // Story 3.1 a introduit `UserRole::CommunityModerator` précisément
+        // pour porter cette capacité sans être syndic : `is_building_admin`
+        // doit le reconnaître au même titre que "syndic".
+        let author_id = Uuid::new_v4();
+        let moderator_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let notice = make_published_notice(building_id, author_id);
+        let notice_id = notice.id;
+
+        let uc = NoticeUseCases::new(
+            Arc::new(MockNoticeRepo::with_notice(notice)),
+            Arc::new(MockUserRepo::new()),
+        );
+
+        let result = uc
+            .archive_notice(
+                notice_id,
+                moderator_id,
+                org_id,
+                "community.moderator",
+                Some("Annonce en doublon".to_string()),
+            )
+            .await;
+        assert!(
+            result.is_ok(),
+            "un community.moderator doit pouvoir archiver avec motif : {:?}",
+            result.err()
+        );
+        assert_eq!(result.unwrap().status, NoticeStatus::Archived);
     }
 
     #[tokio::test]

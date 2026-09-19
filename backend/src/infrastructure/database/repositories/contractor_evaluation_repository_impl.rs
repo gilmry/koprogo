@@ -4,7 +4,7 @@
 //! All `sqlx::Error` paths are wrapped in `AppError::Database(_)` — no
 //! `Result<_, String>` debt (CRITICAL.md #4 / #555).
 //!
-//! Evaluations are append-only: only [`save`] writes new rows. The DB
+//! Evaluations are append-only: only `save` writes new rows. The DB
 //! trigger `contractor_eval_no_mutation` (cf. migration `20260605070000`)
 //! blocks any UPDATE / DELETE at the SQL boundary, so a misbehaving caller
 //! cannot tamper with the audit trail.

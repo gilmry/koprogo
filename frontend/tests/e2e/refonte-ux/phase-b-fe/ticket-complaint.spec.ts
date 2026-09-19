@@ -214,8 +214,13 @@ test.describe("Story B5 — Ticket Complaint (multi-rôle)", () => {
 
     // ─── Phase 2 : Owner-plaignant login UI → /tickets/new?buildingId=… ──
     await uiLogin(page, ownerPlaignant.email, TEST_PASSWORD);
+    // `load` et non `networkidle` : l'attente réseau est REDONDANTE ici,
+    // puisque la précondition réelle est asserée juste en dessous, avec son
+    // propre délai. `networkidle` dépend de tout ce que la page charge par
+    // ailleurs et consommait le budget de 30 s du test avant même que
+    // l'assertion ne commence. Playwright le déconseille lui-même.
     await page.goto(`/tickets/new?buildingId=${building.id}`, {
-      waitUntil: "networkidle",
+      waitUntil: "load",
     });
 
     // Form Owner-facing rendu.
@@ -280,8 +285,9 @@ test.describe("Story B5 — Ticket Complaint (multi-rôle)", () => {
     await uiLogin(page, syndic.email, TEST_PASSWORD);
 
     // Le syndic ouvre la même URL ticket-detail (id capturé avant logout).
+    // Même raison qu'au-dessus : l'assertion qui suit porte son délai.
     await page.goto(`/ticket-detail?id=${ticketIdMatch![1]}`, {
-      waitUntil: "networkidle",
+      waitUntil: "load",
     });
 
     // Le syndic voit le titre (intégration FE-BE OK).

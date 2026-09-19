@@ -153,7 +153,7 @@ impl CallForFundsRepository for MockCffRepo {
     async fn delete(&self, id: Uuid) -> Result<bool, String> {
         Ok(self.store.lock().unwrap().remove(&id).is_some())
     }
-    async fn find_overdue(&self) -> Result<Vec<CallForFunds>, String> {
+    async fn find_overdue(&self, _organization_id: Uuid) -> Result<Vec<CallForFunds>, String> {
         Ok(vec![])
     }
 }
@@ -264,6 +264,14 @@ impl UnitOwnerRepository for MockUnitOwnerRepo {
         _unit_id: Uuid,
     ) -> Result<Vec<koprogo_api::domain::entities::LotHolder>, String> {
         Ok(vec![])
+    }
+
+    async fn is_voting_representative(&self, _unit_owner_id: Uuid) -> Result<bool, String> {
+        Ok(false)
+    }
+
+    async fn set_voting_representative(&self, _unit_owner_id: Uuid) -> Result<(), String> {
+        Ok(())
     }
 }
 

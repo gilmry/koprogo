@@ -158,6 +158,10 @@
         "Évaluation prestataire",
         "Aucune évaluation trouvée",
       ],
+      // #835 — le rapport d'intervention rejoint les scopes émissibles depuis
+      // ce formulaire générique (en plus de la route dédiée
+      // POST /contractor-reports/magic-link, pour les prestataires sans compte).
+      contractor_report: ["Rapport d'intervention", "Aucun rapport trouvé"],
     };
     const [label, empty] = labels[kind];
     return asEmptyHelper ? empty : label;

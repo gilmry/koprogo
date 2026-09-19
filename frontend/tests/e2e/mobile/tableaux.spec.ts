@@ -62,48 +62,196 @@ const LIGNE = {
 };
 
 /**
+ * Un état daté avec une dette réelle sur un lot identifié.
+ *
+ * `EtatDateList` a besoin de sa propre forme de donnée — `LIGNE` ne suffit
+ * pas : la page fait DEUX appels (`/etats-dates` et `/etats-dates/stats`), et
+ * un stub générique servi aux deux fait planter `stats.average_processing_days
+ * .toFixed(1)` sur un objet qui n'a pas ce champ. C'est cette page qui restait
+ * exclue de la règle générale, faute d'un DTO propre (#866).
+ *
+ * Le solde négatif sur le lot 12B est la donnée que le `@security` ci-dessous
+ * vérifie : c'est une dette d'un copropriétaire identifiable par son lot, sur
+ * un document opposable (Art. 3.87 §3 CC), pas une ligne d'exemple anonyme.
+ */
+const ETAT_DATE_LOT_12B = {
+  id: "33333333-3333-3333-3333-333333333333",
+  organization_id: "22222222-2222-2222-2222-222222222222",
+  building_id: "11111111-1111-1111-1111-111111111111",
+  unit_id: "44444444-4444-4444-4444-444444444444",
+  reference_date: "2026-01-15",
+  requested_date: "2026-01-10",
+  generated_date: null,
+  delivered_date: null,
+  status: "requested",
+  language: "fr",
+  reference_number: "ED-2026-0001",
+  notary_name: "Maître Dupont",
+  notary_email: "notaire@example.com",
+  notary_phone: null,
+  building_name: "Résidence Les Érables",
+  building_address: "Rue des Érables 1, 1000 Bruxelles",
+  unit_number: "12B",
+  unit_floor: "2",
+  unit_area: 85,
+  ordinary_charges_quota: 100,
+  extraordinary_charges_quota: 50,
+  owner_balance: -4200.5,
+  arrears_amount: 4200.5,
+  monthly_provision_amount: 150,
+  total_balance: -4200.5,
+  approved_works_unpaid: 0,
+  additional_data: {},
+  pdf_file_path: null,
+  created_at: "2026-01-10T09:00:00Z",
+  updated_at: "2026-01-15T09:00:00Z",
+  is_overdue: true,
+  is_expired: false,
+  days_since_request: 12,
+};
+
+const LISTE_ETATS_DATES = {
+  data: [ETAT_DATE_LOT_12B],
+  page: 1,
+  per_page: 20,
+  total: 1,
+};
+
+const STATS_ETATS_DATES = {
+  total_requests: 1,
+  requested_count: 1,
+  in_progress_count: 0,
+  generated_count: 0,
+  delivered_count: 0,
+  expired_count: 0,
+  overdue_count: 1,
+  average_processing_days: 12,
+};
+
+/**
+ * Une relance de paiement.
+ *
+ * Même défaut de forme que les états datés, mais inversé : `/payment-reminders`
+ * renvoie un TABLEAU NU (`reminders: PaymentReminder[]`), pas `{data: [...]}`.
+ * Servir la forme `{data: [LIGNE], ...}` fait planter `reminders.filter(...)`
+ * dans le `$derived` de `PaymentReminderList` (`reminders` reçoit un objet, pas
+ * un tableau) — la page ne rendait alors aucun tableau, faussement au vert.
+ */
+const RAPPEL_JEAN_DUPONT = {
+  id: "55555555-5555-5555-5555-555555555555",
+  organization_id: "22222222-2222-2222-2222-222222222222",
+  expense_id: "66666666-6666-6666-6666-666666666666",
+  owner_id: "77777777-7777-7777-7777-777777777777",
+  owner_name: "Jean Dupont",
+  owner_email: "jean.dupont@example.com",
+  level: "FirstReminder",
+  status: "Pending",
+  amount_owed: 500,
+  penalty_amount: 25,
+  total_amount: 525,
+  due_date: "2026-01-01",
+  days_overdue: 20,
+  delivery_method: "Email",
+  sent_date: "2026-01-05",
+  opened_date: null,
+  pdf_path: null,
+  tracking_number: null,
+  notes: null,
+  created_at: "2026-01-05T09:00:00Z",
+  updated_at: "2026-01-05T09:00:00Z",
+};
+
+const LISTE_PAYMENT_REMINDERS = [RAPPEL_JEAN_DUPONT];
+
+const STATS_PAYMENT_REMINDERS = {
+  total_owed: 500,
+  total_penalties: 25,
+  reminder_counts: [{ level: "FirstReminder", count: 1 }],
+  status_counts: [{ status: "Pending", count: 1 }],
+};
+
+/**
  * Les pages visitées, et le nombre de tableaux qu'on EXIGE d'y trouver.
  *
  * Le compte attendu est la vérification d'aveuglement, et elle n'est pas
  * théorique : trois des sept pages d'origine ne rendaient aucun tableau sous
  * un stub vide, si bien que la règle y passait au vert sans rien examiner.
  *
- * **Deux pages manquent volontairement.** `/payment-reminders/` et
- * `/etats-dates/` ont besoin d'une réponse plus précise qu'une ligne
- * générique — la première ne rend aucun tableau, la seconde lève deux erreurs
- * de page. Les couvrir demande de décrire leur DTO, ce qui est un travail à
- * part ; il est noté sur #866 plutôt que masqué par un vert.
+ * `fixtures` porte une ou plusieurs réponses ciblées, posées APRÈS le
+ * fourre-tout du socle (cf. `repond`). `/etats-dates/` et `/payment-reminders/`
+ * en ont chacune besoin de DEUX — liste et stats — sans quoi la page plante
+ * avant d'atteindre son tableau (cf. commentaires des fixtures ci-dessus).
+ * C'est précisément le travail que le commentaire précédent de ce fichier
+ * notait comme manquant plutôt que de le masquer par un vert.
  */
 const PAGES: {
   role: Role;
   chemin: string;
-  donnees?: RegExp;
+  fixtures?: { motif: RegExp; corps: unknown }[];
   tableaux: number;
 }[] = [
   {
     role: "accountant",
     chemin: "/budgets/",
-    donnees: /\/api\/v1\/budgets/,
+    fixtures: [
+      {
+        motif: /\/api\/v1\/budgets/,
+        corps: {
+          data: [LIGNE],
+          items: [LIGNE],
+          total: 1,
+          page: 1,
+          per_page: 20,
+        },
+      },
+    ],
     tableaux: 1,
   },
   { role: "syndic", chemin: "/journal-entries/", tableaux: 1 },
   { role: "superadmin", chemin: "/admin/acps/", tableaux: 1 },
   { role: "superadmin", chemin: "/admin/users/", tableaux: 1 },
   { role: "superadmin", chemin: "/admin/organizations/", tableaux: 1 },
+  {
+    // Colonnes : reference, buildingUnit, notary, refDate, balance, status,
+    // delay, actions — le pire cas cité par la story #866 (9 colonnes mesurées
+    // à l'origine, 8 après le nettoyage des faux positifs).
+    role: "syndic",
+    chemin: "/etats-dates/",
+    fixtures: [
+      // La regex de la liste ne doit PAS matcher `/etats-dates/stats` : elle
+      // exige un `?` ou une fin de chaîne juste après `etats-dates`.
+      { motif: /\/api\/v1\/etats-dates(\?|$)/, corps: LISTE_ETATS_DATES },
+      { motif: /\/api\/v1\/etats-dates\/stats/, corps: STATS_ETATS_DATES },
+    ],
+    tableaux: 1,
+  },
+  {
+    // Colonnes : level, owner, amount, penalties, daysOverdue, status,
+    // sentDate — huit colonnes dans la mesure d'origine.
+    role: "syndic",
+    chemin: "/payment-reminders/",
+    fixtures: [
+      {
+        motif: /\/api\/v1\/payment-reminders$/,
+        corps: LISTE_PAYMENT_REMINDERS,
+      },
+      {
+        motif: /\/api\/v1\/payment-reminders\/stats/,
+        corps: STATS_PAYMENT_REMINDERS,
+      },
+    ],
+    tableaux: 1,
+  },
 ];
 
-for (const { role, chemin, donnees, tableaux } of PAGES) {
+for (const { role, chemin, fixtures, tableaux } of PAGES) {
   test(`@edge ${chemin} — aucun tableau coupé en silence`, async ({ page }) => {
     await ouvreEnTantQue(page, role, chemin);
     await repond(page, /\/api\/v1\/buildings/, DEUX_IMMEUBLES);
-    if (donnees) {
-      await repond(page, donnees, {
-        data: [LIGNE],
-        items: [LIGNE],
-        total: 1,
-        page: 1,
-        per_page: 20,
-      });
+    if (fixtures && fixtures.length > 0) {
+      for (const { motif, corps } of fixtures) {
+        await repond(page, motif, corps);
+      }
       await page.reload();
       await page.waitForSelector("[data-testid='tabbar']");
     }
@@ -154,9 +302,82 @@ for (const { role, chemin, donnees, tableaux } of PAGES) {
   });
 }
 
-test("@edge le détecteur voit bien un tableau coupé", async ({ page }) => {
-  // Sans ce contrôle, la règle ci-dessus passerait au vert sur une page sans
-  // tableau, ou si la remontée d'ancêtres ne trouvait jamais de conteneur.
+/**
+ * @security — un état daté est un document opposable (Art. 3.87 §3 CC), pas
+ * une liste anonyme : ce que la règle générale ci-dessus vérifie en abstrait
+ * (« un conteneur défile »), ce test le vérifie sur la donnée concrète que le
+ * découpage silencieux ferait disparaître — le solde d'un lot nommé.
+ *
+ * Avant #866, un syndic consultant l'état daté du lot 12B sur son téléphone ne
+ * voyait pas sa colonne « Solde » : pas de barre, pas d'ombre, aucun signe
+ * qu'une dette de 4 200,50 € existait derrière le bord de l'écran.
+ */
+test("@security /etats-dates/ — le solde du lot 12B n'est pas coupé en silence", async ({
+  page,
+}) => {
+  await ouvreEnTantQue(page, "syndic", "/etats-dates/");
+  await repond(page, /\/api\/v1\/buildings/, DEUX_IMMEUBLES);
+  await repond(page, /\/api\/v1\/etats-dates(\?|$)/, LISTE_ETATS_DATES);
+  await repond(page, /\/api\/v1\/etats-dates\/stats/, STATS_ETATS_DATES);
+  await page.reload();
+  await page.waitForSelector("[data-testid='tabbar']");
+
+  const ligne = page.getByTestId("etat-date-row").first();
+  await expect(ligne).toBeVisible();
+
+  // 5ᵉ colonne du `<thead>` : reference(0), buildingUnit(1), notary(2),
+  // refDate(3), balance(4). C'est elle qui portait la dette coupée.
+  const celluleSolde = ligne.locator("td").nth(4);
+  await expect(celluleSolde).toContainText("200");
+
+  const verdict = await page.evaluate(() => {
+    const rangee = document.querySelector("[data-testid='etat-date-row']");
+    const table = rangee?.closest("table");
+    const conteneur = table?.parentElement;
+    if (!table || !conteneur) return null;
+    return {
+      tableTientEntier: conteneur.clientWidth >= table.scrollWidth,
+      defile: /auto|scroll/.test(getComputedStyle(conteneur).overflowX),
+      atteignable: conteneur.hasAttribute("tabindex"),
+    };
+  });
+
+  expect(
+    verdict,
+    "La ligne du lot 12B ou son conteneur sont introuvables : ce témoin ne " +
+      "peut rien garantir sur sa dette.",
+  ).not.toBeNull();
+
+  if (!verdict!.tableTientEntier) {
+    expect(
+      verdict!.defile,
+      "Le tableau déborde et son conteneur ne défile pas : le solde du " +
+        "lot 12B (colonne « Solde ») peut être coupé sans aucun signe.",
+    ).toBe(true);
+    expect(
+      verdict!.atteignable,
+      "Le conteneur défile mais n'a pas de `tabindex` : au clavier, le " +
+        "solde du lot 12B reste hors de portée.",
+    ).toBe(true);
+  }
+});
+
+/**
+ * @negative — étant donné un `overflow-hidden` réintroduit sur un tableau,
+ * la suite doit échouer.
+ *
+ * On ne le simule pas en éditant un composant en direct (ce serait fragile et
+ * dupliquerait six fois le même montage) : on le simule au niveau où vit la
+ * règle elle-même — la détection d'ancêtre défilant. Sans ce contrôle, la
+ * règle des tests `@edge` ci-dessus passerait au vert sur une page sans
+ * tableau, ou si la remontée d'ancêtres ne trouvait jamais de conteneur ; elle
+ * passerait AUSSI au vert si elle confondait un `overflow:hidden` avec un
+ * conteneur défilant. C'est ce second cas — la régression exacte de #866 —
+ * que ce test garde rouge.
+ */
+test("@negative un `overflow-hidden` réintroduit sur un tableau est détecté comme une coupe", async ({
+  page,
+}) => {
   await ouvreEnTantQue(page, "accountant", "/budgets/");
 
   const detecte = await page.evaluate(() => {
@@ -188,6 +409,7 @@ test("@edge le détecteur voit bien un tableau coupé", async ({ page }) => {
   ).toBe(true);
   expect(
     detecte.defile,
-    "Un conteneur en `overflow:hidden` a été lu comme défilant.",
+    "Un conteneur en `overflow:hidden` a été lu comme défilant : la suite " +
+      "ne détecterait pas la régression de #866 si elle était réintroduite.",
   ).toBe(false);
 });

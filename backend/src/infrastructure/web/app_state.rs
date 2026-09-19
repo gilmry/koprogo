@@ -1,26 +1,28 @@
 use crate::application::ports::mqtt_energy_port::MqttEnergyPort;
 use crate::application::use_cases::boinc_use_cases::BoincUseCases;
 use crate::application::use_cases::consent_use_cases::ConsentUseCases;
+use crate::application::use_cases::module_registry_use_cases::ModuleRegistryUseCases;
 use crate::application::use_cases::{
     AccountUseCases, AchievementUseCases, AcpUseCases, AgSessionUseCases, AgeRequestUseCases,
     AuditLogUseCases, AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases,
-    BoardMemberUseCases, BudgetUseCases, BuildingUseCases, CallForFundsUseCases, ChallengeUseCases,
-    ChargeDistributionUseCases, ContractorEvaluationUseCases, ContractorReportUseCases,
-    ConvocationUseCases, DashboardUseCases, DocumentUseCases, EnergyBillUploadUseCases,
-    EnergyCampaignUseCases, EtatDateUseCases, ExpenseUseCases, FinancialReportUseCases,
-    GamificationStatsUseCases, GdprArt30UseCases, GdprUseCases, IndividualMemberUseCases,
-    IoTUseCases, JournalEntryUseCases, LinkyUseCases, LocalExchangeUseCases, MagicLinkUseCases,
-    MandateUseCases, MeetingUseCases, NoticeUseCases, NotificationUseCases, OrganizationUseCases,
-    OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases, PaymentReminderUseCases,
-    PaymentUseCases, PcnUseCases, PollUseCases, PortfolioUseCases, QuoteUseCases,
-    ResolutionUseCases, ResourceBookingUseCases, RoleDelegationUseCases, SecurityIncidentUseCases,
-    ServiceProviderUseCases, SharedObjectUseCases, SkillUseCases, StatsUseCases,
-    SyndicResponseUseCases, TechnicalInspectionUseCases, TechnicalSpecUseCases, TicketUseCases,
-    TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, UserUseCases, WorkReportUseCases,
+    BoardMemberUseCases, BudgetUseCases, BuildingUseCases, CallForFundsUseCases, CdcUseCases,
+    ChallengeUseCases, ChargeDistributionUseCases, ContractorEvaluationUseCases,
+    ContractorReportUseCases, ConvocationUseCases, DashboardUseCases, DocumentUseCases,
+    EnergyBillUploadUseCases, EnergyCampaignUseCases, EtatDateUseCases, ExpenseUseCases,
+    FinancialReportUseCases, GamificationStatsUseCases, GdprArt30UseCases, GdprUseCases,
+    IndividualMemberUseCases, IoTUseCases, JournalEntryUseCases, LienNotaireUseCases,
+    LinkyUseCases, LocalExchangeUseCases, MagicLinkUseCases, MandateUseCases, MeetingUseCases,
+    NoticeUseCases, NotificationUseCases, OrganizationUseCases, OwnerContributionUseCases,
+    OwnerUseCases, PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, PcnUseCases,
+    PollUseCases, PortfolioUseCases, QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases,
+    RoleDelegationUseCases, SecurityIncidentUseCases, ServiceProviderUseCases,
+    SharedObjectUseCases, SkillUseCases, StatsUseCases, SyndicResponseUseCases,
+    TechnicalInspectionUseCases, TechnicalSpecUseCases, TicketUseCases, TwoFactorUseCases,
+    UnitOwnerUseCases, UnitUseCases, UserUseCases, WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::database::repositories::{
-    PostgresSyndicResponseRepository, PostgresTicketRepository,
+    PostgresModuleRegistry, PostgresSyndicResponseRepository, PostgresTicketRepository,
 };
 use crate::infrastructure::email::EmailService;
 use crate::infrastructure::pool::DbPool;
@@ -29,6 +31,8 @@ use std::sync::Arc;
 pub struct AppState {
     pub account_use_cases: Arc<AccountUseCases>,
     pub acp_use_cases: Arc<AcpUseCases>,
+    /// Registre de modules par ACP — Story 5.1 (#585), ADR-0015.
+    pub module_registry_use_cases: Arc<ModuleRegistryUseCases>,
     pub audit_log_use_cases: Arc<AuditLogUseCases>,
     pub auth_use_cases: Arc<AuthUseCases>,
     pub building_use_cases: Arc<BuildingUseCases>,
@@ -70,6 +74,7 @@ pub struct AppState {
     pub linky_use_cases: Arc<LinkyUseCases>,
     pub board_member_use_cases: Arc<BoardMemberUseCases>,
     pub board_decision_use_cases: Arc<BoardDecisionUseCases>,
+    pub cdc_use_cases: Arc<CdcUseCases>,
     pub board_dashboard_use_cases: Arc<BoardDashboardUseCases>,
     pub dashboard_use_cases: Arc<DashboardUseCases>,
     pub financial_report_use_cases: Arc<FinancialReportUseCases>,
@@ -95,6 +100,9 @@ pub struct AppState {
     pub user_use_cases: Arc<UserUseCases>,
     /// Story 3.2 — generic MagicLink (public-access tokens for contractors / tiers).
     pub magic_link_use_cases: Arc<MagicLinkUseCases>,
+    /// #845 / ADR 0051 — notary link (signed, renewable, revocable access to
+    /// a single état daté via `GET /etats-dates/reference/{reference_number}`).
+    pub lien_notaire_use_cases: Arc<LienNotaireUseCases>,
     /// Story 3.4 — Mandate (delegation to external professionals: notaire,
     /// avocat, AMO, architecte, BET, gardien) with bounded validity.
     pub mandate_use_cases: Arc<MandateUseCases>,
@@ -159,6 +167,7 @@ impl AppState {
         linky_use_cases: LinkyUseCases,
         board_member_use_cases: BoardMemberUseCases,
         board_decision_use_cases: BoardDecisionUseCases,
+        cdc_use_cases: CdcUseCases,
         board_dashboard_use_cases: BoardDashboardUseCases,
         dashboard_use_cases: DashboardUseCases,
         financial_report_use_cases: FinancialReportUseCases,
@@ -182,6 +191,7 @@ impl AppState {
         boinc_use_cases: BoincUseCases,
         user_use_cases: UserUseCases,
         magic_link_use_cases: MagicLinkUseCases,
+        lien_notaire_use_cases: LienNotaireUseCases,
         mandate_use_cases: MandateUseCases,
         role_delegation_use_cases: RoleDelegationUseCases,
         syndic_response_use_cases: SyndicResponseUseCases<
@@ -191,9 +201,20 @@ impl AppState {
         technical_spec_use_cases: TechnicalSpecUseCases,
         contractor_evaluation_use_cases: ContractorEvaluationUseCases,
     ) -> Self {
+        // Construit ICI plutôt qu'ajouté à la signature : `new()` est
+        // positionnelle et appelée par plusieurs harnais de test. Un
+        // paramètre de plus les aurait tous cassés d'un coup, pour une
+        // dépendance qu'on sait déjà dériver de `pool` et `acp_use_cases`.
+        let acp_use_cases = Arc::new(acp_use_cases);
+        let module_registry_use_cases = Arc::new(ModuleRegistryUseCases::new(
+            Arc::new(PostgresModuleRegistry::new(pool.clone())),
+            acp_use_cases.clone(),
+        ));
+
         Self {
             account_use_cases: Arc::new(account_use_cases),
-            acp_use_cases: Arc::new(acp_use_cases),
+            acp_use_cases,
+            module_registry_use_cases,
             audit_log_use_cases: Arc::new(audit_log_use_cases),
             auth_use_cases: Arc::new(auth_use_cases),
             building_use_cases: Arc::new(building_use_cases),
@@ -235,6 +256,7 @@ impl AppState {
             linky_use_cases: Arc::new(linky_use_cases),
             board_member_use_cases: Arc::new(board_member_use_cases),
             board_decision_use_cases: Arc::new(board_decision_use_cases),
+            cdc_use_cases: Arc::new(cdc_use_cases),
             board_dashboard_use_cases: Arc::new(board_dashboard_use_cases),
             dashboard_use_cases: Arc::new(dashboard_use_cases),
             financial_report_use_cases: Arc::new(financial_report_use_cases),
@@ -258,6 +280,7 @@ impl AppState {
             boinc_use_cases: Arc::new(boinc_use_cases),
             user_use_cases: Arc::new(user_use_cases),
             magic_link_use_cases: Arc::new(magic_link_use_cases),
+            lien_notaire_use_cases: Arc::new(lien_notaire_use_cases),
             mandate_use_cases: Arc::new(mandate_use_cases),
             role_delegation_use_cases: Arc::new(role_delegation_use_cases),
             syndic_response_use_cases: Arc::new(syndic_response_use_cases),

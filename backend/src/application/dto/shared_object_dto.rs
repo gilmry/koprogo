@@ -20,6 +20,16 @@ pub struct CreateSharedObjectDto {
     pub usage_instructions: Option<String>,
 }
 
+/// DTO for deleting a shared object.
+///
+/// `reason` est ignoré quand le propriétaire supprime sa propre annonce, mais
+/// devient obligatoire pour une suppression par modération (syndic /
+/// `community.moderator` non propriétaire) — Story 5.3 (#587), INV-4.
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct DeleteSharedObjectDto {
+    pub reason: Option<String>,
+}
+
 /// DTO for updating a shared object
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateSharedObjectDto {

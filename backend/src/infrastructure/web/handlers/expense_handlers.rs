@@ -470,7 +470,7 @@ pub async fn mark_expense_overdue(
     match state.expense_use_cases.mark_as_overdue(*id).await {
         Ok(expense) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid,
+                AuditEventType::ExpenseMarkedOverdue,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -511,7 +511,7 @@ pub async fn cancel_expense(
     match state.expense_use_cases.cancel_expense(*id).await {
         Ok(expense) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid,
+                AuditEventType::ExpenseCancelled,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -552,7 +552,7 @@ pub async fn reactivate_expense(
     match state.expense_use_cases.reactivate_expense(*id).await {
         Ok(expense) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid,
+                AuditEventType::ExpenseReactivated,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -593,7 +593,7 @@ pub async fn unpay_expense(
     match state.expense_use_cases.unpay_expense(*id).await {
         Ok(expense) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid,
+                AuditEventType::ExpenseUnpaid,
                 Some(user.user_id),
                 user.organization_id,
             )

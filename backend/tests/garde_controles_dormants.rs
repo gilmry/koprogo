@@ -36,11 +36,13 @@ use std::path::Path;
 /// demande de justifier, dans le commit, pourquoi une garantie neuve n'est
 /// appliquée nulle part.
 const DORMANTS_AU_2026_09_08: &[&str] = &[
-    "assert_single_voting_representative",
     "can_access_building",
     "can_add_building",
     "can_add_user",
-    "can_moderate_community",
+    // `can_moderate_community` retiré le 2026-09-16 : il est désormais
+    // APPELÉ en production. La garde le dit elle-même — « retirez-les de
+    // DORMANTS ». Un contrôle qui se réveille sort de la liste, sinon la
+    // liste cesse de dire ce qu'elle prétend.
     "can_process_data",
     "can_refund",
     "can_send_marketing",

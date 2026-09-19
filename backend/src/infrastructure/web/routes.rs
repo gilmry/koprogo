@@ -44,6 +44,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_acp)
             .service(update_acp)
             .service(archive_acp)
+            // Registre de modules par ACP (Story 5.1 #585, ADR-0015).
+            // Trois segments : aucun risque de capture par `/acps/{id}`.
+            .service(list_acp_modules)
+            .service(enable_acp_module)
+            .service(disable_acp_module)
             // Portfolios (Story 2.1 — Slice 2 Refonte UX multi-rôle, ADR-0011)
             .service(create_portfolio)
             .service(list_portfolios)
@@ -107,6 +112,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_owner_ownership_history)
             .service(transfer_ownership)
             .service(get_total_ownership_percentage)
+            .service(designate_voting_representative)
             .service(export_ownership_contract_pdf) // PDF Export (Issue #47)
             // Expenses
             .service(create_expense)
@@ -155,6 +161,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(list_building_convocations)
             .service(list_organization_convocations)
             .service(list_convocation_recipients)
+            .service(list_eligible_convocation_recipients) // GET /buildings/{id}/eligible-convocation-recipients (#780 verrou 1)
             .service(get_convocation_tracking_summary)
             .service(mark_recipient_email_opened)
             .service(update_recipient_attendance)
@@ -425,6 +432,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(add_notes)
             .service(complete_decision)
             .service(get_decision_stats)
+            // CdC — alertes + élection (Story 4.7 / #582)
+            .service(create_cdc_alert)
+            .service(list_cdc_alerts_for_meeting)
+            .service(elect_cdc_members)
             // Documents
             .service(upload_document)
             .service(list_documents)
@@ -473,6 +484,9 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(list_expired)
             .service(get_stats)
             .service(get_by_reference_number)
+            .service(issue_notary_link) // POST /etats-dates/{id}/notary-link (#845)
+            .service(renew_notary_link) // PUT /etats-dates/{id}/notary-link/renew (#845)
+            .service(revoke_notary_link) // DELETE /etats-dates/{id}/notary-link (#845)
             .service(list_etats_dates_by_unit)
             .service(list_etats_dates_by_building)
             .service(get_etat_date)
@@ -713,10 +727,12 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(delete_contractor_report) // DELETE /contractor-reports/{id}
             .service(get_contractor_report) // GET /contractor-reports/{id} — LAST (parameterized)
             // Generic MagicLinks (Story 3.2 — FR6 INV-13 INV-17)
-            // POST /magic-links : syndic/superadmin issues a link
-            // GET  /c/{token}   : PUBLIC (no auth) — validate + consume + resolve scope
+            // POST /magic-links       : syndic/superadmin issues a link
+            // GET  /c/{token}         : PUBLIC (no auth) — validate + consume + resolve scope
+            // POST /c/{token}/respond : PUBLIC (no auth) — write action (#835, ContractorReport)
             .service(issue_magic_link)
             .service(consume_magic_link)
+            .service(respond_magic_link)
             // Mandates (Story 3.4 — FR7 INV-14)
             // POST   /mandates              : syndic/superadmin issues a mandate
             // GET    /mandates?subject=<u>  : list active mandates for a subject

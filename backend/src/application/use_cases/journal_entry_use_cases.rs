@@ -15,6 +15,7 @@
 //
 // Use cases for manual journal entry creation and retrieval
 
+use crate::application::error::AppError;
 use crate::application::ports::journal_entry_repository::JournalEntryRepository;
 use crate::domain::entities::journal_entry::{JournalEntry, JournalEntryLine};
 use chrono::{DateTime, Utc};
@@ -59,18 +60,32 @@ impl JournalEntryUseCases {
     /// Limite connue : une ACP à plusieurs immeubles (Art. 3.84) peut avoir des
     /// écritures qui ne se rattachent à aucun bloc. Elles ne sont pas encore
     /// saisissables par cette voie ; il faudra désigner l'ACP directement.
-    async fn resoudre_lacp(&self, building_id: Option<Uuid>) -> Result<Uuid, String> {
+    ///
+    /// #762 : le résultat porte sa catégorie dans le TYPE (`AppError`), pas
+    /// dans un motif à chercher dans le message. Une saisie sans immeuble et
+    /// un immeuble inexistant sont tous deux des erreurs d'entrée client,
+    /// mais de nature différente (`Validation` : rien n'a été désigné ;
+    /// `NotFound` : ce qui a été désigné n'existe pas) — la distinction ne
+    /// se lit plus a posteriori dans le texte, elle est faite une fois ici.
+    /// Seul le câblage manquant (`building_repository` absent, une erreur de
+    /// configuration et non de saisie) reste `Internal`.
+    async fn resoudre_lacp(&self, building_id: Option<Uuid>) -> Result<Uuid, AppError> {
         let building_id = building_id.ok_or_else(|| {
-            "Impossible de déterminer l'ACP : une écriture manuelle doit désigner un immeuble"
-                .to_string()
+            AppError::Validation(
+                "Impossible de déterminer l'ACP : une écriture manuelle doit désigner un immeuble"
+                    .to_string(),
+            )
         })?;
         let Some(building_repo) = &self.building_repository else {
-            return Err("Impossible de déterminer l'ACP : dépôt d'immeubles non câblé".to_string());
+            return Err(AppError::Internal(
+                "Impossible de déterminer l'ACP : dépôt d'immeubles non câblé".to_string(),
+            ));
         };
         let building = building_repo
             .find_by_id(building_id)
-            .await?
-            .ok_or_else(|| "Immeuble introuvable".to_string())?;
+            .await
+            .map_err(AppError::from)?
+            .ok_or_else(|| AppError::NotFound("Immeuble introuvable".to_string()))?;
         Ok(building.acp_id)
     }
 
@@ -97,20 +112,26 @@ impl JournalEntryUseCases {
         description: Option<String>,
         document_ref: Option<String>,
         lines: Vec<(String, Decimal, Decimal, String)>, // (account_code, debit, credit, line_description)
-    ) -> Result<JournalEntry, String> {
+    ) -> Result<JournalEntry, AppError> {
+        // #762 : chaque refus est un `AppError::Validation` — une erreur de
+        // saisie typée, pas une String que le gestionnaire HTTP devrait
+        // ensuite reclasser en devinant sur son contenu.
+        //
         // Validate journal type if provided (inspired by Noalyss journal types)
         if let Some(ref jtype) = journal_type {
             if !["ACH", "VEN", "FIN", "ODS"].contains(&jtype.as_str()) {
-                return Err(format!(
+                return Err(AppError::Validation(format!(
                     "Invalid journal type: {}. Must be one of: ACH (Purchases), VEN (Sales), FIN (Financial), ODS (Miscellaneous)",
                     jtype
-                ));
+                )));
             }
         }
 
         // Validate that we have at least 2 lines (double-entry principle)
         if lines.len() < 2 {
-            return Err("Journal entry must have at least 2 lines (debit and credit)".to_string());
+            return Err(AppError::Validation(
+                "Journal entry must have at least 2 lines (debit and credit)".to_string(),
+            ));
         }
 
         // Calculate totals and validate balance (Noalyss principle)
@@ -118,10 +139,10 @@ impl JournalEntryUseCases {
         let total_credit: Decimal = lines.iter().map(|(_, _, credit, _)| *credit).sum();
 
         if (total_debit - total_credit).abs() > dec!(0.01) {
-            return Err(format!(
+            return Err(AppError::Validation(format!(
                 "Journal entry is unbalanced: debits={:.2} credits={:.2}. Debits must equal credits.",
                 total_debit, total_credit
-            ));
+            )));
         }
 
         // Create journal entry ID
@@ -167,9 +188,18 @@ impl JournalEntryUseCases {
         };
 
         // Save to repository
+        //
+        // #762 @security : le dépôt (Postgres) renvoie encore `Result<_,
+        // String>` — hors du périmètre borné de cette story, qui porte sur
+        // le CLASSEMENT dans le gestionnaire, pas sur la migration complète
+        // du port (#555). Mais on ne relit pas ce message pour le classer :
+        // `AppError::from(String)` le range en `Internal`, qu'`error_response`
+        // masque avant de répondre au client (jamais de nom de contrainte
+        // SQL ni de table renvoyé tel quel).
         self.journal_entry_repo
             .create_manual_entry(&journal_entry, &journal_lines)
-            .await?;
+            .await
+            .map_err(AppError::from)?;
 
         Ok(journal_entry)
     }
@@ -276,6 +306,12 @@ mod tests {
     struct MockJournalEntryRepository {
         entries: Mutex<HashMap<Uuid, JournalEntry>>,
         lines: Mutex<HashMap<Uuid, Vec<JournalEntryLine>>>,
+        /// #762 @security : simule un dépôt (Postgres) qui échoue à
+        /// l'écriture avec un message brut de contrainte SQL — le genre de
+        /// message que ce dépôt renvoie réellement aujourd'hui (voir
+        /// `journal_entry_repository_impl.rs::create_manual_entry`,
+        /// `format!("Failed to insert journal entry: {}", e)`).
+        echoue_a_lecriture_comme_la_base: bool,
     }
 
     impl MockJournalEntryRepository {
@@ -283,6 +319,16 @@ mod tests {
             Self {
                 entries: Mutex::new(HashMap::new()),
                 lines: Mutex::new(HashMap::new()),
+                echoue_a_lecriture_comme_la_base: false,
+            }
+        }
+
+        /// #762 @security : un dépôt qui échoue comme Postgres échoue —
+        /// avec un message qui nomme une contrainte et une table.
+        fn qui_echoue_comme_la_base() -> Self {
+            Self {
+                echoue_a_lecriture_comme_la_base: true,
+                ..Self::new()
             }
         }
     }
@@ -403,6 +449,12 @@ mod tests {
             entry: &JournalEntry,
             entry_lines: &[JournalEntryLine],
         ) -> Result<(), String> {
+            if self.echoue_a_lecriture_comme_la_base {
+                return Err("Failed to insert journal entry: insert or update on table \
+                     \"journal_entry_lines\" violates foreign key constraint \
+                     \"fk_account\""
+                    .to_string());
+            }
             let mut entries = self.entries.lock().unwrap();
             entries.insert(entry.id, entry.clone());
             let mut lines = self.lines.lock().unwrap();
@@ -607,8 +659,12 @@ mod tests {
         );
     }
 
-    /// Une écriture qui ne désigne pas d'immeuble ne dit pas dans quels livres
-    /// elle s'inscrit. On refuse, plutôt que d'écrire au hasard.
+    /// @negative — Issue #762, cas constaté le 2026-09-04 : une écriture qui
+    /// ne désigne pas d'immeuble ne dit pas dans quels livres elle s'inscrit.
+    /// Le refus, en français (« Impossible de déterminer l'ACP… »), ne
+    /// correspondait à aucun motif anglais cherché par le gestionnaire HTTP
+    /// et ressortait en 500. Il est maintenant typé `AppError::Validation` :
+    /// sa langue n'a plus d'incidence sur le code retourné.
     #[tokio::test]
     async fn test_pas_decriture_sans_livres_identifiables() {
         let uc = make_use_cases(MockJournalEntryRepository::new());
@@ -626,9 +682,13 @@ mod tests {
             .await
             .expect_err("doit refuser");
 
+        // #762 : la catégorie de l'erreur (400, saisie incomplète) tient au
+        // TYPE `AppError::Validation`, pas à un mot cherché dans le message.
+        // Le message reste utile pour l'humain ; ce n'est plus sur lui que
+        // le gestionnaire HTTP s'appuie pour choisir le code.
         assert!(
-            erreur.contains("ACP"),
-            "le refus doit nommer ce qui manque : {erreur}"
+            matches!(erreur, AppError::Validation(ref msg) if msg.contains("ACP")),
+            "le refus doit être une erreur de VALIDATION nommant ce qui manque : {erreur:?}"
         );
     }
 
@@ -656,9 +716,11 @@ mod tests {
             .await
             .expect_err("doit refuser");
 
+        // #762 : même remarque — le TYPE dit déjà « validation », le message
+        // ne sert plus qu'à l'humain qui lit la réponse.
         assert!(
-            erreur.contains("unbalanced"),
-            "…c'est le déséquilibre qui doit être signalé, pas l'ACP : {erreur}"
+            matches!(erreur, AppError::Validation(ref msg) if msg.contains("unbalanced")),
+            "…c'est le déséquilibre qui doit être signalé, pas l'ACP : {erreur:?}"
         );
     }
 
@@ -691,6 +753,9 @@ mod tests {
         assert_eq!(entry.lines.len(), 2);
     }
 
+    /// @happy — Issue #762 : le chemin nominal d'une erreur applicative
+    /// typée. Le déséquilibre remonte en `AppError::Validation`, la variante
+    /// que le futur gestionnaire HTTP traduira en 400 sans lire le message.
     #[tokio::test]
     async fn test_create_manual_entry_fail_unbalanced() {
         let repo = MockJournalEntryRepository::new();
@@ -726,9 +791,14 @@ mod tests {
 
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err.contains("unbalanced"));
-        assert!(err.contains("debits=1000.00"));
-        assert!(err.contains("credits=800.00"));
+        // #762 : le déséquilibre est une erreur de VALIDATION typée — plus
+        // une String que le gestionnaire HTTP devrait reclasser en devinant
+        // sur "unbalanced".
+        assert!(matches!(err, AppError::Validation(_)), "{err:?}");
+        let msg = err.to_string();
+        assert!(msg.contains("unbalanced"));
+        assert!(msg.contains("debits=1000.00"));
+        assert!(msg.contains("credits=800.00"));
     }
 
     #[tokio::test]
@@ -751,13 +821,21 @@ mod tests {
 
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err.contains("Invalid journal type: INVALID"));
-        assert!(err.contains("ACH"));
-        assert!(err.contains("VEN"));
-        assert!(err.contains("FIN"));
-        assert!(err.contains("ODS"));
+        // #762 : type de journal invalide → VALIDATION typée, jamais Internal.
+        assert!(matches!(err, AppError::Validation(_)), "{err:?}");
+        let msg = err.to_string();
+        assert!(msg.contains("Invalid journal type: INVALID"));
+        assert!(msg.contains("ACH"));
+        assert!(msg.contains("VEN"));
+        assert!(msg.contains("FIN"));
+        assert!(msg.contains("ODS"));
     }
 
+    /// @edge — Issue #762 : avant cette story, ce cas n'était même pas dans
+    /// la liste de motifs `.contains()` reconnue par le gestionnaire HTTP —
+    /// il tombait en 500 par défaut, sans qu'on l'ait jamais remarqué. Le
+    /// TYPE (`AppError::Validation`) suffit désormais, sans qu'il ait fallu
+    /// l'y ajouter nommément : c'est tout le point d'une erreur typée.
     #[tokio::test]
     async fn test_create_manual_entry_fail_less_than_2_lines() {
         let repo = MockJournalEntryRepository::new();
@@ -784,7 +862,9 @@ mod tests {
             .await;
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("must have at least 2 lines"));
+        let err = result.unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)), "{err:?}");
+        assert!(err.to_string().contains("must have at least 2 lines"));
     }
 
     #[tokio::test]
@@ -853,5 +933,47 @@ mod tests {
         assert!(result
             .unwrap_err()
             .contains("Cannot delete auto-generated journal entries"));
+    }
+
+    /// @security — Issue #762 : classer par sous-chaîne (`foreign key`,
+    /// `violates`) suppose qu'on LIT le message brut de la base — donc qu'on
+    /// est à un `?` près de le renvoyer tel quel au client. Un échec de
+    /// dépôt (contrainte SQL, table interne) doit devenir `AppError::Internal`,
+    /// que `AppError::error_response()` masque avant de répondre («
+    /// Internal server error », voir application/error.rs) — jamais une
+    /// variante qui affiche son contenu tel quel (`Validation`, `Conflict`,
+    /// `NotFound`), ce qui exposerait le nom de la contrainte et de la table.
+    #[tokio::test]
+    async fn negative_762_echec_de_depot_ne_devient_pas_une_validation_qui_exposerait_le_message_brut(
+    ) {
+        let uc = make_use_cases(MockJournalEntryRepository::qui_echoue_comme_la_base());
+        let org_id = Uuid::new_v4();
+
+        let erreur = uc
+            .create_manual_entry(
+                org_id,
+                Some(Uuid::new_v4()),
+                Some("ACH".to_string()),
+                Utc::now(),
+                Some("Test échec dépôt".to_string()),
+                None,
+                balanced_lines(),
+            )
+            .await
+            .expect_err("le dépôt doit échouer");
+
+        assert!(
+            matches!(erreur, AppError::Internal(_)),
+            "un échec de dépôt (base, contrainte SQL) reste interne — jamais \
+             une catégorie déduite du contenu de son message : {erreur:?}"
+        );
+        assert!(
+            !matches!(
+                erreur,
+                AppError::Validation(_) | AppError::Conflict(_) | AppError::NotFound(_)
+            ),
+            "ces variantes affichent leur contenu tel quel au client : le \
+             message brut de la base y fuirait : {erreur:?}"
+        );
     }
 }

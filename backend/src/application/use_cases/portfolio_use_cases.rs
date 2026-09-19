@@ -451,6 +451,18 @@ mod tests {
             async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, String>;
             async fn find_by_email(&self, email: &str) -> Result<Option<User>, String>;
             async fn find_all(&self) -> Result<Vec<User>, String>;
+            async fn find_page(
+                &self,
+                recherche: Option<String>,
+                role: Option<String>,
+                limit: i64,
+                offset: i64,
+            ) -> Result<Vec<User>, String>;
+            async fn count_matching(
+                &self,
+                recherche: Option<String>,
+                role: Option<String>,
+            ) -> Result<i64, String>;
             async fn find_by_organization(&self, org_id: Uuid) -> Result<Vec<User>, String>;
             async fn update(&self, user: &User) -> Result<User, String>;
             async fn update_password(&self, id: Uuid, password_hash: &str) -> Result<bool, String>;

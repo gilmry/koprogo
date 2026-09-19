@@ -180,11 +180,18 @@ jobs:
             --test garde_ordre_des_routes \
             --test garde_harnais_executes \
             --test garde_identite_sans_decision \
+            --test garde_audit_des_transitions \
+            --test garde_documentation_personas \
+            --test garde_identite_jetee \
+            --test garde_enum_contre_contrainte \
+            --test garde_versions_de_migration \
+            --test garde_colonnes_declarees \
             --test garde_paniques_en_production \
             --test garde_perimetre_wbs \
             --test garde_schema_mort \
             --test garde_taxonomie_bdd \
-            --test garde_taxonomie_des_tests
+            --test garde_taxonomie_des_tests \
+            --test garde_skips_justifies
 
   test-bdd:
     name: BDD Tests
@@ -278,6 +285,9 @@ jobs:
             --test bdd_operations --test bdd_community \
             --test bdd_acp --test bdd_building_conformity \
             --test bdd_list_buildings_role_based --test bdd_meeting_complete \
+            --test bdd_meeting_hybrid_quorum \
+            --test bdd_cdc_alert --test bdd_community_accountant_forbidden \
+            --test bdd_resolution_auto_evaluation \
             --test bdd_portfolio --test bdd_validate_before_compute \
             --test bdd_voting_right --test bdd_iot
 
@@ -442,6 +452,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      # ── Libérer le disque AVANT la suite d'intégration ───────────────────
+      #
+      # Le 2026-09-19, le job est tombé en `exit 101` après avoir passé TOUTES
+      # les cibles exécutées. La cause n'était pas un test :
+      #
+      #   ##[warning]You are running out of disk space.
+      #   Free space left: 0 MB
+      #   FATAL: could not write init file        (postgres)
+      #
+      # Soixante-six binaires de test en `debug`, plus l'image postgres et le
+      # cache cargo, saturent le disque du runner. L'échec arrive donc APRÈS
+      # des dizaines de tests verts, ce qui le fait passer pour une régression
+      # alors que c'est une panne de place.
+      #
+      # On retire des outillages préinstallés qu'aucun job de ce dépôt
+      # n'utilise. Mesuré avant/après : le journal doit montrer le gain, sinon
+      # l'étape est une décoration.
+      - name: Libérer de la place sur le runner
+        run: |
+          set -euo pipefail
+          echo "avant :"
+          df -h / | tail -1
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android \
+                      /usr/local/share/boost "${AGENT_TOOLSDIRECTORY:-}" || true
+          echo "après :"
+          df -h / | tail -1
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
@@ -494,7 +531,8 @@ jobs:
           cargo test --no-fail-fast \
             --test e2e --test e2e_ag_sessions --test e2e_buildings \
             --test e2e_convocations --test e2e_gdpr --test e2e_payments \
-            --test e2e_api_keys
+            --test e2e_api_keys --test e2e_stats_owner_dues \
+            --test e2e_concurrency_limit
           # Lot 2 — 13 harnais supplémentaires, 130 tests, mesurés verts le
           # 2026-08-26. Aucun n'avait jamais été exécuté, ni en CI ni en local.
           # Leur première exécution a mis au jour deux défauts produit :

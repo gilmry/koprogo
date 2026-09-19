@@ -4,6 +4,10 @@
   import { _ } from "../lib/i18n";
   import { formatDate } from "../lib/utils/date.utils";
   import { api } from "../lib/api";
+  import {
+    chercherUtilisateurs,
+    TAILLE_PAGE_UTILISATEURS,
+  } from "../lib/api/utilisateurs-recherche";
   import { toast } from "../stores/toast";
   import { authStore } from "../stores/auth";
   import type { User } from "../lib/types";
@@ -40,6 +44,11 @@
   let error = "";
   let searchTerm = "";
   let roleFilter = "all";
+  /** Le total CORRESPONDANT aux filtres courants, rendu par le serveur. */
+  let totalFiltre = 0;
+  /** `true` s'il existe des utilisateurs au-delà de la page affichée. */
+  let listeIncomplete = false;
+  let minuterieRecherche: ReturnType<typeof setTimeout> | undefined;
   let showFormModal = false;
   let showConfirmDialog = false;
   let selectedUser: User | null = null;
@@ -54,13 +63,23 @@
     try {
       loading = true;
       error = "";
-      const response = await api.get<{ data: BackendUser[] }>(
-        "/users?per_page=1000",
-      );
+      // Recherche ET filtre de rôle sont portés par le SERVEUR.
+      //
+      // Cet écran demandait `?per_page=1000` à une route qui ignorait le
+      // paramètre : il recevait les 4 120 lignes de la recette, soit
+      // 2 399 187 octets, puis filtrait dans le navigateur. À 375 px, deux
+      // specs de la campagne du 2026-09-18 dépassaient les 30 s dessus
+      // (#953).
+      const page = await chercherUtilisateurs<BackendUser>(searchTerm, {
+        role: roleFilter,
+        taille: TAILLE_PAGE_UTILISATEURS,
+      });
 
-      users = response.data.map((backendUser) =>
+      users = page.elements.map((backendUser) =>
         mapUserFromBackend(backendUser),
       );
+      totalFiltre = page.total;
+      listeIncomplete = page.incomplete;
     } catch (e) {
       error = e instanceof Error ? e.message : $_("admin.users.loadError");
       console.error("Error loading users:", e);
@@ -69,16 +88,23 @@
     }
   }
 
-  $: filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.last_name.toLowerCase().includes(searchTerm.toLowerCase());
+  // Le serveur a déjà appliqué les deux filtres. Les rejouer ici cacherait
+  // toute divergence entre ce qu'il comprend et ce que l'écran croit
+  // demander — et c'est précisément cette divergence qui a permis à
+  // `?per_page=1000` d'être ignoré pendant des mois sans que rien ne le
+  // signale.
+  $: filteredUsers = users;
 
-    const matchesRole = roleFilter === "all" || user.role === roleFilter;
+  /** Relance la recherche après une pause de frappe. */
+  function surSaisieRecherche(): void {
+    clearTimeout(minuterieRecherche);
+    minuterieRecherche = setTimeout(() => void loadUsers(), 250);
+  }
 
-    return matchesSearch && matchesRole;
-  });
+  /** Le rôle n'est pas une frappe : on relance sans attendre. */
+  function surChangementDeRole(): void {
+    void loadUsers();
+  }
 
   function getRoleBadgeClass(role: string): string {
     const classes = {
@@ -197,8 +223,9 @@
         >
         <input
           id="user-search"
-          type="text"
+          type="search"
           bind:value={searchTerm}
+          on:input={surSaisieRecherche}
           placeholder={$_("admin.users.searchPlaceholder")}
           data-testid="user-search-input"
           class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -212,6 +239,7 @@
         <select
           id="user-role-filter"
           bind:value={roleFilter}
+          on:change={surChangementDeRole}
           data-testid="user-role-filter"
           class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         >
@@ -465,6 +493,23 @@
               ? " (" + $_("common.filtered") + ")"
               : ""}
           </p>
+          <!--
+            Dire qu'il en reste, plutôt que de laisser croire que c'est tout.
+            Le total vient du SERVEUR et porte les mêmes deux filtres que la
+            page : sans lui, un écran de cinquante lignes sur quatre mille
+            passe pour complet, et c'est précisément le défaut que la
+            pagination était censée corriger.
+          -->
+          {#if listeIncomplete}
+            <p class="mt-1 text-sm text-gray-600" data-testid="user-list-reste">
+              {$_("admin.users.usersMore", {
+                values: {
+                  affichees: filteredUsers.length,
+                  total: totalFiltre,
+                },
+              })}
+            </p>
+          {/if}
         </div>
       {/if}
     {/if}

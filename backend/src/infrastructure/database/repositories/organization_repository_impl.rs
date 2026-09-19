@@ -2,6 +2,7 @@ use crate::application::ports::OrganizationRepository;
 use crate::domain::entities::{Organization, SubscriptionPlan};
 use crate::infrastructure::pool::DbPool;
 use async_trait::async_trait;
+use sqlx::Row;
 use uuid::Uuid;
 
 pub struct PostgresOrganizationRepository {
@@ -115,6 +116,92 @@ impl OrganizationRepository for PostgresOrganizationRepository {
             }
             None => Ok(None),
         }
+    }
+
+    /// Requêtes vérifiées à l'EXÉCUTION, contrairement au reste du fichier.
+    ///
+    /// Les sept autres emploient `sqlx::query!`, qui exige le cache `.sqlx`.
+    /// Ce cache est suivi par git et `sqlx prepare` le vide avant de le
+    /// refaire : le régénérer pour deux requêtes ferait porter à ce
+    /// chantier le risque de perdre les entrées de tout le monde. Le
+    /// filtre est couvert par les tests d'intégration, qui exécutent le SQL
+    /// pour de vrai. Même raison que `module_registry_impl.rs`.
+    async fn find_page(
+        &self,
+        recherche: Option<String>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Organization>, String> {
+        // `ILIKE` sur le nom, le slug ET le courriel de contact : un
+        // administrateur cherche l'un des trois sans savoir lequel il a sous
+        // les yeux.
+        //
+        // Le courriel a été ajouté en alignant `OrganizationList`, dont le
+        // filtre CLIENT le cherchait déjà. S'en tenir au nom et au slug
+        // aurait rétréci en silence ce qu'un administrateur peut trouver —
+        // le genre de perte qu'un remplacement « équivalent » fait passer
+        // inaperçue.
+        //
+        // Le motif est LIÉ, jamais concaténé : une recherche est une donnée
+        // d'utilisateur.
+        let motif = recherche
+            .map(|r| r.trim().to_string())
+            .filter(|r| !r.is_empty())
+            .map(|r| format!("%{r}%"));
+
+        let rows = sqlx::query(
+            "SELECT id, name, slug, contact_email, contact_phone, subscription_plan, \
+                    max_buildings, max_users, is_active, created_at, updated_at \
+             FROM organizations \
+             WHERE $1::text IS NULL OR name ILIKE $1 OR slug ILIKE $1 OR contact_email ILIKE $1 \
+             ORDER BY name ASC \
+             LIMIT $2 OFFSET $3",
+        )
+        .bind(motif.as_deref())
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to fetch organizations page: {e}"))?;
+
+        Ok(rows
+            .into_iter()
+            .filter_map(|row| {
+                let plan: String = row.get("subscription_plan");
+                let subscription_plan = plan.parse::<SubscriptionPlan>().ok()?;
+                Some(Organization {
+                    id: row.get("id"),
+                    name: row.get("name"),
+                    slug: row.get("slug"),
+                    contact_email: row.get("contact_email"),
+                    contact_phone: row.get("contact_phone"),
+                    subscription_plan,
+                    max_buildings: row.get("max_buildings"),
+                    max_users: row.get("max_users"),
+                    is_active: row.get("is_active"),
+                    created_at: row.get("created_at"),
+                    updated_at: row.get("updated_at"),
+                })
+            })
+            .collect())
+    }
+
+    async fn count_matching(&self, recherche: Option<String>) -> Result<i64, String> {
+        let motif = recherche
+            .map(|r| r.trim().to_string())
+            .filter(|r| !r.is_empty())
+            .map(|r| format!("%{r}%"));
+
+        let total: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM organizations \
+             WHERE $1::text IS NULL OR name ILIKE $1 OR slug ILIKE $1 OR contact_email ILIKE $1",
+        )
+        .bind(motif.as_deref())
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to count organizations: {e}"))?;
+
+        Ok(total)
     }
 
     async fn find_all(&self) -> Result<Vec<Organization>, String> {

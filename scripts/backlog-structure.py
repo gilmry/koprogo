@@ -200,8 +200,14 @@ CAPACITES = [
     # qu'on en a rempli un voisin.
     ("C7.1", "T3", "La recette peut se connecter et s'exécuter", "Must",
      {872: "L", 870: "S", 696: "M", 877: "S", 880: "M"}),
+    # #913 ajoutée le 2026-09-15, sur décision du PO : relire une promotion
+    # à l'ENVERS de la pyramide — la vitrine d'abord, les unitaires en
+    # dernier. Elle est de C7.2 parce qu'elle dit comment la taxonomie se
+    # CONSOMME, là où #427 dit comment elle se mesure. Prolonge #875 : la
+    # profondeur atteinte remplace le compteur binaire « a-t-il ouvert le
+    # diff ».
     ("C7.2", "T3", "La taxonomie des tests est la gate de release", "Should",
-     {427: "L"}),
+     {427: "L", 913: "S"}),
     # Story habilitante (Sprint 0). La Méthode Foyer : « sans elle, aucune
     # autre story ne peut boucler » — et sur un projet existant, « c'est une
     # story de correction structurelle dédiée qui BLOQUE le reste du backlog

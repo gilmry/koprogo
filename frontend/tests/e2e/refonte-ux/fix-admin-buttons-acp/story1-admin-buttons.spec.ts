@@ -9,6 +9,7 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 import { confirmerSiDemande } from "../../helpers/amorcage";
+import { attendreFinDuGardeDeRoute } from "../../helpers/garde-de-route";
 import { loginAsAdmin, loginAsSyndicWithExpense } from "../../helpers/auth";
 
 import { API_BASE } from "../../helpers/adresses";
@@ -43,6 +44,7 @@ test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
   }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/organizations");
+    await attendreFinDuGardeDeRoute(page);
     const createBtn = page.getByTestId("create-organization-button");
     await expect(createBtn).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -67,6 +69,7 @@ test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
   test('@happy clic "Nouvel utilisateur" ouvre la modale', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/users");
+    await attendreFinDuGardeDeRoute(page);
     const createBtn = page.getByTestId("create-user-button");
     await expect(createBtn).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -81,6 +84,7 @@ test.describe("Story 1 (#697) — boutons admin morts (Svelte 5)", () => {
   }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/organizations");
+    await attendreFinDuGardeDeRoute(page);
 
     const btn = page.getByTestId("create-organization-button");
     await expect(btn).toBeVisible({ timeout: 15_000 });

@@ -50,8 +50,9 @@ impl ResourceBookingUseCases {
             // modules, alors que la création d'ANNONCE par un syndic fonctionne
             // — parce qu'un avis, lui, émane de la copropriété.
             //
-            // Le vrai manque est ailleurs : le syndic agissant pour le compte
-            // de l'ACP, prévu par la story #588 et non implémenté.
+            // Le syndic agissant pour le compte de l'ACP (AG, prestataires)
+            // ne passe pas par ce chemin : voir `dto.on_behalf_of_acp` et
+            // `create_booking_on_behalf_of_acp()` (story #588).
             .ok_or_else(|| crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES.to_string())
     }
 
@@ -64,13 +65,26 @@ impl ResourceBookingUseCases {
     /// 4. Enrich response with owner name
     ///
     /// # Authorization
-    /// - Any authenticated owner can create bookings
+    /// - Any authenticated owner can create bookings for themselves.
+    /// - Story #588 (INV-5/FR27) — `dto.on_behalf_of_acp = true` books on
+    ///   behalf of the ACP (AG, prestataires) instead of personally. Reserved
+    ///   to `is_syndic` callers (403 otherwise) and requires `dto.motif`
+    ///   (422 otherwise, via `ReservationOnBehalfError`). A syndic without an
+    ///   owner profile who omits `on_behalf_of_acp` still hits the ordinary
+    ///   `resolve_owner()` refusal below (INV-5 "no personal participation").
     pub async fn create_booking(
         &self,
         user_id: Uuid,
         organization_id: Uuid,
+        is_syndic: bool,
         dto: CreateResourceBookingDto,
     ) -> Result<ResourceBookingResponseDto, String> {
+        if dto.on_behalf_of_acp {
+            return self
+                .create_booking_on_behalf_of_acp(user_id, is_syndic, dto)
+                .await;
+        }
+
         let owner = self.resolve_owner(user_id, organization_id).await?;
         let booked_by = owner.id;
         // Create booking entity (validates business rules in constructor)
@@ -112,6 +126,72 @@ impl ResourceBookingUseCases {
         let created = self.booking_repo.create(&booking).await?;
 
         // Enrich with owner name
+        self.enrich_booking_response(created).await
+    }
+
+    /// Story #588 (INV-5/FR27) — réservation syndic "pour le compte de l'ACP".
+    ///
+    /// Séparée de `create_booking()` pour ne pas mêler deux légitimités
+    /// différentes : celle d'un copropriétaire (fiche `Owner`) et celle d'un
+    /// syndic agissant ès qualités (pas de fiche `Owner`, motif obligatoire).
+    async fn create_booking_on_behalf_of_acp(
+        &self,
+        user_id: Uuid,
+        is_syndic: bool,
+        dto: CreateResourceBookingDto,
+    ) -> Result<ResourceBookingResponseDto, String> {
+        if !is_syndic {
+            return Err(crate::application::error::REFUS_ON_BEHALF_RESERVE_AUX_SYNDICS.to_string());
+        }
+
+        let motif = dto.motif.clone().unwrap_or_default();
+        let booking = ResourceBooking::new_on_behalf_of_acp(
+            dto.building_id,
+            dto.resource_type.clone(),
+            dto.resource_name.clone(),
+            user_id,
+            motif,
+            dto.start_time,
+            dto.end_time,
+            dto.notes.clone(),
+            dto.recurring_pattern.clone(),
+            dto.recurrence_end_date,
+            dto.max_duration_hours,
+            dto.max_advance_days,
+        )?;
+
+        let conflicts = self
+            .booking_repo
+            .find_conflicts(
+                dto.building_id,
+                dto.resource_type,
+                &dto.resource_name,
+                dto.start_time,
+                dto.end_time,
+                None,
+            )
+            .await?;
+
+        if !conflicts.is_empty() {
+            return Err(format!(
+                "Booking conflicts with {} existing booking(s) for this resource",
+                conflicts.len()
+            ));
+        }
+
+        let created = self.booking_repo.create(&booking).await?;
+
+        // AC @happy — "log spécifique" : distingue à l'audit une réservation
+        // pour le compte de l'ACP d'une réservation personnelle, sans devoir
+        // rouvrir la base pour le savoir.
+        log::info!(
+            "reservation_on_behalf_acp: syndic_user_id={} building_id={} resource=\"{}\" motif=\"{}\"",
+            user_id,
+            dto.building_id,
+            dto.resource_name,
+            created.motif.clone().unwrap_or_default(),
+        );
+
         self.enrich_booking_response(created).await
     }
 
@@ -254,7 +334,7 @@ impl ResourceBookingUseCases {
             .ok_or("Booking not found".to_string())?;
 
         // Authorization: Only booking owner can update
-        if booking.booked_by != owner.id {
+        if booking.booked_by != Some(owner.id) {
             return Err("Only the booking owner can update this booking".to_string());
         }
 
@@ -386,7 +466,7 @@ impl ResourceBookingUseCases {
             .ok_or("Booking not found".to_string())?;
 
         // Authorization: Only booking owner can delete
-        if booking.booked_by != owner.id {
+        if booking.booked_by != Some(owner.id) {
             return Err("Only the booking owner can delete this booking".to_string());
         }
 
@@ -428,18 +508,28 @@ impl ResourceBookingUseCases {
     }
 
     /// Helper: Enrich single booking with owner name
+    ///
+    /// Story #588 — une réservation `on_behalf_of_acp` n'a pas d'owner (le
+    /// syndic n'en a structurellement pas) : elle est étiquetée par un
+    /// libellé fixe plutôt que par une recherche d'owner qui échouerait
+    /// toujours.
     async fn enrich_booking_response(
         &self,
         booking: ResourceBooking,
     ) -> Result<ResourceBookingResponseDto, String> {
-        // Fetch owner to get full name
-        let owner = self
-            .owner_repo
-            .find_by_id(booking.booked_by)
-            .await?
-            .ok_or("Booking owner not found".to_string())?;
-
-        let booked_by_name = format!("{} {}", owner.first_name, owner.last_name);
+        let booked_by_name = if booking.on_behalf_of_acp {
+            "Syndic — pour le compte de l'ACP".to_string()
+        } else {
+            let owner_id = booking
+                .booked_by
+                .ok_or("Booking has neither an owner nor on_behalf_of_acp".to_string())?;
+            let owner = self
+                .owner_repo
+                .find_by_id(owner_id)
+                .await?
+                .ok_or("Booking owner not found".to_string())?;
+            format!("{} {}", owner.first_name, owner.last_name)
+        };
 
         Ok(ResourceBookingResponseDto::from_entity(
             booking,
@@ -550,7 +640,7 @@ mod tests {
             let map = self.bookings.lock().unwrap();
             Ok(map
                 .values()
-                .filter(|b| b.booked_by == user_id)
+                .filter(|b| b.booked_by == Some(user_id))
                 .cloned()
                 .collect())
         }
@@ -563,7 +653,7 @@ mod tests {
             let map = self.bookings.lock().unwrap();
             Ok(map
                 .values()
-                .filter(|b| b.booked_by == user_id && b.status == status)
+                .filter(|b| b.booked_by == Some(user_id) && b.status == status)
                 .cloned()
                 .collect())
         }
@@ -877,6 +967,8 @@ mod tests {
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         }
     }
 
@@ -887,7 +979,7 @@ mod tests {
         let (use_cases, user_id, org_id, building_id, _) = setup_use_cases();
         let dto = make_create_dto(building_id);
 
-        let result = use_cases.create_booking(user_id, org_id, dto).await;
+        let result = use_cases.create_booking(user_id, org_id, false, dto).await;
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.building_id, building_id);
@@ -902,12 +994,12 @@ mod tests {
 
         // First booking succeeds
         use_cases
-            .create_booking(user_id, org_id, dto.clone())
+            .create_booking(user_id, org_id, false, dto.clone())
             .await
             .unwrap();
 
         // Second booking for same resource and time range should fail
-        let result = use_cases.create_booking(user_id, org_id, dto).await;
+        let result = use_cases.create_booking(user_id, org_id, false, dto).await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("conflicts with"));
     }
@@ -918,7 +1010,7 @@ mod tests {
         let dto = make_create_dto(building_id);
 
         let created = use_cases
-            .create_booking(user_id, org_id, dto)
+            .create_booking(user_id, org_id, false, dto)
             .await
             .unwrap();
 
@@ -941,7 +1033,7 @@ mod tests {
         let dto = make_create_dto(building_id);
 
         let created = use_cases
-            .create_booking(user_id, org_id, dto)
+            .create_booking(user_id, org_id, false, dto)
             .await
             .unwrap();
 
@@ -957,7 +1049,7 @@ mod tests {
         let dto = make_create_dto(building_id);
 
         let created = use_cases
-            .create_booking(user_id, org_id, dto)
+            .create_booking(user_id, org_id, false, dto)
             .await
             .unwrap();
 
@@ -980,7 +1072,7 @@ mod tests {
         let dto = make_create_dto(building_id);
 
         let created = use_cases
-            .create_booking(user_id, org_id, dto)
+            .create_booking(user_id, org_id, false, dto)
             .await
             .unwrap();
 
@@ -998,7 +1090,7 @@ mod tests {
         let dto = make_create_dto(building_id);
 
         let created = use_cases
-            .create_booking(user_id, org_id, dto)
+            .create_booking(user_id, org_id, false, dto)
             .await
             .unwrap();
 
@@ -1024,11 +1116,11 @@ mod tests {
         dto2.resource_name = "Meeting Room B".to_string();
 
         use_cases
-            .create_booking(user_id, org_id, dto1)
+            .create_booking(user_id, org_id, false, dto1)
             .await
             .unwrap();
         use_cases
-            .create_booking(user_id, org_id, dto2)
+            .create_booking(user_id, org_id, false, dto2)
             .await
             .unwrap();
 
@@ -1050,13 +1142,93 @@ mod tests {
         let building_id = Uuid::new_v4();
         let dto = make_create_dto(building_id);
         let result = use_cases
-            .create_booking(Uuid::new_v4(), Uuid::new_v4(), dto)
+            .create_booking(Uuid::new_v4(), Uuid::new_v4(), false, dto)
             .await;
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
             crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES,
             "le refus doit être celui, nommé, opposé à qui n'est pas copropriétaire"
+        );
+    }
+
+    // ------------------------------------------------------------------------
+    // Story #588 (INV-5/FR27) — on_behalf_of_acp, taxonomie 4-cat
+    // ------------------------------------------------------------------------
+
+    fn make_on_behalf_dto(building_id: Uuid, motif: Option<&str>) -> CreateResourceBookingDto {
+        let mut dto = make_create_dto(building_id);
+        dto.on_behalf_of_acp = true;
+        dto.motif = motif.map(|m| m.to_string());
+        dto
+    }
+
+    #[tokio::test]
+    async fn happy_syndic_books_on_behalf_of_acp_with_motif() {
+        let (use_cases, user_id, org_id, building_id, _) = setup_use_cases();
+        let dto = make_on_behalf_dto(building_id, Some("AG annuelle"));
+
+        // La légitimité vient de `is_syndic = true` : ce user_id a bien une
+        // fiche Owner (créée par `setup_use_cases()`), mais le chemin
+        // on_behalf_of_acp ne la consulte jamais — la garde est le rôle, pas
+        // l'existence d'une fiche copropriétaire.
+        let result = use_cases.create_booking(user_id, org_id, true, dto).await;
+        assert!(result.is_ok(), "{:?}", result.err());
+        let response = result.unwrap();
+        assert!(response.on_behalf_of_acp);
+        assert_eq!(response.motif.as_deref(), Some("AG annuelle"));
+        assert_eq!(response.booked_by, None);
+        assert_eq!(response.booked_by_name, "Syndic — pour le compte de l'ACP");
+    }
+
+    #[tokio::test]
+    async fn negative_on_behalf_of_acp_without_motif_is_refused() {
+        let (use_cases, user_id, org_id, building_id, _) = setup_use_cases();
+        let dto = make_on_behalf_dto(building_id, None);
+
+        let result = use_cases.create_booking(user_id, org_id, true, dto).await;
+        assert_eq!(
+            result.unwrap_err(),
+            crate::domain::entities::ReservationOnBehalfError::MotifRequired.to_string()
+        );
+    }
+
+    #[tokio::test]
+    async fn security_non_syndic_cannot_set_on_behalf_of_acp() {
+        let (use_cases, user_id, org_id, building_id, _) = setup_use_cases();
+        let dto = make_on_behalf_dto(building_id, Some("AG annuelle"));
+
+        // is_syndic = false : ce user_id a pourtant une fiche Owner (créée
+        // par `setup_use_cases()`) — la garde ne doit pas dépendre de
+        // l'existence d'une fiche copropriétaire, mais du rôle applicatif.
+        let result = use_cases.create_booking(user_id, org_id, false, dto).await;
+        assert_eq!(
+            result.unwrap_err(),
+            crate::application::error::REFUS_ON_BEHALF_RESERVE_AUX_SYNDICS,
+        );
+    }
+
+    #[tokio::test]
+    async fn edge_syndic_without_owner_profile_and_on_behalf_of_acp_false_is_refused() {
+        // AC @edge — "Syndic réserve on_behalf_of_acp=false → 403" : sans
+        // fiche Owner, le chemin personnel reste refusé (INV-5). Ce n'est pas
+        // une régression à corriger : c'est précisément l'absence de
+        // participation personnelle que l'exception #588 vient nommer.
+        let booking_repo = Arc::new(MockBookingRepo::new());
+        let owner_repo = Arc::new(MockOwnerRepo::new()); // aucun owner enregistré
+        let use_cases = ResourceBookingUseCases::new(
+            booking_repo as Arc<dyn ResourceBookingRepository>,
+            owner_repo as Arc<dyn OwnerRepository>,
+        );
+        let building_id = Uuid::new_v4();
+        let dto = make_create_dto(building_id); // on_behalf_of_acp: false
+
+        let result = use_cases
+            .create_booking(Uuid::new_v4(), Uuid::new_v4(), true, dto)
+            .await;
+        assert_eq!(
+            result.unwrap_err(),
+            crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES,
         );
     }
 }

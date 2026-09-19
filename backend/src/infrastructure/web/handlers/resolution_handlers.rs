@@ -2,13 +2,26 @@ use crate::application::dto::{
     CastVoteRequest, ChangeVoteRequest, CloseVotingRequest, CreateResolutionRequest,
     ResolutionResponse, VoteResponse,
 };
+use crate::application::error::AppError;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::classification_erreurs::est_interdit;
 use crate::infrastructure::web::middleware::scope_guard::verify_acp_org_access;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
 // ==================== Resolution Endpoints ====================
+
+/// Clôturer un scrutin proclame une majorité opposable (Art. 3.87 §4 CC) :
+/// c'est un acte du syndic, jamais celui d'un copropriétaire qui vote.
+fn require_syndic_or_superadmin(user: &AuthenticatedUser) -> Result<(), AppError> {
+    match user.role.as_str() {
+        "syndic" | "superadmin" => Ok(()),
+        _ => Err(AppError::Forbidden(
+            "Seul le syndic peut clôturer le vote d'une résolution".to_string(),
+        )),
+    }
+}
 
 /// Vérifie que l'appelant a un mandat sur l'ACP dont relève une AG.
 ///
@@ -288,10 +301,10 @@ pub async fn delete_resolution(
                 Some(user.user_id),
                 Some(organization_id),
             )
-            .with_error(err.clone())
+            .with_error(err.to_string())
             .log();
 
-            HttpResponse::BadRequest().json(serde_json::json!({"error": err}))
+            err.error_response()
         }
     }
 }
@@ -328,6 +341,50 @@ pub async fn cast_vote(
         }
     };
 
+    // #850 — QUI vote est résolu depuis l'utilisateur authentifié, jamais
+    // repris tel quel du corps de la requête. `AuthenticatedUser` était
+    // présent dans cette signature depuis toujours, mais ne servait qu'à
+    // `require_organization()` et au journal d'audit : rien ne rapprochait
+    // son identité de `request.owner_id`. Même geste que #849
+    // (`poll_handlers.rs::cast_poll_vote`) : résoudre le copropriétaire, pas
+    // l'utilisateur.
+    let caller_owner_id = match state
+        .owner_use_cases
+        .find_owner_by_user_id(user.user_id)
+        .await
+    {
+        Ok(Some(owner)) => match Uuid::parse_str(&owner.id) {
+            Ok(id) => id,
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Identifiant de copropriétaire illisible : {}", e)
+                }));
+            }
+        },
+        Ok(None) => {
+            // Un utilisateur sans fiche de copropriétaire ne peut voter pour
+            // personne — ni pour lui-même (il n'a pas de lot), ni comme
+            // mandataire (aucune identité à opposer à `caller_owner_id`).
+            //
+            // Ceci ferme, pour l'instant, la question que #850 pose sans la
+            // trancher : le syndic doit-il pouvoir saisir des votes en séance ?
+            // Cette route ne le permet plus. Si l'usage l'exige, il faut une
+            // route dédiée, réservée au syndic, journalisée comme saisie pour
+            // compte de tiers et soumise à la limite des procurations — pas
+            // rouvrir celle-ci.
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Aucune fiche de copropriétaire n'est rattachée à ce compte : \
+                          voter à une assemblée est réservé aux copropriétaires.",
+                "kind": "owner_not_linked"
+            }));
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to resolve owner for user: {}", e)
+            }));
+        }
+    };
+
     match state
         .resolution_use_cases
         .cast_vote(
@@ -340,6 +397,8 @@ pub async fn cast_vote(
             // servir ressemblerait à un contrôle — c'est exactement ce que #850
             // reproche à cette route.
             request.proxy_owner_id,
+            request.auth_method,
+            caller_owner_id,
         )
         .await
     {
@@ -389,6 +448,33 @@ pub async fn cast_vote(
                     return crate::application::error::AppError::VotingRightSuspended { unit_id }
                         .error_response();
                 }
+            }
+
+            // Story 4.2 (#48) — `auth_method` absent (422) ou insuffisant pour
+            // le mode distanciel de l'AG (403). Même geste que
+            // VOTING_RIGHT_SUSPENDED ci-dessus : le préfixe posé côté cas
+            // d'usage (`application/error.rs::From<VoteAuthError> for String`)
+            // est reconnu ici pour reconstruire l'erreur typée.
+            if err == "VOTE_AUTH_METHOD_REQUIRED" {
+                return crate::application::error::AppError::VoteAuthMethodRequired
+                    .error_response();
+            }
+            if let Some(reste) = err.strip_prefix("VOTE_AUTH_INSUFFICIENT:") {
+                let mut parts = reste.splitn(2, ':');
+                if let (Some(mode), Some(auth_method)) = (parts.next(), parts.next()) {
+                    return crate::application::error::AppError::VoteAuthInsufficient {
+                        mode: mode.to_string(),
+                        auth_method: auth_method.to_string(),
+                    }
+                    .error_response();
+                }
+            }
+
+            // #850 — usurpation d'identité ou de lot : 403, pas 400. Le préfixe
+            // `FORBIDDEN` posé côté cas d'usage est reconnu par `est_interdit`
+            // (déjà le lexique bilingue partagé par les autres gestionnaires).
+            if est_interdit(&err) {
+                return HttpResponse::Forbidden().json(serde_json::json!({"error": err}));
             }
 
             HttpResponse::BadRequest().json(serde_json::json!({"error": err}))
@@ -540,6 +626,16 @@ pub async fn close_voting(
         }
     };
 
+    // Clôturer un vote proclame une majorité opposable (Art. 3.87 §4 CC) :
+    // c'est un geste du syndic, jamais d'un copropriétaire — même membre de
+    // la même organisation. Ce handler ne vérifiait ni le rôle ni le mandat
+    // sur l'AG : n'importe quel utilisateur authentifié de l'organisation
+    // pouvait clôturer la résolution de n'importe quelle AG qu'elle gère.
+    // Relevé en écrivant le parcours multi-rôle complet du cycle d'AG (#780).
+    if let Err(err) = require_syndic_or_superadmin(&user) {
+        return err.error_response();
+    }
+
     // Le dénominateur de la majorité est lu SUR L'IMMEUBLE, jamais reçu du
     // client.
     //
@@ -562,6 +658,9 @@ pub async fn close_voting(
                 "error": "Resolution not found"
             }));
         };
+        if let Some(refus) = verifier_mandat_sur_ag(&state, &user, resolution.meeting_id).await {
+            return refus;
+        }
         let Ok(Some(meeting)) = state
             .meeting_use_cases
             .get_meeting(resolution.meeting_id)

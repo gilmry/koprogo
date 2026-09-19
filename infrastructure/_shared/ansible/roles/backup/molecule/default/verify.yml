@@ -1,0 +1,62 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  vars:
+    koprogo_dir: /home/koprogo/koprogo
+  tasks:
+    # @happy — a real GPG keypair was generated for backup encryption.
+    - name: Check the backup GPG key exists
+      ansible.builtin.command: gpg --list-keys backup-test@koprogo.local
+      register: gpg_key_check
+      failed_when: false
+      changed_when: false
+
+    - name: Assert the backup GPG key was generated
+      ansible.builtin.assert:
+        that:
+          - gpg_key_check.rc == 0
+        fail_msg: "A.8.24/#40: no GPG key was generated for encrypted backups"
+
+    - name: Slurp the deployed backup script
+      ansible.builtin.slurp:
+        src: "{{ koprogo_dir }}/scripts/backup-encrypted.sh"
+      register: backup_script
+
+    - name: Assert the backup script actually encrypts with GPG (not a plaintext dump)
+      ansible.builtin.assert:
+        that:
+          - "'gpg --encrypt' in (backup_script.content | b64decode)"
+          - "'backup-test@koprogo.local' in (backup_script.content | b64decode)"
+        fail_msg: "A.12.3 backup: deployed script does not GPG-encrypt with the configured recipient"
+
+    - name: Check the daily backup cron job is scheduled
+      ansible.builtin.command: crontab -l -u root
+      register: root_crontab
+      changed_when: false
+
+    - name: Assert the daily encrypted backup cron job exists
+      ansible.builtin.assert:
+        that:
+          - "'backup-encrypted.sh' in root_crontab.stdout"
+        fail_msg: "A.12.3 backup: no cron job schedules the daily encrypted backup"
+
+    # @negative — documented, known gap (see docs/agent-activity/2026-09-14
+    # WP-E2 log): `s3cfg.j2` is an orphaned template, never deployed by any
+    # task, so `~/.s3cfg` never exists and `sync_to_s3()` in the deployed
+    # script silently no-ops. This assertion pins that *current* behavior so
+    # a future fix to wire up S3 config is a deliberate, visible change to
+    # this test — not a silent regression either way.
+    - name: Check that S3 config was NOT deployed (known gap, tracked not hidden)
+      ansible.builtin.stat:
+        path: /root/.s3cfg
+      register: s3cfg
+
+    - name: Assert current (gap) state — S3 sync has no credentials configured
+      ansible.builtin.assert:
+        that:
+          - not s3cfg.stat.exists
+        fail_msg: >-
+          /root/.s3cfg now exists — if S3 config wiring was added, update this
+          assertion (and the gap note in docs/agent-activity/2026-09-14-wp-e2-iac-tests.md)
+          rather than deleting it.

@@ -271,7 +271,8 @@ export async function seedBuildingWithUnitsViaPage(
   );
   if (!buildingRes.ok) {
     throw new Error(
-      `seedBuildingWithUnitsViaPage: POST /buildings -> ${buildingRes.status}`,
+      `seedBuildingWithUnitsViaPage: POST /buildings -> ` +
+        `${buildingRes.status} — ${JSON.stringify(buildingRes.data)}`,
     );
   }
   const buildingId = (buildingRes.data as { id: string }).id;
@@ -286,7 +287,13 @@ export async function seedBuildingWithUnitsViaPage(
     const unitRes = await api.post(
       "/units" as never,
       {
-        organization_id: organizationId,
+        // PAS de `organization_id` : le DTO d'entrée refuse les champs
+        // inconnus, et depuis #602 il attend `acp_id`, pas
+        // `organization_id`. Envoyer l'ancien champ rendait un 400
+        // « unknown field » — 8 échecs e2e le 2026-09-16.
+        //
+        // `building_id` suffit, comme dans `seedBuildingWithUnits`
+        // ci-dessus, qui n'avait pas été oublié lors de ce hotfix.
         building_id: buildingId,
         unit_number: `${i + 1}A`,
         floor: Math.floor(i / 2),
@@ -297,7 +304,8 @@ export async function seedBuildingWithUnitsViaPage(
     );
     if (!unitRes.ok) {
       throw new Error(
-        `seedBuildingWithUnitsViaPage: POST /units #${i + 1} -> ${unitRes.status}`,
+        `seedBuildingWithUnitsViaPage: POST /units #${i + 1} -> ` +
+          `${unitRes.status} — ${JSON.stringify(unitRes.data)}`,
       );
     }
     unitIds.push((unitRes.data as { id: string }).id);

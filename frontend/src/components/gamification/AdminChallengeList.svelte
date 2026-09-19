@@ -203,7 +203,7 @@
       <button
         onclick={() => (showForm = !showForm)}
         data-testid="challenge-create-btn"
-        class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700"
+        class="px-4 py-2 text-sm font-medium text-white bg-amber-700 rounded-md hover:bg-amber-800"
       >
         {showForm ? $_("common.close") : "+ " + $_("common.new")}
       </button>

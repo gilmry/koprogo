@@ -70,6 +70,42 @@ jobs:
           cd docs
           sphinx-build -b html -j auto . _build/html
 
+      # ── La vitrine, récupérée plutôt que rejouée ──────────────────────
+      #
+      # Les sept parcours sont enregistrés par `vitrine.yml`, qui monte la
+      # pile complète — postgres, backend, frontend construit. La rejouer
+      # ici doublerait ce montage et ferait dériver deux enregistrements.
+      #
+      # On prend donc le dernier artefact publié. `if_no_artifact_found:
+      # warn` : une documentation sans vitrine reste une documentation, et
+      # faire échouer la publication du site pour des vidéos manquantes
+      # serait donner à la preuve de valeur un pouvoir de verdict qu'elle ne
+      # doit pas avoir (#876).
+      # La vitrine vient de la branche `vitrine-publiee`, PAS d'un artefact.
+      #
+      # L'artefact `vitrine-feature-dev` a une rétention de sept jours (#963).
+      # La doc, elle, est permanente : la faire dépendre d'un objet qui
+      # s'efface revenait à garantir qu'elle perdrait sa première page au
+      # premier creux d'activité sur `feature/dev`.
+      #
+      # `vitrine-publiee` est une branche orpheline d'un seul commit, que
+      # `vitrine.yml` ré-écrit UNIQUEMENT quand la vitrine est complète. Elle
+      # porte donc toujours la dernière vitrine VALIDE, pas la dernière
+      # tentative. Un tournage partiel ne l'écrase pas.
+      #
+      # Pourquoi pas une release : la création de tag est en Tier 1 dans
+      # CRITICAL.md, réservée à une action humaine explicite, et la pose du
+      # tag de version est hors périmètre agent. Une branche ne touche ni
+      # tag ni release.
+      - name: Récupérer la dernière vitrine publiée
+        id: vitrine
+        continue-on-error: true
+        uses: actions/checkout@v7
+        with:
+          ref: vitrine-publiee
+          path: _vitrine
+          fetch-depth: 1
+
       - name: Combine documentation
         run: |
           # Create combined docs directory
@@ -82,6 +118,19 @@ jobs:
           # Copy Rust docs to /rust subdirectory
           mkdir -p _site/rust
           cp -r backend/target/doc/* _site/rust/
+
+          # La vitrine, si l'étape précédente l'a rapportée.
+          #
+          # Elle est AUTONOME : son `index.html` ne référence aucune
+          # ressource externe, et ses vidéos vivent à côté. Elle se pose donc
+          # telle quelle, sans retouche.
+          if [ -f _vitrine/index.html ]; then
+            mkdir -p _site/vitrine
+            cp -r _vitrine/* _site/vitrine/
+            echo "✅ vitrine publiée : $(du -sh _site/vitrine | cut -f1)"
+          else
+            echo "⚠️  aucune vitrine à publier — le site part sans elle"
+          fi
 
           # Create main index page
           cat > _site/index.html << 'EOF'
@@ -126,13 +175,65 @@ jobs:
                       color: #666;
                       margin-bottom: 0;
                   }
+                  /* La vitrine passe devant : c'est ce qu'on montre en
+                     premier pour faire comprendre un produit. Les guides
+                     viennent après, pour ceux qui ont déjà vu. */
+                  .vitrine-hero {
+                      display: block;
+                      text-decoration: none;
+                      color: inherit;
+                      background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+                      border-radius: 12px;
+                      padding: 2rem;
+                      margin: 2rem 0;
+                      transition: transform 0.2s, box-shadow 0.2s;
+                  }
+                  .vitrine-hero:hover {
+                      transform: translateY(-3px);
+                      box-shadow: 0 8px 24px rgba(30,58,95,0.3);
+                  }
+                  .vitrine-hero h2 {
+                      margin: 0.35rem 0 0.75rem;
+                      color: #ffffff;
+                      font-size: 1.6rem;
+                  }
+                  .vitrine-hero p {
+                      color: #dbe7f3;
+                      margin: 0 0 0.6rem;
+                      line-height: 1.55;
+                  }
+                  .vitrine-note {
+                      font-size: 0.92rem;
+                      color: #b9cde3 !important;
+                      margin-bottom: 0 !important;
+                  }
+                  .vitrine-kicker {
+                      display: inline-block;
+                      font-size: 0.78rem;
+                      letter-spacing: 0.09em;
+                      text-transform: uppercase;
+                      color: #90cdf4;
+                      font-weight: 700;
+                  }
               </style>
           </head>
           <body>
               <h1>📚 KoproGo Documentation</h1>
               <p>Bienvenue sur la documentation du projet KoproGo - Plateforme SaaS de gestion de copropriétés</p>
 
+              <a href="vitrine/index.html" class="vitrine-hero">
+                  <span class="vitrine-kicker">Commencez par ici</span>
+                  <h2>🎬 La vitrine — le produit en vidéo</h2>
+                  <p>Sept parcours narrés, un par rôle : le syndic, le copropriétaire,
+                     le comptable, l'administration, le conseil de copropriété, le
+                     prestataire et le modérateur.</p>
+                  <p class="vitrine-note">Chapitres horodatés — on saute à l'étape
+                     plutôt que de regarder le film. Chaque parcours est rejoué par le
+                     gate de tests : ce que vous voyez est ce qui passe.</p>
+              </a>
+
               <div class="docs-links">
+
                   <a href="docs/index.html" class="doc-card">
                       <h2>📖 Documentation Générale</h2>
                       <p>Architecture, guides de déploiement, roadmap et documentation complète du projet</p>
@@ -156,6 +257,29 @@ jobs:
           </body>
           </html>
           EOF
+
+          # ── La banniere ne doit jamais promettre une vitrine absente ─────
+          #
+          # Le telechargement est en `if_no_artifact_found: warn` : quand
+          # l'artefact a expire (retention 7 jours), l'etape passe au vert et
+          # le site part sans vitrine. La banniere, elle, est ecrite en dur
+          # par le heredoc ci-dessus. Sans ce retrait, la premiere page
+          # renverrait un 404 en silence, ce qui est precisement la
+          # degradation muette que le projet s'interdit.
+          if [ ! -f _site/vitrine/index.html ]; then
+            echo "::error::Vitrine absente : banniere retiree de la page d accueil. Relancer vitrine.yml sur feature/dev, puis cette publication."
+            grep -q 'class="vitrine-hero"' _site/index.html || {
+              echo "::error::Banniere introuvable dans index.html : le retrait ne peut pas etre verifie."
+              exit 1
+            }
+            sed -i '/<a href="vitrine\/index.html" class="vitrine-hero">/,/^ *<\/a>$/c\
+              <p style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:1rem;margin:2rem 0;">La vitrine est indisponible pour cette publication. Elle figure habituellement en tete de cette page.</p>' _site/index.html
+            grep -q 'class="vitrine-hero"' _site/index.html && {
+              echo "::error::Le retrait de la banniere a echoue : elle est toujours la."
+              exit 1
+            }
+            echo "Banniere retiree : aucun lien mort vers la vitrine."
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5

@@ -113,11 +113,28 @@ pub struct SendConvocationRequest {
     /// paraissait sans effet. Constaté en recette le 2026-09-06 (RN-10),
     /// premier des trois verrous qui empêchent une AG d'aboutir (#780).
     ///
-    /// Le champ est conservé pour l'écran de sélection à venir : convoquer
-    /// est un acte juridique, et le syndic doit pouvoir voir et choisir qui
-    /// reçoit. Voir #784.
+    /// `None` (champ absent, ancien client) : le serveur déduit tous les
+    /// copropriétaires actifs de l'immeuble. `Some(vec![])` (l'écran de
+    /// sélection rendu, tout décoché) : refusé explicitement, pas remplacé en
+    /// silence par le défaut — un renoncement délibéré n'est pas une absence
+    /// de choix. Voir `ConvocationUseCases::list_eligible_recipients`.
     #[serde(default)]
     pub recipient_owner_ids: Option<Vec<Uuid>>,
+}
+
+/// Un copropriétaire qu'une convocation toucherait, pour l'écran de
+/// sélection des destinataires (#780 verrou 1, #784).
+///
+/// Distinct de `ConvocationRecipientResponse` : celui-ci décrit un
+/// destinataire déjà rattaché à une convocation envoyée (tracking d'ouverture,
+/// de présence, de procuration). Celui-ci décrit un copropriétaire ÉLIGIBLE,
+/// avant tout envoi — la question posée est « qui pourrait recevoir ceci ? »,
+/// pas « qui l'a reçu ? ».
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
+pub struct EligibleRecipientResponse {
+    pub owner_id: Uuid,
+    pub full_name: String,
+    pub email: String,
 }
 
 #[derive(Debug, Serialize)]

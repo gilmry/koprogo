@@ -52,7 +52,7 @@ export interface IssuedMagicLink {
   token: string;
   /** ISO 8601 — date d'expiration. */
   expires_at: string;
-  /** "ticket" | "quote" | "invoice" | "contractor_evaluation". */
+  /** "ticket" | "quote" | "invoice" | "contractor_evaluation" | "contractor_report". */
   scope_kind: string;
   /** UUID de la ressource scopée. */
   scope_id: string;
@@ -68,6 +68,9 @@ export const MAGIC_LINK_SCOPE_KINDS = [
   "quote",
   "invoice",
   "contractor_evaluation",
+  // #835 — le rapport d'intervention rejoint le système générique (absorbe
+  // le second système de liens magiques qui existait en parallèle).
+  "contractor_report",
 ] as const;
 
 export type MagicLinkScopeKind = (typeof MAGIC_LINK_SCOPE_KINDS)[number];

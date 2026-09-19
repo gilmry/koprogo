@@ -100,6 +100,36 @@ fn fichiers_de_production(racine: &Path, trouves: &mut Vec<PathBuf>) {
     }
 }
 
+/// Les paniques CONCÉDÉES, avec leur raison — et leur nombre exact.
+///
+/// ── Pourquoi une liste, et pas un compteur qu'on monte ────────────────────
+///
+/// La fusion du 2026-09-15 a porté le total de 39 à 43. Monter le seuil aurait
+/// été le geste facile, et le mauvais : le nombre aurait cessé de dire
+/// « paniques que personne n'a jugées » pour dire « paniques qu'on a laissé
+/// passer ». C'est le troisième garde de la journée à recevoir ce traitement,
+/// après `garde_identite_sans_decision` et `garde_lecture`.
+///
+/// Une concession n'est PAS une dispense : elle nomme le fichier, son nombre,
+/// et pourquoi la panique y est acceptable. Si le fichier en gagne une de
+/// plus, la garde rougit — `saturating_sub` retire exactement ce qui est
+/// concédé, jamais plus.
+fn concessions(chemin_relatif: &str) -> usize {
+    match chemin_relatif {
+        // `reqwest::Client::builder().build()` ne peut échouer que si le
+        // backend TLS refuse de s'initialiser — un défaut de plateforme, pas
+        // une donnée d'entrée. Et `HmacSha256::new_from_slice` accepte une
+        // clé de N'IMPORTE quelle longueur : sa signature rend un `Result`
+        // que l'implémentation HMAC ne peut pas peupler d'erreur.
+        //
+        // Les rendre faillibles ferait remonter un `Result` jusqu'aux
+        // appelants pour un cas qui n'arrive pas, au prix d'un bruit qui, lui,
+        // masquerait les vraies erreurs.
+        "infrastructure/external/signature_provider_common.rs" => 3,
+        _ => 0,
+    }
+}
+
 fn compter() -> (usize, Vec<String>) {
     let racine = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut fichiers = Vec::new();
@@ -112,7 +142,13 @@ fn compter() -> (usize, Vec<String>) {
             continue;
         };
         let utile = hors_modules_de_test(&contenu);
-        let n = utile.matches(".unwrap()").count() + utile.matches(".expect(").count();
+        let relatif = chemin
+            .strip_prefix(&racine)
+            .unwrap_or(&chemin)
+            .display()
+            .to_string();
+        let brut = utile.matches(".unwrap()").count() + utile.matches(".expect(").count();
+        let n = brut.saturating_sub(concessions(&relatif));
         if n > 0 {
             total += n;
             details.push(format!(

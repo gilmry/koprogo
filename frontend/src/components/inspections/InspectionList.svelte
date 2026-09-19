@@ -308,7 +308,7 @@
       <div class="mt-3 flex gap-2">
         <button
           onclick={createInspection}
-          class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+          class="px-4 py-1.5 bg-green-700 text-white text-sm rounded hover:bg-green-800"
           data-testid="submit-inspection-button">{$_("common.create")}</button
         >
         <button
@@ -503,6 +503,13 @@
 </div>
 
 {#if selectedInspection}
+  <!--
+    #868 — `InspectionDetail` reste monté PAR-DESSUS cette liste, dont les
+    lignes gardent chacune leur propre bouton de suppression. Les deux
+    portaient `delete-inspection-button` : cibler cet ancre pendant qu'un
+    détail est ouvert atteignait la ligne ET le panneau. `InspectionDetail`
+    porte maintenant `inspection-detail-delete-button`.
+  -->
   <InspectionDetail
     isOpen={detailOpen}
     inspection={selectedInspection}

@@ -2,7 +2,7 @@
 feature: refonte-ux-multi-role-acp/phase-b-fe
 phase: index
 status: Draft 0.2 — Maury-grade
-date: 2026-06-09
+date: "2026-06-09"
 authors: [Claude Opus 4.7 (drafting), @gilmry (signature pending)]
 ---
 

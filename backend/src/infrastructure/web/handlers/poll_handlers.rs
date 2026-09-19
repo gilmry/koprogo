@@ -192,16 +192,48 @@ pub async fn update_poll(
 #[get("/polls")]
 pub async fn list_polls(
     state: web::Data<AppState>,
-    // `_auth_user` : cette route ne reçoit AUCUN identifiant de périmètre en
-    // chemin, et c'est le cas d'usage qui filtre. L'underscore dit ici que
-    // l'absence de garde est DÉLIBÉRÉE, et non oubliée.
-    //
-    // La distinction compte : #772 reproche aux routes de prendre l'identité
-    // sans s'en servir, parce que la revue les compte alors comme protégées.
-    // Un underscore commenté est l'inverse — il signale qu'on a regardé.
-    _auth_user: AuthenticatedUser,
+    auth_user: AuthenticatedUser,
     query: web::Query<ListPollsQuery>,
 ) -> HttpResponse {
+    // Cloisonnement (#882) : le commentaire précédent affirmait « c'est le cas
+    // d'usage qui filtre » — c'était FAUX. `list_polls_paginated` ne filtre
+    // que sur les paramètres fournis par le CLIENT, jamais sur l'organisation
+    // de l'appelant. Sans `building_id`, la route rendait TOUS les sondages de
+    // l'instance ; avec le `building_id` d'une autre ACP, ceux d'une
+    // copropriété tierce.
+    match &query.building_id {
+        Some(id_str) => {
+            let building_id = match Uuid::parse_str(id_str) {
+                Ok(id) => id,
+                Err(_) => {
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "error": "Invalid building_id format"
+                    }))
+                }
+            };
+            if let Err(err) = verify_building_org_access(
+                &auth_user,
+                building_id,
+                &state.building_use_cases,
+                &state.acp_use_cases,
+            )
+            .await
+            {
+                return err.error_response();
+            }
+        }
+        None => {
+            // Sans immeuble, la route parcourrait TOUS les sondages de
+            // l'instance : réservée au superadministrateur, comme les
+            // balayages IoT sans immeuble (#864).
+            if !auth_user.is_superadmin() {
+                return HttpResponse::Forbidden().json(serde_json::json!({
+                    "error": "building_id is required"
+                }));
+            }
+        }
+    }
+
     let page_request = PageRequest {
         page: query.page.unwrap_or(1),
         per_page: query.per_page.unwrap_or(10),
@@ -637,8 +669,14 @@ pub async fn cast_poll_vote(
             // Un utilisateur sans fiche de copropriétaire n'est pas un
             // copropriétaire : le dire, plutôt que de le laisser buter sur une
             // autorisation qui ne le nommera pas.
+            //
+            // Story 5.3 (#587), INV-4 — c'est ICI, avant tout appel à
+            // `cast_vote`, que le syndic pur (sans lot) est bloqué : voir la
+            // doc de `PollUseCases::cast_vote` pour pourquoi ce refus ne peut
+            // pas vivre dans le use case lui-même (double sens de `None`,
+            // partagé avec le vote anonyme du Scénario 8 `polls.feature`).
             return HttpResponse::Forbidden().json(serde_json::json!({
-                "error": "Aucune fiche de copropriétaire n'est rattachée à ce compte :                           le vote à une consultation est réservé aux copropriétaires.",
+                "error": crate::application::error::REFUS_VOTE_RESERVE_AUX_COPROPRIETAIRES,
                 "kind": "owner_not_linked"
             }));
         }

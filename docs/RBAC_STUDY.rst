@@ -646,7 +646,7 @@ References
 ==========
 
 - Matrice actuelle : ``docs/ROLE_PERMISSIONS_MATRIX.rst``
-- Multi-role support : ``docs/MULTI_ROLE_SUPPORT.md``
+- Multi-role support : ``docs/user-guides/MULTI_ROLE_SUPPORT.md``
 - Middleware auth : ``backend/src/infrastructure/web/mod.rs``
 - User roles : ``backend/src/domain/entities/user_role_assignment.rs``
 - Migration roles : ``backend/migrations/20250130000000_add_user_roles.sql``

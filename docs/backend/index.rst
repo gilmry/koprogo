@@ -184,8 +184,8 @@ Commandes Développement
    # Copier .env
    cp backend/.env.example backend/.env
 
-   # Démarrer PostgreSQL
-   make docker-up
+   # Démarrer la pile de développement
+   make up
 
    # Run migrations
    cd backend && sqlx migrate run
@@ -195,8 +195,7 @@ Commandes Développement
 .. code-block:: bash
 
    # Dev server avec auto-reload
-   make dev                    # backend uniquement
-   make dev-all                # backend + frontend + postgres
+   make dev                    # Traefik + backend + frontend, en hot reload
 
    # Build release
    cargo build --release

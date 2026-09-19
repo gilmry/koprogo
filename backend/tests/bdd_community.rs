@@ -22,9 +22,9 @@ use koprogo_api::application::use_cases::{
     NoticeUseCases, ResourceBookingUseCases, SharedObjectUseCases, SkillUseCases,
 };
 use koprogo_api::domain::entities::{
-    AchievementCategory, AchievementTier, ChallengeType, ExchangeType, ExpertiseLevel,
-    NoticeCategory, NoticeType, ObjectCondition, Owner, RecurringPattern, ResourceType,
-    SharedObjectCategory, SkillCategory,
+    AchievementCategory, AchievementTier, ChallengeType, ExchangeStatus, ExchangeType,
+    ExpertiseLevel, NoticeCategory, NoticeStatus, NoticeType, ObjectCondition, Owner,
+    RecurringPattern, ResourceType, SharedObjectCategory, SkillCategory,
 };
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresAchievementRepository, PostgresBuildingRepository,
@@ -939,7 +939,7 @@ async fn when_archive_notice(world: &mut CommunityWorld) {
     let notice_id = world.last_notice_id.unwrap();
     let uc = world.notice_use_cases.as_ref().unwrap().clone();
     let resp = uc
-        .archive_notice(notice_id, user_id, org_id, "syndic")
+        .archive_notice(notice_id, user_id, org_id, "syndic", None)
         .await
         .expect("archive");
     world.last_notice_response = Some(resp);
@@ -2446,7 +2446,7 @@ async fn when_delete_object(world: &mut CommunityWorld, name: String) {
     let org_id = world.org_id.unwrap();
     let object_id = world.last_object_id.unwrap();
     let uc = world.shared_object_use_cases.as_ref().unwrap().clone();
-    uc.delete_shared_object(object_id, user_id, org_id)
+    uc.delete_shared_object(object_id, user_id, org_id, "owner", None)
         .await
         .expect("delete");
 }
@@ -2642,10 +2642,12 @@ async fn when_create_booking(
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
-    match uc.create_booking(user_id, org_id, dto).await {
+    match uc.create_booking(user_id, org_id, false, dto).await {
         Ok(resp) => {
             world.last_booking_id = Some(resp.id);
             world.last_booking_response = Some(resp);
@@ -2696,11 +2698,13 @@ async fn given_booked_on_date(
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
     let resp = uc
-        .create_booking(user_id, org_id, dto)
+        .create_booking(user_id, org_id, false, dto)
         .await
         .expect("create booking");
     world.last_booking_id = Some(resp.id);
@@ -2744,10 +2748,12 @@ async fn when_try_book_conflict(
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
-    match uc.create_booking(user_id, org_id, dto).await {
+    match uc.create_booking(user_id, org_id, false, dto).await {
         Ok(resp) => {
             world.last_booking_response = Some(resp);
             world.last_booking_error = None;
@@ -2788,11 +2794,13 @@ async fn given_booked_simple(
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
     let resp = uc
-        .create_booking(user_id, org_id, dto)
+        .create_booking(user_id, org_id, false, dto)
         .await
         .expect("create");
     world.last_booking_id = Some(resp.id);
@@ -2831,10 +2839,12 @@ async fn when_book_adjacent(
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
-    match uc.create_booking(user_id, org_id, dto).await {
+    match uc.create_booking(user_id, org_id, false, dto).await {
         Ok(resp) => {
             world.last_booking_id = Some(resp.id);
             world.last_booking_response = Some(resp);
@@ -2877,11 +2887,13 @@ async fn create_pending_booking(world: &mut CommunityWorld) {
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
 
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
     let resp = uc
-        .create_booking(user_id, org_id, dto)
+        .create_booking(user_id, org_id, false, dto)
         .await
         .expect("create pending");
     world.last_booking_id = Some(resp.id);
@@ -2952,8 +2964,10 @@ async fn given_owner_has_bookings(world: &mut CommunityWorld, name: String, coun
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
-        uc.create_booking(user_id, org_id, dto)
+        uc.create_booking(user_id, org_id, false, dto)
             .await
             .expect("create");
     }
@@ -2981,9 +2995,11 @@ async fn given_active_and_cancelled(world: &mut CommunityWorld, active: usize, c
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
         let resp = uc
-            .create_booking(user_id, org_id, dto)
+            .create_booking(user_id, org_id, false, dto)
             .await
             .expect("create active");
         // Confirm booking, then backdate to be currently in progress
@@ -3011,9 +3027,11 @@ async fn given_active_and_cancelled(world: &mut CommunityWorld, active: usize, c
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
         let resp = uc
-            .create_booking(user_id, org_id, dto)
+            .create_booking(user_id, org_id, false, dto)
             .await
             .expect("create");
         uc.cancel_booking(resp.id, user_id, org_id)
@@ -3042,8 +3060,10 @@ async fn given_bookings_for_types(world: &mut CommunityWorld, type1: String, typ
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
-        uc.create_booking(user_id, org_id, dto)
+        uc.create_booking(user_id, org_id, false, dto)
             .await
             .expect("create");
     }
@@ -3078,8 +3098,10 @@ async fn given_bookings_different_resources(world: &mut CommunityWorld, count: u
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
-        uc.create_booking(user_id, org_id, dto)
+        uc.create_booking(user_id, org_id, false, dto)
             .await
             .expect("create");
     }
@@ -3105,8 +3127,10 @@ async fn given_future_and_past_bookings(world: &mut CommunityWorld) {
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
-    uc.create_booking(user_id, org_id, dto)
+    uc.create_booking(user_id, org_id, false, dto)
         .await
         .expect("create future");
 
@@ -3123,9 +3147,11 @@ async fn given_future_and_past_bookings(world: &mut CommunityWorld) {
         recurrence_end_date: None,
         max_duration_hours: None,
         max_advance_days: None,
+        on_behalf_of_acp: false,
+        motif: None,
     };
     let past_booking = uc
-        .create_booking(user_id, org_id, dto2)
+        .create_booking(user_id, org_id, false, dto2)
         .await
         .expect("create past");
     let pool = world.pool.as_ref().unwrap();
@@ -3160,9 +3186,11 @@ async fn given_various_status_bookings(world: &mut CommunityWorld) {
             recurrence_end_date: None,
             max_duration_hours: None,
             max_advance_days: None,
+            on_behalf_of_acp: false,
+            motif: None,
         };
         let resp = uc
-            .create_booking(user_id, org_id, dto)
+            .create_booking(user_id, org_id, false, dto)
             .await
             .expect("create");
         if i == 1 {
@@ -4760,7 +4788,7 @@ async fn when_cancel_exchange(world: &mut CommunityWorld, reason: String) {
         reason: Some(reason),
     };
 
-    match uc.cancel_exchange(exchange_id, user_id, dto).await {
+    match uc.cancel_exchange(exchange_id, user_id, "owner", dto).await {
         Ok(resp) => {
             world.last_exchange_response = Some(resp);
             world.last_exchange_error = None;
@@ -5187,6 +5215,320 @@ async fn then_all_of_type(world: &mut CommunityWorld, expected: String) {
 }
 
 // ============================================================
+// === STORY 5.3 (#587), INV-4 — SYNDIC = COMMUNITY.MODERATOR ===
+// ============================================================
+//
+// `user_map` (name → user_id) sert ici à représenter un syndic SANS fiche
+// `Owner` : aucune ligne `owners` n'est créée pour ce nom, exactement ce que
+// `OwnerRepository::find_by_user_id` doit trouver absent pour que le refus
+// INV-4 s'applique. Le rôle "syndic" est passé en dur aux use-cases, comme
+// le fait déjà `archive_notice(notice_id, user_id, org_id, "syndic", None)`
+// plus haut dans ce fichier (l.942) pour le même type de scénario.
+
+#[given(regex = r#"^a syndic "([^"]*)" exists without an owner record$"#)]
+async fn given_syndic_without_owner(world: &mut CommunityWorld, name: String) {
+    world.user_map.insert(name, Uuid::new_v4());
+}
+
+// --- SEL ---
+
+#[when(
+    regex = r#"^the syndic "([^"]*)" tries to create a service exchange offer titled "([^"]*)"$"#
+)]
+async fn when_syndic_tries_create_exchange(
+    world: &mut CommunityWorld,
+    name: String,
+    title: String,
+) {
+    let user_id = *world
+        .user_map
+        .get(&name)
+        .expect("syndic exists in user_map");
+    let building_id = world.building_id.unwrap();
+    let uc = world.local_exchange_use_cases.as_ref().unwrap().clone();
+
+    let dto = CreateLocalExchangeDto {
+        building_id,
+        exchange_type: ExchangeType::Service,
+        title,
+        description: "Offre personnelle du syndic".to_string(),
+        credits: 1,
+    };
+
+    match uc.create_exchange(user_id, dto).await {
+        Ok(resp) => {
+            world.last_exchange_id = Some(resp.id);
+            world.last_exchange_response = Some(resp);
+            world.last_exchange_error = None;
+        }
+        Err(e) => {
+            world.last_exchange_error = Some(e);
+        }
+    }
+}
+
+#[then("the SEL action should be forbidden")]
+async fn then_sel_action_forbidden(world: &mut CommunityWorld) {
+    let error = world
+        .last_exchange_error
+        .as_ref()
+        .expect("a SEL error was expected");
+    assert!(
+        koprogo_api::infrastructure::web::classification_erreurs::est_interdit(error)
+            || koprogo_api::infrastructure::web::classification_erreurs::est_refus_owner_requis(
+                error
+            ),
+        "expected a 403-classified refusal, got: {error}"
+    );
+}
+
+#[when(regex = r#"^the syndic "([^"]*)" moderates the exchange with reason "([^"]*)"$"#)]
+async fn when_syndic_moderates_exchange(world: &mut CommunityWorld, name: String, reason: String) {
+    let user_id = *world
+        .user_map
+        .get(&name)
+        .expect("syndic exists in user_map");
+    let exchange_id = world.last_exchange_id.unwrap();
+    let uc = world.local_exchange_use_cases.as_ref().unwrap().clone();
+
+    let dto = CancelExchangeDto {
+        reason: Some(reason),
+    };
+    match uc
+        .cancel_exchange(exchange_id, user_id, "syndic", dto)
+        .await
+    {
+        Ok(resp) => {
+            world.last_exchange_response = Some(resp);
+            world.last_exchange_error = None;
+        }
+        Err(e) => {
+            world.last_exchange_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^the syndic "([^"]*)" tries to moderate the exchange without a reason$"#)]
+async fn when_syndic_moderates_exchange_no_reason(world: &mut CommunityWorld, name: String) {
+    let user_id = *world
+        .user_map
+        .get(&name)
+        .expect("syndic exists in user_map");
+    let exchange_id = world.last_exchange_id.unwrap();
+    let uc = world.local_exchange_use_cases.as_ref().unwrap().clone();
+
+    let dto = CancelExchangeDto { reason: None };
+    match uc
+        .cancel_exchange(exchange_id, user_id, "syndic", dto)
+        .await
+    {
+        Ok(resp) => {
+            world.last_exchange_response = Some(resp);
+            world.last_exchange_error = None;
+        }
+        Err(e) => {
+            world.last_exchange_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^"([^"]*)" cancels her own exchange as syndic without a reason$"#)]
+async fn when_owner_syndic_cancels_own_exchange(world: &mut CommunityWorld, name: String) {
+    let (_, user_id) = world.get_owner_ids(&name);
+    let exchange_id = world.last_exchange_id.unwrap();
+    let uc = world.local_exchange_use_cases.as_ref().unwrap().clone();
+
+    let dto = CancelExchangeDto { reason: None };
+    match uc
+        .cancel_exchange(exchange_id, user_id, "syndic", dto)
+        .await
+    {
+        Ok(resp) => {
+            world.last_exchange_response = Some(resp);
+            world.last_exchange_error = None;
+        }
+        Err(e) => {
+            world.last_exchange_error = Some(e);
+        }
+    }
+}
+
+#[then("the exchange should be cancelled")]
+async fn then_exchange_should_be_cancelled(world: &mut CommunityWorld) {
+    let resp = world.last_exchange_response.as_ref().unwrap_or_else(|| {
+        panic!(
+            "expected a cancelled exchange, got error: {:?}",
+            world.last_exchange_error
+        )
+    });
+    assert_eq!(resp.status, ExchangeStatus::Cancelled);
+}
+
+#[then("the SEL action should be refused for a missing reason")]
+async fn then_sel_refused_missing_reason(world: &mut CommunityWorld) {
+    let error = world
+        .last_exchange_error
+        .as_ref()
+        .expect("a SEL error was expected");
+    assert_eq!(
+        error,
+        koprogo_api::application::error::MOTIF_MODERATION_REQUIS
+    );
+}
+
+// --- Notices ---
+
+#[when(regex = r#"^the syndic "([^"]*)" archives the notice with reason "([^"]*)"$"#)]
+async fn when_syndic_archives_notice(world: &mut CommunityWorld, name: String, reason: String) {
+    let user_id = *world
+        .user_map
+        .get(&name)
+        .expect("syndic exists in user_map");
+    let org_id = world.org_id.unwrap();
+    let notice_id = world.last_notice_id.unwrap();
+    let uc = world.notice_use_cases.as_ref().unwrap().clone();
+
+    match uc
+        .archive_notice(notice_id, user_id, org_id, "syndic", Some(reason))
+        .await
+    {
+        Ok(resp) => {
+            world.last_notice_response = Some(resp);
+            world.last_notice_error = None;
+        }
+        Err(e) => {
+            world.last_notice_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^the syndic "([^"]*)" tries to archive the notice without a reason$"#)]
+async fn when_syndic_archives_notice_no_reason(world: &mut CommunityWorld, name: String) {
+    let user_id = *world
+        .user_map
+        .get(&name)
+        .expect("syndic exists in user_map");
+    let org_id = world.org_id.unwrap();
+    let notice_id = world.last_notice_id.unwrap();
+    let uc = world.notice_use_cases.as_ref().unwrap().clone();
+
+    match uc
+        .archive_notice(notice_id, user_id, org_id, "syndic", None)
+        .await
+    {
+        Ok(resp) => {
+            world.last_notice_response = Some(resp);
+            world.last_notice_error = None;
+        }
+        Err(e) => {
+            world.last_notice_error = Some(e);
+        }
+    }
+}
+
+#[then("the notice should be archived")]
+async fn then_notice_should_be_archived(world: &mut CommunityWorld) {
+    let resp = world.last_notice_response.as_ref().unwrap_or_else(|| {
+        panic!(
+            "expected an archived notice, got error: {:?}",
+            world.last_notice_error
+        )
+    });
+    assert_eq!(resp.status, NoticeStatus::Archived);
+}
+
+#[then("the notice action should be refused for a missing reason")]
+async fn then_notice_refused_missing_reason(world: &mut CommunityWorld) {
+    let error = world
+        .last_notice_error
+        .as_ref()
+        .expect("a notice error was expected");
+    assert_eq!(
+        error,
+        koprogo_api::application::error::MOTIF_MODERATION_REQUIS
+    );
+}
+
+// --- SharedObjects ---
+
+#[when(regex = r#"^the syndic "([^"]*)" deletes the shared object with reason "([^"]*)"$"#)]
+async fn when_syndic_deletes_shared_object(
+    world: &mut CommunityWorld,
+    name: String,
+    reason: String,
+) {
+    let user_id = *world
+        .user_map
+        .get(&name)
+        .expect("syndic exists in user_map");
+    let org_id = world.org_id.unwrap();
+    let object_id = world.last_object_id.unwrap();
+    let uc = world.shared_object_use_cases.as_ref().unwrap().clone();
+
+    match uc
+        .delete_shared_object(object_id, user_id, org_id, "syndic", Some(reason))
+        .await
+    {
+        Ok(_) => {
+            world.last_object_error = None;
+        }
+        Err(e) => {
+            world.last_object_error = Some(e);
+        }
+    }
+}
+
+#[when(regex = r#"^the syndic "([^"]*)" tries to delete the shared object without a reason$"#)]
+async fn when_syndic_deletes_shared_object_no_reason(world: &mut CommunityWorld, name: String) {
+    let user_id = *world
+        .user_map
+        .get(&name)
+        .expect("syndic exists in user_map");
+    let org_id = world.org_id.unwrap();
+    let object_id = world.last_object_id.unwrap();
+    let uc = world.shared_object_use_cases.as_ref().unwrap().clone();
+
+    match uc
+        .delete_shared_object(object_id, user_id, org_id, "syndic", None)
+        .await
+    {
+        Ok(_) => {
+            world.last_object_error = None;
+        }
+        Err(e) => {
+            world.last_object_error = Some(e);
+        }
+    }
+}
+
+#[then("the shared object should be deleted")]
+async fn then_shared_object_should_be_deleted(world: &mut CommunityWorld) {
+    assert!(
+        world.last_object_error.is_none(),
+        "expected the shared object to be deleted, got error: {:?}",
+        world.last_object_error
+    );
+    let object_id = world.last_object_id.unwrap();
+    let uc = world.shared_object_use_cases.as_ref().unwrap().clone();
+    assert!(
+        uc.get_shared_object(object_id).await.is_err(),
+        "the shared object should no longer exist after deletion"
+    );
+}
+
+#[then("the shared object action should be refused for a missing reason")]
+async fn then_shared_object_refused_missing_reason(world: &mut CommunityWorld) {
+    let error = world
+        .last_object_error
+        .as_ref()
+        .expect("a shared object error was expected");
+    assert_eq!(
+        error,
+        koprogo_api::application::error::MOTIF_MODERATION_REQUIS
+    );
+}
+
+// ============================================================
 // === MAIN ===
 // ============================================================
 
@@ -5202,6 +5544,7 @@ async fn main() {
         "tests/features/resource_bookings.feature",
         "tests/features/gamification.feature",
         "tests/features/local_exchange.feature",
+        "tests/features/community_syndic_moderator.feature",
     ];
     let mut had_failures = false;
     for f in features {

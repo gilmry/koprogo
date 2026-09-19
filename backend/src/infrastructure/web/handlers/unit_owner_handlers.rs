@@ -1,5 +1,6 @@
 use crate::application::dto::{
-    AddOwnerToUnitDto, TransferOwnershipDto, UnitOwnerResponseDto, UpdateOwnershipDto,
+    AddOwnerToUnitDto, DesignateVotingRepresentativeDto, TransferOwnershipDto,
+    UnitOwnerResponseDto, UpdateOwnershipDto, VotingRepresentativeResponseDto,
 };
 use crate::domain::entities::UnitOwner;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
@@ -582,6 +583,110 @@ pub async fn get_total_ownership_percentage(
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": err
         })),
+    }
+}
+
+/// Désigne le représentant de vote d'un lot (#848, Art. 3.87 §1 CC).
+///
+/// Un lot à plusieurs titulaires actifs (couple, succession — le cas le plus
+/// ordinaire d'une copropriété belge) a son vote SUSPENDU jusqu'à cette
+/// désignation. Refuse un second représentant tant qu'un premier est en place
+/// (409, `assert_single_voting_representative`).
+#[utoipa::path(
+    post,
+    path = "/units/{unit_id}/voting-representative",
+    tag = "UnitOwners",
+    summary = "Désigner le représentant de vote d'un lot (Art. 3.87 §1er)",
+    params(("unit_id" = String, Path, description = "UUID du lot")),
+    request_body = DesignateVotingRepresentativeDto,
+    responses(
+        (status = 200, description = "Représentant désigné", body = crate::application::dto::unit_owner_dto::VotingRepresentativeResponseDto),
+        (status = 400, description = "Identifiant invalide"),
+        (status = 403, description = "Hors mandat sur ce lot"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[post("/units/{unit_id}/voting-representative")]
+pub async fn designate_voting_representative(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    unit_id: web::Path<String>,
+    dto: web::Json<DesignateVotingRepresentativeDto>,
+) -> impl Responder {
+    if let Some(response) = check_unit_ownership_permission(&user) {
+        return response;
+    }
+
+    if let Err(errors) = dto.validate() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Validation failed",
+            "details": errors.to_string()
+        }));
+    }
+
+    let unit_id = match Uuid::parse_str(&unit_id) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Invalid unit_id format"
+            }))
+        }
+    };
+
+    let owner_id = match Uuid::parse_str(&dto.owner_id) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Invalid owner_id format"
+            }))
+        }
+    };
+
+    // Cloisonnement : désigner un représentant de vote engage le droit de
+    // vote d'autrui (story #848, critère @security) — un syndic hors mandat
+    // sur ce lot ne peut pas le faire, comme pour les autres routes de ce
+    // fichier qui touchent aux titularités (#772, #864).
+    if let Err(err) = verify_unit_org_access(
+        &user,
+        unit_id,
+        &state.unit_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
+    match state
+        .unit_owner_use_cases
+        .designate_voting_representative(unit_id, owner_id)
+        .await
+    {
+        Ok(target) => {
+            if let Some(org_id) = user.organization_id {
+                AuditLogEntry::new(
+                    AuditEventType::UnitOwnerUpdated,
+                    Some(user.user_id),
+                    Some(org_id),
+                )
+                .with_resource("UnitOwner", target.id)
+                .with_metadata(serde_json::json!({
+                    "voting_representative_designated": true,
+                    "unit_id": unit_id.to_string(),
+                    "owner_id": owner_id.to_string()
+                }))
+                .log();
+            }
+
+            HttpResponse::Ok().json(VotingRepresentativeResponseDto {
+                unit_id: unit_id.to_string(),
+                owner_id: owner_id.to_string(),
+                unit_owner_id: target.id.to_string(),
+                is_voting_representative: true,
+            })
+        }
+        Err(err) => err.error_response(),
     }
 }
 

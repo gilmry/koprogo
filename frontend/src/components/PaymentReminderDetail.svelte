@@ -425,13 +425,13 @@
             data-testid="payment-reminder-mark-paid-button"
             onclick={markAsPaid}
             disabled={loading}
-            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+            class="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors disabled:opacity-50"
             >✅ {$_("paymentReminders.markAsPaid")}</button
           ><button
             data-testid="payment-reminder-escalate-button"
             onclick={escalate}
             disabled={loading}
-            class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+            class="px-4 py-2 bg-orange-700 text-white rounded-lg hover:bg-orange-800 transition-colors disabled:opacity-50"
             >⬆️ {$_("paymentReminders.escalate")}</button
           >{/if}
         {#if reminder.status !== "Paid" && reminder.status !== "Cancelled"}<button

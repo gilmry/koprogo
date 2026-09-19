@@ -1,0 +1,35 @@
+# KoproGo fail2ban jails - ISO 27001 A.9.4
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 3600
+findtime = 600
+
+[traefik-auth]
+enabled = true
+port = http,https
+filter = traefik-auth
+logpath = /var/log/traefik/access.log
+maxretry = 5
+bantime = 1800
+findtime = 600
+
+[koprogo-api-abuse]
+enabled = true
+port = http,https
+filter = koprogo-api-abuse
+logpath = /var/log/traefik/access.log
+maxretry = 100
+bantime = 600
+findtime = 60
+
+[postgres-bruteforce]
+enabled = true
+port = 5432
+filter = postgres-bruteforce
+logpath = /var/log/postgresql/postgresql-15-main.log
+maxretry = 5
+bantime = 3600

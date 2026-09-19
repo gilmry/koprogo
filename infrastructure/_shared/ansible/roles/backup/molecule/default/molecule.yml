@@ -1,0 +1,28 @@
+---
+# Molecule scenario for the `backup` role (#354 WP-E2) — GPG-encrypted
+# backup capability (Issue #40). Third of the four irreversible-side-effect
+# roles from the story's @edge ordering (security, hardening, backup, vault).
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: koprogo-backup-instance
+    image: "docker.io/geerlingguy/docker-ubuntu2204-ansible:0.17.1"
+    privileged: true
+    pre_build_image: true
+    cgroupns_mode: host
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+provisioner:
+  name: ansible
+  playbooks:
+    converge: converge.yml
+    verify: verify.yml
+  inventory:
+    host_vars:
+      koprogo-backup-instance:
+        ansible_python_interpreter: /usr/bin/python3
+verifier:
+  name: ansible

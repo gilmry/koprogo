@@ -134,6 +134,72 @@ async fn test_resource_bookings_create() {
     );
 }
 
+/// Issue #781 (RN-11, recette 4 du 2026-09-06) — @negative + @security.
+///
+/// Un syndic SANS fiche de copropriétaire ne peut pas réserver une ressource
+/// commune : le refus est LÉGITIME pour l'instant (réserver engage une
+/// personne, tant que la story #588 — réservation au nom de l'ACP — n'est
+/// pas implémentée), mais doit être un 403 lisible, pas un 400 générique.
+#[actix_web::test]
+#[serial]
+async fn security_resource_bookings_create_by_syndic_without_owner_profile_is_forbidden() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    // Syndic authentifié, SANS ligne dans `owners` — le cas de la recette.
+    let token = common::register_and_login_with_role(&app_state, org_id, "syndic").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let building_id = create_building_for_bookings(
+        &app_state,
+        org_id,
+        "Resource Booking Syndic Sans Fiche Building",
+    )
+    .await;
+
+    let start_time = "2027-06-02T10:00:00Z";
+    let end_time = "2027-06-02T12:00:00Z";
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/resource-bookings")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "building_id": building_id,
+            "resource_type": "MeetingRoom",
+            "resource_name": "Meeting Room A",
+            "start_time": start_time,
+            "end_time": end_time,
+            "notes": "Réunion du conseil",
+            "max_advance_days": 1000
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        403,
+        "Le refus opposé à un syndic sans fiche de copropriétaire doit être \
+         un 403 (règle métier), pas un 400 (saisie invalide)"
+    );
+
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    assert_eq!(
+        body["kind"], "owner_profile_required",
+        "kind stable requis pour la traduction frontend (#781)"
+    );
+    let message = body["error"].as_str().unwrap_or_default();
+    assert!(
+        !message.to_lowercase().contains("owner not found"),
+        "le message ne doit plus être le libellé technique anglais : {}",
+        message
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_resource_bookings_get() {

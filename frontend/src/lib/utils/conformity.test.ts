@@ -37,6 +37,47 @@ describe("conformity utils — 4-cat (Track H Story H1)", () => {
   // @happy — chemin nominal
   // ----------------------------------------------------------------------
 
+  // Track H Story H5 — le constat au niveau COPROPRIÉTÉ.
+  //
+  // Ces trois tests seraient passés au vert AVANT la correction s'ils
+  // n'avaient vérifié que la variante immeuble. Ils échouent sans elle, ce
+  // qui est exactement leur raison d'être : le frontend ne reconnaissait que
+  // `building_not_conformant`, et un refus au niveau ACP passait donc sans
+  // toast ni bannière — un 422 nu pour l'utilisateur (#942).
+  const CORPS_ACP = {
+    error: "La copropriété n'est pas conforme à son acte de base",
+    kind: "acp_not_conformant",
+    details: {
+      code: "ACP_NOT_CONFORMANT",
+      acp_id: "3342dcfc-1872-4239-a63b-3c37612cfdfd",
+      units_delta: 4,
+      quota_delta: "1000",
+      quota_basis: 1000,
+    },
+  };
+
+  it("@happy isConformityError reconnaît AUSSI le constat au niveau ACP", () => {
+    expect(isConformityError(CORPS_ACP)).toBe(true);
+  });
+
+  it("@happy extractConformityPayload rend le payload ACP", () => {
+    const payload = extractConformityPayload(CORPS_ACP);
+    expect(payload?.code).toBe("ACP_NOT_CONFORMANT");
+    expect(payload?.units_delta).toBe(4);
+    expect(payload?.quota_basis).toBe(1000);
+  });
+
+  it("@negative un kind ACP avec un code IMMEUBLE n'est pas reconnu", () => {
+    // Les deux vont par paire. Accepter un croisement laisserait passer un
+    // corps malformé, et le toast lirait des champs absents.
+    expect(
+      isConformityError({
+        ...CORPS_ACP,
+        details: { ...CORPS_ACP.details, code: "BUILDING_NOT_CONFORMANT" },
+      }),
+    ).toBe(false);
+  });
+
   it("@happy isConformityError reconnaît un body 422 direct", () => {
     expect(isConformityError(VALID_BODY)).toBe(true);
   });

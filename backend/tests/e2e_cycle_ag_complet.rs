@@ -24,7 +24,10 @@
 mod common;
 
 use actix_web::{http::header, test, App};
-use common::{create_test_building, register_and_login_with_role, setup_test_db};
+use common::{
+    create_test_building, register_and_login_returning_user, register_and_login_with_role,
+    setup_test_db,
+};
 use koprogo_api::infrastructure::web::routes::configure_routes;
 use serde_json::json;
 use uuid::Uuid;
@@ -140,7 +143,38 @@ async fn happy_le_cycle_dune_ag_va_de_la_convocation_a_la_cloture() {
         let (statut, texte, _) = lire(resp).await;
         assert_eq!(statut, 201, "rattachement du lot {numero} : {texte}");
 
-        lots.push((owner_id, unit_id, quota));
+        // ── Le copropriétaire reçoit un COMPTE, et c'est #850 qui l'exige ──
+        //
+        // Avant, ce test votait avec le jeton du syndic. La route le refuse
+        // désormais :
+        //
+        //     403 — « Aucune fiche de copropriétaire n'est rattachée à ce
+        //     compte : voter à une assemblée est réservé aux
+        //     copropriétaires. »
+        //
+        // Ce n'est pas le produit qui a régressé, c'est ce test dont la
+        // SPÉCIFICATION est périmée. Le commentaire de `resolution_handlers`
+        // le dit sans ambiguïté : « le syndic doit-il pouvoir saisir des
+        // votes en séance ? Cette route ne le permet plus. Si l'usage
+        // l'exige, il faut une route dédiée, journalisée comme saisie pour
+        // compte de tiers et soumise à la limite des procurations — pas
+        // rouvrir celle-ci. »
+        //
+        // Aucune assertion n'est retirée : le test vote maintenant comme le
+        // produit demande qu'on vote, et continue de vérifier que la voix
+        // pèse la quotité du lot.
+        let (jeton_copro, user_id) =
+            register_and_login_returning_user(&app_state, org_id, "owner").await;
+        app_state
+            .owner_use_cases
+            .link_user_to_owner(
+                Uuid::parse_str(&owner_id).expect("identifiant de copropriétaire lisible"),
+                Some(user_id),
+            )
+            .await
+            .expect("rattachement du compte au copropriétaire");
+
+        lots.push((owner_id, unit_id, quota, jeton_copro));
     }
 
     // ── 1. Une AG dont la date laisse le délai légal ─────────────────────
@@ -272,16 +306,21 @@ async fn happy_le_cycle_dune_ag_va_de_la_convocation_a_la_cloture() {
     assert_eq!(statut, 201, "création de la résolution : {texte}");
     let resolution_id = resolution["id"].as_str().unwrap().to_string();
 
-    for (owner_id, unit_id, quota) in &lots {
+    for (owner_id, unit_id, quota, jeton_copro) in &lots {
+        // Le vote part du compte du COPROPRIÉTAIRE, pas de celui du syndic.
+        let porteur_copro = |req: test::TestRequest| {
+            req.insert_header((header::AUTHORIZATION, format!("Bearer {jeton_copro}")))
+        };
         let resp = test::call_service(
             &app,
-            porteur(
+            porteur_copro(
                 test::TestRequest::post()
                     .uri(&format!("/api/v1/resolutions/{resolution_id}/vote"))
                     .set_json(json!({
                         "owner_id": owner_id,
                         "unit_id": unit_id,
-                        "vote_choice": "pour"
+                        "vote_choice": "pour",
+                        "auth_method": "presence"
                     })),
             )
             .to_request(),

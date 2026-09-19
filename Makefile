@@ -97,9 +97,26 @@ test-bdd: ## 🥒 Tests BDD/Cucumber (backend)
 	@echo "$(GREEN)🥒 Tests BDD...$(NC)"
 	cd backend && SQLX_OFFLINE=true cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
 
-test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend)
+test-e2e: base-neuve ## 🌐 Tests E2E Playwright, sur une base NEUVE (#954)
 	@echo "$(GREEN)🌐 Tests E2E...$(NC)"
-	cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) PLAYWRIGHT_API_BASE=$(RECETTE)/api/v1 npm run test:e2e
+	@# La pile de recette tourne sous cargo-watch (backend/Dockerfile.dev:71) :
+	@# une recompilation en cours de campagne coupe le backend ~90s, et sans
+	@# témoin les échecs qu'elle cause sont indiscernables d'une régression
+	@# (issue #880 : 83 des 95 échecs du 2026-09-13). e2e-guarded.sh encadre
+	@# la commande réelle d'une surveillance d'empreinte du process backend ;
+	@# exit 75 (EX_TEMPFAIL) signifie « non mesuré », pas « rouge ».
+	KOPROGO_E2E_ARTIFACT_DIR=frontend/test-results \
+	bash scripts/e2e-guarded.sh -- bash -c 'cd frontend && PLAYWRIGHT_BASE_URL=$(RECETTE) PLAYWRIGHT_API_BASE=$(RECETTE)/api/v1 npm run test:e2e'
+
+base-neuve: ## 🧼 Rend à la recette une base VIERGE (précondition de test-e2e, #954)
+	@bash ./scripts/recette-base-neuve.sh
+
+base-neuve-test: ## 🧪 Tests 4-cat du garde-fou de cible de base-neuve (#954)
+	@bash ./scripts/recette-base-neuve.test.sh
+
+e2e-guard-test: ## 🧪 Tests 4-cat du témoin d'interruption backend e2e (#880)
+	@bash ./scripts/e2e-backend-watch.test.sh
+	@bash ./scripts/e2e-guarded.test.sh
 
 codegen: ## 🎬 Playwright codegen interactif (DEVICE=mobile pour iPhone 13)
 	@echo "$(GREEN)🎬 Playwright codegen ($(YELLOW)DEVICE=$(DEVICE)$(GREEN))...$(NC)"
@@ -322,6 +339,12 @@ docs: ## 📚 Générer docs Rust (cargo doc)
 	@echo "$(GREEN)📚 Génération docs Rust...$(NC)"
 	cd backend && SQLX_OFFLINE=true cargo doc --no-deps --open
 
+docs-guard: ## 🚧 Refuser tout markdown non listé à la racine de docs/ (#854)
+	@bash ./scripts/check-docs-root-orphans.sh
+
+docs-guard-test: ## 🧪 Tests 4-cat du garde-fou docs-guard (#854)
+	@bash ./scripts/check-docs-root-orphans.test.sh
+
 docs-sphinx: ## 📖 Build docs Sphinx
 	@echo "$(GREEN)📖 Build docs Sphinx...$(NC)"
 	@if [ ! -d docs/.venv ]; then \
@@ -421,7 +444,7 @@ adr-new: ## 📝 Créer nouvel ADR (usage: make adr-new TITLE="mon-titre")
 	echo "$(GREEN)✅ ADR créé: $$NEW_FILE$(NC)"; \
 	echo "$(YELLOW)📝 Éditer le fichier et compléter les sections$(NC)"
 
-docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (tests ralentis 1s)
+docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (vitrine en cadence + gate à la vitesse)
 	@echo "$(GREEN)🎥 Génération docs avec vidéos E2E...$(NC)"
 	@echo ""
 	@echo "0️⃣ Vérification des services (Traefik + backend + frontend)..."
@@ -642,6 +665,9 @@ claude-check: ## 🤖 Valider la config guardrails Claude Code (settings.json + 
 	@echo "$(GREEN)🤖 Maury entry doc present?$(NC)"
 	@test -f Maury/README.md && echo "  ✓ Maury/README.md" || echo "  $(YELLOW)✗ missing — créer pour devenir agent canonical entry$(NC)"
 
+test-guardrail-hooks: ## 🧪 Témoin Tier 1/Tier 2 (#429) : les hooks bloquent-ils vraiment ce qu'ils prétendent ?
+	@./scripts/test-guardrail-hooks.sh
+
 token-budget: ## 📊 Mesure budget tokens des artefacts agents (cible CLAUDE.md ≤5k)
 	@echo "$(GREEN)📊 Token budget snapshot$(NC)"
 	@for f in CLAUDE.md README.md Maury/Méthode\ Maury.md Maury/CHANGELOG.md Maury/README.md .claude/rules/CRITICAL.md .claude/AGENT_GUARDRAILS.md; do \
@@ -651,5 +677,5 @@ token-budget: ## 📊 Mesure budget tokens des artefacts agents (cible CLAUDE.md
 		fi; \
 	done
 
-ci-guardrails: claude-check secret-scan ## 🚦 CI guardrails seul (claude-check + secret-scan)
+ci-guardrails: claude-check secret-scan test-guardrail-hooks ## 🚦 CI guardrails seul (claude-check + secret-scan + témoin Tier 1/Tier 2)
 	@echo "$(GREEN)✅ Guardrails CI passed$(NC)"

@@ -33,7 +33,14 @@
 
   import { _ } from "../../i18n";
 
-  type ScopeKind = "ticket" | "quote" | "invoice" | "contractor_evaluation";
+  // #835 — "contractor_report" absorbe le second système de liens magiques
+  // (`/contractor/?token=`, page distincte) : même écran, même paramètre `t`.
+  type ScopeKind =
+    | "ticket"
+    | "quote"
+    | "invoice"
+    | "contractor_evaluation"
+    | "contractor_report";
 
   type Props = {
     /**
@@ -95,6 +102,26 @@
     message: "",
   });
 
+  /** Pièce remplacée (rapport d'intervention). */
+  type ReplacedPartDraft = {
+    name: string;
+    reference: string;
+    quantity: number;
+  };
+
+  /**
+   * Brouillon dédié au rapport d'intervention (#835) — champs distincts du
+   * `draft` générique (message/amount) car le formulaire est structurellement
+   * différent (date, compte-rendu, pièces) et doit rester utilisable
+   * hors-ligne, seule capacité que le système absorbé (B) avait et que le
+   * système générique (A) n'avait pas — cf. issue #835 @edge.
+   */
+  let crDraft = $state<{
+    workDate: string;
+    compteRendu: string;
+    parts: ReplacedPartDraft[];
+  }>({ workDate: "", compteRendu: "", parts: [] });
+
   /** Whether we have restored a pre-existing draft from IDB. */
   let draftRestored = $state(false);
 
@@ -131,6 +158,8 @@
         return "Facture";
       case "contractor_evaluation":
         return "Évaluation prestataire";
+      case "contractor_report":
+        return $_("magicLink.crTitle");
       default:
         return "Ressource";
     }
@@ -146,12 +175,21 @@
         return "Confirmer la facture";
       case "contractor_evaluation":
         return "Envoyer l'évaluation";
+      case "contractor_report":
+        return $_("magicLink.crActionVerb");
       default:
         return "Continuer";
     }
   });
 
-  let submitDisabled = $derived(submitting || draft.message.trim() === "");
+  /** Le rapport exige un compte-rendu non vide pour être soumis (miroir de
+   *  l'invariant domaine `ContractorReport::submit`) et une date renseignée. */
+  let submitDisabled = $derived(
+    submitting ||
+      (scopeKind === "contractor_report"
+        ? crDraft.compteRendu.trim() === "" || crDraft.workDate === ""
+        : draft.message.trim() === ""),
+  );
 
   // -------------------------------------------------------------------------
   // IndexedDB draft persistence — minimal, dedicated store
@@ -179,14 +217,23 @@
     });
   }
 
-  async function loadDraft(): Promise<typeof draft | null> {
+  /** Union des deux formes de brouillon persistées sous la même clé (#835). */
+  type DraftSnapshot = {
+    message: string;
+    amount?: number;
+    workDate: string;
+    compteRendu: string;
+    parts: ReplacedPartDraft[];
+  };
+
+  async function loadDraft(): Promise<DraftSnapshot | null> {
     try {
       const db = await openDraftDb();
       return await new Promise((resolve, reject) => {
         const tx = db.transaction([IDB_STORE], "readonly");
         const store = tx.objectStore(IDB_STORE);
         const req = store.get(draftKey());
-        req.onsuccess = () => resolve((req.result as typeof draft) ?? null);
+        req.onsuccess = () => resolve((req.result as DraftSnapshot) ?? null);
         req.onerror = () => reject(req.error);
       });
     } catch (_err) {
@@ -195,7 +242,7 @@
     }
   }
 
-  async function saveDraft(value: typeof draft): Promise<void> {
+  async function saveDraft(value: DraftSnapshot): Promise<void> {
     try {
       const db = await openDraftDb();
       await new Promise<void>((resolve, reject) => {
@@ -293,10 +340,18 @@
     };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
 
-    // Restore any draft persisted from a previous offline session.
+    // Restore any draft persisted from a previous offline session. Both
+    // shapes are restored unconditionally (harmless — only the one matching
+    // `scopeKind` is ever rendered/sent) since `scopeKind` may still be
+    // resolving asynchronously at this point (cf. #835).
     void loadDraft().then((restored) => {
       if (restored) {
-        draft = restored;
+        draft = { message: restored.message ?? "", amount: restored.amount };
+        crDraft = {
+          workDate: restored.workDate ?? "",
+          compteRendu: restored.compteRendu ?? "",
+          parts: restored.parts ?? [],
+        };
       }
       draftRestored = true;
     });
@@ -311,8 +366,15 @@
   // Persist on every draft mutation (but only once we've finished restoring).
   $effect(() => {
     if (!draftRestored) return;
-    // Touch reactive props so the effect re-runs.
-    const snapshot = { message: draft.message, amount: draft.amount };
+    // Touch reactive props so the effect re-runs — both shapes are saved
+    // together so a late-resolving `scopeKind` never loses a restored value.
+    const snapshot = {
+      message: draft.message,
+      amount: draft.amount,
+      workDate: crDraft.workDate,
+      compteRendu: crDraft.compteRendu,
+      parts: crDraft.parts,
+    };
     void saveDraft(snapshot);
   });
 
@@ -341,10 +403,26 @@
     submitting = true;
     submitError = null;
 
-    const payload = {
-      message: draft.message.trim(),
-      amount: draft.amount,
-    };
+    const payload =
+      scopeKind === "contractor_report"
+        ? {
+            work_date: crDraft.workDate
+              ? new Date(crDraft.workDate).toISOString()
+              : undefined,
+            compte_rendu: crDraft.compteRendu.trim(),
+            parts_replaced: crDraft.parts
+              .filter((p) => p.name.trim() !== "")
+              .map((p) => ({
+                name: p.name,
+                reference: p.reference || null,
+                quantity: p.quantity || 1,
+                photo_document_id: null,
+              })),
+          }
+        : {
+            message: draft.message.trim(),
+            amount: draft.amount,
+          };
 
     try {
       const resp = await fetch(
@@ -403,7 +481,7 @@
   {#if installPromptEvent}
     <button
       type="button"
-      class="mb-4 w-full min-h-[44px] rounded-lg bg-sky-600 px-4 py-2 text-white font-medium hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+      class="mb-4 w-full min-h-[44px] rounded-lg bg-sky-700 px-4 py-2 text-white font-medium hover:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
       data-testid="pwa-install-prompt"
       aria-label="{$_('magicLink.install')} KoproGo Contractor"
       onclick={triggerInstall}
@@ -464,7 +542,7 @@
       <div class="mt-5 flex justify-end">
         <button
           type="button"
-          class="min-h-[44px] min-w-[44px] rounded-lg bg-sky-600 px-5 py-2 text-white font-medium hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+          class="min-h-[44px] min-w-[44px] rounded-lg bg-sky-700 px-5 py-2 text-white font-medium hover:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
           data-testid="pwa-summary-next"
           aria-label={actionVerb}
           onclick={goToAction}
@@ -499,44 +577,142 @@
           void submit();
         }}
       >
-        <div>
-          <label
-            for="pwa-action-message"
-            class="block text-sm font-medium text-gray-800 mb-1"
-          >
-            {$_("magicLink.message")}
-          </label>
-          <textarea
-            id="pwa-action-message"
-            data-testid="pwa-action-message-input"
-            class="w-full min-h-[120px] rounded-lg border border-gray-300 px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
-            bind:value={draft.message}
-            required
-            aria-required="true"
-            placeholder="Décrivez votre intervention, vos disponibilités…"
-          ></textarea>
-        </div>
-
-        {#if canShowAmount}
+        {#if scopeKind === "contractor_report"}
+          <!-- ================================================================= -->
+          <!-- Rapport d'intervention (#835) — absorbe le formulaire du second   -->
+          <!-- système (photos non reprises : jamais réellement persistées côté -->
+          <!-- serveur dans l'ancien système, cf. issue #835).                   -->
+          <!-- ================================================================= -->
           <div>
             <label
-              for="pwa-action-amount"
+              for="pwa-cr-work-date"
               class="block text-sm font-medium text-gray-800 mb-1"
             >
-              {$_("magicLink.amount")}
+              {$_("magicLink.crWorkDate")}
             </label>
             <input
-              id="pwa-action-amount"
-              type="number"
-              inputmode="decimal"
-              step="0.01"
-              min="0"
-              data-testid="pwa-action-amount-input"
+              id="pwa-cr-work-date"
+              type="date"
+              data-testid="pwa-cr-work-date-input"
               class="w-full min-h-[44px] rounded-lg border border-gray-300 px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
-              bind:value={draft.amount}
-              placeholder="0.00"
+              bind:value={crDraft.workDate}
+              required
+              aria-required="true"
             />
           </div>
+
+          <div>
+            <label
+              for="pwa-cr-compte-rendu"
+              class="block text-sm font-medium text-gray-800 mb-1"
+            >
+              {$_("magicLink.crCompteRendu")}
+            </label>
+            <textarea
+              id="pwa-cr-compte-rendu"
+              data-testid="pwa-cr-compte-rendu-input"
+              class="w-full min-h-[120px] rounded-lg border border-gray-300 px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+              bind:value={crDraft.compteRendu}
+              required
+              aria-required="true"
+              placeholder={$_("magicLink.crCompteRenduPlaceholder")}></textarea>
+          </div>
+
+          <div>
+            <p class="block text-sm font-medium text-gray-800 mb-2">
+              {$_("magicLink.crParts")}
+            </p>
+            {#each crDraft.parts as part, idx (idx)}
+              <div class="flex items-center gap-2 mb-2">
+                <input
+                  type="text"
+                  aria-label={$_("magicLink.crPartName")}
+                  data-testid={`pwa-cr-part-name-${idx}`}
+                  bind:value={part.name}
+                  class="flex-1 min-h-[44px] rounded-lg border border-gray-300 px-2 py-1 text-sm"
+                />
+                <input
+                  type="text"
+                  aria-label={$_("magicLink.crPartReference")}
+                  data-testid={`pwa-cr-part-ref-${idx}`}
+                  bind:value={part.reference}
+                  class="flex-1 min-h-[44px] rounded-lg border border-gray-300 px-2 py-1 text-sm"
+                />
+                <input
+                  type="number"
+                  min="1"
+                  aria-label={$_("magicLink.crPartQuantity")}
+                  data-testid={`pwa-cr-part-qty-${idx}`}
+                  bind:value={part.quantity}
+                  class="w-20 min-h-[44px] rounded-lg border border-gray-300 px-2 py-1 text-sm"
+                />
+                <button
+                  type="button"
+                  aria-label={$_("magicLink.crRemovePart")}
+                  data-testid={`pwa-cr-part-remove-${idx}`}
+                  class="min-h-[44px] min-w-[44px] rounded-lg text-red-600 hover:bg-red-50"
+                  onclick={() => {
+                    crDraft.parts = crDraft.parts.filter((_, i) => i !== idx);
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            {/each}
+            <button
+              type="button"
+              data-testid="pwa-cr-add-part"
+              class="min-h-[44px] rounded-lg border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              onclick={() => {
+                crDraft.parts = [
+                  ...crDraft.parts,
+                  { name: "", reference: "", quantity: 1 },
+                ];
+              }}
+            >
+              {$_("magicLink.crAddPart")}
+            </button>
+          </div>
+        {:else}
+          <div>
+            <label
+              for="pwa-action-message"
+              class="block text-sm font-medium text-gray-800 mb-1"
+            >
+              {$_("magicLink.message")}
+            </label>
+            <textarea
+              id="pwa-action-message"
+              data-testid="pwa-action-message-input"
+              class="w-full min-h-[120px] rounded-lg border border-gray-300 px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+              bind:value={draft.message}
+              required
+              aria-required="true"
+              placeholder="Décrivez votre intervention, vos disponibilités…"
+            ></textarea>
+          </div>
+
+          {#if canShowAmount}
+            <div>
+              <label
+                for="pwa-action-amount"
+                class="block text-sm font-medium text-gray-800 mb-1"
+              >
+                {$_("magicLink.amount")}
+              </label>
+              <input
+                id="pwa-action-amount"
+                type="number"
+                inputmode="decimal"
+                step="0.01"
+                min="0"
+                data-testid="pwa-action-amount-input"
+                class="w-full min-h-[44px] rounded-lg border border-gray-300 px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+                bind:value={draft.amount}
+                placeholder="0.00"
+              />
+            </div>
+          {/if}
         {/if}
 
         {#if submitError}
@@ -561,7 +737,7 @@
           </button>
           <button
             type="submit"
-            class="min-h-[44px] rounded-lg bg-sky-600 px-5 py-2 text-white font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+            class="min-h-[44px] rounded-lg bg-sky-700 px-5 py-2 text-white font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
             data-testid="pwa-action-submit"
             disabled={submitDisabled}
             aria-label="Envoyer la réponse au syndic"

@@ -59,11 +59,83 @@ pub struct ScenarioUnitResult {
 
 pub struct DatabaseSeeder {
     pool: PgPool,
+    /// Empreintes bcrypt précalculées, par mot de passe en clair.
+    ///
+    /// Le semis du monde crée vingt-six comptes. Hachés un par un, à
+    /// `DEFAULT_COST`, cela prenait **44 secondes** (mesuré sur la recette
+    /// le 2026-09-17) — au point de bloquer sept tests d'accessibilité dont
+    /// le plafond de requête est de 10 s, et d'en faire expirer quatre
+    /// autres qui attendaient derrière.
+    ///
+    /// Le coût bcrypt n'est PAS abaissé : ces comptes servent aussi la
+    /// démo. Ce sont les hachages qui sont menés de front.
+    empreintes: std::sync::Mutex<std::collections::HashMap<String, String>>,
 }
 
 impl DatabaseSeeder {
     pub fn new(pool: PgPool) -> Self {
-        Self { pool }
+        Self {
+            pool,
+            empreintes: std::sync::Mutex::new(std::collections::HashMap::new()),
+        }
+    }
+
+    /// Le cache d'empreintes, en reprenant la main sur un verrou empoisonné.
+    ///
+    /// Ce cache n'est qu'une optimisation : si une panique ailleurs a
+    /// empoisonné le verrou, s'arrêter ici ne protégerait rien et ferait
+    /// échouer un semis pour une raison sans rapport. Au pire une empreinte
+    /// manque, et `create_demo_user` la recalcule.
+    ///
+    /// C'est aussi ce qui garde `garde_paniques_en_production` à sa place :
+    /// trois points de panique ajoutés ici le 2026-09-17 avaient suffi à
+    /// faire passer son compte de 39 à 42, et le barrage de déploiement à
+    /// rougir pendant huit passages sans que personne le remarque.
+    fn cache_empreintes(
+        &self,
+    ) -> std::sync::MutexGuard<'_, std::collections::HashMap<String, String>> {
+        self.empreintes
+            .lock()
+            .unwrap_or_else(|verrou_empoisonne| verrou_empoisonne.into_inner())
+    }
+
+    /// Hache d'avance, EN PARALLÈLE, les mots de passe qui vont servir.
+    ///
+    /// Sans cela, chaque `create_demo_user` attend son propre bcrypt avant
+    /// que le suivant ne commence : vingt-six attentes en file. Ici les
+    /// `spawn_blocking` partent ensemble et le temps total tombe au plus
+    /// lent divisé par le nombre de cœurs.
+    ///
+    /// Idempotent : un mot de passe déjà connu n'est pas rehaché.
+    async fn precalculer_empreintes(&self, mots_de_passe: &[&str]) {
+        let a_faire: Vec<String> = {
+            let connues = self.cache_empreintes();
+            let mut vus = std::collections::HashSet::new();
+            mots_de_passe
+                .iter()
+                .filter(|m| !connues.contains_key(**m) && vus.insert(**m))
+                .map(|m| m.to_string())
+                .collect()
+        };
+        if a_faire.is_empty() {
+            return;
+        }
+
+        let calculs = a_faire.into_iter().map(|mot| {
+            tokio::task::spawn_blocking(move || {
+                let empreinte = hash(&mot, DEFAULT_COST);
+                (mot, empreinte)
+            })
+        });
+
+        for issue in futures_util::future::join_all(calculs).await {
+            // Un hachage interrompu n'est pas fatal : `create_demo_user`
+            // retombera sur le calcul direct. On ne masque rien, on ne
+            // bloque pas le semis pour autant.
+            if let Ok((mot, Ok(empreinte))) = issue {
+                self.cache_empreintes().insert(mot, empreinte);
+            }
+        }
     }
 
     /// Hotfix #602 follow-up — resolves `acp_id` from `org_id` for seed flows.
@@ -1421,8 +1493,26 @@ impl DatabaseSeeder {
         role: &str,
         organization_id: Option<Uuid>,
     ) -> Result<Uuid, String> {
-        let password_hash =
-            hash(password, DEFAULT_COST).map_err(|e| format!("Failed to hash password: {}", e))?;
+        // Empreinte PRÉCALCULÉE si elle l'a été, sinon hachée ici.
+        //
+        // `precalculer_empreintes` lance les bcrypt de front avant les
+        // boucles de création ; ce chemin-ci reste pour les comptes créés à
+        // l'unité, hors liste.
+        //
+        // Dans les deux cas le hachage sort des threads de travail Actix,
+        // comme #718 l'a fait pour l'authentification : sinon un semis gèle
+        // l'API entière quand `ACTIX_WORKERS` vaut 1.
+        let deja_connue = self.cache_empreintes().get(password).cloned();
+        let password_hash = match deja_connue {
+            Some(empreinte) => empreinte,
+            None => {
+                let mot_de_passe = password.to_string();
+                tokio::task::spawn_blocking(move || hash(&mot_de_passe, DEFAULT_COST))
+                    .await
+                    .map_err(|e| format!("Hachage interrompu : {e}"))?
+                    .map_err(|e| format!("Failed to hash password: {}", e))?
+            }
+        };
 
         let user_id = Uuid::new_v4();
         let now = Utc::now();
@@ -3151,6 +3241,24 @@ impl DatabaseSeeder {
     pub async fn seed_scenario_world(&self) -> Result<ScenarioWorldResult, String> {
         log::info!("🌱 Starting scenario world seeding (Résidence du Parc Royal)...");
 
+        // Les comptes créés À L'UNITÉ, hors des trois listes de personas.
+        //
+        // Sept mots de passe, quinze appels. Précalculés ici, ils partent de
+        // front avec le reste au lieu d'attendre chacun leur tour. Ce sont
+        // des littéraux du fichier : si l'un change, le hachage retombe
+        // simplement sur le chemin direct de `create_demo_user` — rien ne
+        // casse, on perd juste le gain pour celui-là.
+        self.precalculer_empreintes(&[
+            "syndic123",
+            "sophie123",
+            "francois123",
+            "gisele123",
+            "marc123",
+            "comptable123",
+            "owner123",
+        ])
+        .await;
+
         // Check if scenario world already exists
         let existing = sqlx::query_scalar!(
             "SELECT COUNT(*) as count FROM organizations WHERE slug = 'residence-parc-royal-test'"
@@ -3308,6 +3416,11 @@ impl DatabaseSeeder {
                 lots: vec![("4B", 450.0)],
             },
         ];
+
+        // Les bcrypt de cette liste, menés de front (cf.
+        // `precalculer_empreintes`) : en série, le semis prenait 44 s.
+        let mots: Vec<&str> = owner_personas.iter().map(|p| p.password).collect();
+        self.precalculer_empreintes(&mots).await;
 
         for persona in &owner_personas {
             // Create user
@@ -3553,6 +3666,11 @@ impl DatabaseSeeder {
             },
         ];
 
+        // Les bcrypt de cette liste, menés de front (cf.
+        // `precalculer_empreintes`) : en série, le semis prenait 44 s.
+        let mots: Vec<&str> = community_personas.iter().map(|p| p.password).collect();
+        self.precalculer_empreintes(&mots).await;
+
         for persona in &community_personas {
             let user_id = self
                 .create_demo_user(
@@ -3645,6 +3763,11 @@ impl DatabaseSeeder {
                 tantiemes: 350.0,
             },
         ];
+
+        // Les bcrypt de cette liste, menés de front (cf.
+        // `precalculer_empreintes`) : en série, le semis prenait 44 s.
+        let mots: Vec<&str> = building2_personas.iter().map(|p| p.password).collect();
+        self.precalculer_empreintes(&mots).await;
 
         for persona in &building2_personas {
             // Create user

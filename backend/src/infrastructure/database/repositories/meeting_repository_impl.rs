@@ -1,5 +1,5 @@
 use crate::application::ports::MeetingRepository;
-use crate::domain::entities::{Meeting, MeetingStatus, MeetingType};
+use crate::domain::entities::{Meeting, MeetingMode, MeetingStatus, MeetingType};
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
 use sqlx::Row;
@@ -33,6 +33,12 @@ fn row_to_meeting(row: &sqlx::postgres::PgRow) -> Meeting {
     let agenda_json: serde_json::Value = row.get("agenda");
     let agenda: Vec<String> = serde_json::from_value(agenda_json).unwrap_or_default();
 
+    let mode = row
+        .try_get::<String, _>("mode")
+        .ok()
+        .and_then(|s| MeetingMode::from_db_string(&s).ok())
+        .unwrap_or(MeetingMode::InPerson);
+
     Meeting {
         id: row.get("id"),
         acp_id: row.get("acp_id"),
@@ -55,6 +61,8 @@ fn row_to_meeting(row: &sqlx::postgres::PgRow) -> Meeting {
         is_second_convocation: row.try_get("is_second_convocation").unwrap_or(false),
         minutes_document_id: row.try_get("minutes_document_id").unwrap_or(None),
         minutes_sent_at: row.try_get("minutes_sent_at").unwrap_or(None),
+        mode,
+        videoconf_url: row.try_get("videoconf_url").unwrap_or(None),
     }
 }
 
@@ -62,7 +70,7 @@ const SELECT_COLUMNS: &str = "id, acp_id, organization_id, building_id, \
     meeting_type::text AS meeting_type, title, description, scheduled_date, \
     location, status::text AS status, agenda, attendees_count, \
     quorum_validated, quorum_percentage, total_quotas, present_quotas, \
-    is_second_convocation, created_at, updated_at";
+    is_second_convocation, mode, videoconf_url, created_at, updated_at";
 
 #[async_trait]
 impl MeetingRepository for PostgresMeetingRepository {
@@ -81,16 +89,18 @@ impl MeetingRepository for PostgresMeetingRepository {
         let agenda_json = serde_json::to_value(&meeting.agenda)
             .map_err(|e| format!("JSON serialization error: {}", e))?;
 
+        let mode_str = meeting.mode.to_db_str();
+
         sqlx::query(
             r#"
             INSERT INTO meetings (
                 id, acp_id, organization_id, building_id, meeting_type, title, description,
                 scheduled_date, location, status, agenda, attendees_count,
                 quorum_validated, quorum_percentage, total_quotas, present_quotas,
-                is_second_convocation, created_at, updated_at
+                is_second_convocation, mode, videoconf_url, created_at, updated_at
             )
             VALUES ($1, $2, $3, $4, CAST($5 AS meeting_type), $6, $7, $8, $9, CAST($10 AS meeting_status),
-                    $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                    $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
             "#,
         )
         .bind(meeting.id)
@@ -110,6 +120,8 @@ impl MeetingRepository for PostgresMeetingRepository {
         .bind(meeting.total_quotas)
         .bind(meeting.present_quotas)
         .bind(meeting.is_second_convocation)
+        .bind(mode_str)
+        .bind(&meeting.videoconf_url)
         .bind(meeting.created_at)
         .bind(meeting.updated_at)
         .execute(&self.pool)
@@ -154,6 +166,8 @@ impl MeetingRepository for PostgresMeetingRepository {
         let agenda_json = serde_json::to_value(&meeting.agenda)
             .map_err(|e| format!("JSON serialization error: {}", e))?;
 
+        let mode_str = meeting.mode.to_db_str();
+
         sqlx::query(
             r#"
             UPDATE meetings
@@ -169,7 +183,9 @@ impl MeetingRepository for PostgresMeetingRepository {
                 total_quotas = $11,
                 present_quotas = $12,
                 is_second_convocation = $13,
-                updated_at = $14
+                mode = $14,
+                videoconf_url = $15,
+                updated_at = $16
             WHERE id = $1
             "#,
         )
@@ -186,6 +202,8 @@ impl MeetingRepository for PostgresMeetingRepository {
         .bind(meeting.total_quotas)
         .bind(meeting.present_quotas)
         .bind(meeting.is_second_convocation)
+        .bind(mode_str)
+        .bind(&meeting.videoconf_url)
         .bind(meeting.updated_at)
         .execute(&self.pool)
         .await

@@ -76,9 +76,22 @@ if [[ ! -d "$ROOT" ]]; then
 fi
 
 # Nombre de routes SANS `#[utoipa::path]` toléré. Ne doit que décroître.
-# Mesuré le 2026-09-03 après annotation des quinze routes payment-methods
-# (#732), qui vivaient hors contrat depuis toujours. Précédemment 440.
-BASELINE=425
+#
+# 409 depuis le 2026-09-16. Les branches d'agents fusionnées avaient porté la
+# dette à 417 : huit routes ajoutées sans annotation (trois `cdc`, trois
+# `notary-link`, les destinataires éligibles d'une convocation, le
+# représentant de vote d'un lot). Elles sont désormais annotées ET
+# enregistrées, avec leurs dix DTO passés à `ToSchema`.
+#
+# Le cliquet descend de 410 à 409 et non « revient à 410 » : la dette mesurée
+# est de 409, et laisser le seuil au-dessus rendrait une régression d'une
+# route indolore. Un cliquet se pose sur ce qu'on mesure, pas sur ce dont on
+# vient.
+#
+# Précédemment 410, mesuré le 2026-09-03 après annotation des quinze routes
+# payment-methods (#732), qui vivaient hors contrat depuis toujours. Avant
+# cela, 440.
+BASELINE=409
 
 read -r total annotated < <(
   awk '

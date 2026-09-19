@@ -7,7 +7,13 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 /// Request DTO for creating a new account
+///
+/// `deny_unknown_fields` n'est pas décoratif : sans lui, un champ mal nommé
+/// est accepté puis JETÉ en silence — la requête rend 201 et la donnée
+/// n'existe pas. Sur un compte du plan comptable, ce serait une écriture
+/// qu'on croit passée.
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct CreateAccountDto {
     #[validate(length(min = 1, max = 40, message = "Account code must be 1-40 characters"))]
     pub code: String,

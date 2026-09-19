@@ -409,6 +409,15 @@ async fn setup_test_db() -> (
     let magic_link_use_cases =
         koprogo_api::application::use_cases::MagicLinkUseCases::new(magic_link_repo);
 
+    let lien_notaire_repo: Arc<dyn koprogo_api::application::ports::LienNotaireRepository> =
+        Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresLienNotaireRepository::new(
+                pool.clone(),
+            ),
+        );
+    let lien_notaire_use_cases =
+        koprogo_api::application::use_cases::LienNotaireUseCases::new(lien_notaire_repo);
+
     let mandate_repo: Arc<dyn koprogo_api::application::ports::MandateRepository> = Arc::new(
         koprogo_api::infrastructure::database::repositories::PostgresMandateRepository::new(
             pool.clone(),
@@ -508,6 +517,17 @@ async fn setup_test_db() -> (
         linky_use_cases,
         board_member_use_cases,
         board_decision_use_cases,
+        // #582 — `cdc_use_cases` a rejoint `AppState`, ce harnais ne l'avait
+        // pas suivi. Même défaut de jonction que dans `tests/common/mod.rs`.
+        koprogo_api::application::use_cases::CdcUseCases::new(
+            std::sync::Arc::new(
+                koprogo_api::infrastructure::database::repositories::PostgresBoardAlertRepository::new(
+                    pool.clone(),
+                ),
+            ),
+            board_member_repo.clone(),
+            meeting_repo.clone(),
+        ),
         board_dashboard_use_cases,
         dashboard_use_cases,
         financial_report_use_cases,
@@ -534,6 +554,7 @@ async fn setup_test_db() -> (
         boinc_use_cases,
         user_use_cases,
         magic_link_use_cases,
+        lien_notaire_use_cases,
         mandate_use_cases,
         role_delegation_use_cases,
         syndic_response_use_cases,

@@ -63,6 +63,40 @@ pub fn est_interdit(message: &str) -> bool {
         || m.contains("only the")
 }
 
+/// L'erreur est-elle PRÉCISÉMENT le refus opposé à qui n'a pas de fiche de
+/// copropriétaire (skill/shared_object/resource_booking `resolve_owner()`) ?
+///
+/// Issue #781 — ce refus est déjà reconnu par `est_interdit` (403), mais par
+/// mot-clé générique. Un `kind` stable, distinct des autres 403, permet au
+/// frontend de router vers un message traduit dans les quatre locales sans
+/// dépendre du libellé français — cf. `REFUS_RESERVE_AUX_COPROPRIETAIRES`,
+/// dont le commentaire documente pourquoi une comparaison de libellé est
+/// fragile pour les TESTS ; ici c'est le même risque, côté frontend, qu'un
+/// `kind` stable évite.
+pub fn est_refus_owner_requis(message: &str) -> bool {
+    message == crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES
+}
+
+/// L'erreur est-elle PRÉCISÉMENT le refus d'une modération communautaire
+/// (SEL/Poll/Notice/SharedObject) tentée sans motif texte ?
+///
+/// Story 5.3 (#587), INV-4 — distinct de `est_interdit` (403 générique) : ce
+/// refus est un 422, la modération existe mais son exercice manque une
+/// condition de forme (le motif d'audit), pas une autorisation.
+pub fn est_motif_manquant(message: &str) -> bool {
+    message == crate::application::error::MOTIF_MODERATION_REQUIS
+}
+
+/// L'erreur est-elle PRÉCISÉMENT le refus « motif obligatoire » d'une
+/// réservation `on_behalf_of_acp` (story #588, INV-5/FR27) ?
+///
+/// Doit router vers 422 (règle métier sur une requête par ailleurs valide),
+/// pas 400/403 — d'où un `kind` stable distinct, même raisonnement que
+/// `est_refus_owner_requis`.
+pub fn est_motif_acp_manquant(message: &str) -> bool {
+    message == crate::domain::entities::ReservationOnBehalfError::MotifRequired.to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -98,5 +132,80 @@ mod tests {
             "Cette action est réservée aux copropriétaires : elle engage une personne"
         ));
         assert!(!est_interdit("Poll not found"));
+    }
+
+    // ------------------------------------------------------------------------
+    // Issue #781 — est_refus_owner_requis (kind stable pour le frontend)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_le_refus_owner_requis_est_reconnu() {
+        assert!(est_refus_owner_requis(
+            crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES
+        ));
+    }
+
+    #[test]
+    fn edge_un_prefixe_ou_suffixe_ne_suffit_pas() {
+        // La comparaison est stricte : un message qui ne fait que CONTENIR le
+        // refus (ex. concaténé à un contexte) n'est pas CE refus précis — le
+        // kind ne doit s'attacher qu'à une correspondance exacte.
+        assert!(!est_refus_owner_requis(&format!(
+            "{} (contexte additionnel)",
+            crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES
+        )));
+    }
+
+    #[test]
+    fn negative_un_autre_refus_de_droit_ne_declenche_pas_ce_kind() {
+        // `est_interdit` reconnaît aussi ce message (403 générique) — mais il
+        // ne s'agit PAS du refus "owner requis" : les deux fonctions doivent
+        // pouvoir diverger.
+        let autre = "Unauthorized: only owner can update skill";
+        assert!(est_interdit(autre));
+        assert!(!est_refus_owner_requis(autre));
+    }
+
+    #[test]
+    fn security_un_message_vide_nest_jamais_pris_pour_ce_refus() {
+        assert!(!est_refus_owner_requis(""));
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 5.3 (#587) — est_motif_manquant
+    // Story 5.4 — est_motif_acp_manquant (#588, INV-5/FR27)
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn happy_le_motif_manquant_est_reconnu() {
+        assert!(est_motif_manquant(
+            crate::application::error::MOTIF_MODERATION_REQUIS
+        ));
+        assert!(est_motif_acp_manquant(
+            &crate::domain::entities::ReservationOnBehalfError::MotifRequired.to_string()
+        ));
+    }
+
+    #[test]
+    fn negative_un_refus_generique_ne_declenche_pas_ce_kind() {
+        // `est_interdit` reconnaît aussi ce message (403 générique) — mais il
+        // ne s'agit pas de l'absence de motif (422) : les deux refus ont des
+        // causes différentes et ne doivent jamais se confondre.
+        let refus_403 = "Only the provider or a community moderator can delete the exchange";
+        assert!(est_interdit(refus_403));
+        assert!(!est_motif_manquant(refus_403));
+    }
+
+    #[test]
+    fn security_un_message_vide_nest_jamais_pris_pour_le_motif_manquant() {
+        assert!(!est_motif_manquant(""));
+    }
+
+    #[test]
+    fn negative_un_autre_refus_ne_declenche_pas_ce_kind() {
+        assert!(!est_motif_acp_manquant(
+            crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES
+        ));
+        assert!(!est_motif_acp_manquant("Booking not found"));
     }
 }

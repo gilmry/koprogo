@@ -20,7 +20,7 @@ cd frontend
 
 # Lancer l'enregistrement interactif
 npm run codegen
-# OU: npx playwright codegen http://localhost
+# OU: npx playwright codegen http://localhost:8090   # la RECETTE, pas la démo
 
 # Playwright ouvre un navigateur et enregistre vos actions :
 # → Naviguez, cliquez, remplissez des formulaires

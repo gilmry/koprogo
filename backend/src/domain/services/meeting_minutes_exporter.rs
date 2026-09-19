@@ -366,6 +366,8 @@ mod tests {
             is_second_convocation: false,
             minutes_document_id: None,
             minutes_sent_at: None,
+            mode: crate::domain::entities::MeetingMode::InPerson,
+            videoconf_url: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -407,6 +409,7 @@ mod tests {
             agenda_item_index: None,
             voted_at: Some(Utc::now()),
             created_at: Utc::now(),
+            kind: crate::domain::entities::ResolutionKind::Standard,
         };
 
         let resolutions = vec![ResolutionWithVotes {

@@ -33,7 +33,13 @@
   );
 </script>
 
+<!-- `data-testid` porte le STATUT, pas le libellé.
+     Les recettes cherchaient « Adoptée|Rejetée » par expression régulière —
+     un pari sur la langue résolue, qui ne tient que parce que les projets
+     Playwright sont épinglés à fr-BE (#803). Le statut, lui, est stable. -->
 <span
+  data-testid="resolution-status-badge"
+  data-statut={status}
   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {badge.bg} {badge.text}"
 >
   <span class="mr-1">{badge.icon}</span>

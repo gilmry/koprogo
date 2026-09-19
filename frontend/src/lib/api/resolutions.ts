@@ -46,6 +46,11 @@ export interface Resolution {
   voted_at?: string;
   created_at: string;
   updated_at?: string;
+  // Story 4.6 (#581) — vrai pour la résolution d'évaluation des prestataires
+  // générée d'office à toute AGO (Art. 3.89 § 5, 12° CC). Le serveur refuse
+  // déjà sa suppression/modification (403) ; ce champ pilote l'affichage du
+  // badge et le masquage du bouton de suppression.
+  is_auto_generated?: boolean;
 }
 
 // Re-exported from the generated OpenAPI spec — single source of truth.
@@ -78,6 +83,20 @@ export const VoteChoice = {
 } satisfies Record<string, VoteChoice>;
 
 /**
+ * Story 4.2 (#48) — comment le votant a été authentifié. `Presence` couvre la
+ * feuille de présence signée en AG physique ; `Proxy` une procuration papier ;
+ * `Itsme`/`Eid` l'authentification forte requise pour un vote à distance
+ * (Art. 3.87 §1er, §4 CC). Obligatoire côté serveur (absent → 422).
+ */
+export type VoteAuthMethod = components["schemas"]["VoteAuthMethod"];
+export const VoteAuthMethod = {
+  Presence: "presence" as const,
+  Proxy: "proxy" as const,
+  Itsme: "itsme" as const,
+  Eid: "eid" as const,
+} satisfies Record<string, VoteAuthMethod>;
+
+/**
  * Un bulletin, **tel que le serveur le sert**.
  *
  * Aligné sur `backend/src/application/dto/vote_dto.rs`. Cette interface
@@ -107,6 +126,8 @@ export interface Vote {
   proxy_owner_id?: string;
   is_proxy_vote: boolean;
   voted_at: string;
+  /** Story 4.2 (#48) — comment le votant a été authentifié. */
+  auth_method: VoteAuthMethod;
 }
 
 export interface CreateResolutionDto {
@@ -124,6 +145,8 @@ export interface CastVoteDto {
   choice: VoteChoice;
   voting_power: number;
   proxy_owner_id?: string;
+  /** Story 4.2 (#48) — obligatoire côté serveur (absent → 422). */
+  auth_method: VoteAuthMethod;
 }
 
 export const resolutionsApi = {
@@ -151,6 +174,7 @@ export const resolutionsApi = {
     const payload: Record<string, any> = {
       vote_choice: data.choice,
       voting_power: data.voting_power,
+      auth_method: data.auth_method,
     };
     if (data.owner_id) payload.owner_id = data.owner_id;
     if (data.unit_id) payload.unit_id = data.unit_id;

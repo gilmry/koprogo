@@ -93,7 +93,14 @@ services:
     container_name: koprogo-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-koprogo}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-koprogo_db}
+      # `koprogo-postgres` et NON `postgres` : même raison que `koprogo-minio`
+      # ci-dessous (#731). Le service `postgres` n'est aujourd'hui attaché
+      # qu'à `koprogo-network`, mais l'incident MinIO tenait justement à une
+      # hypothèse de ce genre — « ce service n'est pas sur le réseau partagé »
+      # — devenue fausse via un fichier hors dépôt. Le `container_name` est
+      # unique sur l'hôte quel que soit le réseau ; l'alias de service ne
+      # l'est pas.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-koprogo}:${POSTGRES_PASSWORD}@koprogo-postgres:5432/${POSTGRES_DB:-koprogo_db}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant dans .env (openssl rand -base64 32)}
       TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY:?TOTP_ENCRYPTION_KEY manquant dans .env (openssl rand -hex 32)}
       SERVER_HOST: 0.0.0.0

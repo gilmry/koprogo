@@ -4,10 +4,10 @@ phase: architecture
 phase_togaf: D (Technology)
 agent_bmad: Winston (Architecte hexagonal)
 authors: [Gilles Maury, Farah Maury]
-date: 2026-05-20
+date: "2026-05-20"
 version: 1.0
 status: Signed by @gilmry 2026-05-20
-signed_at: 2026-05-20
+signed_at: "2026-05-20"
 signed_by: "@gilmry"
 brief_source: brief.md (Mary, v1.0 signé 2026-05-20)
 prd_source: prd.md (John, v1.0 signé 2026-05-20)

@@ -137,6 +137,89 @@ async fn test_owner_contributions_create() {
     assert_eq!(resp.status().as_u16(), 201);
 }
 
+// @negative — Issue #852 : unit_id est désormais obligatoire dans le DTO
+// (`Option<Uuid>` mentait sur le contrat réel). L'omettre doit produire un
+// 422 de validation de contrat, pas un 400 opaque au milieu du use case.
+#[actix_web::test]
+#[serial]
+async fn negative_owner_contributions_create_missing_unit_id_returns_422() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (token, owner_id, _unit_id, _building_id) =
+        create_contribution_fixtures(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let contribution_date = chrono::Utc::now().to_rfc3339();
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/owner-contributions")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "owner_id": owner_id.to_string(),
+            // unit_id volontairement absent
+            "description": "Appel sans lot",
+            "amount": 250.00,
+            "contribution_type": "regular",
+            "contribution_date": contribution_date
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+
+    assert_eq!(
+        resp.status().as_u16(),
+        422,
+        "Expected 422 when unit_id is missing, got: {}",
+        resp.status()
+    );
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    assert!(
+        body["details"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("unit_id"),
+        "le refus doit nommer le champ manquant : {body}"
+    );
+}
+
+// @edge — un JSON réellement mal formé (pas seulement un champ manquant)
+// reste un 400 : seule la non-conformité au schéma devient un 422.
+#[actix_web::test]
+#[serial]
+async fn negative_owner_contributions_create_malformed_json_stays_400() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/owner-contributions")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_payload("{ ceci n'est pas du JSON")
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+
+    assert_eq!(
+        resp.status().as_u16(),
+        400,
+        "Expected 400 for genuinely malformed JSON, got: {}",
+        resp.status()
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_owner_contributions_get() {
@@ -409,6 +492,123 @@ async fn test_owner_contributions_outstanding_missing_owner_id() {
         resp.status().as_u16(),
         400,
         "Expected 400 when owner_id is missing, got: {}",
+        resp.status()
+    );
+}
+
+/// #882 — @security / @negative : `owner_id` d'une AUTRE organisation est
+/// refusé. Avant #882, `_user` était pris et jeté : n'importe quel
+/// utilisateur authentifié lisait les arriérés de n'importe quel
+/// copropriétaire, dans n'importe quelle organisation, en connaissant son
+/// seul UUID.
+#[actix_web::test]
+#[serial]
+async fn security_outstanding_contributions_refuse_un_owner_id_dune_autre_organisation() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let org_b = common::create_test_organization(&app_state).await;
+
+    let (_token_superadmin_a, _owner_a, _unit_a, _building_a) =
+        create_contribution_fixtures(&app_state, org_a).await;
+
+    // Le demandeur doit etre un utilisateur CLOISONNE. `verify_owner_org_access`
+    // laisse passer les superadmins par conception (scope_guard.rs:846) : ce
+    // sont des administrateurs de plateforme, pas d'organisation. Or la fixture
+    // ci-dessus delivre justement un superadmin — s'en servir ici faisait
+    // echouer le test sur le seul role qui a le droit de traverser, et non sur
+    // la fuite qu'il decrit (« n'importe quel utilisateur authentifie »).
+    let token_a = common::register_and_login_with_role(&app_state, org_a, "syndic").await;
+    let (_token_b, owner_b, unit_b, _building_b) =
+        create_contribution_fixtures(&app_state, org_b).await;
+
+    // Une contribution impayée bien réelle chez B, pour que le refus ne
+    // tienne pas simplement à l'absence de données.
+    app_state
+        .owner_contribution_use_cases
+        .create_contribution(
+            org_b,
+            owner_b,
+            Some(unit_b),
+            "Contribution de B".to_string(),
+            rust_decimal_macros::dec!(200.00),
+            koprogo_api::domain::entities::ContributionType::Regular,
+            chrono::Utc::now(),
+            None,
+        )
+        .await
+        .expect("précondition : contribution de B");
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    // Le syndic de A demande les arriérés du copropriétaire de B.
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/owner-contributions/outstanding?owner_id={}",
+            owner_b
+        ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_a)))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    let statut = resp.status().as_u16();
+
+    assert!(
+        statut == 403 || statut == 404,
+        "FUITE INTER-ORGANISATIONS : le cabinet A a lu les arriérés d'un \
+         copropriétaire du cabinet B, statut {}",
+        statut
+    );
+}
+
+/// #882 — @edge : un utilisateur SANS organisation n'est pas traité par
+/// défaut comme un superadministrateur.
+#[actix_web::test]
+#[serial]
+async fn edge_outstanding_contributions_refuse_lutilisateur_sans_organisation() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (_token, owner_id, _unit_id, _building_id) =
+        create_contribution_fixtures(&app_state, org_id).await;
+
+    let email = format!("sans-org-{}@example.com", Uuid::new_v4());
+    let login = app_state
+        .auth_use_cases
+        .register(koprogo_api::application::dto::RegisterRequest {
+            email,
+            password: "SecurePass123!".to_string(),
+            first_name: "Sans".to_string(),
+            last_name: "Organisation".to_string(),
+            role: "owner".to_string(),
+            organization_id: None,
+        })
+        .await
+        .expect("register sans organisation");
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/owner-contributions/outstanding?owner_id={}",
+            owner_id
+        ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", login.token)))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+
+    assert_eq!(
+        resp.status().as_u16(),
+        403,
+        "un utilisateur sans organisation ne doit pas être traité comme un \
+         superadministrateur par défaut, got: {}",
         resp.status()
     );
 }

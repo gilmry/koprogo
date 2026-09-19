@@ -1,5 +1,5 @@
 ---
-date: 2026-04-30
+date: "2026-04-30"
 persona: devops-engineer
 session: PR-E (chore/ci-gitflow-alignment)
 tier: 2  # proposal via PR ; merge = Tier 1 humain

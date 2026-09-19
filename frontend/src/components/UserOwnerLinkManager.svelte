@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
+  import { chercherUtilisateurs } from "../lib/api/utilisateurs-recherche";
   import type { Owner, User } from "../lib/types";
 
   interface OwnerWithUser extends Owner {
@@ -15,6 +16,10 @@
 
   let owners: OwnerWithUser[] = [];
   let ownerUsers: User[] = []; // Users with role='owner'
+  /** `true` si la page d'utilisateurs ne contient pas tout le monde. */
+  let utilisateursTronques = false;
+  /** Le total rendu par le serveur, pour le dire au lieu de le deviner. */
+  let totalUtilisateurs = 0;
   let loading = true;
   let error: string | null = null;
   let successMessage: string | null = null;
@@ -40,19 +45,28 @@
 
       totalPages = ownersResponse.pagination.total_pages;
 
-      // Load all users with role='owner'
-      const usersResponse = await api.get<{ data: User[] }>(
-        "/users?per_page=1000",
-      );
-      // Filter users who have at least one 'owner' role in their roles array
-      ownerUsers = usersResponse.data.filter(
+      // Les copropriétaires candidats au rattachement.
+      //
+      // Cet appel demandait déjà `per_page=1000`, et la route l'IGNORAIT :
+      // il recevait la table entière, 4 120 lignes sur la recette (#953).
+      // Depuis que la route pagine, le paramètre compte enfin — ce qui crée
+      // un risque neuf : une coupure à mille qui ne se voit pas.
+      //
+      // D'où `incomplete`, rendu par le serveur à partir du total réel. On
+      // ne devine pas, on demande.
+      //
+      // Le filtre reste CLIENT et porte sur `roles`, pas sur la colonne
+      // `role` : un utilisateur dont le rôle principal est syndic peut
+      // détenir une affectation de copropriétaire. Filtrer côté serveur sur
+      // `role` le perdrait, et c'est le genre de rétrécissement qu'un
+      // remplacement « équivalent » fait passer inaperçu.
+      const pageUtilisateurs = await chercherUtilisateurs<User>("", {
+        taille: 1000,
+      });
+      utilisateursTronques = pageUtilisateurs.incomplete;
+      totalUtilisateurs = pageUtilisateurs.total;
+      ownerUsers = pageUtilisateurs.elements.filter(
         (u: User) => u.roles && u.roles.some((r) => r.role === "owner"),
-      );
-      console.log(
-        "Users with owner role:",
-        ownerUsers.length,
-        "out of",
-        usersResponse.data.length,
       );
 
       // Enrich owners with linked user info
@@ -272,6 +286,25 @@
                         </option>
                       {/each}
                     </select>
+                    <!--
+                      Le dire, plutôt que de laisser le sélecteur paraître
+                      exhaustif. Cet appel recevait la table entière jusqu'au
+                      2026-09-18 ; maintenant que la route pagine, une coupure
+                      est possible et doit se voir (#953).
+                    -->
+                    {#if utilisateursTronques}
+                      <p
+                        class="mt-1 text-xs text-gray-600"
+                        data-testid="owner-link-users-reste"
+                      >
+                        {$_("admin.users.usersMore", {
+                          values: {
+                            affichees: ownerUsers.length,
+                            total: totalUtilisateurs,
+                          },
+                        })}
+                      </p>
+                    {/if}
                   {/if}
                 </td>
               </tr>

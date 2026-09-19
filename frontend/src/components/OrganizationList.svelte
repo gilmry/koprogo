@@ -4,12 +4,26 @@
   import { _ } from "../lib/i18n";
   import { formatDate } from "../lib/utils/date.utils";
   import { api } from "../lib/api";
+  import { chercherOrganisations } from "../lib/api/organisations-recherche";
   import { toast } from "../stores/toast";
   import { authStore } from "../stores/auth";
   import type { Organization } from "../lib/types";
   import OrganizationForm from "./admin/OrganizationForm.svelte";
   import ConfirmDialog from "./ui/ConfirmDialog.svelte";
   import Button from "./ui/Button.svelte";
+
+  /**
+   * Combien d'organisations afficher par page.
+   *
+   * Cette valeur était à 5000 — un contournement, posé quand la route
+   * ignorait `per_page` et qu'il fallait éviter une troncature silencieuse.
+   * Maintenant que la recherche est côté SERVEUR, demander tout annulerait
+   * la pagination et ramènerait les 8,2 s d'écran blanc (#943).
+   *
+   * 50 tient dans un écran. Au-delà, on cherche — et le total rendu par le
+   * serveur dit combien il en reste.
+   */
+  const TAILLE_ORGANISATIONS = 50;
 
   // Composant réservé SuperAdmin uniquement (défense en profondeur)
   $: isSuperAdmin = $authStore.user?.role === "superadmin";
@@ -18,6 +32,10 @@
   let loading = true;
   let error = "";
   let searchTerm = "";
+  /** Total renvoyé par le SERVEUR pour la recherche courante. */
+  let totalOrganisations = 0;
+  /** Reste-t-il des organisations au-delà de celles affichées ? */
+  let listeIncomplete = false;
   let showFormModal = false;
   let showConfirmDialog = false;
   let selectedOrganization: Organization | null = null;
@@ -28,15 +46,27 @@
     await loadOrganizations();
   });
 
-  async function loadOrganizations() {
+  /**
+   * Charge une PAGE d'organisations, filtrée par le SERVEUR.
+   *
+   * Ce composant chargeait les 3006 lignes de la table puis filtrait en
+   * mémoire. Le commentaire disait « on veut TOUTES les organisations » —
+   * c'était vrai tant que la route ignorait `per_page` ; ce ne l'est plus,
+   * et le vouloir coûtait 8,2 s d'écran blanc (#943).
+   *
+   * Le filtre client cherchait dans le nom, le slug ET le courriel de
+   * contact. La recherche serveur couvre désormais les trois : s'en tenir
+   * aux deux premiers aurait rétréci en silence ce qu'un administrateur
+   * peut trouver.
+   */
+  async function loadOrganizations(recherche = searchTerm) {
     try {
       loading = true;
       error = "";
-      // Pour le SuperAdmin, on veut TOUTES les organisations sans filtre
-      const response = await api.get<{ data: Organization[] }>(
-        "/organizations?per_page=1000",
-      );
-      organizations = response.data;
+      const page = await chercherOrganisations(recherche, TAILLE_ORGANISATIONS);
+      organizations = page.elements as unknown as Organization[];
+      totalOrganisations = page.total;
+      listeIncomplete = page.incomplete;
     } catch (e) {
       error =
         e instanceof Error ? e.message : $_("admin.organization.loadError");
@@ -46,12 +76,25 @@
     }
   }
 
-  $: filteredOrganizations = organizations.filter(
-    (org) =>
-      org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      org.contact_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      org.slug.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  /**
+   * Relance la recherche après une pause de frappe.
+   *
+   * 250 ms, comme le sélecteur d'ACP : assez pour ne pas interroger à chaque
+   * touche, assez peu pour que la liste suive. La route répond en ~65 ms.
+   */
+  let minuterieRecherche: ReturnType<typeof setTimeout> | undefined;
+  function surRecherche(valeur: string) {
+    searchTerm = valeur;
+    clearTimeout(minuterieRecherche);
+    minuterieRecherche = setTimeout(() => {
+      void loadOrganizations(valeur);
+    }, 250);
+  }
+
+  // Le SERVEUR a déjà filtré : refiltrer ici ferait disparaître des lignes
+  // qu'il vient de juger pertinentes, et masquerait tout écart entre les
+  // deux critères au lieu de le révéler.
+  $: filteredOrganizations = organizations;
 
   function getPlanBadgeClass(plan: string): string {
     const classes = {
@@ -158,7 +201,8 @@
       <input
         id="org-search"
         type="text"
-        bind:value={searchTerm}
+        value={searchTerm}
+        on:input={(e) => surRecherche(e.currentTarget.value)}
         placeholder={$_("admin.organization.searchPlaceholder")}
         data-testid="organization-search-input"
         class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -206,6 +250,14 @@
         role="region"
         aria-label={$_("common.scrollableTable")}
       >
+        {#if listeIncomplete}
+          <p
+            class="px-4 py-2 text-sm text-gray-600"
+            data-testid="organizations-reste"
+          >
+            {organizations.length} / {totalOrganisations}
+          </p>
+        {/if}
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>

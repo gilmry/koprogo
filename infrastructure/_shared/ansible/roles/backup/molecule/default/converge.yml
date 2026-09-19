@@ -1,0 +1,35 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    koprogo_user: koprogo
+    koprogo_dir: /home/koprogo/koprogo
+    gpg_backup_email: backup-test@koprogo.local
+    gpg_key_expiry: "1y"
+  pre_tasks:
+    # Test scaffolding only (not part of the role): a fresh container has no
+    # entropy source, so `gpg --batch --gen-key` with a 4096-bit RSA key can
+    # hang for minutes. haveged gives it enough entropy to complete in
+    # seconds. Also create the koprogo user the role's `owner:`/`group:`
+    # params expect — normally provisioned by the `common` role, which this
+    # scenario deliberately doesn't include (keeps the backup role testable
+    # in isolation, same rationale as the `security` scenario).
+    - name: Install haveged for fast entropy (test-only)
+      ansible.builtin.apt:
+        name: haveged
+        state: present
+        update_cache: true
+
+    - name: Enable haveged
+      ansible.builtin.systemd:
+        name: haveged
+        state: started
+        enabled: true
+
+    - name: Create koprogo user (normally provisioned by the common role)
+      ansible.builtin.user:
+        name: koprogo
+        create_home: true
+  roles:
+    - role: backup

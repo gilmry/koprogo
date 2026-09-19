@@ -34,6 +34,16 @@ pub struct CancelExchangeDto {
     pub reason: Option<String>,
 }
 
+/// DTO for deleting an exchange.
+///
+/// `reason` est ignoré quand le provider supprime sa propre offre, mais
+/// devient obligatoire pour une suppression par modération (syndic /
+/// `community.moderator` non partie à l'échange) — Story 5.3 (#587), INV-4.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct DeleteExchangeDto {
+    pub reason: Option<String>,
+}
+
 /// DTO for rating an exchange partner
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RateExchangeDto {

@@ -2,7 +2,7 @@
 feature: refonte-ux-multi-role-acp/track-h-conformite-legale
 phase: A (Vision TOGAF)
 status: SIGNED v1.0 par @gilmry 2026-06-15
-date: 2026-06-15
+date: "2026-06-15"
 authors: [Claude Opus 4.8 (drafting), @gilmry (signature 2026-06-15)]
 related_issues: [553, 554, 561, 580, 584, 618]
 ---

@@ -1,5 +1,31 @@
 <script lang="ts">
   // Svelte 5 runes mode
+  //
+  // #868 — Ce composant N'EST PAS une seconde instance de
+  // `global/BuildingSelector.svelte` : ce sont deux widgets distincts qui
+  // répondaient au même nom de test.
+  //
+  // Celui-ci est monté PAR PAGE (14 pages : skills, polls, sharing, etc.),
+  // pour toutes les roles y compris owner, et pilote le contenu de LA page
+  // via `onSelect`/`onSelectBuilding` — c'est un filtre de données local,
+  // obligatoire pour que la page sache quel immeuble afficher.
+  //
+  // `global/BuildingSelector.svelte` pilote le PÉRIMÈTRE DE NAVIGATION dans
+  // la barre de contexte, se cache pour les owners (RBAC), et écrit dans le
+  // store `scope.svelte.ts` plutôt que d'appeler un callback de page.
+  //
+  // Les deux sont montés SIMULTANÉMENT sur ces 14 pages pour syndic/
+  // accountant/superadmin (le store global ne dispense pas la page de son
+  // filtre local). Leur ancrage d'état vide collisionnait donc
+  // (`building-selector-empty`), ce que #868 corrige en distinguant
+  // `page-building-selector-empty` (ici) de `building-selector-empty`
+  // (barre de contexte, contrat stable — cf. global/BuildingSelector.svelte).
+  //
+  // Fusionner les deux composants réglerait la duplication de logique
+  // (le préchargement au focus, par ex., n'existe que dans le global), mais
+  // suppose de migrer 14 pages d'un pattern callback vers le store — décision
+  // hors périmètre de #868 (taille S), non vérifiée : voir la story #868,
+  // section « Ce que je n'ai pas vérifié ».
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
   import { withLoadingState } from "../lib/utils/error.utils";
@@ -148,7 +174,7 @@
 {:else if buildings.length === 0}
   <div
     class="p-3 bg-red-50 border border-red-200 rounded-md"
-    data-testid="building-selector-empty"
+    data-testid="page-building-selector-empty"
   >
     <p class="text-sm text-red-800">
       {$_("buildings.noBuildings")}

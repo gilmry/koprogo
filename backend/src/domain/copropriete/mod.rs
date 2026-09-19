@@ -22,8 +22,10 @@
 //! (Art. 3.89 § 5, 12°).
 
 pub mod acp;
+pub mod acp_enabled_module;
 pub mod ag_session;
 pub mod age_request;
+pub mod board_alert;
 pub mod board_decision;
 pub mod board_member;
 pub mod building;
@@ -43,6 +45,7 @@ pub mod envoi_convocation;
 pub mod evaluation_des_contrats;
 pub mod fenetre_ag_ordinaire;
 pub mod fonds_de_reserve;
+pub mod lien_notaire;
 pub mod majorites;
 pub mod mandate;
 pub mod meeting;
@@ -70,6 +73,7 @@ pub use acp::{
 };
 pub use ag_session::{AgSession, AgSessionStatus, VideoPlatform};
 pub use age_request::{AgeRequest, AgeRequestCosignatory, AgeRequestStatus};
+pub use board_alert::{AlertSeverity, AlerteRefusee, BoardAlert};
 pub use board_decision::{BoardDecision, DecisionStatus};
 pub use board_member::{BoardMember, BoardPosition};
 pub use building::{Building, BuildingMetrics, BuildingNotConformantError};
@@ -89,11 +93,12 @@ pub use envoi_convocation::{envoi_regulier, AccordAutreMoyen, EnvoiIrregulier, M
 pub use evaluation_des_contrats::{verifier_exercice, ContratDeLacp, RapportDevaluation};
 pub use fenetre_ag_ordinaire::{FenetreAgOrdinaire, FenetreInvalide};
 pub use fonds_de_reserve::{DotationInsuffisante, StatutFondsReserve};
+pub use lien_notaire::{LienNotaire, LienNotaireError, DUREE_JOURS as DUREE_LIEN_NOTAIRE_JOURS};
 pub use majorites::{majorite_pour_modifier_les_quotes_parts, NatureDeDecision};
 pub use mandate::{Mandate, MandateKind, MandateScope, MAX_MANDATE_DURATION_DAYS};
 pub use meeting::{
-    Meeting, MeetingCompletionChecklist, MeetingNotCompletableError, MeetingStatus, MeetingType,
-    MissingInvariant,
+    Meeting, MeetingCompletionChecklist, MeetingMode, MeetingModeError, MeetingNotCompletableError,
+    MeetingStatus, MeetingType, MissingInvariant,
 };
 pub use mention_numero_entreprise::{
     verifier_les_documents, DocumentProduit, MentionNumeroEntreprise,
@@ -109,7 +114,7 @@ pub use procurations::{
 pub use registre_legal::{rapport_de_conformite, InvariantLegal, REGISTRE};
 pub use releve_notaire::{DemandeDeReleve, EtatDemande};
 pub use requete_ag::{deposer as deposer_requete_ag, RequeteAg, RequeteIrrecevable};
-pub use resolution::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
+pub use resolution::{MajorityType, Resolution, ResolutionKind, ResolutionStatus, ResolutionType};
 pub use signatures_pv::{pv_valablement_signe, SeanceCloturee, SignatureManquante};
 pub use solidarite::{poursuivables_pour_le_tout, repartir_charge, Obligation, Titulaire};
 pub use syndic_mandate::{SyndicMandate, SyndicMandateError};

@@ -242,27 +242,63 @@ jobs:
       # `feature/dev` est écrite en dur, et c'est volontaire : c'est la base
       # que `gh pr create --base feature/dev` vise trois cents lignes plus
       # bas. Les deux doivent bouger ensemble ou pas du tout.
+      # ── `token:` — SANS LUI, LE PAT NE SERT À RIEN (#874) ──────────────
+      #
+      # `actions/checkout` persiste ses identifiants dans la configuration
+      # git du dépôt, sous forme d'un en-tête HTTP :
+      #
+      #     http.https://github.com/.extraheader =
+      #         AUTHORIZATION: basic <base64 x-access-token:GITHUB_TOKEN>
+      #
+      # Cet en-tête **prime sur les identifiants écrits dans l'URL du
+      # remote**. L'étape de poussée faisait donc, en toute bonne foi :
+      #
+      #     git remote set-url origin "https://x-access-token:$PAT@github.com/..."
+      #     git push -u origin "$BRANCHE"
+      #
+      # ...et git authentifiait avec le GITHUB_TOKEN de l'en-tête, jamais
+      # avec le PAT. GitHub ne déclenche aucun workflow sur un événement issu
+      # du GITHUB_TOKEN : d'où vingt-six branches sans gates, alors que le
+      # journal annonçait « Jeton dédié présent ».
+      #
+      # Le secret était bon — PAT à portée fine sur `gilmry/koprogo`, avec
+      # Contents, Issues, Pull requests et Workflows en écriture, vérifié le
+      # 2026-09-15. Le défaut n'a jamais été le jeton, il était dans la
+      # manière de s'en servir : on le posait à l'endroit que git regarde en
+      # DERNIER.
+      #
+      # Le poser ici le rend valable pour TOUTES les opérations git du job,
+      # poussée comprise, et rend le `set-url` inutile.
       - uses: actions/checkout@v7
         with:
+          token: ${{ secrets.FANOUT_GITHUB_TOKEN || github.token }}
           ref: feature/dev
           fetch-depth: 0
 
-      - name: Ouvrir la branche
-        env:
-          BRANCHE: ${{ matrix.entree.branche }}
-        run: |
-          set -euo pipefail
-          git config user.name "koprogo-agent"
-          git config user.email "noreply@koprogo.com"
-          if git ls-remote --exit-code --heads origin "$BRANCHE" >/dev/null 2>&1
-          then
-            echo "::warning::$BRANCHE existe déjà — reprise sur place."
-            git fetch origin "$BRANCHE"
-            git checkout "$BRANCHE"
-          else
-            git checkout -b "$BRANCHE"
-          fi
-
+      # ── L'ORDRE COMPTE : mesurer AVANT de changer de branche (#874) ────
+      #
+      # Cette étape venait APRÈS « Ouvrir la branche », et c'était un piège.
+      #
+      # Sur une reprise, `git checkout "$BRANCHE"` bascule sur une branche
+      # d'agent créée lors d'une vague précédente — donc sur un instantané du
+      # dépôt d'avant les correctifs. Les SCRIPTS de cet instantané sont
+      # périmés, et le harnais se mesurait donc avec ses propres instruments
+      # d'hier.
+      #
+      # Constaté sur V4.10, run 35021168580 :
+      #
+      #     File ".../scripts/backlog-pret.py", line 61, in issues_ouvertes
+      #     FileNotFoundError: No such file or directory: '/home/ubuntu/koprogo'
+      #
+      # `story/867` datait de la première vague, quand `DEPOT` était encore
+      # codé en dur et que `--issue` n'existait pas. Le script y a donc pris
+      # le chemin de `main()` et est mort — et le workflow a conclu « #867 ne
+      # porte pas les huit éléments », ce qui est faux : mesurée depuis
+      # `feature/dev`, elle les porte.
+      #
+      # La règle générale : **tout ce qui MESURE doit tourner sur
+      # `feature/dev`**, jamais sur la branche mesurée. Une branche peut
+      # contenir du code faux ; c'est même pour ça qu'on la mesure.
       - name: Récupérer la story depuis l'issue
         env:
           GH_TOKEN: ${{ github.token }}
@@ -309,6 +345,22 @@ jobs:
             exit 1
           fi
           wc -c /tmp/story.md
+
+      - name: Ouvrir la branche
+        env:
+          BRANCHE: ${{ matrix.entree.branche }}
+        run: |
+          set -euo pipefail
+          git config user.name "koprogo-agent"
+          git config user.email "noreply@koprogo.com"
+          if git ls-remote --exit-code --heads origin "$BRANCHE" >/dev/null 2>&1
+          then
+            echo "::warning::$BRANCHE existe déjà — reprise sur place."
+            git fetch origin "$BRANCHE"
+            git checkout "$BRANCHE"
+          else
+            git checkout -b "$BRANCHE"
+          fi
 
       - name: Installer Claude Code
         run: npm install -g @anthropic-ai/claude-code
@@ -647,9 +699,17 @@ jobs:
           DOM: ${{ matrix.entree.domaine }}
         run: |
           set -euo pipefail
-          # L'URL porte le jeton : `git push` n'utilise pas GH_TOKEN tout seul.
-          git remote set-url origin \
-            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          # Plus de `git remote set-url` : il ne servait à rien.
+          #
+          # L'en-tête `http.extraheader` posé par `actions/checkout` prime sur
+          # les identifiants de l'URL. Le PAT écrit ici était donc ignoré, et
+          # git poussait avec le GITHUB_TOKEN — qui ne réveille aucun
+          # workflow. Le jeton est désormais passé à `checkout` lui-même, une
+          # centaine de lignes plus haut, ce qui le rend valable pour toutes
+          # les opérations git du job.
+          #
+          # Témoin : si cette poussée ne déclenche toujours rien, c'est le
+          # jeton qu'il faut mettre en cause, plus le chemin.
           git push -u origin "$BRANCHE"
           if gh pr view "$BRANCHE" >/dev/null 2>&1; then
             echo "::notice::PR déjà ouverte pour $BRANCHE."

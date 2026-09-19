@@ -1,0 +1,39 @@
+# KoproGo SSH Hardening - ISO 27001 A.9.4 (System and application access control)
+Port 22
+Protocol 2
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+
+# Authentication
+PermitRootLogin no
+PubkeyAuthentication yes
+PasswordAuthentication no
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+MaxAuthTries 3
+LoginGraceTime 30
+
+# Allowed users
+AllowUsers {{ ssh_allowed_users | default('koprogo ubuntu') }}
+
+# Ciphers (modern only)
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
+KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org
+
+# Session
+ClientAliveInterval 300
+ClientAliveCountMax 2
+MaxSessions 3
+
+# Logging (ISO 27001 A.12.4)
+LogLevel VERBOSE
+SyslogFacility AUTH
+
+# Disable forwarding
+X11Forwarding no
+AllowTcpForwarding no
+AllowAgentForwarding no
+
+# Banner
+Banner /etc/issue.net

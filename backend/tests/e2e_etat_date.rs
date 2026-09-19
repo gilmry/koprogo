@@ -7,10 +7,72 @@ mod common;
 use actix_web::http::header;
 use actix_web::{test, App};
 use chrono::Utc;
+use koprogo_api::application::dto::{CreateEtatDateRequest, CreateOwnerDto};
+use koprogo_api::domain::entities::EtatDateLanguage;
 use koprogo_api::infrastructure::web::configure_routes;
 use serde_json::json;
 use serial_test::serial;
 use uuid::Uuid;
+
+/// Crée un état daté réel (building + unit + owner) pour les tests du lien
+/// notaire (#845 / ADR 0048 / ADR 0051). Retourne (syndic_token, etat_date_id,
+/// reference_number).
+///
+/// L'état daté n'est pas une fixture triviale : `create_etat_date` exige un
+/// lot réel (FK) ET au moins un copropriétaire actif dessus (« Unit has no
+/// active owners »). Un `Uuid::new_v4()` inventé échoue à l'insertion, pas au
+/// contrôle qu'on cherche à tester — c'est ce qui rendait l'ancien
+/// `test_get_etat_date_by_reference_number` incapable de prouver quoi que ce
+/// soit (aucune assertion de statut, référence jamais créée).
+async fn create_notary_link_fixture(
+    app_state: &actix_web::web::Data<koprogo_api::infrastructure::web::AppState>,
+    org_id: Uuid,
+) -> (String, Uuid, String) {
+    let syndic_token = common::register_and_login_with_role(app_state, org_id, "syndic").await;
+    let building_id = common::create_test_building(app_state, org_id).await;
+    let unit_id = common::create_test_unit(app_state, building_id).await;
+
+    let owner = app_state
+        .owner_use_cases
+        .create_owner(CreateOwnerDto {
+            organization_id: org_id.to_string(),
+            first_name: "Jean".to_string(),
+            last_name: "Dupont".to_string(),
+            email: format!("owner-{}@example.com", Uuid::new_v4()),
+            phone: None,
+            address: "Rue E2E 1".to_string(),
+            city: "Bruxelles".to_string(),
+            postal_code: "1000".to_string(),
+            country: "Belgium".to_string(),
+            user_id: None,
+        })
+        .await
+        .expect("create_notary_link_fixture: create_owner failed");
+    let owner_id = Uuid::parse_str(&owner.id).expect("parse owner_id");
+
+    app_state
+        .unit_owner_use_cases
+        .add_owner_to_unit(unit_id, owner_id, rust_decimal_macros::dec!(1.0), true)
+        .await
+        .expect("create_notary_link_fixture: add_owner_to_unit failed");
+
+    let etat_date = app_state
+        .etat_date_use_cases
+        .create_etat_date(CreateEtatDateRequest {
+            organization_id: org_id,
+            building_id,
+            unit_id,
+            reference_date: Utc::now(),
+            language: EtatDateLanguage::Fr,
+            notary_name: "Me Dupont".to_string(),
+            notary_email: "dupont@notaire.be".to_string(),
+            notary_phone: None,
+        })
+        .await
+        .expect("create_notary_link_fixture: create_etat_date failed");
+
+    (syndic_token, etat_date.id, etat_date.reference_number)
+}
 
 #[actix_web::test]
 #[serial]
@@ -176,11 +238,20 @@ async fn test_list_expired_etats_dates() {
     assert!(resp.status().is_success() || resp.status().is_client_error());
 }
 
+// ============================================================================
+// #845 / ADR 0048 / ADR 0051 — lien notaire pour `GET /etats-dates/reference/*`
+//
+// Multi-rôle (CRITICAL.md #9) : le syndic (authentifié) émet/renouvelle/
+// révoque le lien ; le notaire (jamais authentifié — c'est tout le point du
+// lien) le consomme. Pas un seul login pour tout le scénario.
+// ============================================================================
+
 #[actix_web::test]
 #[serial]
-async fn test_get_etat_date_by_reference_number() {
+async fn happy_syndic_issues_link_and_notary_reads_the_etat_date_repeatedly() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
-    let token = common::register_and_login(&app_state, org_id).await;
+    let (syndic_token, etat_date_id, reference_number) =
+        create_notary_link_fixture(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -189,17 +260,267 @@ async fn test_get_etat_date_by_reference_number() {
     )
     .await;
 
-    let reference = "ED-2026-001";
+    // Le syndic émet le lien.
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/etats-dates/{}/notary-link", etat_date_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", syndic_token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 201, "issue notary link should succeed");
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    let token = body["token"]
+        .as_str()
+        .expect("clear token present")
+        .to_string();
+
+    // Le notaire, sans compte et sans jeton JWT, lit l'état daté via son lien
+    // — deux fois : ADR 0051 exige le multi-lecture, pas l'usage unique des
+    // liens magiques génériques.
+    for _ in 0..2 {
+        let req = test::TestRequest::get()
+            .uri(&format!(
+                "/api/v1/etats-dates/reference/{}?token={}",
+                reference_number, token
+            ))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(
+            resp.status(),
+            200,
+            "le jeton doit rester valide sur relecture"
+        );
+    }
+}
+
+#[actix_web::test]
+#[serial]
+async fn negative_reading_without_a_token_is_refused_before_reaching_the_use_case() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (_syndic_token, _etat_date_id, reference_number) =
+        create_notary_link_fixture(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let req = test::TestRequest::get()
-        .uri(&format!("/api/v1/etats-dates/reference/{}", reference))
-        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .uri(&format!(
+            "/api/v1/etats-dates/reference/{}",
+            reference_number
+        ))
         .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        403,
+        "sans jeton, la lecture doit être refusée — un UUID/référence deviné ne suffit plus"
+    );
+}
 
-    let _resp = test::call_service(&app, req).await;
+#[actix_web::test]
+#[serial]
+async fn negative_unknown_reference_number_is_404_not_a_panic() {
+    let (app_state, _container, _org_id) = common::setup_test_db().await;
 
-    // Reference number format: ED-YYYY-NNN (e.g., ED-2026-001)
-    // Used for notary tracking and legal compliance
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::get()
+        .uri("/api/v1/etats-dates/reference/ED-INCONNUE-000?token=whatever")
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 404);
+}
+
+#[actix_web::test]
+#[serial]
+async fn negative_malformed_token_is_refused_typed_not_a_panic() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (_syndic_token, _etat_date_id, reference_number) =
+        create_notary_link_fixture(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/etats-dates/reference/{}?token=%20%20%20",
+            reference_number
+        ))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 403);
+}
+
+#[actix_web::test]
+#[serial]
+async fn edge_renewing_the_link_extends_validity_and_the_same_token_still_opens_it() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (syndic_token, etat_date_id, reference_number) =
+        create_notary_link_fixture(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/etats-dates/{}/notary-link", etat_date_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", syndic_token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    let token = body["token"].as_str().unwrap().to_string();
+    let expires_at_before = body["expires_at"].as_str().unwrap().to_string();
+
+    let req = test::TestRequest::put()
+        .uri(&format!(
+            "/api/v1/etats-dates/{}/notary-link/renew",
+            etat_date_id
+        ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", syndic_token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 200);
+    let renew_body: serde_json::Value = test::read_body_json(resp).await;
+    let expires_at_after = renew_body["expires_at"].as_str().unwrap().to_string();
+    assert!(
+        expires_at_after > expires_at_before,
+        "le renouvellement doit repousser l'échéance"
+    );
+
+    // Même jeton qu'à l'émission — le renouvellement ne le change pas.
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/etats-dates/reference/{}?token={}",
+            reference_number, token
+        ))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 200);
+}
+
+#[actix_web::test]
+#[serial]
+async fn security_token_scoped_to_another_etat_date_does_not_open_this_one() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (syndic_token, etat_date_id_a, _reference_a) =
+        create_notary_link_fixture(&app_state, org_id).await;
+    let (_syndic_token_b, _etat_date_id_b, reference_b) =
+        create_notary_link_fixture(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!(
+            "/api/v1/etats-dates/{}/notary-link",
+            etat_date_id_a
+        ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", syndic_token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    let token_a = body["token"].as_str().unwrap().to_string();
+
+    // Le jeton de A ne doit pas ouvrir la référence B.
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/etats-dates/reference/{}?token={}",
+            reference_b, token_a
+        ))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 403);
+}
+
+#[actix_web::test]
+#[serial]
+async fn security_a_revoked_link_no_longer_opens_the_etat_date() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (syndic_token, etat_date_id, reference_number) =
+        create_notary_link_fixture(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/etats-dates/{}/notary-link", etat_date_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", syndic_token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    let token = body["token"].as_str().unwrap().to_string();
+
+    let req = test::TestRequest::delete()
+        .uri(&format!("/api/v1/etats-dates/{}/notary-link", etat_date_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", syndic_token)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 204);
+
+    let req = test::TestRequest::get()
+        .uri(&format!(
+            "/api/v1/etats-dates/reference/{}?token={}",
+            reference_number, token
+        ))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 403);
+}
+
+#[actix_web::test]
+#[serial]
+async fn security_a_syndic_from_another_organization_cannot_issue_a_link() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (_syndic_token, etat_date_id, _reference_number) =
+        create_notary_link_fixture(&app_state, org_id).await;
+
+    let other_org_id = common::create_test_organization(&app_state).await;
+    let other_syndic_token =
+        common::register_and_login_with_role(&app_state, other_org_id, "syndic").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/etats-dates/{}/notary-link", etat_date_id))
+        .insert_header((
+            header::AUTHORIZATION,
+            format!("Bearer {}", other_syndic_token),
+        ))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        403,
+        "un syndic d'une autre organisation ne peut pas émettre de lien pour cet état daté"
+    );
 }
 
 #[actix_web::test]

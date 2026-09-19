@@ -425,7 +425,19 @@ pub async fn setup_test_db() -> (
     let age_request_repo = Arc::new(PostgresAgeRequestRepository::new(pool.clone()));
     let age_request_use_cases = AgeRequestUseCases::new(age_request_repo);
     let contractor_report_repo = Arc::new(PostgresContractorReportRepository::new(pool.clone()));
-    let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo);
+    let magic_link_repo_for_reports: Arc<dyn koprogo_api::application::ports::MagicLinkRepository> =
+        Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresMagicLinkRepository::new(
+                pool.clone(),
+            ),
+        );
+    let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo)
+        // #835 — absorbe le second système de liens magiques (scope ContractorReport).
+        .with_magic_link_support(Arc::new(
+            koprogo_api::application::use_cases::MagicLinkUseCases::new(
+                magic_link_repo_for_reports,
+            ),
+        ));
     let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
     let service_provider_use_cases = ServiceProviderUseCases::new(service_provider_repo);
     let individual_member_repo = Arc::new(
@@ -454,6 +466,15 @@ pub async fn setup_test_db() -> (
     );
     let magic_link_use_cases =
         koprogo_api::application::use_cases::MagicLinkUseCases::new(magic_link_repo);
+
+    let lien_notaire_repo: Arc<dyn koprogo_api::application::ports::LienNotaireRepository> =
+        Arc::new(
+            koprogo_api::infrastructure::database::repositories::PostgresLienNotaireRepository::new(
+                pool.clone(),
+            ),
+        );
+    let lien_notaire_use_cases =
+        koprogo_api::application::use_cases::LienNotaireUseCases::new(lien_notaire_repo);
 
     let mandate_repo: Arc<dyn koprogo_api::application::ports::MandateRepository> = Arc::new(
         koprogo_api::infrastructure::database::repositories::PostgresMandateRepository::new(
@@ -554,6 +575,19 @@ pub async fn setup_test_db() -> (
         linky_use_cases,
         board_member_use_cases,
         board_decision_use_cases,
+        // #582 — le conseil de copropriété a gagné son cas d'usage dans
+        // `AppState`, et ce harnais ne l'avait pas suivi. Défaut de jonction :
+        // la branche qui ajoute le champ ne touche pas au harnais, celle qui
+        // devrait le suivre n'existe pas.
+        koprogo_api::application::use_cases::CdcUseCases::new(
+            std::sync::Arc::new(
+                koprogo_api::infrastructure::database::repositories::PostgresBoardAlertRepository::new(
+                    pool.clone(),
+                ),
+            ),
+            board_member_repo.clone(),
+            meeting_repo.clone(),
+        ),
         board_dashboard_use_cases,
         dashboard_use_cases,
         financial_report_use_cases,
@@ -580,6 +614,7 @@ pub async fn setup_test_db() -> (
         boinc_use_cases,
         user_use_cases,
         magic_link_use_cases,
+        lien_notaire_use_cases,
         mandate_use_cases,
         role_delegation_use_cases,
         syndic_response_use_cases,
@@ -728,6 +763,46 @@ pub async fn create_test_building(
     Uuid::parse_str(&building.id).expect("create_test_building: identifiant illisible")
 }
 
+/// Crée un lot rattaché à `building_id`. Nécessaire pour toute pièce qui
+/// porte une FK vers `units(id)` (état daté, etc.) — un `Uuid::new_v4()`
+/// inventé y échoue à l'insertion en base (violation de contrainte).
+#[allow(dead_code)]
+pub async fn create_test_unit(
+    app_state: &actix_web::web::Data<AppState>,
+    building_id: Uuid,
+) -> Uuid {
+    // `acp_id` est REQUIS par le use case depuis #725 (2026-08-29) : c'est la
+    // route HTTP qui le resout depuis l'immeuble parent
+    // (unit_handlers.rs:89-90), pas le use case. Ce helper appelle le use case
+    // en direct : il doit donc faire la meme resolution, sinon `create_unit`
+    // refuse avec « Missing acp_id ».
+    //
+    // Passe inapercu trois semaines parce que `feature/dev` est exclue de
+    // CI Pipeline (`!feature/dev`) : les tests d'integration n'y tournent pas.
+    let building = app_state
+        .building_use_cases
+        .get_building(building_id)
+        .await
+        .expect("create_test_unit: lecture de l'immeuble parent")
+        .expect("create_test_unit: immeuble parent introuvable");
+
+    let dto = koprogo_api::application::dto::CreateUnitDto {
+        acp_id: Some(building.acp_id.clone()),
+        building_id: building_id.to_string(),
+        unit_number: format!("E2E-{}", Uuid::new_v4().simple()),
+        unit_type: koprogo_api::domain::entities::UnitType::Apartment,
+        floor: Some(1),
+        surface_area: 75.0,
+        quota: rust_decimal::Decimal::from(1000),
+    };
+    let unit = app_state
+        .unit_use_cases
+        .create_unit(dto)
+        .await
+        .expect("create_test_unit: create_unit use case failed");
+    Uuid::parse_str(&unit.id).expect("create_test_unit: identifiant illisible")
+}
+
 /// Helper to register a user and get a JWT token
 #[allow(dead_code)]
 pub async fn register_and_login(
@@ -770,4 +845,41 @@ pub async fn register_and_login_with_role(
         .await
         .expect("login")
         .token
+}
+
+/// Comme `register_and_login_with_role`, mais rend AUSSI l'identifiant de
+/// l'utilisateur créé.
+///
+/// Nécessaire depuis #850 : voter à une assemblée exige une fiche de
+/// copropriétaire rattachée au COMPTE de l'appelant. Sans l'`user_id`, un
+/// test ne peut pas établir ce lien, et se retrouve à voter en syndic — ce
+/// que le produit refuse désormais, à raison.
+#[allow(dead_code)]
+pub async fn register_and_login_returning_user(
+    app_state: &actix_web::web::Data<AppState>,
+    org_id: Uuid,
+    role: &str,
+) -> (String, Uuid) {
+    let email = format!("e2e+{}@test.com", Uuid::new_v4());
+    let reg = koprogo_api::application::dto::RegisterRequest {
+        email: email.clone(),
+        password: "Passw0rd!".to_string(),
+        first_name: "E2E".to_string(),
+        last_name: "Tester".to_string(),
+        role: role.to_string(),
+        organization_id: Some(org_id),
+    };
+    let _ = app_state.auth_use_cases.register(reg).await;
+
+    let login = app_state
+        .auth_use_cases
+        .login(koprogo_api::application::dto::LoginRequest {
+            email: email.clone(),
+            password: "Passw0rd!".to_string(),
+        })
+        .await
+        .expect("login");
+
+    let user_id = login.user.id;
+    (login.token, user_id)
 }

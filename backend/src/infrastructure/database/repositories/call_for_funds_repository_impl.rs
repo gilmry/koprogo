@@ -39,11 +39,11 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
                 id, acp_id, organization_id, building_id, title, description,
                 total_amount, reserve_fund_share, contribution_type, call_date, due_date,
                 sent_date, status, account_code, notes, created_at,
-                updated_at, created_by
+                updated_at, created_by, fund_id
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CAST($9 AS contribution_type),
                     $10, $11, $12, CAST($13 AS call_for_funds_status),
-                    $14, $15, $16, $17, $18)
+                    $14, $15, $16, $17, $18, $19)
             "#,
         )
         .bind(call_for_funds.id)
@@ -64,6 +64,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         .bind(call_for_funds.created_at)
         .bind(call_for_funds.updated_at)
         .bind(call_for_funds.created_by)
+        .bind(call_for_funds.fund_id)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Database error: {}", e))?;
@@ -78,7 +79,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
                    total_amount, reserve_fund_share, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
-                   created_at, updated_at, created_by
+                   created_at, updated_at, created_by, fund_id
             FROM call_for_funds
             WHERE id = $1
             "#,
@@ -98,7 +99,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
                    total_amount, reserve_fund_share, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
-                   created_at, updated_at, created_by
+                   created_at, updated_at, created_by, fund_id
             FROM call_for_funds
             WHERE building_id = $1
             ORDER BY call_date DESC
@@ -122,7 +123,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
                    total_amount, reserve_fund_share, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
-                   created_at, updated_at, created_by
+                   created_at, updated_at, created_by, fund_id
             FROM call_for_funds
             WHERE acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             ORDER BY call_date DESC
@@ -166,7 +167,8 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
                 status = CAST($10 AS call_for_funds_status),
                 account_code = $11,
                 notes = $12,
-                updated_at = $13
+                updated_at = $13,
+                fund_id = $14
             WHERE id = $1
             "#,
         )
@@ -183,6 +185,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         .bind(&call_for_funds.account_code)
         .bind(&call_for_funds.notes)
         .bind(call_for_funds.updated_at)
+        .bind(call_for_funds.fund_id)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Database error: {}", e))?;
@@ -200,20 +203,26 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         Ok(result.rows_affected() > 0)
     }
 
-    async fn find_overdue(&self) -> Result<Vec<CallForFunds>, String> {
+    async fn find_overdue(&self, organization_id: Uuid) -> Result<Vec<CallForFunds>, String> {
+        // #882 : sans `organization_id`, cette requête rendait les arriérés de
+        // TOUTE l'instance. Le périmètre est l'ACP — comme `find_by_organization`
+        // ci-dessus, on remonte par `acps.organization_id` plutôt que par la
+        // colonne `call_for_funds.organization_id` dénormalisée.
         let rows = sqlx::query(
             r#"
             SELECT id, acp_id, organization_id, building_id, title, description,
                    total_amount, reserve_fund_share, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
-                   created_at, updated_at, created_by
+                   created_at, updated_at, created_by, fund_id
             FROM call_for_funds
             WHERE due_date < NOW()
               AND status NOT IN ('completed', 'cancelled')
+              AND acp_id IN (SELECT id FROM acps WHERE organization_id = $1)
             ORDER BY due_date ASC
             "#,
         )
+        .bind(organization_id)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| format!("Database error: {}", e))?;
@@ -260,6 +269,7 @@ impl PostgresCallForFundsRepository {
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
             created_by: row.try_get("created_by").ok(),
+            fund_id: row.try_get("fund_id").ok(),
         }
     }
 }

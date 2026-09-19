@@ -1,3 +1,4 @@
+use crate::application::dto::{PageRequest, PageResponse};
 use crate::domain::entities::UserRole;
 use crate::domain::entities::UserRoleAssignment;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -57,17 +58,77 @@ impl NormalizedRole {
     }
 }
 
-/// GET /api/v1/users — list all users (SuperAdmin only)
+/// Le paramètre de recherche de `GET /users`, à côté de `PageRequest`.
+///
+/// Séparé plutôt que fondu dans `PageRequest` : celui-ci est partagé par les
+/// neuf routes paginées du dépôt, et toutes ne se cherchent pas.
+#[derive(serde::Deserialize)]
+pub struct RechercheUtilisateur {
+    pub q: Option<String>,
+    /// Filtre de rôle. `all` et la chaîne vide valent « pas de filtre ».
+    ///
+    /// Porté par le SERVEUR, et pas par l'écran : filtrer une page de
+    /// cinquante côté client montrerait « les syndics parmi les cinquante
+    /// premiers » en les présentant comme « les syndics ».
+    pub role: Option<String>,
+}
+
+/// GET /api/v1/users
+/// Une PAGE d'utilisateurs, filtrable (SuperAdmin only).
+///
+/// ── Ce que cette route faisait, et ce que ça coûtait ──────────────────────
+///
+/// Elle appelait `list_all()` : aucune borne, aucun `PageRequest`. Mesuré le
+/// 2026-09-18 sur la recette, avec le même jeton et à la suite :
+///
+/// ```text
+/// GET /organizations   6 190 octets    18,8 ms   (paginée la veille)
+/// GET /users       2 399 187 octets   667,0 ms   (table entière, 4 120 lignes)
+/// ```
+///
+/// Un facteur 387 en volume. Le pire est que `OrganizationDetail.svelte:86`
+/// demandait déjà `?page=1&per_page=200` — le composant croyait paginer, le
+/// serveur ignorait les deux paramètres. C'est le motif exact de #943, et il
+/// vivait encore ici.
+///
+/// Sur un vrai parc, un syndic de quelques milliers de copropriétaires
+/// recevait 2,4 Mo à chaque ouverture de l'écran. Sur un téléphone en 4G, ce
+/// n'est pas lent : c'est inutilisable.
+///
+/// La clé `data` ne bouge pas — les appelants qui la lisent continuent de
+/// fonctionner — et `pagination` s'y ajoute, avec le total. C'est ce total
+/// qui permet à l'appelant de savoir qu'il ne voit qu'un fragment, au lieu de
+/// le deviner (#953).
 #[get("/users")]
-pub async fn list_users(state: web::Data<AppState>, user: AuthenticatedUser) -> impl Responder {
+pub async fn list_users(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    page_request: web::Query<PageRequest>,
+    recherche: web::Query<RechercheUtilisateur>,
+) -> impl Responder {
     if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(json!({
             "error": "Only SuperAdmin can access all users"
         }));
     }
 
-    match state.user_use_cases.list_all().await {
-        Ok(users) => HttpResponse::Ok().json(json!({ "data": users })),
+    let per_page = page_request.per_page.max(1);
+    let page = page_request.page.max(1);
+    let offset = (page - 1) * per_page;
+
+    match state
+        .user_use_cases
+        .list_page(
+            recherche.q.clone(),
+            recherche.role.clone(),
+            per_page,
+            offset,
+        )
+        .await
+    {
+        Ok((users, total)) => {
+            HttpResponse::Ok().json(PageResponse::new(users, page, per_page, total))
+        }
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to fetch users: {}", e)
         })),

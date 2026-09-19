@@ -11,10 +11,21 @@
   //
   // Les données sont assemblées à partir des listes existantes plutôt que
   // d'un nouvel endpoint agrégé. Il n'existe ni `GET /organizations/{id}`, ni
-  // filtre par organisation sur /users, /acps ou /buildings ; en ajouter
-  // quatre pour une page d'administration dont les volumes se comptent en
-  // dizaines serait disproportionné. Si ces listes grossissent, c'est ici
-  // qu'il faudra basculer sur un endpoint dédié.
+  // filtre par organisation sur /acps ou /buildings ; en ajouter pour une
+  // page d'administration dont les volumes se comptent en dizaines serait
+  // disproportionné.
+  //
+  // ── Correction du 2026-09-18 ──────────────────────────────────────────
+  //
+  // Ce commentaire disait AUSSI qu'aucun filtre par organisation n'existait
+  // sur `/users`. C'était vrai de `/users`, et faux du dépôt :
+  // `GET /organizations/{id}/users` existe et cloisonne côté serveur. Tant
+  // que `/users` ignorait `per_page`, charger toute l'instance et filtrer
+  // ici marchait par accident. Depuis que la route pagine (#953), cet écran
+  // aurait perdu la plupart des comptes sans rien signaler.
+  //
+  // Les listes d'ACP et d'immeubles restent assemblées ici : leurs volumes
+  // n'ont pas changé. Si elles grossissent, c'est ici qu'il faudra basculer.
 
   interface Organization {
     id: string;
@@ -83,7 +94,19 @@
         api.get<{ data: Organization[] }>("/organizations?page=1&per_page=200"),
         api.get<Acp[]>("/acps"),
         api.get<{ data: Building[] }>("/buildings?page=1&per_page=200"),
-        api.get<{ data: User[] }>("/users?page=1&per_page=200"),
+        // La route DÉDIÉE, et non plus `/users` filtré dans le navigateur.
+        //
+        // Cet écran chargeait 200 utilisateurs de toute l'instance pour en
+        // garder ceux d'une organisation. Tant que `/users` ignorait
+        // `per_page` il recevait tout et le filtre marchait par accident ;
+        // depuis que la route pagine (#953), il aurait perdu la plupart des
+        // comptes sans rien signaler.
+        //
+        // `GET /organizations/{id}/users` existait déjà et cloisonne côté
+        // serveur. Le commentaire en tête de ce fichier disait qu'aucun
+        // filtre par organisation n'existait sur `/users` : c'était vrai de
+        // `/users`, et faux du dépôt.
+        api.get<{ data: User[] }>(`/organizations/${organizationId}/users`),
       ]);
 
       organization = orgPage.data.find((o) => o.id === organizationId) ?? null;
@@ -97,7 +120,9 @@
       // Les immeubles ne portent pas d'organization_id : le rattachement
       // passe par l'ACP.
       buildings = buildingPage.data.filter((b) => acpIds.has(b.acp_id));
-      users = userPage.data.filter((u) => u.organization_id === organizationId);
+      // Plus de filtre client : le serveur ne rend que les comptes de
+      // cette organisation.
+      users = userPage.data;
     } catch (err) {
       error = err instanceof Error ? err.message : $_("common.error");
     } finally {

@@ -42,6 +42,17 @@ name: koprogo-dev
 services:
   # Traefik Reverse Proxy (HTTP only for dev)
   traefik:
+    # Sans cette ligne, un redémarrage du démon Docker tue la recette et
+    # RIEN ne la relève. Arrivé le 2026-09-18 à 17:24:59 : les cinq
+    # conteneurs sont morts dix secondes après, code 255, et la pile est
+    # restée éteinte quatre heures sans que personne le remarque.
+    #
+    # La démo, elle, est revenue seule : elle porte `unless-stopped`
+    # depuis toujours. L'écart entre les deux piles n'était pas un choix,
+    # c'était un oubli — et il rend une campagne impossible à lancer au
+    # moment où on en a besoin, avec une erreur qui ressemble à une
+    # régression du produit (#954).
+    restart: unless-stopped
     image: traefik:latest
     container_name: koprogo-dev-traefik
     command:
@@ -61,6 +72,7 @@ services:
 
   # PostgreSQL Database
   postgres:
+    restart: unless-stopped
     image: postgres:15-alpine
     container_name: koprogo-dev-postgres
     environment:
@@ -82,6 +94,7 @@ services:
 
   # Backend (Rust + Actix) with HOT RELOAD via cargo-watch
   backend:
+    restart: unless-stopped
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
@@ -115,7 +128,19 @@ services:
       COOKIE_SECURE: "false"
       ENABLE_RATE_LIMITING: false
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-s3} # Basculer sur le stockage local: STORAGE_PROVIDER=local
-      UPLOAD_DIR: /app/uploads
+      # HORS de l'arborescence surveillée par cargo-watch.
+      #
+      # `/app` est le code source monté (`./backend:/app`) et `cargo watch`
+      # surveille tout le répertoire du crate. Avec `UPLOAD_DIR=/app/uploads`,
+      # CHAQUE envoi de document écrivait dans l'arbre surveillé et faisait
+      # REDÉMARRER le backend — d'où des `502 Bad Gateway` au milieu des
+      # campagnes e2e, apparemment aléatoires.
+      #
+      # Mesuré le 2026-09-17 : 2 redémarrages pour 100 s de campagne, et
+      # ZÉRO sur cinq minutes à vide. Le journal le dit en clair —
+      # « [Running 'cargo run'] » suivi d'une compilation en 0,8 s : rien à
+      # recompiler, seul un fichier non-source avait bougé.
+      UPLOAD_DIR: /var/lib/koprogo/uploads
       S3_BUCKET: ${S3_BUCKET:-koprogo-dev} # Pour du S3 externe, renseigner vos identifiants/bucket
       S3_REGION: ${S3_REGION:-us-east-1}
       S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
@@ -129,6 +154,8 @@ services:
       - cargo_cache:/usr/local/cargo/registry
       - cargo_git:/usr/local/cargo/git
       - target_cache:/app/target
+      # Les fichiers envoyés vivent hors de `/app` : voir UPLOAD_DIR.
+      - uploads_dev:/var/lib/koprogo/uploads
       # Docker socket for testcontainers (BDD/E2E tests)
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
@@ -146,6 +173,7 @@ services:
 
   # Frontend (Astro + Svelte) with HOT RELOAD
   frontend:
+    restart: unless-stopped
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
@@ -174,6 +202,7 @@ services:
 
   # MinIO for local S3-compatible storage
   minio:
+    restart: unless-stopped
   # ── Registre : quay.io, PAS docker.io (#877) ─────────────────────────────
   #
   # `docker.io/minio/minio` a disparu ENTIÈREMENT le 2026-09 — `:latest`
@@ -253,6 +282,7 @@ volumes:
   cargo_cache:
   cargo_git:
   target_cache:
+  uploads_dev:
   minio_data:
 
 networks:

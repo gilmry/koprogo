@@ -1,0 +1,46 @@
+---
+// Story 5.7 — point de montage de OnboardingWizard.svelte.
+//
+// Sous `/admin/*` : couvert par `roleGuards["/admin/*"] = [SUPERADMIN]`
+// (frontend/src/lib/guards.ts) + `RouteGuard.svelte` monté globalement dans
+// Layout.astro. Un accès direct par URL sans session superadmin redirige
+// avant même que ce composant ne s'affiche — c'est la garde d'URL de l'AC
+// @security ("jamais bypass"). Le composant fait sa propre vérification de
+// rôle en plus (défense en profondeur, cf. son en-tête).
+import Layout from "../../../layouts/Layout.astro";
+import OnboardingWizard from "../../../lib/components/onboarding/OnboardingWizard.svelte";
+---
+
+<Layout title="Mise en service d'une ACP - Admin KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+      <OnboardingWizard client:load />
+
+      <div class="mt-6">
+        <!-- Libellé porté par aria-label plutôt qu'en texte visible : cf.
+             garde-libelles-en-dur (#834), qui interdit toute nouvelle phrase
+             en dur dans les gabarits .astro (pas d'infrastructure i18n
+             disponible dans le frontmatter Astro à ce jour). -->
+        <a
+          data-testid="onboarding-back-to-acps-link"
+          href="/admin/acps"
+          aria-label="Retour à la liste des ACP"
+          class="inline-flex items-center text-primary-600 hover:text-primary-700"
+        >
+          <svg
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout>

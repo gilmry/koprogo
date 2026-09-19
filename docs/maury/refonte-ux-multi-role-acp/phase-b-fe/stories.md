@@ -4,7 +4,7 @@ phase: stories
 phase_togaf: D (Stories user-centric)
 agent_bmad: Bob (Scrum Master)
 authors: [Claude Opus 4.7 (drafting), @gilmry (signature pending)]
-date: 2026-06-09
+date: "2026-06-09"
 version: 0.2
 status: Draft 0.2 — Maury-grade rewrite (v0.1 jugé insuffisant 2026-06-09)
 parent_architecture: phase-b-fe/architecture.md (v0.2)

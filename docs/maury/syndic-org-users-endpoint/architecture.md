@@ -2,7 +2,7 @@
 feature: syndic-org-users-endpoint
 phase: C (Information systems architecture TOGAF)
 status: SIGNED v1.0 par @gilmry 2026-08-07
-date: 2026-08-07
+date: "2026-08-07"
 authors: [Claude Sonnet 5 (drafting)]
 depends_on: brief.md (SIGNED v1.0), prd.md (SIGNED v1.0)
 ---

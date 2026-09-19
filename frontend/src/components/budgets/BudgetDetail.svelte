@@ -431,7 +431,7 @@
             on:click={() => (showApproveModal = true)}
             disabled={actionLoading}
             data-testid="approve-budget-button"
-            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+            class="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 transition disabled:opacity-50"
           >
             {$_("budgets.actions.approve")}
           </button>
@@ -450,7 +450,7 @@
             on:click={archiveBudget}
             disabled={actionLoading}
             data-testid="archive-budget-button"
-            class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition disabled:opacity-50"
+            class="px-4 py-2 bg-yellow-700 text-white rounded-lg hover:bg-yellow-800 transition disabled:opacity-50"
           >
             {$_("budgets.actions.archive")}
           </button>
@@ -517,7 +517,7 @@
             data-testid="budget-approve-confirm-button"
             on:click={approveBudget}
             disabled={actionLoading}
-            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            class="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 disabled:opacity-50"
           >
             {$_("budgets.actions.approve")}
           </button>

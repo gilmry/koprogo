@@ -22,6 +22,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/acps/with-metrics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Les ACP du périmètre, avec leurs métriques agrégées
+     * @description Sert la table « Mes ACP » du tableau de bord syndic : nombre de blocs, lots encodés et déclarés, somme des quotités. Séparée de `GET /acps` parce que les métriques coûtent quatre sous-requêtes par ligne : un sélecteur qui n'a besoin que des noms ne doit pas les payer.
+     */
+    get: operations["list_acps_with_metrics"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/acps/{id}": {
     parameters: {
       query?: never;
@@ -36,6 +56,57 @@ export interface paths {
     post?: never;
     /** Archive (delete) an ACP (admin + scope) */
     delete: operations["archive_acp"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/acps/{id}/modules": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Modules actifs d'une ACP (portée ACP) */
+    get: operations["list_acp_modules"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/acps/{id}/modules/{module}/disable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Éteindre un module pour une ACP (admin + portée) */
+    put: operations["disable_acp_module"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/acps/{id}/modules/{module}/enable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Allumer un module pour une ACP (admin + portée) */
+    put: operations["enable_acp_module"];
+    post?: never;
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -367,6 +438,62 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/buildings/{building_id}/cdc/alerts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Émettre une alerte du conseil de copropriété */
+    post: operations["create_cdc_alert"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/cdc/elections": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Élire les membres du conseil de copropriété */
+    post: operations["elect_cdc_members"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/eligible-convocation-recipients": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Copropriétaires éligibles à une convocation
+     * @description Sert l'écran de sélection des destinataires (#780 verrou 1, #784) : le
+     *     syndic doit pouvoir voir et choisir AVANT d'envoyer, pas seulement
+     *     constater après coup que « 0 destinataire » était resté un libellé.
+     */
+    get: operations["list_eligible_convocation_recipients"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/buildings/{building_id}/expenses": {
     parameters: {
       query?: never;
@@ -607,6 +734,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/c/{token}/respond": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Public write action for a magic link (currently: ContractorReport submit) */
+    post: operations["respond_magic_link"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/call-for-funds": {
     parameters: {
       query?: never;
@@ -795,6 +939,45 @@ export interface paths {
     };
     get: operations["list_contractor_evaluations"];
     put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/{id}/notary-link": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Émettre un lien notaire pour un état daté
+     * @description Cloisonné comme les autres écritures de ce fichier (#864) : le syndic doit
+     *     avoir la gestion de l'ACP dont relève l'état daté.
+     */
+    post: operations["issue_notary_link"];
+    /** Révoquer un lien notaire */
+    delete: operations["revoke_notary_link"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/{id}/notary-link/renew": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Prolonger un lien notaire existant */
+    put: operations["renew_notary_link"];
     post?: never;
     delete?: never;
     options?: never;
@@ -1414,6 +1597,23 @@ export interface paths {
     put?: never;
     /** Revoke a mandate before its natural expiry (syndic / superadmin) */
     post: operations["revoke_mandate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetings/{meeting_id}/cdc/alerts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Alertes du conseil rattachées à une AG */
+    get: operations["list_cdc_alerts_for_meeting"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2972,6 +3172,29 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/units/{unit_id}/voting-representative": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Désigner le représentant de vote d'un lot (Art. 3.87 §1er)
+     * @description Un lot à plusieurs titulaires actifs (couple, succession — le cas le plus
+     *     ordinaire d'une copropriété belge) a son vote SUSPENDU jusqu'à cette
+     *     désignation. Refuse un second représentant tant qu'un premier est en place
+     *     (409, `assert_single_voting_representative`).
+     */
+    post: operations["designate_voting_representative"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/{user_id}/role-assignments": {
     parameters: {
       query?: never;
@@ -3112,6 +3335,32 @@ export interface components {
      */
     AttendanceStatus:
       "Pending" | "WillAttend" | "WillNotAttend" | "Attended" | "DidNotAttend";
+    /** @description DTO pour la réponse API d'une alerte du conseil. */
+    BoardAlertResponseDto: {
+      building_id: string;
+      created_at: string;
+      id: string;
+      raised_by_board_member_id: string;
+      severity: string;
+      target_meeting_id: string;
+      text: string;
+    };
+    /** @description DTO pour la réponse API d'un membre du conseil */
+    BoardMemberResponseDto: {
+      building_id: string;
+      created_at: string;
+      /** Format: int64 */
+      days_remaining: number;
+      elected_by_meeting_id: string;
+      expires_soon: boolean;
+      id: string;
+      is_active: boolean;
+      mandate_end: string;
+      mandate_start: string;
+      owner_id: string;
+      position: string;
+      updated_at: string;
+    };
     /**
      * @description Booking status lifecycle
      * @enum {string}
@@ -3152,6 +3401,11 @@ export interface components {
       description: string;
       /** Format: date-time */
       due_date: string;
+      /**
+       * Format: uuid
+       * @description Le fonds alimenté par cet appel (issue #635).
+       */
+      fund_id?: string | null;
       /** Format: uuid */
       id: string;
       is_overdue: boolean;
@@ -3197,6 +3451,7 @@ export interface components {
     };
     /** @description Request DTO for casting a vote */
     CastVoteRequest: {
+      auth_method?: null | components["schemas"]["VoteAuthMethod"];
       /** Format: uuid */
       owner_id: string;
       /** Format: uuid */
@@ -3216,6 +3471,11 @@ export interface components {
        *     et pour qui — aura tranché le reste de la route.
        */
       voting_power?: string | null;
+    };
+    /** @description Un candidat à élire au conseil de copropriété. */
+    CdcCandidateDto: {
+      owner_id: string;
+      position: string;
     };
     /**
      * @description Challenge status lifecycle
@@ -3341,6 +3601,23 @@ export interface components {
        *     1000 millièmes / 10000 dix-millièmes / autre (Art. 3.84 CC, ADR-0010).
        */
       total_tantiemes?: number | null;
+    };
+    /**
+     * @description DTO pour créer une alerte du conseil de copropriété (Story 4.7 / #582).
+     *
+     *     `building_id` n'y figure pas : il vient du chemin de la route
+     *     (`/buildings/{building_id}/cdc/alerts`), pas du corps — une route scopée
+     *     ne doit pas laisser le corps affirmer un autre immeuble que celui de
+     *     l'URL.
+     *
+     *     `target_meeting_id` est fourni par l'appelant plutôt que résolu
+     *     automatiquement — cf. `CdcUseCases::create_alert` pour la justification.
+     */
+    CreateBoardAlertDto: {
+      /** @description "info", "warning" ou "critical". */
+      severity: string;
+      target_meeting_id: string;
+      text: string;
     };
     CreateBuildingDto: {
       /**
@@ -3479,8 +3756,14 @@ export interface components {
       description: string;
       /** Format: uuid */
       owner_id: string;
-      /** Format: uuid */
-      unit_id?: string | null;
+      /**
+       * Format: uuid
+       * @description Obligatoire : c'est le lot qui porte l'ACP créancière (Story H15,
+       *     ADR-0045). `resoudre_lacp_creanciere` refuse déjà `None` en use case —
+       *     Issue #852 aligne la signature sur ce que le code a toujours exigé,
+       *     pour qu'un client suivant le contrat n'essuie plus un 400 opaque.
+       */
+      unit_id: string;
     };
     /** @description Create payment method request DTO (from Stripe) */
     CreatePaymentMethodRequest: {
@@ -3668,6 +3951,57 @@ export interface components {
      * @enum {string}
      */
     DeliveryMethod: "Email" | "RegisteredLetter" | "Bailiff";
+    /** @description DTO for designating the voting representative of a unit (#848, Art. 3.87 §1 CC). */
+    DesignateVotingRepresentativeDto: {
+      owner_id: string;
+    };
+    /**
+     * @description DTO pour élire les membres du conseil à l'issue d'une AG (Story 4.7).
+     *
+     *     `building_id` vient du chemin (`/buildings/{building_id}/cdc/elections`),
+     *     pas du corps — même raison que `CreateBoardAlertDto`.
+     *
+     *     L'AG référencée par `meeting_id` doit être `Completed` : sa clôture
+     *     prouve déjà le quorum double (Art. 3.87 §5 CC) via
+     *     `Meeting::assert_can_complete`. Cf. `CdcUseCases::elect_members`.
+     */
+    ElectCdcMembersDto: {
+      candidates: components["schemas"]["CdcCandidateDto"][];
+      meeting_id: string;
+    };
+    /**
+     * @description Un copropriétaire qu'une convocation toucherait, pour l'écran de
+     *     sélection des destinataires (#780 verrou 1, #784).
+     *
+     *     Distinct de `ConvocationRecipientResponse` : celui-ci décrit un
+     *     destinataire déjà rattaché à une convocation envoyée (tracking d'ouverture,
+     *     de présence, de procuration). Celui-ci décrit un copropriétaire ÉLIGIBLE,
+     *     avant tout envoi — la question posée est « qui pourrait recevoir ceci ? »,
+     *     pas « qui l'a reçu ? ».
+     */
+    EligibleRecipientResponse: {
+      email: string;
+      full_name: string;
+      /** Format: uuid */
+      owner_id: string;
+    };
+    /**
+     * @description Réponse de `GET /acps/{id}/modules`.
+     *
+     *     La forme est **imposée par la moitié frontend déjà livrée**
+     *     (`frontend/src/lib/api/modules.ts`, `EnabledModulesResponseDto`), qui a
+     *     été écrite en attendant cette story : `acp_id` en `snake_case`.
+     *
+     *     `modules` porte `Module` et non `String`. Le fil est identique — `Module`
+     *     se sérialise en `snake_case` — mais le **schéma** change : il énumère les
+     *     sept valeurs au lieu d'annoncer « une chaîne quelconque ». C'est ce qui
+     *     permet à `api.d.ts` d'être plus fort que la liste écrite à la main côté
+     *     frontend, au lieu d'être plus faible qu'elle.
+     */
+    EnabledModulesResponseDto: {
+      acp_id: string;
+      modules: components["schemas"]["Module"][];
+    };
     /** @enum {string} */
     EnergyType: "Electricity" | "Gas" | "Both";
     /**
@@ -3830,6 +4164,14 @@ export interface components {
        */
       valid_until: string;
     };
+    IssuedLienNotaireDto: {
+      /** Format: date-time */
+      expires_at: string;
+      /** Format: uuid */
+      id: string;
+      /** @description Jeton clair — à renvoyer au syndic UNE FOIS, jamais persisté ailleurs. */
+      token: string;
+    };
     JournalEntryLineRequest: {
       account_code: string;
       credit: string;
@@ -3861,6 +4203,14 @@ export interface components {
     JournalEntryWithLinesResponse: {
       entry: components["schemas"]["JournalEntryResponse"];
       lines: components["schemas"]["JournalEntryLineResponse"][];
+    };
+    LienNotaireStatusDto: {
+      /** Format: date-time */
+      expires_at: string;
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      renewed_at?: string | null;
     };
     LoginRequest: {
       email: string;
@@ -3906,6 +4256,28 @@ export interface components {
      * @enum {string}
      */
     MeetingType: "Ordinary" | "Extraordinary";
+    /**
+     * @description Les capacités que KoproGo sait allumer ou éteindre par copropriété.
+     *
+     *     Les variantes doivent rester alignées, dans les deux sens, sur la
+     *     contrainte `acp_enabled_modules_module_check`
+     *     (`migrations/20260917000000_create_acp_enabled_modules.sql`). La garde
+     *     `garde_enum_contre_contrainte` casse si l'une des deux listes devance
+     *     l'autre — c'est elle qui rend cet alignement vérifié plutôt que promis.
+     *
+     *     Le frontend tient la même liste dans `frontend/src/lib/api/modules.ts`
+     *     (`MODULE_NAMES`), dette documentée en tête de ce fichier-là, à résorber
+     *     en important les types générés dès que ce handler est au schéma OpenAPI.
+     * @enum {string}
+     */
+    Module:
+      | "identity"
+      | "community"
+      | "ticketing"
+      | "accounting"
+      | "governance"
+      | "maintenance"
+      | "portfolio";
     /**
      * @description Notice category for filtering
      * @enum {string}
@@ -4139,6 +4511,14 @@ export interface components {
       "Pending" | "Sent" | "Opened" | "Paid" | "Escalated" | "Cancelled";
     ReopenTicketRequest: {
       reason: string;
+    };
+    ReplacedPartDto: {
+      name: string;
+      /** Format: uuid */
+      photo_document_id?: string | null;
+      /** Format: int32 */
+      quantity: number;
+      reference?: string | null;
     };
     /**
      * @description Statut d'une résolution
@@ -4431,6 +4811,23 @@ export interface components {
       /** Format: int32 */
       total_units: number;
     };
+    /**
+     * @description Mise à jour du brouillon (photos, pièces, compte-rendu)
+     *
+     *     `ToSchema` est requis depuis la fusion du 2026-09-15 : `magic_link_handlers`
+     *     expose ce DTO dans un `#[utoipa::path]`, et utoipa exige alors qu'il sache
+     *     se décrire. Les deux branches étaient justes séparément — l'une ajoutait le
+     *     handler, l'autre le DTO — et leur rencontre a produit l'incohérence. C'est
+     *     le genre de défaut qu'aucune des deux revues n'aurait pu voir.
+     */
+    UpdateContractorReportDto: {
+      compte_rendu?: string | null;
+      parts_replaced?: components["schemas"]["ReplacedPartDto"][] | null;
+      photos_after?: string[] | null;
+      photos_before?: string[] | null;
+      /** Format: date-time */
+      work_date?: string | null;
+    };
     /** @description Modifier une facture brouillon ou rejetée. */
     UpdateInvoiceDraftDto: {
       amount_excl_vat?: string | null;
@@ -4523,10 +4920,27 @@ export interface components {
       valid_until?: string | null;
     };
     /**
+     * @description Méthode d'authentification du votant (Story 4.2, Art. 3.87 §1er, §4 CC,
+     *     #48). `Presence` couvre la signature de la feuille de présence en AG
+     *     physique ; `Proxy` une procuration papier en bonne et due forme ;
+     *     `Itsme`/`Eid` l'authentification forte requise pour un vote à distance
+     *     (Art. 3.87 §1er : « à distance au moyen d'une communication
+     *     électronique » suppose de savoir QUI a voté).
+     * @enum {string}
+     */
+    VoteAuthMethod: "presence" | "proxy" | "itsme" | "eid";
+    /**
      * @description Choix de vote d'un copropriétaire
      * @enum {string}
      */
     VoteChoice: "pour" | "contre" | "abstention";
+    /** @description Response DTO for a voting representative designation (#848). */
+    VotingRepresentativeResponseDto: {
+      is_voting_representative: boolean;
+      owner_id: string;
+      unit_id: string;
+      unit_owner_id: string;
+    };
     WarrantyType:
       | "none"
       | "standard"
@@ -4621,6 +5035,31 @@ export interface operations {
       };
       /** @description Domain validation error */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_acps_with_metrics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des ACP avec métriques */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
         headers: {
           [name: string]: unknown;
         };
@@ -4748,6 +5187,110 @@ export interface operations {
       };
       /** @description ACP still carries buildings — detach or delete them first */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_acp_modules: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description ACP UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Modules actifs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnabledModulesResponseDto"];
+        };
+      };
+      /** @description Hors portée */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  disable_acp_module: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description ACP UUID */
+        id: string;
+        /** @description Nom du module (ADR-0015) */
+        module: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Module éteint */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Hors portée, droits insuffisants, ou module toujours actif */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Nom de module inconnu */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  enable_acp_module: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description ACP UUID */
+        id: string;
+        /** @description Nom du module (ADR-0015) */
+        module: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Module actif */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Hors portée ou droits insuffisants */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Nom de module inconnu */
+      422: {
         headers: {
           [name: string]: unknown;
         };
@@ -5212,6 +5755,118 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  create_cdc_alert: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID de l'immeuble */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateBoardAlertDto"];
+      };
+    };
+    responses: {
+      /** @description Alerte émise */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardAlertResponseDto"];
+        };
+      };
+      /** @description Hors mandat ou hors portée */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Sévérité ou AG cible invalide */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  elect_cdc_members: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID de l'immeuble */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ElectCdcMembersDto"];
+      };
+    };
+    responses: {
+      /** @description Membres élus */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardMemberResponseDto"][];
+        };
+      };
+      /** @description Hors portée */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Quorum non atteint ou candidature invalide */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_eligible_convocation_recipients: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID de l'immeuble */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Destinataires éligibles */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EligibleRecipientResponse"][];
+        };
+      };
+      /** @description Hors portée */
+      403: {
         headers: {
           [name: string]: unknown;
         };
@@ -5773,6 +6428,44 @@ export interface operations {
       };
     };
   };
+  respond_magic_link: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateContractorReportDto"];
+      };
+    };
+    responses: {
+      /** @description Report updated and submitted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unsupported scope for this link, or validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid / expired token */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   list_call_for_funds: {
     parameters: {
       query?: {
@@ -6185,6 +6878,115 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["ContractorEvaluationDto"][];
         };
+      };
+    };
+  };
+  issue_notary_link: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID de l'état daté */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Lien émis — le jeton en clair n'est rendu QU'ICI */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IssuedLienNotaireDto"];
+        };
+      };
+      /** @description Hors portée */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description État daté introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  revoke_notary_link: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID de l'état daté */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Lien révoqué */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Hors portée */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Lien introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  renew_notary_link: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID de l'état daté */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Lien prolongé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LienNotaireStatusDto"];
+        };
+      };
+      /** @description Hors portée */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Lien introuvable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };
@@ -7201,7 +8003,7 @@ export interface operations {
           "application/json": components["schemas"]["JournalEntryWithLinesResponse"];
         };
       };
-      /** @description Unbalanced entry, or unknown field in the body */
+      /** @description Unbalanced entry, missing building, unknown field in the body */
       400: {
         headers: {
           [name: string]: unknown;
@@ -7217,6 +8019,13 @@ export interface operations {
       };
       /** @description Forbidden (accountant or superadmin only) */
       403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Designated building does not exist */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -7476,6 +8285,43 @@ export interface operations {
         content?: never;
       };
       /** @description Mandate not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  list_cdc_alerts_for_meeting: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID de l'assemblée */
+        meeting_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Alertes de l'AG */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardAlertResponseDto"][];
+        };
+      };
+      /** @description Hors portée (cloisonnement #882) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Assemblée introuvable */
       404: {
         headers: {
           [name: string]: unknown;
@@ -8096,7 +8942,7 @@ export interface operations {
           "application/json": components["schemas"]["OwnerContributionResponse"];
         };
       };
-      /** @description Validation error, or unknown field in the body */
+      /** @description Malformed JSON body, or wrong Content-Type */
       400: {
         headers: {
           [name: string]: unknown;
@@ -8105,6 +8951,13 @@ export interface operations {
       };
       /** @description User does not belong to an organization */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Body does not match the schema (e.g. unit_id missing) — see Issue #852 */
+      422: {
         headers: {
           [name: string]: unknown;
         };
@@ -11432,6 +12285,47 @@ export interface operations {
       };
       /** @description Assignment refused by the domain */
       400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  designate_voting_representative: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description UUID du lot */
+        unit_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DesignateVotingRepresentativeDto"];
+      };
+    };
+    responses: {
+      /** @description Représentant désigné */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["VotingRepresentativeResponseDto"];
+        };
+      };
+      /** @description Identifiant invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Hors mandat sur ce lot */
+      403: {
         headers: {
           [name: string]: unknown;
         };

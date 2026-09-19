@@ -19,8 +19,8 @@ use uuid::Uuid;
 /// - building_id: UUID
 /// - resource_type: ResourceType (MeetingRoom, LaundryRoom, Gym, etc.)
 /// - resource_name: String (e.g., "Meeting Room A")
-/// - start_time: DateTime<Utc>
-/// - end_time: DateTime<Utc>
+/// - start_time: `DateTime<Utc>`
+/// - end_time: `DateTime<Utc>`
 /// - notes: `Option<String>`
 /// - recurring_pattern: RecurringPattern (default: None)
 /// - recurrence_end_date: `Option<DateTime<Utc>>`
@@ -43,15 +43,36 @@ pub async fn create_booking(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+    // Story #588 (INV-5/FR27) — même idiome RBAC que le reste des handlers
+    // (cf. iot_grid_handlers, stats_handlers) : "syndic" ou superadmin.
+    let is_syndic = auth.is_superadmin() || auth.role == "syndic";
     match data
         .resource_booking_use_cases
-        .create_booking(auth.user_id, org_id, request.into_inner())
+        .create_booking(auth.user_id, org_id, is_syndic, request.into_inner())
         .await
     {
         Ok(booking) => HttpResponse::Created().json(booking),
         Err(e) => {
+            // Issue #781 — le refus "pas de fiche de copropriétaire" est un
+            // 403 (règle métier : réserver engage une personne, pas encore
+            // la copropriété). Depuis la story #588, un syndic dispose d'une
+            // échappatoire tracée : `on_behalf_of_acp` + motif. Le `kind`
+            // laisse le frontend router vers un message traduit dans les
+            // quatre locales sans dépendre du libellé français.
             if e.contains("conflicts with") {
                 HttpResponse::Conflict().json(serde_json::json!({"error": e}))
+            } else if classification_erreurs::est_motif_acp_manquant(&e) {
+                HttpResponse::UnprocessableEntity().json(serde_json::json!({
+                    "error": e,
+                    "kind": "reservation_motif_required",
+                }))
+            } else if classification_erreurs::est_refus_owner_requis(&e) {
+                HttpResponse::Forbidden().json(serde_json::json!({
+                    "error": e,
+                    "kind": "owner_profile_required",
+                }))
+            } else if classification_erreurs::est_interdit(&e) {
+                HttpResponse::Forbidden().json(serde_json::json!({"error": e}))
             } else if classification_erreurs::est_introuvable(&e) {
                 HttpResponse::NotFound().json(serde_json::json!({"error": e}))
             } else {
@@ -748,9 +769,24 @@ pub struct CheckConflictsQuery {
 #[get("/resource-bookings/check-conflicts")]
 pub async fn check_conflicts(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     query: web::Query<CheckConflictsQuery>,
 ) -> impl Responder {
+    // Cloisonnement (#882) : `building_id` arrive en paramètre de requête sans
+    // aucune vérification. Une réservation dit qui a réservé la salle ou le
+    // parking visiteur, et QUAND — la même donnée que `verify_booking_org_access`
+    // protège déjà pour les réservations existantes de ce fichier.
+    if let Err(err) = verify_building_org_access(
+        &auth,
+        query.building_id,
+        &data.building_use_cases,
+        &data.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     // Parse resource_type
     let resource_type: ResourceType =
         match serde_json::from_str(&format!("\"{}\"", query.resource_type)) {

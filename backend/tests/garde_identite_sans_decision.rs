@@ -173,11 +173,6 @@ const EXCEPTIONS: &[(&str, &str)] = &[
         "SELECT ... WHERE organization_id = $1 — idem",
     ),
     (
-        "local_exchange_handlers.rs::delete_exchange",
-        "le cas d'usage refuse : `if exchange.provider_id != owner_id`, lu \
-         dans local_exchange_use_cases.rs:372",
-    ),
-    (
         "document_handlers.rs::list_documents",
         "`user.organization_id` passé au cas d'usage, qui borne la requête",
     ),
@@ -310,6 +305,47 @@ const EXCEPTIONS: &[(&str, &str)] = &[
          un autre sujet ; le cloisonnement inter-organisations n'est pas en \
          cause",
     ),
+    // ── Lues le 2026-09-13, deuxième passe sur les 40 non classées ─────────
+    (
+        "api_key_handlers.rs::get_api_key",
+        "SELECT ... WHERE id = $1 AND organization_id = $2 — jumeau exact de \
+         revoke_api_key/list_api_keys, deja exceptes pour le meme motif SQL",
+    ),
+    (
+        "two_factor_handlers.rs::enable_2fa",
+        "appelle `two_factor_use_cases.enable_2fa(auth.user_id, ...)` — agit \
+         sur soi, jamais sur un tiers. Jumeau de setup_2fa deja excepte",
+    ),
+    (
+        "two_factor_handlers.rs::disable_2fa",
+        "`disable_2fa(auth.user_id, ...)` — idem",
+    ),
+    (
+        "two_factor_handlers.rs::regenerate_backup_codes",
+        "`regenerate_backup_codes(auth.user_id, ...)` — idem",
+    ),
+    (
+        "mcp_sse_handlers.rs::mcp_sse_endpoint",
+        "ouvre une session SSE et rend un `session_id` : aucune ressource \
+         ciblee, rien a cloisonner. Le filtrage a lieu ensuite dans \
+         mcp_messages_endpoint",
+    ),
+    (
+        "mcp_sse_handlers.rs::mcp_messages_endpoint",
+        "delegue a `dispatch_tool`, fonction separee (ligne 517) qui extrait \
+         `user.organization_id` et borne chaque outil avec — meme angle mort \
+         que verifier_mandat_sur_ag : la decision existe, le motif textuel ne \
+         la voit pas dans CETTE fonction",
+    ),
+    (
+        "mcp_sse_handlers.rs::mcp_system_prompt_endpoint",
+        "`include_str!(\"../../mcp_system_prompt.md\")` — contenu statique \
+         fige a la compilation, identique pour tous",
+    ),
+    (
+        "mcp_sse_handlers.rs::mcp_legal_index_endpoint",
+        "`include_str!(\"../../legal_index.json\")` — idem, statique",
+    ),
 ];
 
 /// Mesuré le 2026-09-13. Relevé, jamais estimé.
@@ -318,7 +354,25 @@ const EXCEPTIONS: &[(&str, &str)] = &[
 /// en CORRIGEANT une route (elle sort du relevé), ou en la LISANT et en
 /// l'inscrivant aux exceptions (elle sort du non-classé). Les deux sont du
 /// travail ; aucune ne touche à la définition de l'instrument.
-const NON_CLASSEES_AU_2026_09_13: usize = 40;
+///
+/// **40 → 32**, deuxième passe de lecture le 2026-09-13 : huit routes lues et
+/// inscrites aux EXCEPTIONS ci-dessus (`get_api_key`, les trois routes 2FA
+/// self-service, les quatre endpoints MCP). Aucune corrigée dans cette passe.
+///
+/// Les 32 qui restent ont été lues aussi, et ne sont PAS des exceptions : ce
+/// sont des lacunes de cloisonnement probables, prioritaires pour la suite —
+/// notamment les quatre transitions de facture (`update_invoice_draft`,
+/// `submit_invoice_for_approval`, `approve_invoice`, `reject_invoice`, qui
+/// contrôlent le RÔLE et jamais le PÉRIMÈTRE, catégorie décrite plus haut) et
+/// les trois routes `unit_owner_handlers.rs` (`add_owner_to_unit`,
+/// `transfer_ownership`, `update_unit_owner`), pour lesquelles le correctif
+/// (`verify_owner_org_access` / `verify_unit_org_access`) existe déjà, importé
+/// et utilisé ailleurs dans le même fichier. `issue_magic_link` est la plus
+/// sévère : elle mène à un accès non authentifié hors périmètre. Non
+/// corrigées ici faute de pouvoir exécuter `cargo test`/`clippy` dans cette
+/// session pour démontrer le rouge puis le vert — corriger sans ce filet
+/// serait produire du code non mesuré.
+const NON_CLASSEES_AU_2026_09_13: usize = 32;
 
 #[test]
 fn chaque_exception_est_encore_dans_le_releve() {

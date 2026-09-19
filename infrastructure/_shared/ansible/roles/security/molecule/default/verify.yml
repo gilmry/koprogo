@@ -1,0 +1,88 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    # @happy — the role is self-contained: every template it deploys must
+    # come from its own templates/, not rely on `hardening` having run
+    # first in the same play.
+    - name: Check LUKS setup script was deployed
+      ansible.builtin.stat:
+        path: /usr/local/bin/koprogo-luks-setup.sh
+      register: luks_script
+
+    - name: Assert LUKS setup script exists with restrictive permissions
+      ansible.builtin.assert:
+        that:
+          - luks_script.stat.exists
+          - luks_script.stat.mode == "0700"
+        fail_msg: "A.8.24 LUKS: setup script missing or not restricted to root (mode should be 0700)"
+
+    # @negative — LUKS format is destructive; the role must NOT auto-invoke
+    # it. This asserts the (intentional) absence of automatic execution.
+    - name: Check LUKS mapper devices were NOT created by the role itself
+      ansible.builtin.command: cryptsetup status postgres_encrypted
+      register: luks_status
+      failed_when: false
+      changed_when: false
+
+    - name: Assert no LUKS volume was auto-formatted by the role
+      ansible.builtin.assert:
+        that:
+          - luks_status.rc != 0
+        fail_msg: "A.8.24 LUKS: role auto-formatted a device — luksFormat must stay a human-gated action (irreversible/destructive)"
+
+    - name: Check fail2ban jail + filters were deployed
+      ansible.builtin.stat:
+        path: /etc/fail2ban/jail.d/koprogo.conf
+      register: fail2ban_jail
+
+    - name: Assert fail2ban jail file exists
+      ansible.builtin.assert:
+        that:
+          - fail2ban_jail.stat.exists
+        fail_msg: "A.8.7 fail2ban: koprogo jail config not deployed by security role alone"
+
+    - name: Check CrowdSec service is enabled and running
+      ansible.builtin.systemd:
+        name: crowdsec
+      register: crowdsec_status
+
+    - name: Assert CrowdSec is active
+      ansible.builtin.assert:
+        that:
+          - crowdsec_status.status.ActiveState == "active"
+        fail_msg: "A.8.7 CrowdSec: service not active after security role converge"
+
+    - name: Check Suricata local ruleset was deployed
+      ansible.builtin.stat:
+        path: /etc/suricata/rules/local.rules
+      register: suricata_rules
+
+    - name: Assert Suricata ruleset exists
+      ansible.builtin.assert:
+        that:
+          - suricata_rules.stat.exists
+        fail_msg: "A.8.16 Suricata: local.rules not deployed — this is the exact bug WP-E2 fixed (missing template in security/templates/)"
+
+    - name: Slurp sshd_config content
+      ansible.builtin.slurp:
+        src: /etc/ssh/sshd_config
+      register: sshd_config_content
+
+    - name: Assert sshd_config was hardened by the security role alone
+      ansible.builtin.assert:
+        that:
+          - "'PermitRootLogin no' in (sshd_config_content.content | b64decode)"
+        fail_msg: "A.8.9 SSH: security role did not deploy the hardened sshd_config on its own"
+
+    - name: Check original sshd_config was backed up before overwrite
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config.backup
+      register: sshd_backup
+
+    - name: Assert sshd_config.backup exists (rollback path preserved)
+      ansible.builtin.assert:
+        that:
+          - sshd_backup.stat.exists
+        fail_msg: "A.8.9 SSH: original sshd_config was not backed up before being overwritten"

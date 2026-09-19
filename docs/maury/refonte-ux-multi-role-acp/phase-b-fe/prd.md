@@ -4,7 +4,7 @@ phase: prd
 phase_togaf: B (Business architecture)
 agent_bmad: John (Product Manager)
 authors: [Claude Opus 4.7 (drafting), @gilmry (signature pending)]
-date: 2026-06-09
+date: "2026-06-09"
 version: 0.2
 status: Draft 0.2 — Maury-grade rewrite (v0.1 jugé insuffisant 2026-06-09)
 parent_brief: phase-b-fe/brief.md (v0.2)

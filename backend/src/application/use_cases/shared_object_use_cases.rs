@@ -474,22 +474,52 @@ impl SharedObjectUseCases {
     /// # Authorization
     /// - Only owner can delete their object
     /// - Cannot delete if currently borrowed
+    ///
+    /// # Authorization (Story 5.3 — #587, INV-4)
+    /// - The listing's owner can delete it, no reason needed (self-service).
+    /// - A community moderator (syndic, `community.moderator`, superadmin)
+    ///   who is NOT the owner can delete a litigious listing, but a reason is
+    ///   mandatory (audit trail).
+    /// - Anyone else is refused — with the pre-existing, named refusal when
+    ///   they hold no `Owner` record at all in this organization
+    ///   ([`crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES`]),
+    ///   distinct from a legitimate-but-wrong owner.
     pub async fn delete_shared_object(
         &self,
         object_id: Uuid,
         user_id: Uuid,
         organization_id: Uuid,
+        actor_role: &str,
+        reason: Option<String>,
     ) -> Result<(), String> {
-        let owner = self.resolve_owner(user_id, organization_id).await?;
+        let owner = self
+            .owner_repo
+            .find_by_user_id_and_organization(user_id, organization_id)
+            .await?;
+
         let object = self
             .shared_object_repo
             .find_by_id(object_id)
             .await?
             .ok_or("Shared object not found".to_string())?;
 
-        // Authorization: only owner can delete
-        if object.owner_id != owner.id {
-            return Err("Unauthorized: only owner can delete object".to_string());
+        let is_owner = owner
+            .as_ref()
+            .map(|o| object.owner_id == o.id)
+            .unwrap_or(false);
+
+        if !is_owner {
+            if crate::application::community_permissions::peut_moderer(actor_role) {
+                reason.filter(|r| !r.trim().is_empty()).ok_or_else(|| {
+                    crate::application::error::MOTIF_MODERATION_REQUIS.to_string()
+                })?;
+            } else if owner.is_none() {
+                return Err(
+                    crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES.to_string()
+                );
+            } else {
+                return Err("Unauthorized: only owner can delete object".to_string());
+            }
         }
 
         // Business rule: cannot delete if borrowed
@@ -1065,7 +1095,9 @@ mod tests {
         let dto = make_create_dto(building_id);
         let created = uc.create_shared_object(user_id, org_id, dto).await.unwrap();
 
-        let result = uc.delete_shared_object(created.id, user_id, org_id).await;
+        let result = uc
+            .delete_shared_object(created.id, user_id, org_id, "owner", None)
+            .await;
         assert!(result.is_ok());
     }
 
@@ -1077,12 +1109,95 @@ mod tests {
 
         // Another user tries to delete -- will fail because user not found as owner
         let other = Uuid::new_v4();
-        let result = uc.delete_shared_object(created.id, other, org_id).await;
+        let result = uc
+            .delete_shared_object(created.id, other, org_id, "owner", None)
+            .await;
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
             crate::application::error::REFUS_RESERVE_AUX_COPROPRIETAIRES,
             "le refus doit être celui, nommé, opposé à qui n'est pas copropriétaire"
+        );
+    }
+
+    // ------------------------------------------------------------------------
+    // Story 5.3 (#587), INV-4 — Syndic = community.moderator sur le partage d'objets
+    // ------------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn happy_syndic_moderator_supprime_un_objet_litigieux_avec_motif() {
+        let (uc, user_id, org_id, building_id, _) = setup();
+        let dto = make_create_dto(building_id);
+        let created = uc.create_shared_object(user_id, org_id, dto).await.unwrap();
+
+        let syndic_id = Uuid::new_v4(); // aucune fiche Owner dans cette org
+        let result = uc
+            .delete_shared_object(
+                created.id,
+                syndic_id,
+                org_id,
+                "syndic",
+                Some("Objet dangereux signalé".to_string()),
+            )
+            .await;
+        assert!(
+            result.is_ok(),
+            "un syndic modérateur doit pouvoir supprimer un objet litigieux : {:?}",
+            result.err()
+        );
+        assert!(uc.get_shared_object(created.id).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn negative_moderation_dun_objet_sans_motif_est_refusee() {
+        let (uc, user_id, org_id, building_id, _) = setup();
+        let dto = make_create_dto(building_id);
+        let created = uc.create_shared_object(user_id, org_id, dto).await.unwrap();
+
+        let syndic_id = Uuid::new_v4();
+        let result = uc
+            .delete_shared_object(created.id, syndic_id, org_id, "syndic", None)
+            .await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            crate::application::error::MOTIF_MODERATION_REQUIS
+        );
+    }
+
+    #[tokio::test]
+    async fn edge_syndic_cumulant_le_role_owner_supprime_son_propre_objet_sans_motif() {
+        // Le syndic a AUSSI une fiche de copropriétaire (un lot) dans cette
+        // ACP : il agit ès qualités de copropriétaire sur SON objet, comme
+        // n'importe quel owner — pas de motif requis (ADR-0052).
+        let obj_repo = Arc::new(MockSharedObjectRepo::new());
+        let owner_repo = Arc::new(MockOwnerRepo::new());
+        let credit_repo = Arc::new(MockCreditBalanceRepo::new());
+
+        let syndic_owner_user_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        owner_repo.add_owner(create_test_owner(syndic_owner_user_id, org_id));
+
+        let uc = SharedObjectUseCases::new(
+            obj_repo as Arc<dyn SharedObjectRepository>,
+            owner_repo as Arc<dyn OwnerRepository>,
+            credit_repo as Arc<dyn OwnerCreditBalanceRepository>,
+        );
+
+        let dto = make_create_dto(building_id);
+        let created = uc
+            .create_shared_object(syndic_owner_user_id, org_id, dto)
+            .await
+            .unwrap();
+
+        let result = uc
+            .delete_shared_object(created.id, syndic_owner_user_id, org_id, "syndic", None)
+            .await;
+        assert!(
+            result.is_ok(),
+            "le propriétaire de l'objet n'a pas à motiver sa propre suppression : {:?}",
+            result.err()
         );
     }
 

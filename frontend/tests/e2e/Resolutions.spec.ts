@@ -109,20 +109,77 @@ test.describe("Resolutions - AG Voting System", () => {
     });
     const unit = await unitResp.json();
 
+    // Le vote est émis par le COPROPRIÉTAIRE lui-même, pas par le syndic.
+    //
+    // `POST /resolutions/{id}/vote` refuse en 403 tout compte sans fiche de
+    // copropriétaire rattachée, et le commentaire du gestionnaire est
+    // explicite : « Ceci ferme, pour l'instant, la question que #850 pose
+    // sans la trancher : le syndic doit-il pouvoir saisir des votes en
+    // séance ? Cette route ne le permet plus. »
+    //
+    // Ce test présumait le contraire — le syndic votait avec un `owner_id`
+    // qui n'était pas le sien. Ce n'est pas un détail d'amorçage : c'est le
+    // scénario entier qui est devenu interdit, et à raison. Il est donc
+    // réécrit sur le geste réel, pas contourné.
+    const ownerEmail = `vote-owner-${timestamp}@test.com`;
+    const ownerRegResp = await page.request.post(`${API_BASE}/auth/register`, {
+      data: {
+        email: ownerEmail,
+        password: "test123456",
+        first_name: "Vote",
+        last_name: `Owner${timestamp}`,
+        role: "owner",
+        organization_id: orgId,
+      },
+    });
+    expect(ownerRegResp.status()).toBe(201);
+    const ownerUser = await ownerRegResp.json();
+    const ownerToken = ownerUser.token;
+    const ownerUserId = ownerUser.user?.id ?? ownerUser.id;
+
     const ownerResp = await page.request.post(`${API_BASE}/owners`, {
       data: {
         organization_id: orgId,
         first_name: "Vote",
         last_name: `Owner${timestamp}`,
-        email: `vote-owner-${timestamp}@test.com`,
+        email: ownerEmail,
         address: "1 Rue Vote",
         city: "Brussels",
         postal_code: "1000",
         country: "Belgium",
+        // `user_id` est ce qui rattache la fiche au compte. Sans lui, le
+        // compte vote « pour personne » et la route refuse.
+        user_id: ownerUserId,
       },
       headers: { Authorization: `Bearer ${token}` },
     });
     const owner = await ownerResp.json();
+
+    // Lier le copropriétaire AU LOT avant de voter.
+    //
+    // Sans ce lien, `POST /resolutions/{id}/vote` rend 403 depuis le
+    // durcissement #850 : « le copropriétaire X ne détient pas le lot Y : il
+    // ne peut pas voter pour lui (Art. 3.87 § 1er CC) ». Auparavant
+    // n'importe quel `owner_id` de l'organisation passait — c'est
+    // exactement l'usurpation que #850 ferme.
+    //
+    // Le produit a raison et le test avait vieilli : on ne vote que pour un
+    // lot qu'on détient. Le lien est donc AJOUTÉ, pas la garde contournée.
+    const lienResp = await page.request.post(
+      `${API_BASE}/units/${unit.id}/owners`,
+      {
+        data: {
+          owner_id: owner.id,
+          // 1 et non 100 : malgré son nom, `ownership_percentage` est une
+          // FRACTION. Envoyer 100 fait répondre au serveur « adding: 10000%,
+          // total would be: 10000% » et refuser en 400 (Art. 577-2 §4 CC).
+          ownership_percentage: 1,
+          is_primary_contact: true,
+        },
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(lienResp.status()).toBe(201);
 
     // Create resolution
     const resolutionResp = await page.request.post(
@@ -154,8 +211,14 @@ test.describe("Resolutions - AG Voting System", () => {
           unit_id: unit.id,
           vote_choice: "pour",
           voting_power: 100,
+          // Story 4.2 (#48) — comment le votant a été authentifié. Son
+          // absence rend 422 `VOTE_AUTH_METHOD_REQUIRED` : Art. 3.87 §1er
+          // suppose de savoir QUI a voté. `presence` est la modalité d'une
+          // AG tenue en salle ; `itsme`/`eid` seraient exigées pour un vote
+          // à distance.
+          auth_method: "presence",
         },
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${ownerToken}` },
       },
     );
     expect(voteResp.status()).toBe(201);

@@ -30,6 +30,30 @@ pub enum MajorityType {
     Unanimity,
 }
 
+impl MajorityType {
+    /// Rang de sévérité croissant du seuil — Art. 3.88 §1 : absolue < deux
+    /// tiers < quatre cinquièmes < unanimité.
+    fn rang(&self) -> u8 {
+        match self {
+            MajorityType::Absolute => 0,
+            MajorityType::TwoThirds => 1,
+            MajorityType::FourFifths => 2,
+            MajorityType::Unanimity => 3,
+        }
+    }
+
+    /// La majorité obtenue (`self`) satisfait-elle au moins le seuil
+    /// `requise` ?
+    ///
+    /// Une majorité plus exigeante que celle requise satisfait toujours le
+    /// seuil — une AG qui vote à l'unanimité un fonds affecté n'a pas voté
+    /// « moins » que les deux tiers requis. Introduit pour la story #635
+    /// (création d'un fonds affecté — Art. 3.88, gros travaux — 2/3).
+    pub fn satisfait(&self, requise: &MajorityType) -> bool {
+        self.rang() >= requise.rang()
+    }
+}
+
 /// Statut d'une résolution
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
@@ -37,6 +61,23 @@ pub enum ResolutionStatus {
     Pending,  // En attente de vote
     Adopted,  // Adoptée
     Rejected, // Rejetée
+}
+
+/// Nature métier d'une résolution — distincte de `ResolutionType`, qui ne dit
+/// que le seuil de majorité requis.
+///
+/// Story 4.6 (#581) : `generate_ago_resolutions(meeting_id)` ajoute d'office,
+/// à toute AGO, une résolution d'évaluation des prestataires (Art. 3.89 § 5,
+/// 12° Code Civil belge). `kind` est ce qui la distingue d'une résolution
+/// ordinaire — `is_auto_generated()` s'y fie exclusivement, pour qu'aucune
+/// autre donnée (titre, statut) ne puisse accidentellement déclencher ou
+/// lever sa protection contre la suppression/l'édition.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ResolutionKind {
+    #[default]
+    Standard,
+    EvaluationContractorsAuto,
 }
 
 /// Résolution soumise au vote lors d'une assemblée générale
@@ -48,6 +89,8 @@ pub struct Resolution {
     pub description: String,
     pub resolution_type: ResolutionType,
     pub majority_required: MajorityType,
+    /// Cf. `ResolutionKind` — Story 4.6 (#581).
+    pub kind: ResolutionKind,
     pub vote_count_pour: i32,
     pub vote_count_contre: i32,
     pub vote_count_abstention: i32,
@@ -153,7 +196,52 @@ impl Resolution {
             prestataire_de_la_mission,
             created_at: now,
             voted_at: None,
+            kind: ResolutionKind::Standard,
         })
+    }
+
+    /// La résolution d'évaluation des prestataires que `generate_ago_resolutions`
+    /// ajoute d'office à toute AGO (Art. 3.89 § 5, 12° Code Civil belge — Story
+    /// 4.6, #581).
+    ///
+    /// Construite directement plutôt que via `new_avec_prestataire` : son
+    /// titre et sa description sont fixes et jamais vides, donc jamais
+    /// faillibles — un `Result` ici n'aurait pas d'état d'erreur atteignable,
+    /// et forcerait l'appelant à `unwrap()` un cas qui ne se produit pas.
+    pub fn new_evaluation_contractors_auto(meeting_id: Uuid) -> Self {
+        let now = Utc::now();
+        Self {
+            id: Uuid::new_v4(),
+            meeting_id,
+            title: "Évaluation des prestataires".to_string(),
+            description: "Évaluation de l'exécution des contrats en cours, inscrite d'office \
+                à l'ordre du jour de l'assemblée ordinaire (Art. 3.89 § 5, 12° Code Civil belge)."
+                .to_string(),
+            resolution_type: ResolutionType::Ordinary,
+            majority_required: MajorityType::Absolute,
+            vote_count_pour: 0,
+            vote_count_contre: 0,
+            vote_count_abstention: 0,
+            total_voting_power_pour: Decimal::ZERO,
+            total_voting_power_contre: Decimal::ZERO,
+            total_voting_power_abstention: Decimal::ZERO,
+            status: ResolutionStatus::Pending,
+            agenda_item_index: None,
+            prestataire_de_la_mission: None,
+            created_at: now,
+            voted_at: None,
+            kind: ResolutionKind::EvaluationContractorsAuto,
+        }
+    }
+
+    /// Une résolution générée d'office (Story 4.6) n'est ni supprimable ni
+    /// modifiable par l'organe qu'elle évalue — c'est le cœur de la story :
+    /// le syndic ne retire pas son propre bulletin de notes de l'ordre du
+    /// jour. Dérivé de `kind`, jamais stocké séparément, pour qu'aucune
+    /// écriture (changement de statut, de titre…) ne puisse désynchroniser
+    /// la protection de ce qu'elle protège.
+    pub fn is_auto_generated(&self) -> bool {
+        self.kind == ResolutionKind::EvaluationContractorsAuto
     }
 
     /// Enregistre un vote "Pour" et met à jour les compteurs
@@ -804,6 +892,90 @@ mod tests {
         assert_eq!(resolution.vote_count_contre, 2);
         assert_eq!(resolution.pour_percentage(), 55.0);
         assert_eq!(resolution.contre_percentage(), 45.0);
+    }
+
+    // ===== MajorityType::satisfait (issue #635) =====
+
+    /// @happy — la majorité obtenue égale exactement le seuil requis.
+    #[test]
+    fn happy_deux_tiers_satisfait_deux_tiers() {
+        assert!(MajorityType::TwoThirds.satisfait(&MajorityType::TwoThirds));
+    }
+
+    /// @edge — une majorité plus exigeante que celle requise satisfait
+    /// toujours le seuil (l'unanimité n'est pas « moins » que les 2/3).
+    #[test]
+    fn edge_unanimite_satisfait_deux_tiers() {
+        assert!(MajorityType::Unanimity.satisfait(&MajorityType::TwoThirds));
+        assert!(MajorityType::FourFifths.satisfait(&MajorityType::TwoThirds));
+    }
+
+    /// @security — la majorité simple (absolue) ne satisfait PAS un seuil de
+    /// deux tiers : contourner le seuil qualifié par un vote simple doit être
+    /// détectable.
+    #[test]
+    fn security_majorite_absolue_ne_satisfait_pas_deux_tiers() {
+        assert!(!MajorityType::Absolute.satisfait(&MajorityType::TwoThirds));
+    }
+
+    /// @negative — un seuil non atteint reste non atteint quel que soit le
+    /// sens de comparaison (pas de panic, résultat booléen stable).
+    #[test]
+    fn negative_quatre_cinquiemes_ne_satisfait_pas_unanimite() {
+        assert!(!MajorityType::FourFifths.satisfait(&MajorityType::Unanimity));
+    }
+
+    // ===== Resolution::is_auto_generated (Story 4.6, #581) =====
+
+    /// @happy — `generate_ago_resolutions` construit une résolution marquée
+    /// `EvaluationContractorsAuto`, immédiatement reconnue comme auto-générée.
+    #[test]
+    fn happy_resolution_evaluation_contractors_auto_est_auto_generee() {
+        let resolution = Resolution::new_evaluation_contractors_auto(Uuid::new_v4());
+        assert_eq!(resolution.kind, ResolutionKind::EvaluationContractorsAuto);
+        assert!(resolution.is_auto_generated());
+        assert_eq!(resolution.status, ResolutionStatus::Pending);
+    }
+
+    /// @edge — un syndic peut nommer une résolution ordinaire du même titre ;
+    /// seul `kind` fait foi, jamais un intitulé qui pourrait coïncider.
+    #[test]
+    fn edge_resolution_standard_homonyme_nest_pas_auto_generee() {
+        let resolution = Resolution::new(
+            Uuid::new_v4(),
+            "Évaluation des prestataires".to_string(),
+            "Point ajouté manuellement par le syndic".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            None,
+        )
+        .unwrap();
+        assert!(!resolution.is_auto_generated());
+    }
+
+    /// @security — le prédicat qui protège la résolution contre la
+    /// suppression/l'édition ne se fie qu'à `kind` : ni un changement de
+    /// statut ni un renommage ne peuvent lever ou forger la protection.
+    #[test]
+    fn security_is_auto_generated_repose_uniquement_sur_kind() {
+        let mut resolution = Resolution::new_evaluation_contractors_auto(Uuid::new_v4());
+        resolution.status = ResolutionStatus::Adopted;
+        resolution.title = "Renommée par un tiers".to_string();
+        assert!(resolution.is_auto_generated());
+    }
+
+    /// @negative — deux résolutions auto-générées pour deux réunions
+    /// distinctes restent deux entités séparées (pas d'ID ni de réunion
+    /// partagés par erreur de construction).
+    #[test]
+    fn negative_deux_resolutions_auto_generees_ne_partagent_rien() {
+        let meeting_a = Uuid::new_v4();
+        let meeting_b = Uuid::new_v4();
+        let a = Resolution::new_evaluation_contractors_auto(meeting_a);
+        let b = Resolution::new_evaluation_contractors_auto(meeting_b);
+        assert_ne!(a.id, b.id);
+        assert_eq!(a.meeting_id, meeting_a);
+        assert_eq!(b.meeting_id, meeting_b);
     }
 
     /// Une résolution sans aucun vote ne divise pas par zéro.

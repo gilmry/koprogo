@@ -39,6 +39,25 @@
     onclose?.();
   };
 
+  /**
+   * Échap traité SUR le dialogue, là où le focus se trouve réellement.
+   *
+   * L'écouteur `document` plus bas ne suffisait pas : l'élément ci-dessous
+   * porte `onkeydown={(e) => e.stopPropagation()}`, et comme le piège de
+   * focus garde le focus DANS la modale, la touche n'atteignait jamais le
+   * document. La modale ne se fermait donc pas au clavier — relevé par
+   * `AccessibiliteEcransAuthentifies` (@edge, piège de focus).
+   *
+   * Le `stopPropagation` n'est pas retiré : il est voulu pour ne pas
+   * déclencher la fermeture par le fond. On agit avant lui.
+   */
+  const surToucheDansLeDialogue = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && isOpen) {
+      handleClose();
+    }
+    e.stopPropagation();
+  };
+
   // Keyboard: Escape closes the modal
   $effect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
@@ -104,7 +123,7 @@
         size
       ]} mx-auto my-8 max-h-[90vh] flex flex-col"
       onclick={(e) => e.stopPropagation()}
-      onkeydown={(e) => e.stopPropagation()}
+      onkeydown={surToucheDansLeDialogue}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"

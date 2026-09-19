@@ -66,7 +66,31 @@
       let hasChecked = false;
 
       // Check if user is authenticated and has access to current route
-      const checkAccess = () => {
+      //
+      // `forcer` : ne plus attendre `isLoading`. Employé une seule fois,
+      // juste après la course ci-dessus, et c'est ce qui rend le plafond de
+      // quinze secondes utile.
+      //
+      // ── Ce que cet argument répare ────────────────────────────────────
+      //
+      // `authStore.init()` ne remet `isLoading` à faux QUE s'il aboutit
+      // (`auth.ts:241`) ou s'il nettoie la session. S'il pend — un
+      // rafraîchissement silencieux vers un backend qui ne répond pas —
+      // `isLoading` reste vrai POUR TOUJOURS.
+      //
+      // La course rejetait alors au bout de quinze secondes, le `catch`
+      // passait, `checkAccess()` était appelé… et retournait aussitôt sur
+      // `if (isLoading)`. La souscription ne le rappelait jamais, puisque le
+      // store n'émettait plus. Le voile restait, indéfiniment.
+      //
+      // Le commentaire d'au-dessus annonçait pourtant l'inverse :
+      // « l'alternative est un écran qui ne répond plus jamais, ce qui est
+      // strictement pire ». L'intention était juste ; le code ne l'obtenait
+      // pas.
+      //
+      // Constaté le 2026-09-18 sur `vitrine.yml` : les cinq parcours filmés
+      // bloqués sur `/login`, voile encore présent après 25 s (#873).
+      const checkAccess = (forcer = false) => {
         // Prevent multiple checks - only check once
         if (hasChecked) {
           return;
@@ -75,7 +99,7 @@
         const { user, isAuthenticated, isLoading } = $authStore;
 
         // Wait until auth store is done loading
-        if (isLoading) {
+        if (isLoading && !forcer) {
           return;
         }
 
@@ -120,8 +144,12 @@
         isChecking = false;
       };
 
-      // Initial check
-      checkAccess();
+      // Premier contrôle, SANS attendre `isLoading`.
+      //
+      // À ce point, `init()` a soit abouti, soit dépassé son plafond. Dans
+      // les deux cas la question est tranchée : on ne gagne plus rien à
+      // attendre, et on risque de ne jamais reprendre la main.
+      checkAccess(true);
 
       // Re-check ONLY ONCE on auth store changes (then unsubscribe)
       unsubscribe = authStore.subscribe(() => {

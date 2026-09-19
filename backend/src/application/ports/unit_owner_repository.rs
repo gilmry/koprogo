@@ -60,7 +60,7 @@ pub trait UnitOwnerRepository: Send + Sync {
 
     /// Quotes-parts de CHARGE des détenteurs actifs d'un immeuble.
     ///
-    /// Renvoie `(unit_id, owner_id, part)` où `part` est la fraction [0,1] du
+    /// Renvoie `(unit_id, owner_id, part)` où `part` est la fraction `[0, 1]` du
     /// montant total qui incombe à ce copropriétaire :
     ///
     /// ```text
@@ -81,4 +81,18 @@ pub trait UnitOwnerRepository: Send + Sync {
     /// pour rejeter les lots démembrés/indivis sans représentant unique désigné
     /// (`VOTING_RIGHT_SUSPENDED`).
     async fn find_voting_holders_by_unit(&self, unit_id: Uuid) -> Result<Vec<LotHolder>, String>;
+
+    /// Story #848 (Art. 3.87 §1 CC) — la ligne `unit_owners` identifiée
+    /// porte-t-elle déjà la désignation de représentant de vote ? Sert à
+    /// rendre la désignation idempotente : redésigner le représentant déjà en
+    /// place ne doit pas se heurter à la règle du représentant unique contre
+    /// elle-même (`assert_single_voting_representative`).
+    async fn is_voting_representative(&self, unit_owner_id: Uuid) -> Result<bool, String>;
+
+    /// Story #848 (Art. 3.87 §1 CC) — écrit la désignation du représentant de
+    /// vote pour une ligne `unit_owners` précise. L'appelant DOIT avoir validé
+    /// `assert_single_voting_representative` sur l'état prospectif AVANT
+    /// d'appeler cette méthode : elle écrit, elle ne contrôle rien (cf.
+    /// `UnitOwnerUseCases::designate_voting_representative`).
+    async fn set_voting_representative(&self, unit_owner_id: Uuid) -> Result<(), String>;
 }

@@ -11,7 +11,7 @@
 [![Documentation](https://img.shields.io/badge/docs-gilmry.github.io%2Fkoprogo-blue)](https://gilmry.github.io/koprogo)
 
 [![CI Pipeline](https://github.com/gilmry/koprogo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gilmry/koprogo/actions/workflows/ci.yml)
-[![GDPR Compliance](<https://img.shields.io/badge/GDPR-Compliant%20(Art.%2015%2F16%2F17%2F18%2F21%2F30)-success>)](docs/GDPR_COMPLIANCE_CHECKLIST.md)
+[![GDPR Compliance](<https://img.shields.io/badge/GDPR-Compliant%20(Art.%2015%2F16%2F17%2F18%2F21%2F30)-success>)](docs/legal/GDPR_COMPLIANCE_CHECKLIST.md)
 [![Security Audit](https://github.com/gilmry/koprogo/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/gilmry/koprogo/actions/workflows/security.yml)
 [![Documentation](https://github.com/gilmry/koprogo/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/gilmry/koprogo/actions/workflows/docs.yml)
 
@@ -49,7 +49,7 @@ encore en prod publique. Critères GO : `docs/WBS_GO_LIVE_v0.1.0.md`.
 | Capacité                     | Détail                                                                                                                                                                                                                     | Référence                                                                                                                         |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | 💰 **Decimal end-to-end**    | Toute la chaîne monétaire (charges, contributions, appels, état daté, journal PCMN) en `rust_decimal::Decimal` exact ; erreurs domaine **typées** (5 enums) mappées vers `AppError::Validation` (400, jamais 500 Internal) | Umbrella `#433` (EXP-005/006/007/008) + ADR-0007 + [ADR-0008 amendement](docs/adr/0008-numeric-vs-double-precision-postgresql.md) |
-| 🔐 **JWT hors localStorage** | Refresh token = cookie `HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth` ; access en mémoire seule ; silent-refresh **single-flight** anti-race                                                                       | WP-FE1 `#343` + #550 + [JWT_REFRESH_TOKENS §Amendment 2026-05-19](docs/JWT_REFRESH_TOKENS.md)                                     |
+| 🔐 **JWT hors localStorage** | Refresh token = cookie `HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth` ; access en mémoire seule ; silent-refresh **single-flight** anti-race                                                                       | WP-FE1 `#343` + #550 + [ADR-0054](docs/adr/0054-refresh-token-cookie-httponly.md) + [JWT_REFRESH_TOKENS](docs/backend/JWT_REFRESH_TOKENS.md)                                     |
 | 🔑 **Rotation clés API**     | `POST /api-keys/{id}/rotate` gate SYNDIC/SUPERADMIN, transaction, anti-rejeu, secret rendu une fois. **Aucun `501 Not Implemented` ne part en bêta.**                                                                      | `#339` + [RD_PUBLIC_API_V2 §API Key Lifecycle](docs/RD_PUBLIC_API_V2.rst)                                                         |
 | 📋 **Politique PCMN**        | `expenses.amount > 0` conservé ; annulations en **contre-écritures journal** (pas de relâche schéma)                                                                                                                       | `#526` + [BELGIAN_ACCOUNTING_PCMN §Annulations](docs/BELGIAN_ACCOUNTING_PCMN.rst)                                                 |
 | 🛂 **Gouvernance AG**        | Quorum Art. 3.87 §5 CC, 2e convocation auto, vote mandataire Art. 3.87 §7, governance Decimal exact                                                                                                                        | `#271`, `#272`, `#273`, `#525`                                                                                                    |
@@ -434,8 +434,8 @@ koprogo/
 git clone https://github.com/gilmry/koprogo.git
 cd koprogo
 
-# 2. Démarrer PostgreSQL avec Docker
-make docker-up
+# 2. Démarrer la pile de développement (Traefik + backend + frontend + PostgreSQL)
+make up
 
 # 3. Configuration de l'environnement
 cp backend/.env.example backend/.env
@@ -480,10 +480,7 @@ make coverage
 
 ```bash
 # Tests d'intégration avec PostgreSQL (testcontainers)
-cargo test --test integration
-
-# Ou via Makefile
-make test-integration
+make test-e2e-backend
 ```
 
 ### Tests BDD (Behavior-Driven Development)
@@ -648,8 +645,8 @@ Documentation complète disponible dans le dossier `docs/` :
 ### Guides Techniques
 
 - **[CLAUDE.md](CLAUDE.md)** - Instructions développeurs (Architecture hexagonale, TDD, Commandes)
-- **[Multi-owner Support](docs/MULTI_OWNER_SUPPORT.md)** - Fonctionnement quotes-parts et API multi-copropriétaires
-- **[Multi-role Support](docs/MULTI_ROLE_SUPPORT.md)** - Gestion utilisateurs multi-rôles
+- **[Multi-owner Support](docs/user-guides/MULTI_OWNER_SUPPORT.md)** - Fonctionnement quotes-parts et API multi-copropriétaires
+- **[Multi-role Support](docs/user-guides/MULTI_ROLE_SUPPORT.md)** - Gestion utilisateurs multi-rôles
 - **[Deployment Guide](docs/deployment/index.rst)** - Déploiement (Terraform, Ansible, GitOps)
 - **[Security](infrastructure/SECURITY.md)** - Sécurité production (LUKS, IDS, WAF, backups)
 

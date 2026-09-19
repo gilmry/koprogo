@@ -4,7 +4,12 @@
 //
 // Source de vérité réactive du périmètre de travail courant (building / acp /
 // portfolio sélectionnés). Consommé par :
-// - `BuildingSelector.svelte` (mutation + lecture)
+// - `BuildingSelector.svelte` (mutation + lecture) — le filtre immeuble,
+//   secondaire depuis la story #798.
+// - `AcpSelector.svelte` (mutation + lecture, story #798) — le périmètre
+//   PRINCIPAL : l'ACP est la personne morale (numéro BCE, compte, AG,
+//   quotités), pas l'immeuble. Une ACP couvre 1..N immeubles (ACP principale
+//   + secondaires, droit belge) : la relation n'est jamais 1:1.
 // - `ContextBanner.svelte` (Story 2.3 — affichage)
 // - menus contextualisés (Navigation) — masquer/afficher liens selon scope
 //
@@ -120,6 +125,44 @@ export function setPortfolio(portfolioId: string | null): void {
  */
 export function setAcp(acpId: string | null): void {
   _state.selectedAcpId = acpId;
+}
+
+/**
+ * Demande l'accès à une ACP donnée, VALIDÉ par le serveur (Story #798).
+ *
+ * `setAcp()` fait confiance à l'appelant — correct quand l'identifiant vient
+ * déjà d'une liste scope-filtrée par le serveur (`listAcps()`). Ce chemin-ci
+ * sert quand ce n'est pas garanti (lien profond, ACP demandée par un
+ * identifiant externe) : le critère `@negative` de la story #798 exige qu'une
+ * ACP hors du portefeuille de l'utilisateur retourne 403 **sans changer le
+ * périmètre courant**.
+ *
+ * Différence avec `rehydraterDepuisLurl` (#841) : celui-là répond à un
+ * premier chargement de page — le périmètre part de zéro, donc "reset" et
+ * "inchangé" coïncident. Ici, un refus PENDANT une session ne doit rien
+ * effacer de ce qui fonctionnait déjà : on ne touche `selectedAcpId` qu'en
+ * cas de succès.
+ *
+ * @param acpId   Identifiant demandé (non cru sur parole).
+ * @param charger Chargeur d'ACP par identifiant, injecté pour rester testable
+ *                sans réseau et sans importer la couche API dans le store.
+ * @returns       `true` si le serveur a confirmé l'ACP (scope mis à jour),
+ *                `false` sinon (scope inchangé, `scopeError` posé).
+ */
+export async function demanderAcp(
+  acpId: string,
+  charger: (id: string) => Promise<{ id: string }>,
+): Promise<boolean> {
+  try {
+    const acp = await charger(acpId);
+    _state.selectedAcpId = acp.id;
+    _state.scopeError = null;
+    return true;
+  } catch (err: unknown) {
+    const statut = (err as { status?: number } | null)?.status;
+    _state.scopeError = statut === 403 ? "forbidden" : "not_found";
+    return false;
+  }
 }
 
 /**
@@ -270,6 +313,58 @@ export async function resoudreLeDefautServeur(
   _state.selectedAcpId = acps[0].id;
   _state.scopeError = null;
   return acps[0].id;
+}
+
+/** Chargeurs injectés pour {@link resoudrePerimetreAuChargement}. */
+export interface ChargeursPerimetre {
+  building: (id: string) => Promise<Building>;
+  acps: () => Promise<{ id: string }[]>;
+}
+
+/**
+ * Compose les deux replis en un seul point d'entrée pour le chargement d'une
+ * page : c'est LA fonction qui manquait pour clore #841.
+ *
+ * `rehydraterDepuisLurl` et `resoudreLeDefautServeur` existaient déjà,
+ * séparément testés, mais rien ne les enchaînait. Un appelant qui voulait les
+ * trois branches de l'AC @edge — lien profond, puis défaut serveur, puis nul —
+ * devait réinventer l'ordre et, surtout, la règle de non-repli ci-dessous.
+ *
+ * ── L'ordre ───────────────────────────────────────────────────────────────
+ *
+ * 1. `?buildingId=` (ou `building_id=`) accepté par le serveur → il gagne, le
+ *    défaut n'est même pas consulté.
+ * 2. Absence de paramètre → le défaut serveur tente de combler.
+ * 3. Ni l'un ni l'autre → périmètre nul, l'écran demande une sélection.
+ *
+ * ── La règle qui n'est pas qu'un détail d'ordre ─────────────────────────────
+ *
+ * Un `?buildingId=` **présent mais refusé** par le serveur (403/404) ne
+ * retombe PAS sur le défaut serveur. Deviner un remplacement à un lien que
+ * l'utilisateur (ou l'attaquant) a explicitement demandé serait le repli
+ * silencieux que l'AC @negative interdit — et pour un lien partagé entre deux
+ * cabinets, cela ferait atterrir l'utilisateur sur SA PROPRE ACP par défaut
+ * sans qu'aucun écran ne dise que le lien d'origine a été refusé.
+ * `rehydraterDepuisLurl` a déjà posé `scopeError`, c'est cet état qui doit
+ * rester visible.
+ *
+ * @param chargeurs  `building` sert le lien profond, `acps` sert le défaut.
+ *                   Injectés pour que l'orchestrateur reste testable sans
+ *                   réseau et n'importe pas la couche API.
+ */
+export async function resoudrePerimetreAuChargement(
+  chargeurs: ChargeursPerimetre,
+): Promise<void> {
+  if (typeof window === "undefined") return;
+
+  const params = new URLSearchParams(window.location.search);
+  const idDemande = params.get("buildingId") ?? params.get("building_id");
+
+  const adopte = await rehydraterDepuisLurl(chargeurs.building);
+  if (adopte !== null) return;
+  if (idDemande !== null) return;
+
+  await resoudreLeDefautServeur(chargeurs.acps);
 }
 
 /**

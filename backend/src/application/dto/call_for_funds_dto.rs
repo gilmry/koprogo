@@ -50,6 +50,8 @@ pub struct CallForFundsResponse {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub created_by: Option<Uuid>,
+    /// Le fonds alimenté par cet appel (issue #635).
+    pub fund_id: Option<Uuid>,
 }
 
 impl From<CallForFunds> for CallForFundsResponse {
@@ -91,6 +93,7 @@ impl From<CallForFunds> for CallForFundsResponse {
             created_at: call.created_at,
             updated_at: call.updated_at,
             created_by: call.created_by,
+            fund_id: call.fund_id,
         }
     }
 }

@@ -1127,6 +1127,22 @@ mod tests {
         async fn find_by_id(&self, _id: Uuid) -> Result<Option<User>, String> {
             Ok(None)
         }
+        async fn find_page(
+            &self,
+            _recherche: Option<String>,
+            _role: Option<String>,
+            _limit: i64,
+            _offset: i64,
+        ) -> Result<Vec<User>, String> {
+            Ok(Vec::new())
+        }
+        async fn count_matching(
+            &self,
+            _recherche: Option<String>,
+            _role: Option<String>,
+        ) -> Result<i64, String> {
+            Ok(0)
+        }
         async fn find_by_email(&self, _e: &str) -> Result<Option<User>, String> {
             Ok(None)
         }

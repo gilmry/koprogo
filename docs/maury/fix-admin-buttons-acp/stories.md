@@ -1,7 +1,7 @@
 ---
 feature: fix-admin-buttons-acp
 status: SIGNED v1.0 par @gilmry 2026-08-08
-date: 2026-08-08
+date: "2026-08-08"
 authors: [Claude Sonnet 5 (drafting)]
 parent_brief: brief.md
 archetype: full-stack (Story 1 = frontend pur ; Story 2 = frontend, backend déjà conforme)

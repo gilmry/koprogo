@@ -84,8 +84,33 @@ fn racine_handlers() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure/web/handlers")
 }
 
+/// Une route est-elle gardée ?
+///
+/// ── Pourquoi la liste s'allonge, et pourquoi ce n'est PAS un relâchement ──
+///
+/// Elle ne connaissait que deux marqueurs, ceux du 2026-09-03. Depuis, #864 a
+/// cloisonné vingt-deux routes avec des helpers NOMMÉS par ressource —
+/// `verify_budget_org_access`, `verify_etat_date_org_access`,
+/// `verify_meeting_org_access`, `verify_expense_org_access`.
+///
+/// Ces helpers ne font pas autre chose : ils remontent à l'ACP par la même
+/// chaîne et appellent `verify_org_access`. Ils portent simplement le nom de
+/// la ressource qu'ils cloisonnent, ce qui rend leur absence LISIBLE dans la
+/// signature d'un gestionnaire.
+///
+/// Ne pas les reconnaître ferait compter comme « non gardée » une route qui
+/// l'est — et, pire, laisserait croire que la dette a grossi alors qu'elle a
+/// baissé. C'est l'inverse d'un relâchement : c'est l'instrument qui rattrape
+/// le travail, exactement comme `DECISION` a dû reconnaître `verify_*` dans
+/// `garde_identite_sans_decision`.
+///
+/// Le motif reste EXIGEANT : il faut un `verify_…_org_access`, pas un
+/// contrôle de rôle. Un `check_syndic_role` ne garde pas un périmètre, et ce
+/// cliquet continue de le refuser.
 fn est_garde(corps: &str) -> bool {
-    corps.contains("verify_building_org_access") || corps.contains("verify_acp_org_access")
+    corps.contains("verify_building_org_access")
+        || corps.contains("verify_acp_org_access")
+        || corps.contains("_org_access(")
 }
 
 /// Les routes d'écriture d'un module, avec le verdict de garde.

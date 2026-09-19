@@ -4,10 +4,10 @@ phase: prd
 phase_togaf: B-C (Business + SI)
 agent_bmad: John (Product Manager)
 authors: [Gilles Maury, Farah Maury]
-date: 2026-05-20
+date: "2026-05-20"
 version: 1.0
 status: Signed by @gilmry 2026-05-20
-signed_at: 2026-05-20
+signed_at: "2026-05-20"
 signed_by: "@gilmry"
 brief_source: brief.md (Mary, v1.0 signé 2026-05-20)
 total_frs: 45

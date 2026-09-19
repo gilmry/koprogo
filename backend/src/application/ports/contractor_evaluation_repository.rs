@@ -8,7 +8,7 @@
 //! All methods return `Result<_, AppError>` natively — no legacy `String`
 //! error debt to migrate later (CRITICAL.md #4 / #555).
 //!
-//! Evaluations are append-only — the repository exposes only [`save`] and
+//! Evaluations are append-only — the repository exposes only `save` and
 //! read methods; mutation guards are enforced at the DB trigger level (cf.
 //! migration `20260605070000_create_contractor_evaluations.sql`).
 

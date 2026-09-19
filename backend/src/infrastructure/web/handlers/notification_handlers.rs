@@ -100,11 +100,23 @@ pub async fn create_notification(
 #[get("/notifications/{id}")]
 pub async fn get_notification(
     state: web::Data<AppState>,
-    _user: AuthenticatedUser,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match state.notification_use_cases.get_notification(*id).await {
-        Ok(Some(notification)) => HttpResponse::Ok().json(notification),
+        Ok(Some(notification)) => {
+            // Cloisonnement (#882) : une notification est adressée à UN
+            // destinataire (`user_id`), pas à toute une organisation. L'identité
+            // était prise et jetée (`_user`) : n'importe quel utilisateur
+            // authentifié pouvait lire le titre et le message d'une
+            // notification d'un autre, dans une autre organisation.
+            if !user.is_superadmin() && notification.user_id != user.user_id {
+                return HttpResponse::Forbidden().json(serde_json::json!({
+                    "error": "Notification does not belong to you"
+                }));
+            }
+            HttpResponse::Ok().json(notification)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Notification not found"
         })),

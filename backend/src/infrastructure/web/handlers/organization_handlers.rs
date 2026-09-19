@@ -1,3 +1,4 @@
+use crate::application::dto::{PageRequest, PageResponse};
 use crate::domain::entities::Organization;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
@@ -52,12 +53,30 @@ pub struct UpdateOrganizationRequest {
     pub subscription_plan: String,
 }
 
+/// Recherche libre sur le nom ou le slug.
+#[derive(serde::Deserialize)]
+pub struct RechercheOrganisation {
+    pub q: Option<String>,
+}
+
 /// GET /api/v1/organizations
-/// List all organizations (SuperAdmin only)
+/// Une PAGE d'organisations, filtrable (SuperAdmin only).
+///
+/// Cette route rendait la table ENTIÈRE en ignorant `per_page` : 2743 lignes
+/// sur la recette au 2026-09-17, d'où 8,2 s d'écran blanc sur `/admin/acps`
+/// contre 1,9 s sur `/admin/users` (#943).
+///
+/// Elle rend désormais `PageResponse`, comme les huit autres routes
+/// paginées du dépôt. La clé `data` ne bouge pas — les appelants qui la
+/// lisent continuent de fonctionner — et `pagination` s'y ajoute, avec le
+/// total. C'est ce total qui permet à l'appelant de savoir qu'il ne voit
+/// qu'un fragment, au lieu de le deviner.
 #[get("/organizations")]
 pub async fn list_organizations(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
+    page_request: web::Query<PageRequest>,
+    recherche: web::Query<RechercheOrganisation>,
 ) -> impl Responder {
     if !user.is_superadmin() {
         return HttpResponse::Forbidden().json(serde_json::json!({
@@ -65,10 +84,21 @@ pub async fn list_organizations(
         }));
     }
 
-    match state.organization_use_cases.list_all().await {
-        Ok(orgs) => HttpResponse::Ok().json(serde_json::json!({
-            "data": orgs.into_iter().map(to_response).collect::<Vec<_>>()
-        })),
+    let per_page = page_request.per_page.max(1);
+    let page = page_request.page.max(1);
+    let offset = (page - 1) * per_page;
+
+    match state
+        .organization_use_cases
+        .list_page(recherche.q.clone(), per_page, offset)
+        .await
+    {
+        Ok((orgs, total)) => HttpResponse::Ok().json(PageResponse::new(
+            orgs.into_iter().map(to_response).collect::<Vec<_>>(),
+            page,
+            per_page,
+            total,
+        )),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to fetch organizations: {}", e)
         })),

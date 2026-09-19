@@ -4,7 +4,7 @@ phase: brief
 phase_togaf: A (Vision)
 agent_bmad: Mary (Analyste TOGAF)
 authors: [Claude Opus 4.7 (drafting), @gilmry (signature pending)]
-date: 2026-06-09
+date: "2026-06-09"
 version: 0.2
 status: Draft 0.2 — Maury-grade rewrite (v0.1 jugé insuffisant 2026-06-09)
 parent_brief: docs/maury/refonte-ux-multi-role-acp/brief.md (v1.0, signed 2026-05-20 by @gilmry)

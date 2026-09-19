@@ -58,13 +58,74 @@ fn sources_rust(dossier: &Path) -> Vec<PathBuf> {
     trouvees
 }
 
+/// Le code, débarrassé de ses commentaires.
+///
+/// ── Pourquoi cette étape existe ───────────────────────────────────────────
+///
+/// Le 2026-09-16, cette garde a refusé `copropriete/lien_notaire.rs` pour :
+///
+/// ```text
+/// `copropriete` référence `plateforme`, qui ne lui est pas ouvert
+/// ```
+///
+/// La seule occurrence était un lien de DOCUMENTATION :
+///
+/// ```text
+/// //! Contrairement au [`crate::domain::plateforme::magic_link::MagicLink`]
+/// ```
+///
+/// Or le message de la garde parle d'IMPORTER un type — « un identifiant venu
+/// d'un autre contexte reste un Uuid nu ». Citer un type voisin pour EXPLIQUER
+/// en quoi on s'en distingue n'est pas une dépendance : c'est exactement le
+/// genre de commentaire qu'on veut encourager.
+///
+/// C'est la deuxième garde du dépôt à confondre la mention et l'usage, après
+/// `garde_paniques_en_production` qui comptait un `.unwrap()` cité dans une
+/// doc. Une garde textuelle ne les distingue pas d'elle-même — il faut le lui
+/// apprendre, une fois, ici.
+fn sans_commentaires(source: &str) -> String {
+    let mut sortie = String::with_capacity(source.len());
+    let mut dans_bloc = false;
+    for ligne in source.lines() {
+        let mut reste = ligne;
+        if dans_bloc {
+            match reste.find("*/") {
+                Some(i) => {
+                    dans_bloc = false;
+                    reste = &reste[i + 2..];
+                }
+                None => continue,
+            }
+        }
+        // Les commentaires de ligne, doc comprise (`//`, `///`, `//!`).
+        let utile = match reste.find("//") {
+            Some(i) => &reste[..i],
+            None => reste,
+        };
+        // Un bloc `/* … */` ouvert reste ouvert.
+        if let Some(i) = utile.find("/*") {
+            if !utile[i..].contains("*/") {
+                dans_bloc = true;
+            }
+            sortie.push_str(&utile[..i]);
+        } else {
+            sortie.push_str(utile);
+        }
+        sortie.push('\n');
+    }
+    sortie
+}
+
 /// Les contextes qu'un fichier référence, hors le sien.
+///
+/// Lit le CODE, pas la prose : cf. [`sans_commentaires`].
 fn contextes_references(source: &str, propre: &str) -> BTreeSet<String> {
+    let code = sans_commentaires(source);
     REGLE
         .iter()
         .map(|(nom, _)| *nom)
         .filter(|nom| *nom != propre)
-        .filter(|nom| source.contains(&format!("domain::{nom}")))
+        .filter(|nom| code.contains(&format!("domain::{nom}")))
         .map(str::to_string)
         .collect()
 }

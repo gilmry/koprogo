@@ -19,12 +19,16 @@ pub use crate::domain::copropriete::acp;
 pub use crate::domain::copropriete::acp::{
     Acp, AcpError, AcpLegalStatus, AcpMetrics, AcpNotConformantError, ReserveFundInsufficientError,
 };
+pub use crate::domain::copropriete::acp_enabled_module;
+pub use crate::domain::copropriete::acp_enabled_module::{AcpEnabledModule, Module};
 pub use crate::domain::copropriete::ag_session;
 pub use crate::domain::copropriete::ag_session::{AgSession, AgSessionStatus, VideoPlatform};
 pub use crate::domain::copropriete::age_request;
 pub use crate::domain::copropriete::age_request::{
     AgeRequest, AgeRequestCosignatory, AgeRequestStatus,
 };
+pub use crate::domain::copropriete::board_alert;
+pub use crate::domain::copropriete::board_alert::{AlertSeverity, AlerteRefusee, BoardAlert};
 pub use crate::domain::copropriete::board_decision;
 pub use crate::domain::copropriete::board_decision::{BoardDecision, DecisionStatus};
 pub use crate::domain::copropriete::board_member;
@@ -43,14 +47,18 @@ pub use crate::domain::copropriete::convocation_recipient::{
 };
 pub use crate::domain::copropriete::document;
 pub use crate::domain::copropriete::document::{Document, DocumentType};
+pub use crate::domain::copropriete::lien_notaire;
+pub use crate::domain::copropriete::lien_notaire::{
+    LienNotaire, LienNotaireError, DUREE_JOURS as DUREE_LIEN_NOTAIRE_JOURS,
+};
 pub use crate::domain::copropriete::mandate;
 pub use crate::domain::copropriete::mandate::{
     Mandate, MandateKind, MandateScope, MAX_MANDATE_DURATION_DAYS,
 };
 pub use crate::domain::copropriete::meeting;
 pub use crate::domain::copropriete::meeting::{
-    Meeting, MeetingCompletionChecklist, MeetingNotCompletableError, MeetingStatus, MeetingType,
-    MissingInvariant,
+    Meeting, MeetingCompletionChecklist, MeetingMode, MeetingModeError, MeetingNotCompletableError,
+    MeetingStatus, MeetingType, MissingInvariant,
 };
 pub use crate::domain::copropriete::poll;
 pub use crate::domain::copropriete::poll::{Poll, PollOption, PollStatus, PollType};
@@ -58,7 +66,7 @@ pub use crate::domain::copropriete::poll_vote;
 pub use crate::domain::copropriete::poll_vote::PollVote;
 pub use crate::domain::copropriete::resolution;
 pub use crate::domain::copropriete::resolution::{
-    MajorityType, Resolution, ResolutionStatus, ResolutionType,
+    MajorityType, Resolution, ResolutionKind, ResolutionStatus, ResolutionType,
 };
 pub use crate::domain::copropriete::syndic_mandate;
 pub use crate::domain::copropriete::syndic_mandate::{SyndicMandate, SyndicMandateError};
@@ -80,7 +88,9 @@ pub use crate::domain::copropriete::unit_owner::{
     VotingRightSuspendedError,
 };
 pub use crate::domain::copropriete::vote;
-pub use crate::domain::copropriete::vote::{Vote, VoteChoice};
+pub use crate::domain::copropriete::vote::{
+    assert_vote_auth_sufficient, Vote, VoteAuthError, VoteAuthMethod, VoteChoice,
+};
 
 // --- comptabilite ---
 pub use crate::domain::comptabilite::account;
@@ -103,6 +113,8 @@ pub use crate::domain::comptabilite::expense;
 pub use crate::domain::comptabilite::expense::{
     ApprovalStatus, Expense, ExpenseCategory, PaymentStatus,
 };
+pub use crate::domain::comptabilite::fund;
+pub use crate::domain::comptabilite::fund::{Fund, FundError, FundKind, FundReassignment};
 pub use crate::domain::comptabilite::invoice_line_item;
 pub use crate::domain::comptabilite::invoice_line_item::InvoiceLineItem;
 pub use crate::domain::comptabilite::journal_entry;
@@ -175,7 +187,7 @@ pub use crate::domain::economie_circulaire::notice::{
 };
 pub use crate::domain::economie_circulaire::resource_booking;
 pub use crate::domain::economie_circulaire::resource_booking::{
-    BookingStatus, RecurringPattern, ResourceBooking, ResourceType,
+    BookingStatus, RecurringPattern, ReservationOnBehalfError, ResourceBooking, ResourceType,
 };
 pub use crate::domain::economie_circulaire::service_provider;
 pub use crate::domain::economie_circulaire::service_provider::{ServiceProvider, TradeCategory};

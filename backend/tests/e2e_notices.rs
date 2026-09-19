@@ -116,6 +116,72 @@ async fn test_notices_create() {
     assert_eq!(body["status"], "Draft");
 }
 
+/// Issue #781 (RN-11, recette 4 du 2026-09-06) — @happy, preuve de
+/// non-régression à l'échelle HTTP.
+///
+/// Un syndic SANS fiche de copropriétaire peut créer une annonce : un avis
+/// émane de la copropriété, pas d'une personne nommée. C'est la preuve,
+/// vérifiée en recette le 2026-09-06, que le refus opposé par
+/// skill/shared_object/resource_booking (RN-11) n'est pas une panne
+/// générale des modules communautaires.
+#[actix_web::test]
+#[serial]
+async fn happy_notices_create_by_syndic_without_owner_profile_succeeds() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    // Syndic authentifié, SANS ligne dans `owners`.
+    let token = common::register_and_login_with_role(&app_state, org_id, "syndic").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let acp_id = common::create_test_acp(&app_state, org_id).await;
+    let building_req = test::TestRequest::post()
+        .uri("/api/v1/buildings")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "organization_id": org_id.to_string(),
+            "acp_id": acp_id.clone(),
+            "name": "Notice Syndic Sans Fiche Building",
+            "address": "11 Notice Street",
+            "city": "Brussels",
+            "postal_code": "1000",
+            "country": "BE",
+            "total_units": 8,
+            "total_tantiemes": 1000
+        }))
+        .to_request();
+    let building_resp = test::call_service(&app, building_req).await;
+    let building_body: serde_json::Value = test::read_body_json(building_resp).await;
+    let building_id = building_body["id"].as_str().unwrap();
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/notices")
+        .insert_header(header::ContentType::json())
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "building_id": building_id,
+            "notice_type": "Announcement",
+            "category": "General",
+            "title": "RECETTE4-Entretien des communs",
+            "content": "Un avis émane de la copropriété, pas d'une personne nommée."
+        }))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        201,
+        "Un syndic sans fiche de copropriétaire doit pouvoir créer une \
+         annonce : le refus des autres modules communautaires n'est pas une \
+         panne générale (RN-11)"
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_notices_get() {

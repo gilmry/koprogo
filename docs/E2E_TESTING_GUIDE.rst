@@ -63,6 +63,41 @@ Lancer les tests
    # Harnais séparé — il ne rend aucun verdict et ne touche pas au gate.
    make vitrine
 
+Le témoin d'interruption backend (#880)
+----------------------------------------
+
+Le backend de la pile de recette tourne sous ``cargo-watch``
+(``backend/Dockerfile.dev:71``) : une édition de fichier Rust pendant une
+campagne recompile et coupe le service ~90s. Sans témoin, ces échecs sont
+indiscernables d'une régression — 83 des 95 échecs du 2026-09-13 visaient un
+backend mort (cf. issue #880).
+
+``make test-e2e`` encadre désormais la commande Playwright réelle de
+``scripts/e2e-guarded.sh``, qui surveille l'empreinte (PID + heure de
+démarrage) du process backend pendant toute la campagne
+(``scripts/e2e-backend-watch.sh``) :
+
+.. code-block:: text
+
+   exit <code Playwright>   aucun redémarrage détecté — verdict inchangé
+   exit 75 (EX_TEMPFAIL)    backend redémarré pendant la campagne :
+                            campagne NON MESURÉE, quel qu'ait été le résultat
+                            brut — voir frontend/test-results/campaign-verdict.json
+                            et frontend/test-results/backend-restarts.jsonl
+
+Si l'empreinte est indisponible (pas de démon Docker, banc distant), le
+code de sortie de la commande encadrée est transmis tel quel, mais
+``campaign-verdict.json`` porte ``"monitoring": "unavailable"`` et
+``"backend_restarts": null`` — jamais un zéro silencieux qui prétendrait
+avoir vérifié.
+
+Tests du témoin lui-même (4 catégories, sans docker réel — fixtures
+rejouant une séquence d'empreintes) :
+
+.. code-block:: bash
+
+   make e2e-guard-test
+
 📹 Enregistrer de Nouveaux Tests
 =================================
 
@@ -133,36 +168,49 @@ Si vous préférez écrire le code directement :
    # Lancer
    npm run test:e2e -- mon-test.spec.ts
 
-🐌 Créer des Vidéos Plus Lisibles
-==================================
+🎬 Créer des Vidéos Lisibles — la vitrine
+==========================================
 
-Pour que les vidéos soient plus faciles à suivre, utilisez le **mode ralenti** :
-
-.. code-block:: bash
-
-   make test-e2e-slow
-
-**Ce qui se passe automatiquement :**
-
-1. ✅ Ajoute ``await page.waitForTimeout(1000)`` après chaque action (click, fill, etc.)
-2. ✅ Lance les tests E2E
-3. ✅ Génère les vidéos localement (1 seconde entre chaque action = plus lisible !)
-4. ✅ Restaure automatiquement la vitesse normale après
-
-**Délai personnalisé :**
+Les vidéos du **gate** sont enregistrées à la vitesse des tests : elles
+servent au diagnostic d'un échec, pas à raconter le produit. Pour une vidéo
+qu'un humain suit, on passe par la **vitrine**, qui est un harnais
+**séparé** :
 
 .. code-block:: bash
 
-   # 2 secondes entre chaque action
-   bash .claude/scripts/slow-down-tests.sh 2000
-   cd frontend && npm run test:e2e
-   bash .claude/scripts/restore-test-speed.sh
+   make vitrine
 
-**Restaurer manuellement :**
+Elle rejoue le parcours de référence en cadence, incruste la narration dans
+la page pendant l'enregistrement, et assemble une galerie autonome :
+
+.. code-block:: text
+
+   frontend/tests/e2e/journeys/vitrine/index.html
+
+**Ce qui se passe :**
+
+1. ``enregistrer-vitrine.mjs`` rejoue ``tests/e2e/journeys/parcours.ts`` à
+   raison d'une action par seconde (``CADENCE_MS``, dans ``scene.ts``)
+2. Chaque étape est **racontée à l'écran**, donc visible dans la vidéo
+3. ``assembler-vitrine.mjs`` produit la galerie et les **chapitres
+   horodatés** (``videos/<parcours>.json``), pour sauter à une étape au lieu
+   de regarder le film en entier
+4. La CI publie le tout dans l'artefact ``vitrine`` (``ci.yml``, #873)
+
+**Changer la cadence :**
 
 .. code-block:: bash
 
-   make test-e2e-restore-speed
+   VITRINE_CADENCE_MS=2000 make vitrine
+
+.. warning::
+
+   Il a existé jusqu'au 2026-09-12 un ``make test-e2e-slow`` qui **modifiait
+   les fichiers du gate** pour y insérer des pauses, puis les restaurait.
+   La cible, les deux scripts et leurs commandes **n'existent plus** : muter
+   les specs du gate pour enregistrer confie au gate une responsabilité qui
+   n'est pas la sienne, et la Méthode Foyer le nomme comme l'anti-patron à
+   éviter (#876). Le harnais de valeur ne touche à aucun fichier du gate.
 
 📚 Ajouter les Vidéos dans la Documentation
 ===========================================
@@ -269,17 +317,31 @@ un message qui parle d'identifiants là où le défaut est de configuration.
 
    export KOPROGO_SUPERADMIN_EMAIL=...
    export KOPROGO_SUPERADMIN_PASSWORD=...
+   export KOPROGO_CONFIRME_HOTE_DISTANT=1
    PLAYWRIGHT_BASE_URL=https://koprogo.com npm run test:e2e
 
-Sans ces variables, la suite **s'arrête avant la première requête** et nomme
-celle qui manque (``tests/e2e/helpers/identifiants.ts``). C'est délibéré : le
-2026-09-10, le ``401`` muet a coûté une demi-journée d'enquête sur un défaut
-produit qui n'existait pas (#870).
+Sans les deux premières variables, la suite **s'arrête avant la première
+requête** et nomme celle qui manque (``tests/e2e/helpers/identifiants.ts``).
+C'est délibéré : le 2026-09-10, le ``401`` muet a coûté une demi-journée
+d'enquête sur un défaut produit qui n'existait pas (#870).
 
 Le garde regarde si la variable est **posée**, pas ce qu'elle contient. Choisir
 une valeur faible en connaissance de cause est une décision d'exploitation, et
 le serveur l'avertit déjà de son côté au démarrage. Ce qu'il refuse, c'est de
 partir vers un hôte distant sans que personne n'ait choisi.
+
+.. danger::
+
+   **La troisième variable existe pour le cas inverse et plus dangereux
+   (#872) : un identifiant qui FONCTIONNE.** Elle se nomme
+   ``KOPROGO_CONFIRME_HOTE_DISTANT``.
+
+   Un mot de passe correct contre un hôte distant ne rend aucun ``401`` — il
+   laisse la campagne enchaîner ses écritures, son ``seed-reset``, son
+   ``reset-db``, sur des données vivantes. Le garde ne peut pas savoir si le
+   mot de passe est correct sans l'essayer, et l'essayer est justement
+   l'action qu'il doit empêcher. Il exige donc une confirmation *séparée* de
+   l'identifiant, que ce dernier soit correct ou non.
 
 .. warning::
 
@@ -411,7 +473,7 @@ Le navigateur s'affiche pendant l'exécution des tests.
 .. code-block:: bash
 
    # Vérifier que les services tournent — sur le port de la RECETTE.
-   # Un curl sur http://localhost interrogerait la démo et répondrait 200,
+   # Un curl sur le port 80 nu interrogerait la démo et répondrait 200,
    # ce qui ferait croire que votre pile tourne alors qu'elle est éteinte.
    curl http://localhost:8090
    curl http://localhost:8090/api/v1/health
@@ -568,7 +630,7 @@ Helpers existants (réutiliser, ne pas dupliquer)
 Pattern silent-refresh single-flight (frontend)
 ================================================
 
-(Voir aussi ``docs/JWT_REFRESH_TOKENS.md`` §"Amendment 2026-05-19".)
+(Voir aussi ``docs/backend/JWT_REFRESH_TOKENS.md`` §"Amendment 2026-05-19".)
 
 ``frontend/src/stores/auth.ts`` coalesce les appels concurrents à
 ``refreshAccessToken()`` via une promesse partagée au scope du module :

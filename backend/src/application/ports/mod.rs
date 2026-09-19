@@ -4,6 +4,7 @@ pub mod acp_repository;
 pub mod ag_session_repository;
 pub mod age_request_repository;
 pub mod audit_log_repository;
+pub mod board_alert_repository;
 pub mod board_decision_repository;
 pub mod board_member_repository;
 pub mod budget_repository;
@@ -18,22 +19,26 @@ pub mod contractor_report_repository;
 pub mod convocation_recipient_repository;
 pub mod convocation_repository;
 pub mod document_repository;
+pub mod electronic_signature_provider;
 pub mod energy_bill_upload_repository;
 pub mod energy_campaign_repository;
 pub mod etat_date_repository;
 pub mod expense_repository;
+pub mod fund_repository;
 pub mod gdpr_art30_repository;
 pub mod gdpr_repository;
 pub mod grid_participation_port;
 pub mod individual_member_repository;
 pub mod iot_repository;
 pub mod journal_entry_repository;
+pub mod lien_notaire_repository;
 pub mod linky_api_client;
 pub mod local_exchange_repository;
 pub mod magic_link_repository;
 pub mod mandate_repository;
 pub mod meeting_completion_checker;
 pub mod meeting_repository;
+pub mod module_registry;
 pub mod mqtt_energy_port;
 pub mod notice_repository;
 pub mod notification_preference_repository;
@@ -76,6 +81,7 @@ pub use acp_repository::{AcpRepository, ListScope};
 pub use ag_session_repository::AgSessionRepository;
 pub use age_request_repository::AgeRequestRepository;
 pub use audit_log_repository::{AuditLogFilters, AuditLogRepository};
+pub use board_alert_repository::BoardAlertRepository;
 pub use board_decision_repository::BoardDecisionRepository;
 pub use board_member_repository::BoardMemberRepository;
 pub use budget_repository::{BudgetRepository, BudgetStatsResponse, BudgetVarianceResponse};
@@ -91,10 +97,15 @@ pub use convocation_recipient_repository::{
 };
 pub use convocation_repository::ConvocationRepository;
 pub use document_repository::DocumentRepository;
+pub use electronic_signature_provider::{
+    ElectronicSignatureProvider, ElectronicSignatureProviderRegistry, SignatureProviderError,
+    SignatureRequest, SignatureRequestAck,
+};
 pub use energy_bill_upload_repository::EnergyBillUploadRepository;
 pub use energy_campaign_repository::EnergyCampaignRepository;
 pub use etat_date_repository::EtatDateRepository;
 pub use expense_repository::ExpenseRepository;
+pub use fund_repository::FundRepository;
 pub use gdpr_art30_repository::GdprArt30Repository;
 pub use gdpr_repository::GdprRepository;
 pub use grid_participation_port::{
@@ -104,6 +115,7 @@ pub use grid_participation_port::{
 pub use individual_member_repository::IndividualMemberRepository;
 pub use iot_repository::IoTRepository;
 pub use journal_entry_repository::JournalEntryRepository;
+pub use lien_notaire_repository::LienNotaireRepository;
 pub use linky_api_client::{
     ConsumptionDataPoint, LinkyApiClient, LinkyApiError, OAuth2TokenResponse, PowerDataPoint,
 };
@@ -112,6 +124,7 @@ pub use magic_link_repository::MagicLinkRepository;
 pub use mandate_repository::MandateRepository;
 pub use meeting_completion_checker::MeetingCompletionCheckerPort;
 pub use meeting_repository::MeetingRepository;
+pub use module_registry::ModuleRegistry;
 pub use mqtt_energy_port::{MqttEnergyPort, MqttError, MqttIncomingReadingDto};
 pub use notice_repository::NoticeRepository;
 pub use notification_preference_repository::NotificationPreferenceRepository;

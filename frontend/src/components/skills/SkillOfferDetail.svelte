@@ -138,7 +138,7 @@
                   await loadOfferDetails();
                 }
               }}
-              class="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 text-sm"
+              class="px-4 py-2 bg-orange-700 text-white rounded hover:bg-orange-800 text-sm"
             >
               {$_("skills.detail.markUnavailable")}
             </button>
@@ -151,7 +151,7 @@
                   await loadOfferDetails();
                 }
               }}
-              class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+              class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 text-sm"
             >
               {$_("skills.detail.markAvailable")}
             </button>

@@ -61,9 +61,20 @@ use std::path::{Path, PathBuf};
 ///   pas un secret, et derrière elle il y a les dettes d'un copropriétaire
 ///   nommé.
 ///
-/// Reste donc **une** route non gardée, et elle a une issue : l'identité
-/// notaire est à créer (#845, ADR 0048).
-const DETTE_AU_2026_09_10: usize = 1;
+/// ── La dernière route est passée sous garde le 2026-09-15 (#845, ADR 0051) ─
+///
+/// `GET /etats-dates/reference/{reference_number}` exige désormais
+/// `?token=<lien notaire>`, vérifié par `LienNotaireUseCases::verify_token` —
+/// jeton signé, sept jours, multi-lecture, renouvelable et révocable par le
+/// syndic (ADR 0051). Le jeton EST l'identité, au même titre que `/c/{token}`,
+/// mais cette route reste nommée ici plutôt que rejoindre `PUBLIQUES` :
+/// contrairement aux liens magiques, l'accès qu'elle protège porte les dettes
+/// d'un copropriétaire nommé, et ADR 0048 a explicitement refusé de la
+/// traiter comme publique.
+///
+/// **Le seuil est verrouillé à 0, pas à 1** : un cliquet qui tolère un reste
+/// laisse la porte par laquelle le nombre remonte (#845 @edge).
+const DETTE_AU_2026_09_15: usize = 0;
 
 /// Les routes publiques, et pourquoi.
 ///
@@ -89,6 +100,10 @@ const PUBLIQUES: &[(&str, &str)] = &[
         "coordonnées du syndic, que l'Art. 3.89 rend publiques",
     ),
     ("/c/{token}", "lien magique : le jeton EST l'identité"),
+    (
+        "/c/{token}/respond",
+        "lien magique : action d'écriture liée au même jeton que la lecture (#835)",
+    ),
     ("/contractor/token/{token}", "lien magique du prestataire"),
     (
         "/contractor/token/{token}/submit",
@@ -315,10 +330,19 @@ fn aucune_route_supplementaire_ne_se_passe_didentite() {
     let liste = nues();
     let n = liste.len();
 
+    // `== 0` et non `<= 0`. Le seuil vaut ZÉRO depuis #845, et clippy a
+    // raison de signaler la comparaison : sur un `usize`, `<= 0` ne peut
+    // signifier que `== 0`.
+    //
+    // L'écrire ainsi n'est pas cosmétique — c'est dire que ce cliquet n'est
+    // PAS une dette qu'on tolère à un reste près, mais un invariant. La
+    // forme `<= SEUIL` était celle des cliquets qui descendent ; celui-ci
+    // est arrivé, et sa forme doit le refléter.
     assert!(
-        n <= DETTE_AU_2026_09_10,
-        "{n} routes ne vérifient AUCUNE identité, contre {DETTE_AU_2026_09_10} \
-         au 2026-09-08.\n\n\
+        n == DETTE_AU_2026_09_15,
+        "{n} routes ne vérifient AUCUNE identité, contre {DETTE_AU_2026_09_15} \
+         au 2026-09-15 — le seuil est verrouillé à ZÉRO (#845 @edge), pas à un \
+         reste toléré.\n\n\
          Ni `AuthenticatedUser`, ni lecture de l'en-tête `Authorization`. Le \
          seul obstacle pour l'appeler est de connaître un UUID.\n\n\
          Ces routes échappent aux deux cliquets de #772, qui ne comptent que \
@@ -371,6 +395,11 @@ fn security_les_routes_les_plus_exposees_restent_gardees() {
         "GET /notices/{id}",
         "GET /skills/{id}",
         "GET /shared-objects/{id}",
+        // Troisième vague : la dernière route nue, refermée le 2026-09-15
+        // (#845, ADR 0051). Nommée ici pour la même raison que les autres —
+        // un cliquet global se satisferait de n'importe quelles autres routes
+        // corrigées, celle-ci ne doit plus jamais redevenir nue.
+        "GET /etats-dates/reference/{reference_number}",
     ] {
         assert!(
             !sans_identite.contains(route),

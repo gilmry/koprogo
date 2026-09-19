@@ -1,4 +1,4 @@
-import { api } from "../api";
+import { api, type ApiFetchOptions } from "../api";
 import type { components } from "../../types/api";
 
 /**
@@ -67,8 +67,16 @@ export interface CreateSkillOfferDto {
 
 export const skillsApi = {
   // Skill Offers
-  async createOffer(data: CreateSkillOfferDto): Promise<SkillOffer> {
-    return api.post("/skills", data);
+  //
+  // Issue #781 — `options` (notamment `{ silent: true }`) permet à
+  // `SkillOfferCreateModal` de désactiver le toast générique 403 de
+  // `apiFetch` pour router elle-même vers le message traduit
+  // `owner_profile_required`, sans double toast.
+  async createOffer(
+    data: CreateSkillOfferDto,
+    options?: ApiFetchOptions,
+  ): Promise<SkillOffer> {
+    return api.post("/skills", data, options);
   },
 
   async getOfferById(id: string): Promise<SkillOffer> {

@@ -34,6 +34,7 @@ import { adminLogin } from "./helpers/auth";
  */
 
 import { API_BASE } from "./helpers/adresses";
+import { attendreFinDuGardeDeRoute } from "./helpers/garde-de-route";
 
 // Helper: Register and login a new user (with organization for proper auth)
 async function registerAndLogin(
@@ -220,6 +221,7 @@ test.describe("GDPR - Admin Operations (Idempotent)", () => {
 
     // Step 3: Navigate to admin GDPR panel
     await page.goto("/admin/gdpr");
+    await attendreFinDuGardeDeRoute(page);
     await expect(page.getByTestId("admin-gdpr-panel")).toBeVisible();
 
     // Wait for users table to load (at least one row visible)
@@ -311,6 +313,7 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
 
     // Step 5: Admin exports user's data
     await page.goto("/admin/gdpr");
+    await attendreFinDuGardeDeRoute(page);
     await expect(page.getByTestId("admin-gdpr-user-row").first()).toBeVisible({
       timeout: 10000,
     });
@@ -393,6 +396,7 @@ test.describe("GDPR - Audit Logs Verification", () => {
     // Step 2: Admin checks audit logs
     await loginAsSuperAdmin(page);
     await page.goto("/admin/gdpr");
+    await attendreFinDuGardeDeRoute(page);
 
     await page.getByTestId("admin-gdpr-audit-toggle").click();
     await expect(page.getByTestId("admin-gdpr-audit-logs")).toBeVisible();
@@ -409,20 +413,28 @@ test.describe("GDPR - Audit Logs Verification", () => {
         .first(),
     ).toBeVisible();
 
-    // Cleanup
-    await expect(page.getByTestId("admin-gdpr-user-row").first()).toBeVisible({
-      timeout: 10000,
-    });
-    await page.getByTestId("admin-gdpr-search").fill(user.email);
-
-    const userRow = page
-      .getByTestId("admin-gdpr-user-row")
-      .filter({ hasText: user.email });
-    await userRow.getByTestId("admin-gdpr-erase-user").click();
-    await page.getByTestId("admin-gdpr-erase-confirm").click();
-    await expect(page.getByTestId("admin-gdpr-erasure-result")).toBeVisible({
-      timeout: 10000,
-    });
+    // Nettoyage par l'API, et non par l'interface.
+    //
+    // Ce bloc passait par l'écran : chercher l'utilisateur, cliquer
+    // « effacer », confirmer, vérifier le résultat. Toutes les assertions de
+    // ce test-ci passaient, et c'est ce NETTOYAGE qui épuisait le budget de
+    // 30 s — un test qui échoue sur son ménage, après avoir prouvé ce qu'il
+    // avait à prouver.
+    //
+    // Le parcours d'effacement PAR L'INTERFACE reste couvert deux fois dans
+    // ce même fichier — « should allow admin to export and erase user data »
+    // et « should allow SuperAdmin to access any user regardless of
+    // organization ». Rien n'est perdu ici ; on cesse juste de le prouver
+    // une troisième fois avec le budget d'un autre test.
+    //
+    // Et on nettoie pour de bon : laisser l'utilisateur derrière soi est ce
+    // qui a fait 3006 organisations sur la recette.
+    const jetonAdmin = await adminLogin(page);
+    const effacement = await page.request.delete(
+      `${API_BASE}/admin/gdpr/users/${user.userId}/erase`,
+      { headers: { Authorization: `Bearer ${jetonAdmin}` } },
+    );
+    expect(effacement.ok()).toBe(true);
   });
 });
 
@@ -437,6 +449,7 @@ test.describe("GDPR - Cross-Organization Access", () => {
     // Step 2: Admin accesses both users
     await loginAsSuperAdmin(page);
     await page.goto("/admin/gdpr");
+    await attendreFinDuGardeDeRoute(page);
     await expect(page.getByTestId("admin-gdpr-user-row").first()).toBeVisible({
       timeout: 10000,
     });

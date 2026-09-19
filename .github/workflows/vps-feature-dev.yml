@@ -103,6 +103,33 @@ jobs:
       - name: Gate OpenAPI — annotation et enregistrement
         run: ./scripts/check-openapi-coverage.sh
 
+      # Le garde-fou de #854 existait depuis le 2026-09-16 et n'était cité
+      # par AUCUN portail — ni ici, ni dans `ci.yml`. C'est exactement le
+      # motif que le commentaire des gardes Rust plus bas décrit : « un
+      # cliquet que rien n'exécute ne freine rien, il décore ».
+      #
+      # Son témoin est joué avec lui : un garde-fou dont la batterie n'est
+      # pas exécutée peut devenir permissif sans que personne ne le voie. Sa
+      # première version du cas @security montait un fichier piégé dont le
+      # nom contenait un `/` — `touch` échouait, le `|| true` avalait
+      # l'échec, et l'assertion accusait la garde d'un défaut qu'elle
+      # n'avait pas.
+      - name: Gate docs — aucun markdown orphelin à la racine de docs/ (#854)
+        run: |
+          bash ./scripts/check-docs-root-orphans.test.sh
+          bash ./scripts/check-docs-root-orphans.sh
+
+      # Seul le TÉMOIN tourne ici, jamais le script lui-même : il recrée une
+      # base, et un exécuteur de CI n'a pas de pile de recette à recréer.
+      #
+      # Ce qu'on garde est le garde-fou de CIBLE. `recette-base-neuve.sh`
+      # agit à côté d'une démo vivante ; ses refus doivent être éprouvés à
+      # chaque commit, pas relus dans un commentaire. La cible `reset-db`
+      # qu'il remplace nommait `koprogo_postgres_data` — le volume de la
+      # DÉMO, à un caractère près de celui de la recette (#954).
+      - name: Gate recette — le garde-fou de cible refuse la démo (#954)
+        run: bash ./scripts/recette-base-neuve.test.sh
+
       - name: cargo fmt
         working-directory: backend
         run: cargo fmt --all -- --check
@@ -140,7 +167,27 @@ jobs:
       # des harnais, pas de leur exécution.
       #
       # Une seule étape et une seule liste : deux listes divergent.
-      - name: Les treize gardes — aucune dette ne grossit
+      #
+      # ── 2026-09-18 : cinq gardes manquaient ici, et elles manquaient là où
+      #    ça compte ────────────────────────────────────────────────────────
+      #
+      # `ci.yml` les citait toutes les 23. Ce portail-ci n'en citait que 18.
+      # Or `ci.yml` NE TOURNE PAS sur `feature/dev` — son filtre l'exclut
+      # explicitement, et c'est `feature/dev` que le VPS déploie. Les cinq
+      # absentes ne freinaient donc rien sur le seul chemin qui mène en
+      # production : `garde_audit_des_transitions`,
+      # `garde_documentation_personas`, `garde_enum_contre_contrainte`,
+      # `garde_identite_jetee` et `garde_ordre_des_routes`.
+      #
+      # La plus coûteuse est `garde_identite_jetee` : c'est elle qui plafonne
+      # à quatre les routes qui jettent leur identité, donc qui empêche le
+      # retour des dix-huit de #882.
+      #
+      # Le titre de l'étape ne porte plus de nombre. « Les treize gardes »
+      # en citait dix-huit, « Les quinze gardes » de `ci.yml` en cite
+      # vingt-trois : un nombre écrit à la main dans un titre dérive, et sa
+      # dérive ne rougit rien. Cf. #956.
+      - name: Toutes les gardes du dépôt — aucune dette ne grossit
         working-directory: backend
         env:
           SQLX_OFFLINE: "true"
@@ -161,7 +208,15 @@ jobs:
             --test garde_taxonomie_bdd \
             --test garde_taxonomie_des_tests \
             --test garde_harnais_executes \
-            --test garde_identite_sans_decision
+            --test garde_versions_de_migration \
+            --test garde_colonnes_declarees \
+            --test garde_identite_sans_decision \
+            --test garde_skips_justifies \
+            --test garde_audit_des_transitions \
+            --test garde_documentation_personas \
+            --test garde_enum_contre_contrainte \
+            --test garde_identite_jetee \
+            --test garde_ordre_des_routes
 
       - uses: actions/setup-node@v4
         with:

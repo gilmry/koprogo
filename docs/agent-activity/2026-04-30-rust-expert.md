@@ -1,5 +1,5 @@
 ---
-date: 2026-04-30
+date: "2026-04-30"
 persona: rust-expert + code-reviewer (cross-cutting)
 tier: 2 (lecture, diagnostic, proposal, comments) avec actions Tier 1 sous autorisation explicite humaine
 runtime: Claude Desktop primary

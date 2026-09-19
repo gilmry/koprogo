@@ -82,6 +82,16 @@ export interface CreateConvocationDto {
   language?: string;
 }
 
+/**
+ * Un copropriétaire qu'une convocation pour cet immeuble toucherait —
+ * écran de sélection des destinataires (#780 verrou 1, #784).
+ */
+export interface EligibleRecipient {
+  owner_id: string;
+  full_name: string;
+  email: string;
+}
+
 export interface TrackingSummary {
   total_recipients: number;
   email_sent: number;
@@ -143,10 +153,30 @@ export const convocationsApi = {
   },
 
   /**
-   * Send convocation (generates PDF, creates recipients, triggers emails)
+   * Les copropriétaires qu'une convocation pour cet immeuble toucherait.
+   *
+   * Sert l'écran de sélection AVANT l'envoi : avant #780, « 0 destinataire »
+   * était un libellé sans contrôle pour le constituer, et l'envoi déduisait
+   * silencieusement tous les copropriétaires actifs sans que le syndic
+   * puisse le voir ni le corriger.
    */
-  async send(id: string): Promise<Convocation> {
-    return api.post(`/convocations/${id}/send`, {});
+  async getEligibleRecipients(
+    buildingId: string,
+  ): Promise<EligibleRecipient[]> {
+    return api.get(`/buildings/${buildingId}/eligible-convocation-recipients`);
+  },
+
+  /**
+   * Send convocation (generates PDF, creates recipients, triggers emails).
+   *
+   * `recipientOwnerIds` omis : le serveur convoque tous les copropriétaires
+   * actifs de l'immeuble par défaut (compatibilité des appelants qui ne
+   * connaissent pas encore la sélection).
+   */
+  async send(id: string, recipientOwnerIds?: string[]): Promise<Convocation> {
+    return api.post(`/convocations/${id}/send`, {
+      ...(recipientOwnerIds ? { recipient_owner_ids: recipientOwnerIds } : {}),
+    });
   },
 
   /**

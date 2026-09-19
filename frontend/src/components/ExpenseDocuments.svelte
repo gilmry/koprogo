@@ -1,5 +1,12 @@
 <script lang="ts">
   // Svelte 5 runes mode
+  //
+  // #868 — Ce composant est monté À L'INTÉRIEUR de `ExpenseDetail.svelte`
+  // (`expense-detail.astro`). Son bouton d'annulation d'upload portait
+  // `cancel-button`, comme celui de `ExpenseDetail` (visible quand la
+  // dépense est en attente/en retard) : les deux peuvent être visibles en
+  // même temps (formulaire d'upload ouvert + dépense en attente), d'où
+  // `expense-documents-cancel-button` ici.
   import { _ } from "../lib/i18n";
   import { api } from "../lib/api";
   import type { Document } from "../lib/types";
@@ -254,7 +261,7 @@
           <Button
             variant="outline"
             onclick={() => (showUploadForm = false)}
-            data-testid="cancel-button"
+            data-testid="expense-documents-cancel-button"
           >
             {$_("common.cancel")}
           </Button>

@@ -18,6 +18,7 @@ pub mod magic_link;
 pub mod notification;
 pub mod organization;
 pub mod portfolio;
+pub mod qualified_signature;
 pub mod refresh_token;
 pub mod security_incident;
 pub mod two_factor_secret;
@@ -40,6 +41,9 @@ pub use notification::{
 };
 pub use organization::{Organization, SubscriptionPlan};
 pub use portfolio::{Portfolio, PortfolioBuilding, PortfolioError, PortfolioShare};
+pub use qualified_signature::{
+    select_signature_provider, QualifiedSignature, QualifiedSignatureError, SignatureProviderKind,
+};
 pub use refresh_token::RefreshToken;
 pub use security_incident::{IncidentSeverity, IncidentStatus, SecurityIncident};
 pub use two_factor_secret::TwoFactorSecret;

@@ -104,7 +104,7 @@ impl UserRoleAssignment {
         self.is_expired_at(Utc::now())
     }
 
-    /// Testable variant of [`is_expired`] taking an explicit reference time.
+    /// Testable variant of `is_expired` taking an explicit reference time.
     pub fn is_expired_at(&self, t: DateTime<Utc>) -> bool {
         match self.valid_until {
             None => false,

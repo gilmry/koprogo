@@ -12,6 +12,7 @@ import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "../../helpers/auth";
 
 import { API_BASE } from "../../helpers/adresses";
+import { attendreFinDuGardeDeRoute } from "../../helpers/garde-de-route";
 
 /**
  * `GET /buildings` trie par défaut `created_at ASC` (le plus ancien en
@@ -107,6 +108,7 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     //    visible, sans geste d'ouverture — ce qui teste bien le point d'entrée
     //    et non la mécanique du menu.
     await page.goto("/admin");
+    await attendreFinDuGardeDeRoute(page);
 
     // Ciblage par `href`. C'était à l'origine un contournement :
     // `RoleSubmenu.svelte` dérivait `nav-link-{...}` du libellé TRADUIT, d'où
@@ -139,6 +141,7 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
   }) => {
     await loginAsAdmin(page);
     await page.goto("/admin");
+    await attendreFinDuGardeDeRoute(page);
 
     const card = page.getByTestId("admin-quick-action-acps");
     await expect(card).toBeVisible({ timeout: 15_000 });
@@ -156,6 +159,7 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     const { acpId } = await createOrgAndAcp(page, token, "s2happy1");
 
     await page.goto("/buildings");
+    await attendreFinDuGardeDeRoute(page);
     const createBtn = page.getByTestId("create-building-button");
     await expect(createBtn).toBeVisible({ timeout: 15_000 });
     await createBtn.click();
@@ -217,6 +221,7 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     const org = await orgResp.json();
 
     await page.goto("/admin/acps");
+    await attendreFinDuGardeDeRoute(page);
     const toggle = page.getByTestId("acp-create-toggle");
     await expect(toggle).toBeVisible({ timeout: 15_000 });
     await toggle.click();
@@ -224,6 +229,20 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     const form = page.getByTestId("acp-create-form");
     await expect(form).toBeVisible();
     await form.getByTestId("acp-form-name").fill(`S2 ACP ${ts}`);
+
+    // On CHERCHE l'organisation avant de la choisir.
+    //
+    // Le sélecteur ne charge plus les 3006 organisations de la base mais une
+    // page de cinquante, triée par nom (#943). Celle que ce test vient de
+    // créer — « s2happy2 Org <horodatage> » — n'y est pas, et
+    // `selectOption` échouait sur « did not find some options ».
+    //
+    // Ce n'est pas un contournement : c'est le geste réel depuis que
+    // l'écran cherche côté serveur. Un administrateur tape le nom.
+    await form.getByTestId("acp-form-org-search").fill(`s2happy2-${ts}`);
+    await expect(
+      form.getByTestId("acp-form-org-id").locator(`option[value="${org.id}"]`),
+    ).toHaveCount(1, { timeout: 10_000 });
     await form.getByTestId("acp-form-org-id").selectOption(org.id);
     await form.getByTestId("acp-form-street").fill("1 Rue Test");
     await form.getByTestId("acp-form-postal").fill("1000");
@@ -250,6 +269,7 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
   }) => {
     await loginAsAdmin(page);
     await page.goto("/buildings");
+    await attendreFinDuGardeDeRoute(page);
     const createBtn = page.getByTestId("create-building-button");
     await expect(createBtn).toBeVisible({ timeout: 15_000 });
     await createBtn.click();
@@ -303,6 +323,7 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     expect(buildingResp.status()).toBe(201);
 
     await page.goto("/buildings");
+    await attendreFinDuGardeDeRoute(page);
     await expect(page.getByTestId("building-search-input")).toBeVisible({
       timeout: 15_000,
     });
@@ -363,6 +384,7 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
     });
 
     await page.goto("/buildings");
+    await attendreFinDuGardeDeRoute(page);
     const createBtn = page.getByTestId("create-building-button");
     await expect(createBtn).toBeVisible({ timeout: 15_000 });
     await createBtn.click();

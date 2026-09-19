@@ -3,6 +3,7 @@
   import { _ } from "../lib/i18n";
   import { authStore } from "../stores/auth";
   import { api } from "../lib/api";
+  import { chercherOrganisations } from "../lib/api/organisations-recherche";
   import type { Organization } from "../lib/types";
 
   let {
@@ -20,6 +21,9 @@
 
   let organizations = $state<Organization[]>([]);
   let loadingOrgs = $state(false);
+  let rechercheOrg = $state("");
+  let totalOrgs = $state(0);
+  let orgsIncompletes = $state(false);
 
   let formData = $state({
     organization_id: "",
@@ -60,10 +64,15 @@
   async function loadOrganizations() {
     try {
       loadingOrgs = true;
-      const response = await api.get<{ data: Organization[] }>(
-        "/organizations",
-      );
-      organizations = response.data;
+      // `/organizations` NU rendait toute la table tant que la route
+      // ignorait `per_page`. Depuis qu'elle pagine (#943), un appel sans
+      // paramètre rendrait les VINGT premières — une troncature silencieuse
+      // que ce changement aurait introduite. On demande donc explicitement,
+      // et on dit ce qui manque.
+      const page = await chercherOrganisations(rechercheOrg, 200);
+      organizations = page.elements as unknown as Organization[];
+      totalOrgs = page.total;
+      orgsIncompletes = page.incomplete;
     } catch (e) {
       console.error("Error loading organizations:", e);
     } finally {
@@ -142,6 +151,14 @@
                   >{org.name}</option
                 >{/each}</select
             >
+            {#if orgsIncompletes}
+              <p
+                class="mt-1 text-sm text-gray-600"
+                data-testid="owner-create-organization-reste"
+              >
+                {organizations.length} / {totalOrgs}
+              </p>
+            {/if}
           </div>
         {/if}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

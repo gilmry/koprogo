@@ -815,12 +815,14 @@ pub async fn verify_unit_org_access(
 /// Les routes portées par un copropriétaire servent, nominativement, ce qu'une
 /// personne doit et ce qu'elle a payé :
 ///
-///     GET /owners/{id}/payments            montants et dates
-///     GET /owners/{id}/payments/total      ce qu'elle a versé
-///     GET /owners/{id}/payment-methods     ses instruments enregistrés
-///     GET /owners/{id}/payment-reminders   ses rappels, donc ses retards
-///     GET /owners/{id}/distributions       sa quote-part de chaque charge
-///     GET /owners/{id}/total-due           ce qu'elle doit
+/// ```text
+/// GET /owners/{id}/payments            montants et dates
+/// GET /owners/{id}/payments/total      ce qu'elle a versé
+/// GET /owners/{id}/payment-methods     ses instruments enregistrés
+/// GET /owners/{id}/payment-reminders   ses rappels, donc ses retards
+/// GET /owners/{id}/distributions       sa quote-part de chaque charge
+/// GET /owners/{id}/total-due           ce qu'elle doit
+/// ```
 ///
 /// Un identifiant de copropriétaire suffisait à les obtenir. Ce n'est pas un
 /// écart de périmètre, c'est la situation financière d'une personne nommée

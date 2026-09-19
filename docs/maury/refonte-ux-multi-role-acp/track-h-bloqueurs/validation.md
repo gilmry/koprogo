@@ -4,10 +4,10 @@ phase: validation
 phase_togaf: F (Migration Planning)
 agent_bmad: Product Owner (@gilmry)
 authors: [Gilles Maury]
-date: 2026-06-15
+date: "2026-06-15"
 version: 1.0
 status: Validated by @gilmry 2026-06-15
-signed_at: 2026-06-15
+signed_at: "2026-06-15"
 signed_by: "@gilmry"
 brief_source: brief.md (Mary, v0.1 Draft 2026-06-15)
 prd_source: prd.md (John, v0.1 Draft 2026-06-15)

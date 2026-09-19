@@ -1,5 +1,5 @@
 ---
-date: 2026-04-30
+date: "2026-04-30"
 persona: support-agent
 session: PR-D (docs/gitops-runbook)
 tier: 2  # création doc référence ; merge = Tier 1 humain

@@ -425,7 +425,7 @@
             data-testid="admin-seed-demo-button"
             onclick={handleSeedDemoData}
             disabled={seedLoading || clearLoading}
-            class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            class="w-full bg-green-700 text-white py-3 rounded-lg hover:bg-green-800 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             {seedLoading
               ? "⏳ " + $_("dashboards.admin.seed.generating")

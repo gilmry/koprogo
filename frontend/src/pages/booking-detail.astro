@@ -46,6 +46,9 @@ import Layout from "../layouts/Layout.astro";
     typeof window !== "undefined" ? localStorage.getItem("koprogo_user") : null;
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
   const ownerId = currentUser?.id ?? "";
+  // Story #588 (INV-5/FR27) — le toggle "réservation pour le compte de
+  // l'ACP" n'est visible que pour le syndic (garde RBAC réelle côté API).
+  const isSyndic = currentUser?.role === "syndic";
 
   if (!resourceId) {
     window.location.href = "/bookings";
@@ -148,7 +151,7 @@ import Layout from "../layouts/Layout.astro";
         if (panelContainer) {
           mount(BookingPanel as any, {
             target: panelContainer,
-            props: { resource, ownerId },
+            props: { resource, ownerId, isSyndic },
           });
         }
       })

@@ -18,6 +18,11 @@ pub enum AuditEventType {
     BuildingDeleted,
     AcpCreated,
     AcpUpdated,
+    /// Story 5.1 (#585) — activation/désactivation d'un module pour une ACP.
+    /// Tracé parce qu'éteindre un module fait disparaître des écrans pour
+    /// tout le monde : il faut pouvoir dire qui l'a fait et quand.
+    AcpModuleEnabled,
+    AcpModuleDisabled,
     AcpArchived,
     JournalEntryCreated,
     JournalEntryDeleted,
@@ -32,6 +37,24 @@ pub enum AuditEventType {
     OwnerUpdated,
     ExpenseCreated,
     ExpenseMarkedPaid,
+    /// La dépense est marquée en retard : elle n'est PAS payée.
+    ///
+    /// Distincte de `ExpenseMarkedPaid`. `mark_expense_overdue` journalisait
+    /// `ExpenseMarkedPaid` — même défaut que `MeetingCancelled` ci-dessous,
+    /// une transition qui recopie l'évènement de la transition voisine.
+    /// Constaté en instruisant #881.
+    ExpenseMarkedOverdue,
+    /// La dépense est annulée : elle N'A PAS été payée, et ne le sera plus
+    /// sur cette écriture. Voir `ExpenseMarkedOverdue`. #881.
+    ExpenseCancelled,
+    /// Une dépense annulée redevient active : elle n'est toujours pas payée.
+    /// Voir `ExpenseMarkedOverdue`. #881.
+    ExpenseReactivated,
+    /// Un paiement enregistré est défait : le paiement n'a plus lieu. Le
+    /// défaut d'origine (#881) journalisait `ExpenseMarkedPaid` sur ce
+    /// geste précis — le registre affirmait l'inverse de ce qui venait de se
+    /// passer.
+    ExpenseUnpaid,
     InvoiceUpdated,
     InvoiceSubmitted,
     InvoiceApproved,
@@ -66,6 +89,10 @@ pub enum AuditEventType {
     BoardDecisionUpdated,
     BoardDecisionCompleted,
     BoardDecisionNotesAdded,
+    /// Story 4.7 — le conseil de copropriété alerte la prochaine AG.
+    CdcAlertCreated,
+    /// Story 4.7 — élection des membres du conseil à l'issue d'une AG clôturée.
+    CdcMembersElected,
 
     // Voting events (Issue #46 - Phase 2)
     ResolutionCreated,
@@ -215,6 +242,12 @@ pub enum AuditEventType {
     EtatDateFinancialUpdate,
     EtatDateAdditionalDataUpdate,
     EtatDateDeleted,
+
+    // Notary link events (#845 — ADR 0048, ADR 0051)
+    NotaryLinkIssued,
+    NotaryLinkConsulted,
+    NotaryLinkRenewed,
+    NotaryLinkRevoked,
 
     // Budget events (Annual budget management)
     BudgetCreated,

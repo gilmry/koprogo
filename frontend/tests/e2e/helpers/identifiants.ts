@@ -81,29 +81,62 @@ function estDistant(adresse: string | undefined): boolean {
  *
  * Le message ne recopie jamais la valeur : une erreur atterrit dans les
  * journaux de CI, qui se conservent.
+ *
+ * ── La seconde moitié du chemin (#872) ──────────────────────────────────
+ *
+ * Ce qui précède ne couvre que « personne n'a choisi ». Ça laisse passer sans
+ * un mot le cas inverse et plus dangereux : un `KOPROGO_SUPERADMIN_PASSWORD`
+ * qui est le VRAI mot de passe de l'hôte distant. Ce garde ne peut pas savoir
+ * si la valeur fonctionne sans l'essayer, et l'essayer EST l'action qu'il
+ * cherche à empêcher — les mêmes `POST`/`PUT`/`DELETE`, le même
+ * `seed-reset`, le même `reset-db` qui détruiraient une base vivante.
+ *
+ * Il exige donc une SECONDE variable, disjointe des identifiants : la
+ * confirmation que l'opérateur a lui-même choisi de viser cet hôte-là, pas
+ * seulement qu'il a rempli un mot de passe qui s'y trouvait être valable.
  */
 export function verifieLesIdentifiants(
   adresse: string | undefined = process.env.PLAYWRIGHT_BASE_URL,
   motDePasseChoisi: string | undefined = process.env
     .KOPROGO_SUPERADMIN_PASSWORD,
+  consentementHoteDistant: string | undefined = process.env
+    .KOPROGO_CONFIRME_HOTE_DISTANT,
 ): void {
   if (!estDistant(adresse)) return;
-  if (motDePasseChoisi) return;
 
-  throw new Error(
-    `PLAYWRIGHT_BASE_URL désigne « ${adresse} », un hôte que cette suite ` +
-      `n'amorce pas, et aucun identifiant n'a été choisi.\n\n` +
-      `Cet hôte reçoit son superadministrateur par upsert au démarrage, ` +
-      `depuis son propre environnement : le repli du seed n'y vaut que si ` +
-      `l'exploitant l'y a lui-même posé. Sinon la connexion rendra ` +
-      `« 401 Invalid credentials » — un message qui parle d'identifiants là ` +
-      `où le défaut est de configuration.\n\n` +
-      `Exportez les deux variables avant de lancer la campagne :\n` +
-      `    KOPROGO_SUPERADMIN_EMAIL\n` +
-      `    KOPROGO_SUPERADMIN_PASSWORD\n\n` +
-      `Contre localhost, rien à faire : la base y est amorcée par la ` +
-      `campagne (#870).`,
-  );
+  if (!motDePasseChoisi) {
+    throw new Error(
+      `PLAYWRIGHT_BASE_URL désigne « ${adresse} », un hôte que cette suite ` +
+        `n'amorce pas, et aucun identifiant n'a été choisi.\n\n` +
+        `Cet hôte reçoit son superadministrateur par upsert au démarrage, ` +
+        `depuis son propre environnement : le repli du seed n'y vaut que si ` +
+        `l'exploitant l'y a lui-même posé. Sinon la connexion rendra ` +
+        `« 401 Invalid credentials » — un message qui parle d'identifiants là ` +
+        `où le défaut est de configuration.\n\n` +
+        `Exportez les deux variables avant de lancer la campagne :\n` +
+        `    KOPROGO_SUPERADMIN_EMAIL\n` +
+        `    KOPROGO_SUPERADMIN_PASSWORD\n\n` +
+        `Contre localhost, rien à faire : la base y est amorcée par la ` +
+        `campagne (#870).`,
+    );
+  }
+
+  if (!consentementHoteDistant) {
+    throw new Error(
+      `PLAYWRIGHT_BASE_URL désigne « ${adresse} », un hôte distant, et un ` +
+        `identifiant A ÉTÉ choisi.\n\n` +
+        `C'est précisément le cas dangereux (#872) : si ce mot de passe est ` +
+        `le VRAI mot de passe de cet hôte, la campagne y enchaînera les ` +
+        `mêmes écritures, le même \`seed-reset\`, le même \`reset-db\` que ` +
+        `contre la pile de recette — mais sur des données vivantes. Ce ` +
+        `garde ne peut pas juger si l'identifiant fonctionne sans l'essayer, ` +
+        `et l'essayer est justement ce qu'il doit empêcher.\n\n` +
+        `Confirmez donc l'intention elle-même, séparément de l'identifiant :\n` +
+        `    export KOPROGO_CONFIRME_HOTE_DISTANT=1\n\n` +
+        `Contre localhost, rien à faire : ce garde ne mord jamais sur un ` +
+        `hôte local.`,
+    );
+  }
 }
 
 // Les 27 specs qui importent ce module déclenchent la vérification à leur

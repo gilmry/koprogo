@@ -19,6 +19,63 @@ pub enum MeetingStatus {
     Cancelled,
 }
 
+/// Modalité de tenue de l'assemblée (Art. 3.87 §1er CC : "physiquement ou à
+/// distance au moyen d'une communication électronique"). Story 4.1.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum MeetingMode {
+    InPerson,
+    Remote,
+    Hybrid,
+}
+
+impl MeetingMode {
+    pub fn from_db_string(s: &str) -> Result<Self, String> {
+        match s {
+            "in_person" => Ok(Self::InPerson),
+            "remote" => Ok(Self::Remote),
+            "hybrid" => Ok(Self::Hybrid),
+            other => Err(format!("Unknown meeting mode: {other}")),
+        }
+    }
+
+    pub fn to_db_str(&self) -> &'static str {
+        match self {
+            Self::InPerson => "in_person",
+            Self::Remote => "remote",
+            Self::Hybrid => "hybrid",
+        }
+    }
+
+    /// Art. 3.87 §1er CC ne rend la participation à distance possible que si
+    /// le lien de connexion est communiqué : sans lui, la modalité annoncée
+    /// est creuse — personne ne peut effectivement rejoindre l'AG.
+    fn requires_videoconf_url(&self) -> bool {
+        matches!(self, Self::Remote | Self::Hybrid)
+    }
+
+    /// Story 4.2 — Art. 3.87 §1er CC : un vote émis à distance doit pouvoir
+    /// être rattaché de façon fiable à son auteur, ce qu'une AG physique
+    /// garantit déjà par la présence elle-même. Même ensemble de modes que
+    /// `requires_videoconf_url` : c'est la même bascule distancielle qui
+    /// déclenche les deux exigences.
+    pub fn requires_strong_vote_auth(&self) -> bool {
+        self.requires_videoconf_url()
+    }
+}
+
+/// Story 4.1 — `Meeting::set_mode()` a refusé un mode distanciel/hybride
+/// sans URL de visioconférence. Mappé vers 422 par `AppError` (payload
+/// `MEETING_MODE_REQUIRES_VIDEOCONF`, cf. `application/error.rs`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum MeetingModeError {
+    #[error(
+        "La configuration de visioconférence (URL) est obligatoire pour une AG en mode {mode:?} \
+         (Art. 3.87 §1er CC)"
+    )]
+    VideoconfUrlRequired { mode: MeetingMode },
+}
+
 /// Représente une assemblée générale de copropriétaires
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Meeting {
@@ -53,6 +110,11 @@ pub struct Meeting {
     // PV Distribution — Issue #313: Track when AG minutes are sent to owners
     pub minutes_document_id: Option<Uuid>, // FK to Document
     pub minutes_sent_at: Option<DateTime<Utc>>, // When PV was distributed
+    // Modalité + configuration distancielle — Art. 3.87 §1er CC (Story 4.1)
+    pub mode: MeetingMode,
+    /// URL de connexion à la session distancielle. Obligatoire si `mode` ∈
+    /// {Remote, Hybrid} — cf. `set_mode()`.
+    pub videoconf_url: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -96,9 +158,35 @@ impl Meeting {
             is_second_convocation: false, // Default: first convocation
             minutes_document_id: None,
             minutes_sent_at: None,
+            mode: MeetingMode::InPerson,
+            videoconf_url: None,
             created_at: now,
             updated_at: now,
         })
+    }
+
+    /// Configure la modalité de tenue de l'AG (Story 4.1, Art. 3.87 §1er CC).
+    ///
+    /// Les modes `Remote` et `Hybrid` supposent qu'un copropriétaire puisse
+    /// effectivement se connecter : sans URL de visioconférence, l'annonce du
+    /// mode est creuse. Refusé avant persistance (422), pas découvert après
+    /// convocation.
+    pub fn set_mode(
+        &mut self,
+        mode: MeetingMode,
+        videoconf_url: Option<String>,
+    ) -> Result<(), MeetingModeError> {
+        let url_present = videoconf_url
+            .as_deref()
+            .map(|u| !u.trim().is_empty())
+            .unwrap_or(false);
+        if mode.requires_videoconf_url() && !url_present {
+            return Err(MeetingModeError::VideoconfUrlRequired { mode });
+        }
+        self.mode = mode;
+        self.videoconf_url = videoconf_url;
+        self.updated_at = Utc::now();
+        Ok(())
     }
 
     pub fn add_agenda_item(&mut self, item: String) -> Result<(), String> {
@@ -856,6 +944,120 @@ mod tests {
 
         let result = meeting.validate_quorum(dec!(100), dec!(0));
         assert!(result.is_err());
+    }
+
+    // ------------------------------------------------------------------
+    // Story 4.1 — `Meeting::set_mode()` — taxonomie 4-cat.
+    // ------------------------------------------------------------------
+
+    /// @happy — mode in_person ne réclame aucune URL.
+    #[test]
+    fn happy_set_mode_in_person_without_url() {
+        let mut meeting = make_meeting_for_mode_tests();
+        assert!(meeting.set_mode(MeetingMode::InPerson, None).is_ok());
+        assert_eq!(meeting.mode, MeetingMode::InPerson);
+        assert!(meeting.videoconf_url.is_none());
+    }
+
+    /// @happy — mode hybrid avec une URL de visioconférence est accepté.
+    #[test]
+    fn happy_set_mode_hybrid_with_url() {
+        let mut meeting = make_meeting_for_mode_tests();
+        let result = meeting.set_mode(
+            MeetingMode::Hybrid,
+            Some("https://meet.jit.si/koprogo-ago-2026".to_string()),
+        );
+        assert!(result.is_ok());
+        assert_eq!(meeting.mode, MeetingMode::Hybrid);
+        assert_eq!(
+            meeting.videoconf_url.as_deref(),
+            Some("https://meet.jit.si/koprogo-ago-2026")
+        );
+    }
+
+    /// @edge — une URL faite uniquement d'espaces n'est pas une configuration.
+    #[test]
+    fn edge_set_mode_remote_with_blank_url_is_refused() {
+        let mut meeting = make_meeting_for_mode_tests();
+        let err = meeting
+            .set_mode(MeetingMode::Remote, Some("   ".to_string()))
+            .expect_err("une URL blanche ne configure rien");
+        assert_eq!(
+            err,
+            MeetingModeError::VideoconfUrlRequired {
+                mode: MeetingMode::Remote
+            }
+        );
+    }
+
+    /// @edge — repasser en in_person efface l'URL sans erreur, quel que soit
+    /// l'état précédent.
+    #[test]
+    fn edge_set_mode_back_to_in_person_clears_url() {
+        let mut meeting = make_meeting_for_mode_tests();
+        meeting
+            .set_mode(
+                MeetingMode::Remote,
+                Some("https://meet.jit.si/x".to_string()),
+            )
+            .unwrap();
+        assert!(meeting.set_mode(MeetingMode::InPerson, None).is_ok());
+        assert!(meeting.videoconf_url.is_none());
+    }
+
+    /// @security — un appelant ne peut pas contourner l'obligation d'URL en
+    /// passant `Some("")` plutôt que `None` : les deux sont traités pareil.
+    #[test]
+    fn security_set_mode_empty_string_url_is_treated_as_missing() {
+        let mut meeting = make_meeting_for_mode_tests();
+        let err = meeting
+            .set_mode(MeetingMode::Hybrid, Some(String::new()))
+            .expect_err("une chaîne vide ne doit pas contourner l'obligation d'URL");
+        assert_eq!(
+            err,
+            MeetingModeError::VideoconfUrlRequired {
+                mode: MeetingMode::Hybrid
+            }
+        );
+    }
+
+    /// @negative — mode hybrid sans configuration de distance (videoconf_url
+    /// manquant) est refusé, et l'entité n'est pas mutée par la tentative.
+    #[test]
+    fn negative_set_mode_hybrid_without_videoconf_url_is_rejected() {
+        let mut meeting = make_meeting_for_mode_tests();
+        let mode_before = meeting.mode;
+        let err = meeting
+            .set_mode(MeetingMode::Hybrid, None)
+            .expect_err("hybrid sans URL doit échouer (422 côté AppError)");
+        assert_eq!(
+            err,
+            MeetingModeError::VideoconfUrlRequired {
+                mode: MeetingMode::Hybrid
+            }
+        );
+        assert_eq!(
+            meeting.mode, mode_before,
+            "une tentative refusée ne doit pas muter l'entité"
+        );
+        assert!(meeting.videoconf_url.is_none());
+    }
+
+    fn make_meeting_for_mode_tests() -> Meeting {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+        Meeting::new(
+            Uuid::new_v4(),
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2026 hybride".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap()
     }
 
     #[test]

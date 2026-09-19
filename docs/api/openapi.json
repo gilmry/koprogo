@@ -99,6 +99,29 @@
         ]
       }
     },
+    "/acps/with-metrics": {
+      "get": {
+        "tags": [
+          "Acps"
+        ],
+        "summary": "Les ACP du périmètre, avec leurs métriques agrégées",
+        "description": "Sert la table « Mes ACP » du tableau de bord syndic : nombre de blocs, lots encodés et déclarés, somme des quotités. Séparée de `GET /acps` parce que les métriques coûtent quatre sous-requêtes par ligne : un sélecteur qui n'a besoin que des noms ne doit pas les payer.",
+        "operationId": "list_acps_with_metrics",
+        "responses": {
+          "200": {
+            "description": "Liste des ACP avec métriques"
+          },
+          "401": {
+            "description": "Non authentifié"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/acps/{id}": {
       "get": {
         "tags": [
@@ -227,6 +250,139 @@
           },
           "409": {
             "description": "ACP still carries buildings — detach or delete them first"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/acps/{id}/modules": {
+      "get": {
+        "tags": [
+          "Acps"
+        ],
+        "summary": "Modules actifs d'une ACP (portée ACP)",
+        "operationId": "list_acp_modules",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ACP UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Modules actifs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnabledModulesResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Hors portée"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/acps/{id}/modules/{module}/disable": {
+      "put": {
+        "tags": [
+          "Acps"
+        ],
+        "summary": "Éteindre un module pour une ACP (admin + portée)",
+        "operationId": "disable_acp_module",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ACP UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "module",
+            "in": "path",
+            "description": "Nom du module (ADR-0015)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Module éteint"
+          },
+          "403": {
+            "description": "Hors portée, droits insuffisants, ou module toujours actif"
+          },
+          "422": {
+            "description": "Nom de module inconnu"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/acps/{id}/modules/{module}/enable": {
+      "put": {
+        "tags": [
+          "Acps"
+        ],
+        "summary": "Allumer un module pour une ACP (admin + portée)",
+        "operationId": "enable_acp_module",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ACP UUID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "module",
+            "in": "path",
+            "description": "Nom du module (ADR-0015)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Module actif"
+          },
+          "403": {
+            "description": "Hors portée ou droits insuffisants"
+          },
+          "422": {
+            "description": "Nom de module inconnu"
           }
         },
         "security": [
@@ -658,6 +814,162 @@
           },
           "500": {
             "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/cdc/alerts": {
+      "post": {
+        "tags": [
+          "Cdc"
+        ],
+        "summary": "Émettre une alerte du conseil de copropriété",
+        "operationId": "create_cdc_alert",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "UUID de l'immeuble",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBoardAlertDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Alerte émise",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardAlertResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Hors mandat ou hors portée"
+          },
+          "422": {
+            "description": "Sévérité ou AG cible invalide"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/cdc/elections": {
+      "post": {
+        "tags": [
+          "Cdc"
+        ],
+        "summary": "Élire les membres du conseil de copropriété",
+        "operationId": "elect_cdc_members",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "UUID de l'immeuble",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ElectCdcMembersDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Membres élus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BoardMemberResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Hors portée"
+          },
+          "422": {
+            "description": "Quorum non atteint ou candidature invalide"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/buildings/{building_id}/eligible-convocation-recipients": {
+      "get": {
+        "tags": [
+          "Convocations"
+        ],
+        "summary": "Copropriétaires éligibles à une convocation",
+        "description": "Sert l'écran de sélection des destinataires (#780 verrou 1, #784) : le\nsyndic doit pouvoir voir et choisir AVANT d'envoyer, pas seulement\nconstater après coup que « 0 destinataire » était resté un libellé.",
+        "operationId": "list_eligible_convocation_recipients",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "path",
+            "description": "UUID de l'immeuble",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Destinataires éligibles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EligibleRecipientResponse"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Hors portée"
           }
         },
         "security": [
@@ -1309,6 +1621,46 @@
         }
       }
     },
+    "/c/{token}/respond": {
+      "post": {
+        "tags": [
+          "MagicLink"
+        ],
+        "summary": "Public write action for a magic link (currently: ContractorReport submit)",
+        "operationId": "respond_magic_link",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContractorReportDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Report updated and submitted"
+          },
+          "400": {
+            "description": "Unsupported scope for this link, or validation error"
+          },
+          "403": {
+            "description": "Invalid / expired token"
+          }
+        }
+      }
+    },
     "/call-for-funds": {
       "get": {
         "tags": [
@@ -1793,6 +2145,130 @@
             }
           }
         }
+      }
+    },
+    "/etats-dates/{id}/notary-link": {
+      "post": {
+        "tags": [
+          "EtatsDates"
+        ],
+        "summary": "Émettre un lien notaire pour un état daté",
+        "description": "Cloisonné comme les autres écritures de ce fichier (#864) : le syndic doit\navoir la gestion de l'ACP dont relève l'état daté.",
+        "operationId": "issue_notary_link",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID de l'état daté",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Lien émis — le jeton en clair n'est rendu QU'ICI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedLienNotaireDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Hors portée"
+          },
+          "404": {
+            "description": "État daté introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "EtatsDates"
+        ],
+        "summary": "Révoquer un lien notaire",
+        "operationId": "revoke_notary_link",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID de l'état daté",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Lien révoqué"
+          },
+          "403": {
+            "description": "Hors portée"
+          },
+          "404": {
+            "description": "Lien introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/etats-dates/{id}/notary-link/renew": {
+      "put": {
+        "tags": [
+          "EtatsDates"
+        ],
+        "summary": "Prolonger un lien notaire existant",
+        "operationId": "renew_notary_link",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID de l'état daté",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lien prolongé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LienNotaireStatusDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Hors portée"
+          },
+          "404": {
+            "description": "Lien introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       }
     },
     "/expenses": {
@@ -2836,13 +3312,16 @@
             }
           },
           "400": {
-            "description": "Unbalanced entry, or unknown field in the body"
+            "description": "Unbalanced entry, missing building, unknown field in the body"
           },
           "401": {
             "description": "User does not belong to an organization"
           },
           "403": {
             "description": "Forbidden (accountant or superadmin only)"
+          },
+          "404": {
+            "description": "Designated building does not exist"
           }
         },
         "security": [
@@ -3110,6 +3589,53 @@
             "description": "Mandate not found"
           }
         }
+      }
+    },
+    "/meetings/{meeting_id}/cdc/alerts": {
+      "get": {
+        "tags": [
+          "Cdc"
+        ],
+        "summary": "Alertes du conseil rattachées à une AG",
+        "operationId": "list_cdc_alerts_for_meeting",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "description": "UUID de l'assemblée",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alertes de l'AG",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BoardAlertResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Hors portée (cloisonnement #882)"
+          },
+          "404": {
+            "description": "Assemblée introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       }
     },
     "/meetings/{meeting_id}/resolutions": {
@@ -3789,10 +4315,13 @@
             }
           },
           "400": {
-            "description": "Validation error, or unknown field in the body"
+            "description": "Malformed JSON body, or wrong Content-Type"
           },
           "401": {
             "description": "User does not belong to an organization"
+          },
+          "422": {
+            "description": "Body does not match the schema (e.g. unit_id missing) — see Issue #852"
           }
         },
         "security": [
@@ -7546,6 +8075,60 @@
         ]
       }
     },
+    "/units/{unit_id}/voting-representative": {
+      "post": {
+        "tags": [
+          "UnitOwners"
+        ],
+        "summary": "Désigner le représentant de vote d'un lot (Art. 3.87 §1er)",
+        "description": "Un lot à plusieurs titulaires actifs (couple, succession — le cas le plus\nordinaire d'une copropriété belge) a son vote SUSPENDU jusqu'à cette\ndésignation. Refuse un second représentant tant qu'un premier est en place\n(409, `assert_single_voting_representative`).",
+        "operationId": "designate_voting_representative",
+        "parameters": [
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "UUID du lot",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesignateVotingRepresentativeDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Représentant désigné",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VotingRepresentativeResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant invalide"
+          },
+          "403": {
+            "description": "Hors mandat sur ce lot"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/users/{user_id}/role-assignments": {
       "get": {
         "tags": [
@@ -7911,6 +8494,99 @@
           "DidNotAttend"
         ]
       },
+      "BoardAlertResponseDto": {
+        "type": "object",
+        "description": "DTO pour la réponse API d'une alerte du conseil.",
+        "required": [
+          "id",
+          "building_id",
+          "raised_by_board_member_id",
+          "text",
+          "severity",
+          "target_meeting_id",
+          "created_at"
+        ],
+        "properties": {
+          "building_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "raised_by_board_member_id": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "target_meeting_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "BoardMemberResponseDto": {
+        "type": "object",
+        "description": "DTO pour la réponse API d'un membre du conseil",
+        "required": [
+          "id",
+          "owner_id",
+          "building_id",
+          "position",
+          "mandate_start",
+          "mandate_end",
+          "elected_by_meeting_id",
+          "is_active",
+          "days_remaining",
+          "expires_soon",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "building_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "days_remaining": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "elected_by_meeting_id": {
+            "type": "string"
+          },
+          "expires_soon": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "mandate_end": {
+            "type": "string"
+          },
+          "mandate_start": {
+            "type": "string"
+          },
+          "owner_id": {
+            "type": "string"
+          },
+          "position": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        }
+      },
       "BookingStatus": {
         "type": "string",
         "description": "Booking status lifecycle",
@@ -8045,6 +8721,14 @@
             "type": "string",
             "format": "date-time"
           },
+          "fund_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Le fonds alimenté par cet appel (issue #635)."
+          },
           "id": {
             "type": "string",
             "format": "uuid"
@@ -8162,6 +8846,17 @@
           "vote_choice"
         ],
         "properties": {
+          "auth_method": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/VoteAuthMethod",
+                "description": "Story 4.2 (#48) — comment le votant a été authentifié. Obligatoire\n(absent → 422 `VOTE_AUTH_METHOD_REQUIRED`) : `Option` ici seulement\npour distinguer « absent » (422 typé) d'un JSON malformé (400 générique\nde désérialisation). Le cas d'usage `cast_vote` le valide contre la\nmodalité de l'AG (`assert_vote_auth_sufficient`)."
+              }
+            ]
+          },
           "owner_id": {
             "type": "string",
             "format": "uuid"
@@ -8186,6 +8881,22 @@
               "null"
             ],
             "description": "**Ignoré par le serveur depuis #850.**\n\nLa puissance de vote d'un lot est sa quotité dans l'acte de base\n(Art. 3.87 § 2 et § 8 CC) : elle n'est pas déclarative. Le serveur la\nrelit sur le lot et n'accorde aucune valeur à ce champ.\n\nIl reste accepté pour ne pas casser les appelants existants, et sera\nretiré du contrat quand l'arbitrage de #850 — qui peut saisir un vote,\net pour qui — aura tranché le reste de la route."
+          }
+        }
+      },
+      "CdcCandidateDto": {
+        "type": "object",
+        "description": "Un candidat à élire au conseil de copropriété.",
+        "required": [
+          "owner_id",
+          "position"
+        ],
+        "properties": {
+          "owner_id": {
+            "type": "string"
+          },
+          "position": {
+            "type": "string"
           }
         }
       },
@@ -8443,6 +9154,27 @@
             ],
             "format": "int32",
             "description": "Dénominateur de l'acte de base (quotités) — défaut 1000 si absent.\n1000 millièmes / 10000 dix-millièmes / autre (Art. 3.84 CC, ADR-0010)."
+          }
+        }
+      },
+      "CreateBoardAlertDto": {
+        "type": "object",
+        "description": "DTO pour créer une alerte du conseil de copropriété (Story 4.7 / #582).\n\n`building_id` n'y figure pas : il vient du chemin de la route\n(`/buildings/{building_id}/cdc/alerts`), pas du corps — une route scopée\nne doit pas laisser le corps affirmer un autre immeuble que celui de\nl'URL.\n\n`target_meeting_id` est fourni par l'appelant plutôt que résolu\nautomatiquement — cf. `CdcUseCases::create_alert` pour la justification.",
+        "required": [
+          "text",
+          "severity",
+          "target_meeting_id"
+        ],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "description": "\"info\", \"warning\" ou \"critical\"."
+          },
+          "target_meeting_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
           }
         }
       },
@@ -8808,6 +9540,7 @@
         "description": "DTO for creating a new owner contribution",
         "required": [
           "owner_id",
+          "unit_id",
           "description",
           "amount",
           "contribution_type",
@@ -8838,11 +9571,9 @@
             "format": "uuid"
           },
           "unit_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
+            "type": "string",
+            "format": "uuid",
+            "description": "Obligatoire : c'est le lot qui porte l'ACP créancière (Story H15,\nADR-0045). `resoudre_lacp_creanciere` refuse déjà `None` en use case —\nIssue #852 aligne la signature sur ce que le code a toujours exigé,\npour qu'un client suivant le contrat n'essuie plus un 400 opaque."
           }
         },
         "additionalProperties": false
@@ -9333,6 +10064,77 @@
           "Bailiff"
         ]
       },
+      "DesignateVotingRepresentativeDto": {
+        "type": "object",
+        "description": "DTO for designating the voting representative of a unit (#848, Art. 3.87 §1 CC).",
+        "required": [
+          "owner_id"
+        ],
+        "properties": {
+          "owner_id": {
+            "type": "string"
+          }
+        }
+      },
+      "ElectCdcMembersDto": {
+        "type": "object",
+        "description": "DTO pour élire les membres du conseil à l'issue d'une AG (Story 4.7).\n\n`building_id` vient du chemin (`/buildings/{building_id}/cdc/elections`),\npas du corps — même raison que `CreateBoardAlertDto`.\n\nL'AG référencée par `meeting_id` doit être `Completed` : sa clôture\nprouve déjà le quorum double (Art. 3.87 §5 CC) via\n`Meeting::assert_can_complete`. Cf. `CdcUseCases::elect_members`.",
+        "required": [
+          "meeting_id",
+          "candidates"
+        ],
+        "properties": {
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CdcCandidateDto"
+            }
+          },
+          "meeting_id": {
+            "type": "string"
+          }
+        }
+      },
+      "EligibleRecipientResponse": {
+        "type": "object",
+        "description": "Un copropriétaire qu'une convocation toucherait, pour l'écran de\nsélection des destinataires (#780 verrou 1, #784).\n\nDistinct de `ConvocationRecipientResponse` : celui-ci décrit un\ndestinataire déjà rattaché à une convocation envoyée (tracking d'ouverture,\nde présence, de procuration). Celui-ci décrit un copropriétaire ÉLIGIBLE,\navant tout envoi — la question posée est « qui pourrait recevoir ceci ? »,\npas « qui l'a reçu ? ».",
+        "required": [
+          "owner_id",
+          "full_name",
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "EnabledModulesResponseDto": {
+        "type": "object",
+        "description": "Réponse de `GET /acps/{id}/modules`.\n\nLa forme est **imposée par la moitié frontend déjà livrée**\n(`frontend/src/lib/api/modules.ts`, `EnabledModulesResponseDto`), qui a\nété écrite en attendant cette story : `acp_id` en `snake_case`.\n\n`modules` porte `Module` et non `String`. Le fil est identique — `Module`\nse sérialise en `snake_case` — mais le **schéma** change : il énumère les\nsept valeurs au lieu d'annoncer « une chaîne quelconque ». C'est ce qui\npermet à `api.d.ts` d'être plus fort que la liste écrite à la main côté\nfrontend, au lieu d'être plus faible qu'elle.",
+        "required": [
+          "acp_id",
+          "modules"
+        ],
+        "properties": {
+          "acp_id": {
+            "type": "string"
+          },
+          "modules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Module"
+            }
+          }
+        }
+      },
       "EnergyType": {
         "type": "string",
         "enum": [
@@ -9796,6 +10598,28 @@
           }
         }
       },
+      "IssuedLienNotaireDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "token",
+          "expires_at"
+        ],
+        "properties": {
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token": {
+            "type": "string",
+            "description": "Jeton clair — à renvoyer au syndic UNE FOIS, jamais persisté ailleurs."
+          }
+        }
+      },
       "JournalEntryLineRequest": {
         "type": "object",
         "required": [
@@ -9938,6 +10762,30 @@
           }
         }
       },
+      "LienNotaireStatusDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "expires_at"
+        ],
+        "properties": {
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "renewed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "LoginRequest": {
         "type": "object",
         "required": [
@@ -10048,6 +10896,19 @@
         "enum": [
           "Ordinary",
           "Extraordinary"
+        ]
+      },
+      "Module": {
+        "type": "string",
+        "description": "Les capacités que KoproGo sait allumer ou éteindre par copropriété.\n\nLes variantes doivent rester alignées, dans les deux sens, sur la\ncontrainte `acp_enabled_modules_module_check`\n(`migrations/20260917000000_create_acp_enabled_modules.sql`). La garde\n`garde_enum_contre_contrainte` casse si l'une des deux listes devance\nl'autre — c'est elle qui rend cet alignement vérifié plutôt que promis.\n\nLe frontend tient la même liste dans `frontend/src/lib/api/modules.ts`\n(`MODULE_NAMES`), dette documentée en tête de ce fichier-là, à résorber\nen important les types générés dès que ce handler est au schéma OpenAPI.",
+        "enum": [
+          "identity",
+          "community",
+          "ticketing",
+          "accounting",
+          "governance",
+          "maintenance",
+          "portfolio"
         ]
       },
       "NoticeCategory": {
@@ -10633,6 +11494,36 @@
         "properties": {
           "reason": {
             "type": "string"
+          }
+        }
+      },
+      "ReplacedPartDto": {
+        "type": "object",
+        "required": [
+          "name",
+          "quantity"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "photo_document_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -11231,6 +12122,54 @@
           }
         }
       },
+      "UpdateContractorReportDto": {
+        "type": "object",
+        "description": "Mise à jour du brouillon (photos, pièces, compte-rendu)\n\n`ToSchema` est requis depuis la fusion du 2026-09-15 : `magic_link_handlers`\nexpose ce DTO dans un `#[utoipa::path]`, et utoipa exige alors qu'il sache\nse décrire. Les deux branches étaient justes séparément — l'une ajoutait le\nhandler, l'autre le DTO — et leur rencontre a produit l'incohérence. C'est\nle genre de défaut qu'aucune des deux revues n'aurait pu voir.",
+        "properties": {
+          "compte_rendu": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "parts_replaced": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ReplacedPartDto"
+            }
+          },
+          "photos_after": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "photos_before": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "work_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "UpdateInvoiceDraftDto": {
         "type": "object",
         "description": "Modifier une facture brouillon ou rejetée.",
@@ -11569,6 +12508,16 @@
           }
         }
       },
+      "VoteAuthMethod": {
+        "type": "string",
+        "description": "Méthode d'authentification du votant (Story 4.2, Art. 3.87 §1er, §4 CC,\n#48). `Presence` couvre la signature de la feuille de présence en AG\nphysique ; `Proxy` une procuration papier en bonne et due forme ;\n`Itsme`/`Eid` l'authentification forte requise pour un vote à distance\n(Art. 3.87 §1er : « à distance au moyen d'une communication\nélectronique » suppose de savoir QUI a voté).",
+        "enum": [
+          "presence",
+          "proxy",
+          "itsme",
+          "eid"
+        ]
+      },
       "VoteChoice": {
         "type": "string",
         "description": "Choix de vote d'un copropriétaire",
@@ -11577,6 +12526,30 @@
           "contre",
           "abstention"
         ]
+      },
+      "VotingRepresentativeResponseDto": {
+        "type": "object",
+        "description": "Response DTO for a voting representative designation (#848).",
+        "required": [
+          "unit_id",
+          "owner_id",
+          "unit_owner_id",
+          "is_voting_representative"
+        ],
+        "properties": {
+          "is_voting_representative": {
+            "type": "boolean"
+          },
+          "owner_id": {
+            "type": "string"
+          },
+          "unit_id": {
+            "type": "string"
+          },
+          "unit_owner_id": {
+            "type": "string"
+          }
+        }
       },
       "WarrantyType": {
         "oneOf": [
