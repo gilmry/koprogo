@@ -81,17 +81,30 @@ jobs:
       # faire échouer la publication du site pour des vidéos manquantes
       # serait donner à la preuve de valeur un pouvoir de verdict qu'elle ne
       # doit pas avoir (#876).
-      - name: Récupérer la dernière vitrine
+      # La vitrine vient de la branche `vitrine-publiee`, PAS d'un artefact.
+      #
+      # L'artefact `vitrine-feature-dev` a une rétention de sept jours (#963).
+      # La doc, elle, est permanente : la faire dépendre d'un objet qui
+      # s'efface revenait à garantir qu'elle perdrait sa première page au
+      # premier creux d'activité sur `feature/dev`.
+      #
+      # `vitrine-publiee` est une branche orpheline d'un seul commit, que
+      # `vitrine.yml` ré-écrit UNIQUEMENT quand la vitrine est complète. Elle
+      # porte donc toujours la dernière vitrine VALIDE, pas la dernière
+      # tentative. Un tournage partiel ne l'écrase pas.
+      #
+      # Pourquoi pas une release : la création de tag est en Tier 1 dans
+      # CRITICAL.md, réservée à une action humaine explicite, et la pose du
+      # tag de version est hors périmètre agent. Une branche ne touche ni
+      # tag ni release.
+      - name: Récupérer la dernière vitrine publiée
         id: vitrine
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v6
+        uses: actions/checkout@v7
         with:
-          workflow: vitrine.yml
-          name: vitrine-feature-dev
-          branch: feature/dev
+          ref: vitrine-publiee
           path: _vitrine
-          if_no_artifact_found: warn
-          search_artifacts: true
+          fetch-depth: 1
 
       - name: Combine documentation
         run: |

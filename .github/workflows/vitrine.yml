@@ -41,7 +41,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # `write` pour la seule branche `vitrine-publiee` : la doc est
+  # permanente, l'artefact expire en sept jours (#963).
+  contents: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -253,3 +255,92 @@ jobs:
           # conservées longtemps remplissent le quota sans que personne ne
           # s'en aperçoive avant le blocage.
           retention-days: 7
+
+      # ── Persister la vitrine, mais seulement si elle est complète ────────
+      #
+      # `doc.koprogo.com` sert la vitrine en première page. Elle arrivait par
+      # l'artefact ci-dessus, dont la rétention est de sept jours : la doc
+      # perdait donc sa première page au premier creux d'activité (#963).
+      #
+      # La vitrine est désormais poussée sur `vitrine-publiee`, une branche
+      # orpheline d'un seul commit que `docs.yml` récupère.
+      #
+      # Le « seulement si complète » n'est pas une précaution de style.
+      # L'enregistrement est en `continue-on-error` et l'envoi en
+      # `if: always()` avec `if-no-files-found: warn` — un tournage à moitié
+      # raté produit donc bel et bien un dossier. Sans ce filtre, une
+      # tentative partielle écraserait la dernière vitrine VALIDE, et la
+      # première page du site montrerait des parcours interrompus.
+      #
+      # On préfère servir une vitrine d'hier, entière, qu'une vitrine
+      # d'aujourd'hui, amputée.
+      - name: Persister la vitrine si elle est complète
+        if: always()
+        env:
+          JETON: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          DOSSIER=frontend/tests/e2e/journeys/vitrine
+
+          if [ ! -f "$DOSSIER/index.html" ]; then
+            echo "::warning::Aucune galerie produite. La branche vitrine-publiee est laissée intacte."
+            exit 0
+          fi
+
+          # Le nombre attendu se LIT dans le code, il ne se recopie pas : un
+          # parcours ajouté sans tournage doit faire échouer la complétude,
+          # pas passer inaperçu parce qu'une constante est restée à 7.
+          ATTENDUS=$(ls frontend/tests/e2e/journeys/*.journey.ts | wc -l)
+          OBTENUS=$(ls "$DOSSIER"/*.json 2>/dev/null | wc -l)
+
+          INTERROMPUS=$(node -e '
+            const { readdirSync, readFileSync } = require("node:fs");
+            const d = process.argv[1];
+            const ko = readdirSync(d)
+              .filter((f) => f.endsWith(".json"))
+              .map((f) => JSON.parse(readFileSync(d + "/" + f, "utf8")))
+              .filter((m) => m.interrompu)
+              .map((m) => m.slug + " (" + m.interrompu + ")");
+            process.stdout.write(ko.join(", "));
+          ' "$DOSSIER")
+
+          echo "parcours attendus : $ATTENDUS — tournés : $OBTENUS"
+
+          if [ "$OBTENUS" -ne "$ATTENDUS" ] || [ -n "$INTERROMPUS" ]; then
+            echo "::warning::Vitrine incomplète : $OBTENUS/$ATTENDUS parcours, interrompus : ${INTERROMPUS:-aucun}. La branche vitrine-publiee garde la dernière vitrine valide."
+            exit 0
+          fi
+
+          # Ne rien pousser si rien n'a changé : la branche porte des vidéos,
+          # et une force-push à chaque exécution gonflerait le dépôt pour
+          # rien. L'empreinte voyage AVEC la vitrine, dans la branche.
+          EMPREINTE=$(find "$DOSSIER" -type f ! -name EMPREINTE -print0 \
+            | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
+          ANCIENNE=$(curl -fsSL \
+            "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/vitrine-publiee/EMPREINTE" \
+            2>/dev/null || true)
+
+          if [ "$EMPREINTE" = "$ANCIENNE" ]; then
+            echo "Vitrine identique à celle déjà publiée ($EMPREINTE). Rien à pousser."
+            exit 0
+          fi
+
+          TMP=$(mktemp -d)
+          cp -r "$DOSSIER/." "$TMP/"
+          echo "$EMPREINTE" > "$TMP/EMPREINTE"
+          cd "$TMP"
+
+          # Dépôt NEUF, donc aucun `http.extraheader` posé par
+          # `actions/checkout` : ici, et seulement ici, le jeton dans l'URL
+          # est bien celui que git utilise. Voir la note de #874 dans
+          # fanout-stories.yml, où c'était l'inverse.
+          git init -q -b vitrine-publiee
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "vitrine: $ATTENDUS parcours complets, depuis ${GITHUB_SHA:0:7}"
+          git push -q --force \
+            "https://x-access-token:${JETON}@github.com/${GITHUB_REPOSITORY}.git" \
+            vitrine-publiee
+
+          echo "Vitrine publiée sur vitrine-publiee : $ATTENDUS parcours, $(du -sh . | cut -f1)."
