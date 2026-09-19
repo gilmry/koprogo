@@ -498,10 +498,19 @@ async fn happy_contractor_reports_respond_via_unified_magic_link() {
     );
 
     // @security — a link issued for a DIFFERENT scope must not open this report.
+    //
+    // Le sujet doit etre un utilisateur REEL et DISTINCT de l'emetteur : le use
+    // case refuse « MagicLink subject and issuer must differ », et un
+    // `Uuid::new_v4()` violait `magic_links_subject_user_id_fkey` avant meme
+    // d'atteindre l'assertion de portee croisee.
+    let (_autre_token, autre_user_id) = setup_contractor_user_token(&app_state, org_id).await;
+
     let ticket_link = app_state
         .magic_link_use_cases
         .issue(
-            Uuid::new_v4(),
+            // `issue(subject_user_id, scope_kind, scope_id, issued_by, ttl)`
+            // (magic_link_use_cases.rs:54-60).
+            autre_user_id,
             koprogo_api::domain::entities::MagicLinkScopeKind::Ticket,
             ticket_id,
             user_id,

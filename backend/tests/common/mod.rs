@@ -771,8 +771,23 @@ pub async fn create_test_unit(
     app_state: &actix_web::web::Data<AppState>,
     building_id: Uuid,
 ) -> Uuid {
+    // `acp_id` est REQUIS par le use case depuis #725 (2026-08-29) : c'est la
+    // route HTTP qui le resout depuis l'immeuble parent
+    // (unit_handlers.rs:89-90), pas le use case. Ce helper appelle le use case
+    // en direct : il doit donc faire la meme resolution, sinon `create_unit`
+    // refuse avec « Missing acp_id ».
+    //
+    // Passe inapercu trois semaines parce que `feature/dev` est exclue de
+    // CI Pipeline (`!feature/dev`) : les tests d'integration n'y tournent pas.
+    let building = app_state
+        .building_use_cases
+        .get_building(building_id)
+        .await
+        .expect("create_test_unit: lecture de l'immeuble parent")
+        .expect("create_test_unit: immeuble parent introuvable");
+
     let dto = koprogo_api::application::dto::CreateUnitDto {
-        acp_id: None,
+        acp_id: Some(building.acp_id.clone()),
         building_id: building_id.to_string(),
         unit_number: format!("E2E-{}", Uuid::new_v4().simple()),
         unit_type: koprogo_api::domain::entities::UnitType::Apartment,

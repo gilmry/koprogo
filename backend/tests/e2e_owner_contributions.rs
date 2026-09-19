@@ -507,8 +507,16 @@ async fn security_outstanding_contributions_refuse_un_owner_id_dune_autre_organi
     let (app_state, _container, org_a) = common::setup_test_db().await;
     let org_b = common::create_test_organization(&app_state).await;
 
-    let (token_a, _owner_a, _unit_a, _building_a) =
+    let (_token_superadmin_a, _owner_a, _unit_a, _building_a) =
         create_contribution_fixtures(&app_state, org_a).await;
+
+    // Le demandeur doit etre un utilisateur CLOISONNE. `verify_owner_org_access`
+    // laisse passer les superadmins par conception (scope_guard.rs:846) : ce
+    // sont des administrateurs de plateforme, pas d'organisation. Or la fixture
+    // ci-dessus delivre justement un superadmin — s'en servir ici faisait
+    // echouer le test sur le seul role qui a le droit de traverser, et non sur
+    // la fuite qu'il decrit (« n'importe quel utilisateur authentifie »).
+    let token_a = common::register_and_login_with_role(&app_state, org_a, "syndic").await;
     let (_token_b, owner_b, unit_b, _building_b) =
         create_contribution_fixtures(&app_state, org_b).await;
 
