@@ -70,6 +70,29 @@ jobs:
           cd docs
           sphinx-build -b html -j auto . _build/html
 
+      # ── La vitrine, récupérée plutôt que rejouée ──────────────────────
+      #
+      # Les sept parcours sont enregistrés par `vitrine.yml`, qui monte la
+      # pile complète — postgres, backend, frontend construit. La rejouer
+      # ici doublerait ce montage et ferait dériver deux enregistrements.
+      #
+      # On prend donc le dernier artefact publié. `if_no_artifact_found:
+      # warn` : une documentation sans vitrine reste une documentation, et
+      # faire échouer la publication du site pour des vidéos manquantes
+      # serait donner à la preuve de valeur un pouvoir de verdict qu'elle ne
+      # doit pas avoir (#876).
+      - name: Récupérer la dernière vitrine
+        id: vitrine
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: vitrine.yml
+          name: vitrine-feature-dev
+          branch: feature/dev
+          path: _vitrine
+          if_no_artifact_found: warn
+          search_artifacts: true
+
       - name: Combine documentation
         run: |
           # Create combined docs directory
@@ -82,6 +105,19 @@ jobs:
           # Copy Rust docs to /rust subdirectory
           mkdir -p _site/rust
           cp -r backend/target/doc/* _site/rust/
+
+          # La vitrine, si l'étape précédente l'a rapportée.
+          #
+          # Elle est AUTONOME : son `index.html` ne référence aucune
+          # ressource externe, et ses vidéos vivent à côté. Elle se pose donc
+          # telle quelle, sans retouche.
+          if [ -f _vitrine/index.html ]; then
+            mkdir -p _site/vitrine
+            cp -r _vitrine/* _site/vitrine/
+            echo "✅ vitrine publiée : $(du -sh _site/vitrine | cut -f1)"
+          else
+            echo "⚠️  aucune vitrine à publier — le site part sans elle"
+          fi
 
           # Create main index page
           cat > _site/index.html << 'EOF'
@@ -133,6 +169,11 @@ jobs:
               <p>Bienvenue sur la documentation du projet KoproGo - Plateforme SaaS de gestion de copropriétés</p>
 
               <div class="docs-links">
+                  <a href="vitrine/index.html" class="doc-card">
+                      <h2>🎬 La vitrine — le produit en vidéo</h2>
+                      <p>Sept parcours narrés, un par rôle : le syndic, le copropriétaire, le comptable, l'administration, le conseil de copropriété, le prestataire et le modérateur. Chapitres horodatés — on saute à l'étape plutôt que de regarder le film.</p>
+                  </a>
+
                   <a href="docs/index.html" class="doc-card">
                       <h2>📖 Documentation Générale</h2>
                       <p>Architecture, guides de déploiement, roadmap et documentation complète du projet</p>
