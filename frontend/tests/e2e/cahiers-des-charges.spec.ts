@@ -52,15 +52,24 @@ test.describe("Cahiers des charges techniques (#968)", () => {
 
     // ── Ce que ce test ne vérifie PAS, et pourquoi ───────────────────────
     //
-    // Il ne vérifie pas que des cahiers des charges s'affichent. En essayant,
-    // j'ai découvert que le syndic amorcé ici **ne voit aucune ACP** :
-    // `listAcps()` rend une liste vide alors que `ensureAcp` vient d'en créer
-    // une pour son organisation. C'est le défaut de cloisonnement user↔ACP
-    // (#694), pas celui que cette recette fige.
+    // Il ne vérifie pas que des cahiers des charges s'affichent, et la
+    // raison mérite d'être écrite parce que je m'étais trompé en la
+    // formulant.
     //
-    // Exiger une ACP ici ferait échouer ce test pour une cause étrangère, et
-    // le rendrait illisible : on croirait la régression revenue alors qu'un
-    // autre chantier serait en cause. Le cas peuplé appartient à #694.
+    // J'avais d'abord attribué la liste d'ACP vide au cloisonnement user↔ACP
+    // (#694). **C'était faux**, vérifié le 2026-09-20 contre l'API : un
+    // syndic voit bien l'ACP de son organisation.
+    //
+    //     POST /acps          -> 201
+    //     GET  /acps (syndic) -> [{"id":"0278d99a…"}]
+    //
+    // Le portefeuille paraissait vide parce qu'AUCUNE ACP n'existait dans
+    // l'organisation du syndic de diagnostic. Pas un défaut : un monde non
+    // semé.
+    //
+    // Ce test ne sème pas ce monde à dessein — il éprouve une séquence
+    // d'appels, pas un contenu. Le cas peuplé appartient aux parcours
+    // métier, qui sèment le leur.
     //
     // Ce qui est vérifié tient en une phrase : **l'écran ne part plus
     // chercher les cahiers des charges sans savoir de quelle ACP il parle.**
