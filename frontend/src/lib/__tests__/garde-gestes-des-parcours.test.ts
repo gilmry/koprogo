@@ -120,7 +120,7 @@ function parcoursMetier(): Mesure[] {
  * cliquet qui recalcule sa référence à chaque exécution vaut toujours sa
  * valeur courante et ne peut jamais mordre.
  */
-const GESTES_AU_2026_09_20 = 94;
+const GESTES_AU_2026_09_20 = 97;
 
 /**
  * Le plancher par parcours. Trois gestes, c'est le minimum en dessous duquel
@@ -138,8 +138,6 @@ const EN_DETTE: Record<string, string> = {
   "prestataire.journey.ts":
     "le prestataire n'a pas d'écran (`ROLES_SANS_INTERFACE`) ; son point " +
     "d'entrée est un lien magique qui n'existe pas (story 3.2)",
-  "perimetre-multi-role.journey.ts":
-    "démontre un cloisonnement, qui se constate plus qu'il ne se clique",
 };
 
 describe("les parcours filmés agissent (#974)", () => {

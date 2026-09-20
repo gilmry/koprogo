@@ -122,24 +122,66 @@ export const perimetreMultiRole: Parcours = {
       },
     },
     {
-      id: "le-perimetre-suit-la-navigation",
+      id: "le-perimetre-suit-le-menu",
       acteur: "syndic",
       description:
-        "Il ouvre un autre écran. Son ACP doit le suivre : re-choisir à " +
-        "chaque menu rendrait le multi-copropriété inutilisable.",
+        "Il déplie « Comptabilité » et clique « Dépenses » — le geste " +
+        "exact que le produit rendait pénible. Son ACP doit le suivre : " +
+        "re-choisir à chaque menu rendrait le multi-copropriété " +
+        "inutilisable.",
       action: async (scene) => {
-        await scene.aller("/expenses");
+        // ── Pourquoi un CLIC de menu, et pas une URL ─────────────────────
+        //
+        // L'étape appelait `scene.aller("/expenses")`. C'était une
+        // navigation, pas le geste rapporté. Le PO l'a décrit ainsi le
+        // 2026-09-20 : « dès qu'on appuie sur un bouton ou qu'on va dans un
+        // menu il faut resélectionner ».
+        //
+        // Un `goto` saute le dépliage du `<details>` de `RoleSubmenu` et
+        // l'interception du lien. Cliquer dans le menu reproduit ce que
+        // l'utilisateur fait, et c'est la seule forme qui éprouve ce qu'il
+        // a signalé (#841).
+        await scene.cliquer("nav-link-expenses");
         await scene.attendreChargement();
       },
       assertion: async (page) => {
+        await expect(page).toHaveURL(/\/expenses/, { timeout: 20000 });
         // Chaque navigation est un chargement de document complet : si le
         // choix n'était pas mémorisé, le sélecteur repartirait vide. C'est
         // exactement ce qui se passait avant #841.
         await expect(
           page.getByTestId("acp-selector-input"),
-          "Le périmètre est perdu après une navigation : l'utilisateur doit " +
-            "re-sélectionner son ACP à chaque écran (#841).",
+          "Le périmètre est perdu après un clic de menu : l'utilisateur " +
+            "doit re-sélectionner son ACP à chaque écran (#841).",
         ).not.toHaveValue("");
+      },
+    },
+    {
+      id: "le-perimetre-survit-a-un-bouton",
+      acteur: "syndic",
+      description:
+        "Et il survit à un bouton, pas seulement à un menu. Le syndic " +
+        "ouvre la saisie d'une facture, la referme, et son périmètre est " +
+        "toujours là.",
+      action: async (scene) => {
+        await scene.cliquer("create-button");
+        await scene.attendreChargement();
+        await scene.cliquer("expense-form-cancel-button");
+        await scene.attendreChargement();
+      },
+      assertion: async (page) => {
+        // La seconde moitié du rapport du PO : « dès qu'on appuie sur un
+        // bouton ». Ouvrir puis fermer une modale ne recharge PAS le
+        // document — le périmètre vit alors en mémoire, pas en session, et
+        // c'est un chemin distinct de celui que le clic de menu éprouve.
+        await expect(
+          page.getByTestId("acp-selector-input"),
+          "Le périmètre est perdu après avoir ouvert et fermé une modale : " +
+            "un geste qui ne change même pas d'écran.",
+        ).not.toHaveValue("");
+        await expect(page.getByTestId("expenses-list")).toBeVisible({
+          timeout: 20000,
+        });
       },
     },
     {
