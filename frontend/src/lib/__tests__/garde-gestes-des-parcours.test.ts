@@ -120,7 +120,7 @@ function parcoursMetier(): Mesure[] {
  * cliquet qui recalcule sa référence à chaque exécution vaut toujours sa
  * valeur courante et ne peut jamais mordre.
  */
-const GESTES_AU_2026_09_20 = 78;
+const GESTES_AU_2026_09_20 = 89;
 
 /**
  * Le plancher par parcours. Trois gestes, c'est le minimum en dessous duquel
@@ -132,9 +132,6 @@ const GESTES_AU_2026_09_20 = 78;
 const PLANCHER_PAR_PARCOURS = 3;
 
 const EN_DETTE: Record<string, string> = {
-  "administration.journey.ts":
-    "crée une organisation et un compte par l'API ; l'écran d'admin n'est " +
-    "que constaté (#974)",
   "conseil.journey.ts":
     "le conseil lit des documents et un ordre du jour ; ses gestes " +
     "d'approbation ne sont pas câblés (#805)",
