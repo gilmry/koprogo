@@ -2741,7 +2741,12 @@
       "Other": "Sonstiges"
     },
     "fieldTitle": "Titel",
-    "loadFailed": "Die Mitteilung konnte nicht geladen werden."
+    "loadFailed": "Die Mitteilung konnte nicht geladen werden.",
+    "publish": "Veröffentlichen",
+    "publishing": "Wird veröffentlicht…",
+    "published_successfully": "Aushang veröffentlicht — die Miteigentümer sehen ihn jetzt",
+    "publish_failed": "Veröffentlichung fehlgeschlagen",
+    "publish_confirmation": "Diesen Aushang veröffentlichen? Er wird für alle Miteigentümer des Gebäudes sichtbar."
   },
   "notifications": {
     "channels": {

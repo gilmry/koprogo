@@ -2741,7 +2741,12 @@
       "Other": "Other"
     },
     "fieldTitle": "Title",
-    "loadFailed": "Failed to load the notice."
+    "loadFailed": "Failed to load the notice.",
+    "publish": "Publish",
+    "publishing": "Publishing…",
+    "published_successfully": "Notice published — co-owners can now see it",
+    "publish_failed": "Publishing failed",
+    "publish_confirmation": "Publish this notice? It will become visible to every co-owner in the building."
   },
   "notifications": {
     "channels": {

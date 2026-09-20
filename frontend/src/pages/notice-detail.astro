@@ -32,8 +32,9 @@ import Layout from "../layouts/Layout.astro";
 
 <script>
   import { mount } from "svelte";
+  import { get } from "svelte/store";
   import NoticeDetail from "../components/notices/NoticeDetail.svelte";
-  import { getMyOwner } from "../lib/api";
+  import { authStore } from "../stores/auth";
 
   // Get notice ID from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -43,8 +44,31 @@ import Layout from "../layouts/Layout.astro";
     window.location.href = "/notices";
   } else {
     async function init() {
-      const owner = await getMyOwner();
-      const currentUserId = owner?.id || "";
+      // ── L'identifiant du COMPTE, pas celui de la fiche ─────────────────
+      //
+      // Cette page lisait `getMyOwner()`, qui rend un `owners.id`. Or
+      // `notices.author_id` référence `users.id` — le use case le commente
+      // en toutes lettres (`notice_use_cases.rs:48`, « now references
+      // users.id »).
+      //
+      // `isAuthor` comparait donc deux identifiants de tables différentes,
+      // et ne pouvait JAMAIS être vrai. Mesuré le 2026-09-20 :
+      //
+      //     id du COMPTE syndic    : da0280d5-8591-…
+      //     author_id de l'annonce : da0280d5-8591-…   ← identiques
+      //     GET /owners/me (syndic): 200  null         ← aucune fiche
+      //
+      // Deux chemins d'échec qui couvrent tout le monde : un syndic n'a pas
+      // de fiche (la comparaison porte sur `""`), et un copropriétaire en a
+      // une dont l'identifiant diffère du sien. Personne ne pouvait donc
+      // archiver ni supprimer sa propre annonce (#979).
+      //
+      // Le commentaire du backend désigne une migration ; c'est cette page
+      // qui ne l'avait pas suivie. `ticket-detail.astro:90` et
+      // `energy-campaigns/detail.astro:29` lisent déjà l'identité de cette
+      // façon.
+      const auth = get(authStore);
+      const currentUserId = auth.user?.id ?? "";
 
       const container = document.getElementById("notice-detail-container");
       if (container) {

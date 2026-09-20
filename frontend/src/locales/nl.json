@@ -2741,7 +2741,12 @@
       "Other": "Andere"
     },
     "fieldTitle": "Titel",
-    "loadFailed": "Kan de mededeling niet laden."
+    "loadFailed": "Kan de mededeling niet laden.",
+    "publish": "Publiceren",
+    "publishing": "Publiceren…",
+    "published_successfully": "Bericht gepubliceerd — de mede-eigenaars zien het nu",
+    "publish_failed": "Publiceren mislukt",
+    "publish_confirmation": "Dit bericht publiceren? Het wordt zichtbaar voor alle mede-eigenaars van het gebouw."
   },
   "notifications": {
     "channels": {

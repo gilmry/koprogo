@@ -104,6 +104,36 @@ export const noticesApi = {
     return api.put(`/notices/${id}`, data);
   },
 
+  /**
+   * Publie une annonce — ce qui la rend visible des autres.
+   *
+   * ── Pourquoi cette méthode n'existait pas, et ce que ça coûtait ────────
+   *
+   * `Notice::new` crée en `Draft`, et le domaine le commente ainsi :
+   * « Draft (not visible to others) »
+   * (`domain/economie_circulaire/notice.rs:40`). La route de sortie existe
+   * côté serveur depuis toujours (`notice_handlers.rs:383`).
+   *
+   * Aucun appelant ne l'empruntait. Toute annonce rédigée au formulaire
+   * restait donc en brouillon POUR TOUJOURS — le syndic la voyait dans sa
+   * propre liste, dont il est l'auteur, et concluait que l'information
+   * était passée ; les copropriétaires lisaient « Aucune annonce trouvée »
+   * (#978).
+   *
+   * Mesuré contre la recette le 2026-09-20 :
+   *
+   *     POST /notices                          -> Draft, published_at = None
+   *     GET  /buildings/{id}/notices/published -> []
+   *     POST /notices/{id}/publish             -> 200, Published
+   *     GET  /buildings/{id}/notices/published -> 1 annonce
+   *
+   * Un silence se prend pour un accord : personne ne reçoit de démenti, et
+   * les travaux commencent devant un hall plein de gens surpris.
+   */
+  async publish(id: string): Promise<Notice> {
+    return api.post(`/notices/${id}/publish`, {});
+  },
+
   async archive(id: string): Promise<Notice> {
     return api.post(`/notices/${id}/archive`, {});
   },

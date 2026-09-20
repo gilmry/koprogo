@@ -35,7 +35,12 @@
  */
 import { expect } from "@playwright/test";
 import type { Parcours } from "./parcours";
-import { adminLogin, ensureAcp, seedConformantUnits } from "../helpers/auth";
+import {
+  adminLogin,
+  ensureAcp,
+  rattacherLeCoproprietaire,
+  seedConformantUnits,
+} from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 async function ok<T = any>(
@@ -129,30 +134,6 @@ export const sondage: Parcours = {
 
     await seedConformantUnits(page, adminToken, acpId, immeuble.id, 4, 1000);
 
-    // ── Un immeuble HABITÉ, et pourquoi ça ne va pas de soi ───────────────
-    //
-    // `poll_use_cases.rs:92` dérive le corps électoral des `unit_owners`
-    // ACTIFS du bâtiment, et `Poll::new` refuse en 400 si le total est nul :
-    //
-    //     {"error":"Total eligible voters must be positive"}
-    //
-    // Mesuré contre la recette le 2026-09-20. Un immeuble avec des lots
-    // conformes mais sans propriétaire rattaché n'a personne à consulter —
-    // c'est une règle métier juste, pas une gêne d'amorçage. Il faut donc
-    // bâtir ET peupler, ce que `seedConformantUnits` seul ne fait pas.
-    const lots = await ok<Array<{ id: string }>>(
-      await api.get(`${API_BASE}/buildings/${immeuble.id}/units`, {
-        headers: entete,
-      }),
-      "amorçage:lots",
-    );
-    if (lots.length === 0) {
-      throw new Error(
-        "L'immeuble n'a aucun lot : le sondage n'aurait aucun corps " +
-          "électoral et le serveur refuserait en 400.",
-      );
-    }
-
     // ── Un SECOND immeuble, et il n'est pas décoratif ─────────────────────
     //
     // `BuildingSelector.svelte:182` n'affiche une liste déroulante que si le
@@ -213,38 +194,17 @@ export const sondage: Parcours = {
       }
     }
 
-    // La fiche de copropriétaire, puis son rattachement au lot. Les deux
-    // sont nécessaires : `/owners` crée la personne, `/units/{id}/owners`
-    // crée le lien qui fait d'elle une votante.
-    const fiche = await ok<{ id: string }>(
-      await api.post(`${API_BASE}/owners`, {
-        data: {
-          organization_id: org.id,
-          first_name: "Carine",
-          last_name: "Copropriétaire",
-          email: emailCopro,
-          address: "1 Rue de la Cage",
-          city: "Brussels",
-          postal_code: "1000",
-          country: "Belgium",
-          user_id: idDuCompteCopro,
-        },
-        headers: entete,
-      }),
-      "amorçage:fiche-coproprietaire",
-    );
-
-    await ok(
-      await api.post(`${API_BASE}/units/${lots[0].id}/owners`, {
-        data: {
-          owner_id: fiche.id,
-          ownership_percentage: 1,
-          is_primary_contact: true,
-        },
-        headers: entete,
-      }),
-      "amorçage:rattachement-au-lot",
-    );
+    // Un compte `owner` n'est pas un copropriétaire tant qu'il ne possède
+    // rien — et sans `unit_owners`, `POST /polls` refuse en 400 « Total
+    // eligible voters must be positive ».
+    await rattacherLeCoproprietaire(page, adminToken, {
+      orgId: org.id,
+      buildingId: immeuble.id,
+      userId: idDuCompteCopro,
+      email: emailCopro,
+      firstName: "Carine",
+      lastName: "Copropriétaire",
+    });
 
     monde = {
       nomDeLImmeuble,

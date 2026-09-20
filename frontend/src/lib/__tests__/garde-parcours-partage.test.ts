@@ -53,6 +53,7 @@ const HARNAIS_GATE = [
   "moderation.spec.ts",
   "incident.spec.ts",
   "sondage.spec.ts",
+  "annonce.spec.ts",
   // Les quatre balayages tiennent dans UNE spec : ils partagent le même
   // mécanisme (`balayage.ts`) et ne diffèrent que par le rôle. Les répartir
   // en quatre fichiers n'aurait ajouté que de la place où diverger.
