@@ -11,7 +11,7 @@ import AxeBuilder from "@axe-core/playwright";
 const WCAG_AA_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
 test.describe("Accessibility - WCAG 2.1 AA Compliance", () => {
-  test("login page should have no accessibility violations", async ({
+  test("@happy login page should have no accessibility violations", async ({
     page,
   }) => {
     await page.goto("/login");
@@ -24,7 +24,9 @@ test.describe("Accessibility - WCAG 2.1 AA Compliance", () => {
     expect(results.violations).toEqual([]);
   });
 
-  test("login page should have proper heading hierarchy", async ({ page }) => {
+  test("@happy login page should have proper heading hierarchy", async ({
+    page,
+  }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
@@ -37,7 +39,7 @@ test.describe("Accessibility - WCAG 2.1 AA Compliance", () => {
     expect(title).toContain("KoproGo");
   });
 
-  test("login page should have proper form labels", async ({ page }) => {
+  test("@happy login page should have proper form labels", async ({ page }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
@@ -50,7 +52,9 @@ test.describe("Accessibility - WCAG 2.1 AA Compliance", () => {
     await expect(passwordLabel).toBeVisible();
   });
 
-  test("login page should support keyboard navigation", async ({ page }) => {
+  test("@happy login page should support keyboard navigation", async ({
+    page,
+  }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
@@ -65,7 +69,7 @@ test.describe("Accessibility - WCAG 2.1 AA Compliance", () => {
     await expect(passwordInput).toBeFocused();
   });
 
-  test("skip navigation link should be accessible", async ({ page }) => {
+  test("@happy skip navigation link should be accessible", async ({ page }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
@@ -78,13 +82,13 @@ test.describe("Accessibility - WCAG 2.1 AA Compliance", () => {
     await expect(skipLink).toBeVisible();
   });
 
-  test("page should have proper lang attribute", async ({ page }) => {
+  test("@happy page should have proper lang attribute", async ({ page }) => {
     await page.goto("/login");
     const lang = await page.locator("html").getAttribute("lang");
     expect(lang).toBe("fr");
   });
 
-  test("main content should have proper landmark", async ({ page }) => {
+  test("@happy main content should have proper landmark", async ({ page }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
@@ -92,7 +96,7 @@ test.describe("Accessibility - WCAG 2.1 AA Compliance", () => {
     await expect(main).toBeAttached();
   });
 
-  test("images should have alt attributes", async ({ page }) => {
+  test("@happy images should have alt attributes", async ({ page }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
@@ -105,7 +109,9 @@ test.describe("Accessibility - WCAG 2.1 AA Compliance", () => {
     }
   });
 
-  test("color contrast should meet WCAG AA standards", async ({ page }) => {
+  test("@happy color contrast should meet WCAG AA standards", async ({
+    page,
+  }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
@@ -117,7 +123,7 @@ test.describe("Accessibility - WCAG 2.1 AA Compliance", () => {
     expect(results.violations).toEqual([]);
   });
 
-  test("focus indicators should be visible", async ({ page }) => {
+  test("@happy focus indicators should be visible", async ({ page }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 

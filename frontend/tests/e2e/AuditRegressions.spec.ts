@@ -22,7 +22,7 @@ import {
 
 test.describe("Audit 2026-08-30 — non-régression", () => {
   // B3 : le message existait, mais c'était la chaîne brute du backend.
-  test("un identifiant erroné affiche un message dans la langue de l'interface", async ({
+  test("@negative un identifiant erroné affiche un message dans la langue de l'interface", async ({
     page,
   }) => {
     await page.goto("/login");
@@ -39,7 +39,7 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
   });
 
   // B1 : signalé comme « bouton inopérant, pas de modal ».
-  test("le bouton Nouvelle réunion ouvre le modal de création", async ({
+  test("@happy le bouton Nouvelle réunion ouvre le modal de création", async ({
     page,
   }) => {
     await loginAsSyndicWithBuilding(page, "audit-meeting");
@@ -56,7 +56,7 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
 
   // Défaut trouvé en reproduisant B1, absent du rapport : le modal ne se
   // fermait qu'à la souris, ce qui piège un utilisateur au clavier.
-  test("le modal de création se ferme avec Échap", async ({ page }) => {
+  test("@happy le modal de création se ferme avec Échap", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "audit-escape");
     await page.goto("/meetings");
 
@@ -71,7 +71,9 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
   });
 
   // B2 : signalé comme « dropdown ne s'ouvre pas ».
-  test("la cloche de notifications ouvre son panneau", async ({ page }) => {
+  test("@happy la cloche de notifications ouvre son panneau", async ({
+    page,
+  }) => {
     await loginAsSyndicWithBuilding(page, "audit-bell");
     await page.goto("/syndic");
 
@@ -90,7 +92,7 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
   });
 
   // UX7 : signalé comme « switch de langue non fonctionnel ou non visible ».
-  test("le sélecteur de langue change la langue et la retient", async ({
+  test("@happy le sélecteur de langue change la langue et la retient", async ({
     page,
   }) => {
     await page.goto("/login");
@@ -114,7 +116,7 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
   // surviendrait si elle devait survenir. Vérifié de 375 à 1920 px, le badge
   // garde sa largeur naturelle — la table défile horizontalement plutôt que
   // d'écraser ses colonnes.
-  test("les badges de rôle ne sont pas tronqués", async ({ page }) => {
+  test("@edge les badges de rôle ne sont pas tronqués", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await loginAsAdmin(page);
     await page.goto("/admin/users");
@@ -134,7 +136,7 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
   // Le test s'arrête au mot de passe ERRONÉ, à dessein : vérifier le chemin
   // nominal effacerait réellement un compte. Ce qui compte ici est que le
   // garde-fou existe et morde, pas qu'une suppression aboutisse.
-  test("l'effacement RGPD exige le mot de passe et rejette un faux", async ({
+  test("@security l'effacement RGPD exige le mot de passe et rejette un faux", async ({
     page,
   }) => {
     await loginAsSyndicWithBuilding(page, "audit-gdpr");
@@ -160,7 +162,7 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
   });
 
   // UX1 : la liste admin n'offrait aucun moyen d'ouvrir une organisation.
-  test("le nom d'une organisation ouvre sa fiche de détail", async ({
+  test("@happy le nom d'une organisation ouvre sa fiche de détail", async ({
     page,
   }) => {
     await loginAsAdmin(page);
@@ -197,7 +199,7 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
   // `$state` rend réactifs les objets et les tableaux, jamais les collections
   // natives, et la réaffectation à soi-même — qui suffisait en Svelte 4 — ne
   // déclenche rien puisque la comparaison est référentielle.
-  test("le bouton Copropriétaires déplie la liste des propriétaires", async ({
+  test("@happy le bouton Copropriétaires déplie la liste des propriétaires", async ({
     page,
   }) => {
     const { buildingId } = await loginAsSyndicWithUnit(page, "audit-owners");
@@ -230,7 +232,9 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
   });
 
   // B4 : signalé comme « perte de session sur URL admin inconnue ».
-  test("une URL admin inconnue ne détruit pas la session", async ({ page }) => {
+  test("@edge une URL admin inconnue ne détruit pas la session", async ({
+    page,
+  }) => {
     await loginAsAdmin(page);
 
     await page.goto("/admin/url-qui-nexiste-pas");

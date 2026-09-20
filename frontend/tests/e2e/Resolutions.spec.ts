@@ -14,7 +14,7 @@ import { loginAsSyndicWithMeeting } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Resolutions - AG Voting System", () => {
-  test("should display meetings page", async ({ page }) => {
+  test("@happy should display meetings page", async ({ page }) => {
     await loginAsSyndicWithMeeting(page, "resolution");
     await page.goto("/meetings");
 
@@ -24,7 +24,9 @@ test.describe("Resolutions - AG Voting System", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a resolution and retrieve it", async ({ page }) => {
+  test("@happy should create a resolution and retrieve it", async ({
+    page,
+  }) => {
     const { token, meetingId } = await loginAsSyndicWithMeeting(
       page,
       "resolution",
@@ -65,7 +67,7 @@ test.describe("Resolutions - AG Voting System", () => {
     expect(retrieved.id).toBe(resolution.id);
   });
 
-  test("should list resolutions for a meeting", async ({ page }) => {
+  test("@happy should list resolutions for a meeting", async ({ page }) => {
     const { token, meetingId } = await loginAsSyndicWithMeeting(
       page,
       "resolution",
@@ -80,7 +82,7 @@ test.describe("Resolutions - AG Voting System", () => {
     expect(Array.isArray(resolutions)).toBeTruthy();
   });
 
-  test("should navigate to meeting detail page", async ({ page }) => {
+  test("@happy should navigate to meeting detail page", async ({ page }) => {
     const { meetingId } = await loginAsSyndicWithMeeting(page, "resolution");
 
     await page.goto(`/meeting-detail?id=${meetingId}`);
@@ -88,7 +90,7 @@ test.describe("Resolutions - AG Voting System", () => {
     await expect(page.locator("h1").first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("should cast a vote on a resolution", async ({ page }) => {
+  test("@happy should cast a vote on a resolution", async ({ page }) => {
     const { token, meetingId, buildingId, orgId, acpId, adminToken } =
       await loginAsSyndicWithMeeting(page, "resolution");
     const timestamp = Date.now();
@@ -224,7 +226,7 @@ test.describe("Resolutions - AG Voting System", () => {
     expect(voteResp.status()).toBe(201);
   });
 
-  test("should list votes for a resolution", async ({ page }) => {
+  test("@happy should list votes for a resolution", async ({ page }) => {
     const { token, meetingId } = await loginAsSyndicWithMeeting(
       page,
       "resolution",
@@ -260,7 +262,7 @@ test.describe("Resolutions - AG Voting System", () => {
     expect(Array.isArray(votes)).toBeTruthy();
   });
 
-  test("should close voting and calculate result", async ({ page }) => {
+  test("@happy should close voting and calculate result", async ({ page }) => {
     const { token, meetingId, buildingId, orgId, acpId, adminToken } =
       await loginAsSyndicWithMeeting(page, "resolution");
     const timestamp = Date.now();
@@ -340,7 +342,9 @@ test.describe("Resolutions - AG Voting System", () => {
     expect(["adopted", "rejected"].includes(closed.status)).toBeTruthy();
   });
 
-  test("should require auth for resolutions API", async ({ page }) => {
+  test("@security should require auth for resolutions API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/resolutions/some-id`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

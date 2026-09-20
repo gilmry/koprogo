@@ -73,7 +73,21 @@ const RACINE = join(process.cwd(), "tests/e2e");
 // urgency indicators » affiche une liste avec ses indicateurs, c'est le rendu
 // nominal d'une fonctionnalité, pas un cas limite. Ma règle avait vu
 // « urgency ».
-const SANS_ETIQUETTE_AU_2026_09_08 = 323;
+// 323 → 256. Huit fichiers de plus : Accessibility (10), AuditRegressions
+// (10), Quotes, Payments, Resolutions, LocalExchanges, Gamification (8
+// chacun), PaymentRecovery (7).
+//
+// Une règle a émergé et mérite d'être écrite : **« should require auth to
+// access X API » est un `@security`, pas un `@happy`.** Ces tests vérifient
+// qu'une route REFUSE sans jeton — ils défendent le cloisonnement, et les
+// ranger en chemin nominal aurait caché six tests de sécurité à la revue de
+// release.
+//
+// `AuditRegressions` a été classé titre par titre : ses dix cas mêlent une
+// authentification refusée, un badge tronqué, une session qui survit à une
+// URL inconnue et l'effacement RGPD qui exige son mot de passe. Aucune règle
+// automatique ne les aurait départagés.
+const SANS_ETIQUETTE_AU_2026_09_08 = 256;
 
 /** Total des specs. **Ne doit pas BAISSER.** */
 // 420 → 432, même cause : les douze scénarios entrent dans le décompte.

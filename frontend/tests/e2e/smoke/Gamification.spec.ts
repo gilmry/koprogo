@@ -12,7 +12,7 @@ import { loginAsSyndic } from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 test.describe("Gamification - Achievements & Challenges", () => {
-  test("should display gamification page", async ({ page }) => {
+  test("@happy should display gamification page", async ({ page }) => {
     await loginAsSyndic(page, "gamif");
     await page.goto("/gamification");
 
@@ -22,7 +22,9 @@ test.describe("Gamification - Achievements & Challenges", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create an achievement and retrieve it", async ({ page }) => {
+  test("@happy should create an achievement and retrieve it", async ({
+    page,
+  }) => {
     const { token, orgId } = await loginAsSyndic(page, "gamif");
     const timestamp = Date.now();
     const name = `Premier pas ${timestamp}`;
@@ -66,7 +68,7 @@ test.describe("Gamification - Achievements & Challenges", () => {
     expect(retrieved.id).toBe(achievement.id);
   });
 
-  test("should list achievements for organization", async ({ page }) => {
+  test("@happy should list achievements for organization", async ({ page }) => {
     const { token, orgId } = await loginAsSyndic(page, "gamif");
 
     const listResp = await page.request.get(
@@ -78,7 +80,7 @@ test.describe("Gamification - Achievements & Challenges", () => {
     expect(Array.isArray(achievements)).toBeTruthy();
   });
 
-  test("should list achievements by category", async ({ page }) => {
+  test("@happy should list achievements by category", async ({ page }) => {
     const { token, orgId } = await loginAsSyndic(page, "gamif");
 
     const listResp = await page.request.get(
@@ -90,7 +92,7 @@ test.describe("Gamification - Achievements & Challenges", () => {
     expect(Array.isArray(achievements)).toBeTruthy();
   });
 
-  test("should create a challenge and activate it", async ({ page }) => {
+  test("@happy should create a challenge and activate it", async ({ page }) => {
     const { token, orgId } = await loginAsSyndic(page, "gamif");
     const timestamp = Date.now();
     const startDate = new Date();
@@ -136,7 +138,7 @@ test.describe("Gamification - Achievements & Challenges", () => {
     expect(activated.status).toBe("Active");
   });
 
-  test("should list challenges for organization", async ({ page }) => {
+  test("@happy should list challenges for organization", async ({ page }) => {
     const { token, orgId } = await loginAsSyndic(page, "gamif");
 
     const listResp = await page.request.get(
@@ -148,7 +150,9 @@ test.describe("Gamification - Achievements & Challenges", () => {
     expect(Array.isArray(challenges)).toBeTruthy();
   });
 
-  test("should get organization gamification leaderboard", async ({ page }) => {
+  test("@happy should get organization gamification leaderboard", async ({
+    page,
+  }) => {
     const { token, orgId } = await loginAsSyndic(page, "gamif");
 
     const leaderboardResp = await page.request.get(
@@ -161,7 +165,9 @@ test.describe("Gamification - Achievements & Challenges", () => {
     ).toBe(200);
   });
 
-  test("should require auth for gamification API", async ({ page }) => {
+  test("@security should require auth for gamification API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(
       `${API_BASE}/achievements/some-invalid-id`,
     );
