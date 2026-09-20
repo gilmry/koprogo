@@ -54,6 +54,8 @@ export interface Observation {
    * main. Garder le message coûte une ligne et supprime l'enquête.
    */
   readonly premiereErreur: string | null;
+  /** La session avait été perdue avant cet écran, et rétablie pour lui. */
+  readonly sessionRetablie: boolean;
 }
 
 /**
@@ -272,13 +274,44 @@ export function balayagePour(acteur: Acteur): Parcours {
           const avant = erreursConsole;
           messages = [];
           await scene.survoler(route);
-          const arrivee = new URL(scene.page.url()).pathname.replace(/\/$/, "");
+          let arrivee = new URL(scene.page.url()).pathname.replace(/\/$/, "");
+
+          // ── Une session perdue ne doit pas se lire comme 90 écrans cassés ─
+          //
+          // Mesuré en CI le 2026-09-19 : le balayage du syndic a rapporté 90
+          // rebonds sur 95 et 90 consoles en erreur. Ce n'étaient pas 90
+          // défauts — la session mourait au sixième écran, et les 88 suivants
+          // mesuraient une page de connexion.
+          //
+          // La cause est dans le produit (`api.ts:217` vide le jeton sur
+          // N'IMPORTE quel 401, cf. #969), mais l'instrument, lui, doit
+          // distinguer « cet écran est cassé » de « je ne suis plus
+          // connecté ». Sans cela il amplifie un défaut unique en avalanche,
+          // et son rapport devient inexploitable.
+          //
+          // On se reconnecte et on retente UNE fois : l'incident est
+          // consigné, et les écrans suivants redeviennent mesurables.
+          let sessionRetablie = false;
+          if (arrivee === "/login") {
+            sessionRetablie = true;
+            await scene.raconter(
+              `Session perdue en ouvrant ${route} : reconnexion pour pouvoir ` +
+                `continuer à mesurer.`,
+              acteur,
+            );
+            await scene.devenir(acteur);
+            messages = [];
+            await scene.survoler(route);
+            arrivee = new URL(scene.page.url()).pathname.replace(/\/$/, "");
+          }
+
           const observation: Observation = {
             route,
             arrivee: arrivee || "/",
             taille: await tailleDuContenu(scene.page),
             erreursConsole: erreursConsole - avant,
             premiereErreur: messages[0] ?? null,
+            sessionRetablie,
           };
           observations.push(observation);
           // Seules les anomalies deviennent un chapitre : un balayage qui
@@ -301,6 +334,7 @@ export function balayagePour(acteur: Acteur): Parcours {
         (o) => o.arrivee === o.route && o.taille < SEUIL_ECRAN_MAIGRE,
       );
       const bruyants = observations.filter((o) => o.erreursConsole > 0);
+      const deconnexions = observations.filter((o) => o.sessionRetablie);
 
       // Le tableau part sur la sortie standard : il devient consultable dans
       // le journal du job, là où un lecteur ira chercher le détail que la
@@ -314,14 +348,16 @@ export function balayagePour(acteur: Acteur): Parcours {
         const message = (o.premiereErreur ?? "").replace(/\|/g, "¦");
         console.log(
           `| ${o.route} | ${o.arrivee === o.route ? "—" : o.arrivee} | ` +
-            `${o.taille} | ${o.erreursConsole} | ${message} |`,
+            `${o.taille} | ${o.erreursConsole} | ` +
+            `${o.sessionRetablie ? "déconnexion · " : ""}${message} |`,
         );
       }
 
       await scene.raconter(
         `${observations.length} écrans ouverts : ${rebonds.length} rebondissent, ` +
           `${maigres.length} ne montrent presque rien, ${bruyants.length} ` +
-          `jettent des erreurs. Le détail est dans le journal.`,
+          `jettent des erreurs, et ${deconnexions.length} ont déconnecté ` +
+          `l'utilisateur. Le détail est dans le journal.`,
         acteur,
       );
     },

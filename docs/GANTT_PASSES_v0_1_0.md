@@ -344,13 +344,63 @@ gates, pas le code.
 
 ## ⚠️ La précondition — le filet avant le saut
 
-**Le mécanisme choisi pour porter le répondre-de n'est pas
+**Le mécanisme choisi pour porter le répondre-de n'était pas
 opérationnel.** Au 2026-09-12 :
 
 | Gate | État | Cause |
 |---|---|---|
 | `e2e` | 🔴 | vise la démo via Traefik — #872 |
 | `doc-vivante` (vitrine) | 🔴 | `make docs-with-videos` — #872 |
+
+### Mesure du 2026-09-20 — le filet est tendu
+
+Cette table avait **huit jours**. La laisser telle quelle conduisait à la
+mauvaise décision : qui la lisait concluait que le filet n'existait pas et
+reportait le lancement des vagues.
+
+| Gate | État | Mesure |
+|---|---|---|
+| `e2e` | 🟢 | ADR 0050 appliqué : recette sur `8090`, démo inchangée sur `80`. `GET localhost:8090/` et `/api/v1/health` → **200** |
+| `doc-vivante` (vitrine) | 🟢 | Publiée sur `doc.koprogo.com`, en **première page**. `GET /vitrine/index.html` → **200**, les 7 vidéos → **206**, 59 chapitres |
+
+**Les trois vagues d'habilitation sont fermées** : V1 #873, V2 #876,
+V3 #874. C'est-à-dire la vitrine publiée, le moule Foyer respecté (parcours
+partagé + invariant anti-dette), et le fan-out CI réglé.
+
+Deux réserves honnêtes, qui ne sont pas des détails :
+
+**#872 reste OUVERTE** alors que sa substance est livrée. Son titre porte sur
+la pile de développement qui revendiquait les conteneurs de la démo ; les
+ports sont décalés depuis le 2026-09-12 et la recette tourne à côté de la
+démo sans la toucher. L'issue devrait être relue et close, ou son reliquat
+explicité.
+
+**Le fan-out n'a jamais tourné sur un vrai créneau.** #874 est fermée, donc
+l'outillage existe ; mais les neuf issues fermées du Gantt l'ont toutes été
+**en série, en session**. Le plan promet dix agents en parallèle sur V4.1 —
+cette promesse n'est pas encore éprouvée, et le premier créneau lancé sera
+autant un test de l'orchestration que du travail lui-même.
+
+> La réserve inscrite en frontmatter par le PO le 2026-09-12 (« le mécanisme
+> de preuve n'est pas encore opérationnel ») paraît levée au vu de ces
+> mesures. Elle porte une **signature humaine** : elle n'est pas modifiée
+> ici, et sa levée revient au signataire.
+
+### Ce que le Gantt ne prévoit pas : ce que la vitrine trouve
+
+Le balayage des 95 écrans, ajouté le 2026-09-19, a produit en une passe
+quatre constats qui n'appartiennent à **aucune vague** :
+
+| issue | trouvaille |
+|---|---|
+| #968 | sept écrans s'ouvrent sans rebondir et cassent — dont `/legal-rules` (`each_key_duplicate`) |
+| #969 | tout 401 déconnecte globalement : ouvrir `/booking-detail` suffit à perdre sa session |
+| #966 | `Characterization E2E Gate` rouge depuis le 2026-09-14 |
+| #967 | `IaC lint` rouge depuis la même date |
+
+C'était l'intérêt annoncé de la preuve de valeur — instruire la revue. Le
+plan n'ayant pas de créneau pour ce qu'elle découvre, ces issues resteront
+hors Gantt tant que le PO n'aura pas tranché où les placer.
 
 Lancer 84 chantiers en parallèle avant que la preuve existe reviendrait
 à produire 84 branches que **rien ne permet de relire**. Le parallélisme
