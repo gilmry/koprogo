@@ -55,6 +55,7 @@ const PARCOURS_A_FILMER = [
   { fichier: "prestataire.journey.ts", export: "prestataire" },
   { fichier: "moderation.journey.ts", export: "moderation" },
   { fichier: "incident.journey.ts", export: "incident" },
+  { fichier: "sondage.journey.ts", export: "sondage" },
 
   // ── Les balayages, après les parcours métier ────────────────────────────
   //
