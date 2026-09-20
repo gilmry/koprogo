@@ -12,8 +12,15 @@ TRACKS = [
  ("R", "Défauts de recette navigateur", """Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
 inatteignable**. Nos tests prouvent que le code marche tout en masquant qu'on
-ne peut pas y arriver.""",
-  [779,780,840,842]),
+ne peut pas y arriver.
+
+Deux entrées neuves du 2026-09-19 viennent du **balayage** des 95 écrans, pas
+d'une recette humaine : #968 (sept écrans s'ouvrent sans rebondir et ne
+montrent rien) et #969 (tout 401 déconnecte globalement — ouvrir
+`/booking-detail` suffit à perdre sa session). Même motif, source nouvelle.
+Conformément à l'arbitrage du PO du 2026-09-20, ce que le balayage ou la
+vitrine trouve entre au périmètre.""",
+  [779,780,842,968,969]),
 
  ("U", "Refonte UX/UI", """Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
@@ -29,19 +36,19 @@ refonte peut désormais déplacer n'importe quel écran sans qu'on perde le
 moyen de vérifier qu'il a survécu — ce qui était l'argument entier de
 l'issue. Le seul critère de fin qu'elle porte encore est une règle de
 processus pour les lots à venir, qu'aucun commit ne peut satisfaire.""",
-  [556,818,820,821,822,823,824,825,826,827,797,798,802,803,834,841,866]),
+  [556,818,820,821,822,823,824,825,826,827,797,798,802,834,841]),
 
  ("D", "Documentation vivante multi-persona", """Six personas, quatre workflows transverses, et la restructuration des cent
 specs e2e pour que les vidéos racontent le produit plutôt que ses modules.
 **Tout le track vient après #803 et après Track U** : filmer des écrans qui
 vont changer produit une documentation périmée le jour de sa livraison.""",
-  [805,806,807,808,809,810,811,812,813,815,816,817,595,835]),
+  [805,806,808,809,810,811,812,813,817,595,835,963]),
 
  ("M", "Modularité par ACP et RBAC communautaire", """Slice 5 de l'épopée #556. Une ACP active les modules dont elle a besoin ; le
 reste répond 403, pas 404. Ce track porte aussi les deux arbitrages ouverts
 sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 (#781, #588), et le comptable doit-il être exclu du communautaire (#589).""",
-  [585,586,587,588,589,590,591,592,781,694,856,867]),
+  [585,586,587,588,589,590,591,592,694,856]),
 
  ("S", "Gouvernance d'assemblée avancée", """Slice 4 de #556 : assemblée hybride, vote à distance authentifié fort,
 procès-verbal signé eIDAS, conseil de copropriété élu, commissaire aux
@@ -55,7 +62,7 @@ la désignation d'un représentant, qui est le remède prévu par la loi, n'exis
 nulle part — `is_voting_representative` n'est écrite par aucun code. Un couple
 propriétaire de son appartement ne peut voter à aucune assemblée, et une
 décision prise sans son vote est attaquable.""",
-  [576,577,578,579,581,582,583,848,635]),
+  [576,577,578,579,581,582,583,635]),
 
  ("T", "Dette d'infrastructure de test", """Ce qui empêche la CI de dire la vérité. Les quatre jobs rouges en continu du
 2026-09-04 — `prettier`, le contrat OpenAPI, `oasdiff` et la suite BDD — sont
@@ -84,7 +91,7 @@ et un module `tests`, pas une vérification de la durée de mandat. La garde
 constatait que la preuve EXISTE, jamais qu'elle est PERTINENTE. C'est la
 forme la plus coûteuse du motif : non pas un test absent, mais un test
 présent qui atteste d'autre chose que ce qu'il prétend.""",
-  [696,832,847,865,868,869,870]),
+  [868,880,966]),
 
  ("K", "Dette de code et de contrat", """Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -127,18 +134,18 @@ immeuble absent de la première page rend « Aucun immeuble trouvé pour cette
 recherche » (#853). Le composant filtrait les vingt éléments chargés alors
 que le serveur offre `?search=` en ILIKE — capacité écrite EN RÉPONSE à ce
 problème, et que le frontend n'appelait pas.""",
-  [555,762,845,846,850,852,855,864]),
+  [555,762,846,855,864]),
 
  ("F", "Ops et infrastructure", """Sauvegardes, TLS, GitOps, et les vulnérabilités de dépendances. F3 a été joué
 le 2026-09-04 et son résultat est **négatif sur deux volets sur trois** : le
 rollback échoue dès qu'une version a migré, et les sauvegardes GPG+S3 du
 runbook n'existent pas sur la machine.""",
-  [354,355,425,429,432,453,466,515,718,731]),
+  [354,355,425,429,432,453,515,731,967]),
 
  ("G", "Gate humain et gouvernance documentaire", """Les deux actes non délégables — la revue humaine et la pose du tag — et ce
 qui les prépare : la taxonomie des tests comme gate de release, et le
 désencombrement de la documentation.""",
-  [427,854]),
+  [427,854,913]),
 
 ]
 

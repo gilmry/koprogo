@@ -1,10 +1,13 @@
 # WBS v0.1.0 — seule vérité courante
 
-`WBS-v0.1.0-r3` · établi le 2026-09-02, révisé le 2026-09-04 · base `feature/dev` à `31ff3fc8`
+`WBS-v0.1.0-r4` · établi le 2026-09-02, révisé le **2026-09-20** · base `feature/dev` à `ea8402c3`
 
 > **Ce document remplace** `WBS_GO_LIVE_v0.1.0.md` et les trois WBS de 2026-04-01,
 > déplacés dans [`docs/archive/`](archive/README.md) avec leur journal de vérification.
-> **Suivi vivant** : issue [#736](https://github.com/gilmry/koprogo/issues/736).
+> **Suivi vivant** : l'issue [#736](https://github.com/gilmry/koprogo/issues/736)
+> qui portait ce rôle est **fermée**. Le suivi passe par l'étiquette
+> `release:0.1.0` et l'inventaire régénéré ci-dessous, que
+> `garde_perimetre_wbs` maintient synchronisé dans les deux sens.
 > **Instantané du plan** : `docs/plans/2026-09-02-remise-a-plat-0.1.0-jumeau-juridique.md`.
 
 ## Ce qui a changé, et pourquoi le périmètre bouge
@@ -603,7 +606,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**83 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**70 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -614,27 +617,35 @@ cinq jours.
 
 | Priorité | Nombre |
 |---|---|
-| critical | 9 |
-| high | 27 |
-| medium | 22 |
+| critical | 6 |
+| high | 25 |
+| medium | 15 |
 | low | 1 |
-| — | 24 |
+| — | 23 |
 
-### Track R — Défauts de recette navigateur (4)
+### Track R — Défauts de recette navigateur (5)
 
 Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
 inatteignable**. Nos tests prouvent que le code marche tout en masquant qu'on
 ne peut pas y arriver.
 
+Deux entrées neuves du 2026-09-19 viennent du **balayage** des 95 écrans, pas
+d'une recette humaine : #968 (sept écrans s'ouvrent sans rebondir et ne
+montrent rien) et #969 (tout 401 déconnecte globalement — ouvrir
+`/booking-detail` suffit à perdre sa session). Même motif, source nouvelle.
+Conformément à l'arbitrage du PO du 2026-09-20, ce que le balayage ou la
+vitrine trouve entre au périmètre.
+
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #780 | critical | Le cycle de vie d'une AG ne peut pas aboutir : trois verrous indépendants, aucun contournable depui… |
 | #842 | critical | Le droit à l'effacement RGPD est inatteignable : le serveur exige un mot de passe que l'interface n… |
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
-| #840 | medium | Une résolution sans point d'ordre du jour est acceptée, alors que la loi la rend nulle (Art. 3.87 §… |
+| #969 | high | Tout 401 déconnecte globalement : ouvrir /booking-detail suffit à perdre sa session |
+| #968 | — | Balayage du syndic : /legal-rules jette each_key_duplicate, /contractor et /contractor-report s'ouv… |
 
-### Track U — Refonte UX/UI (17)
+### Track U — Refonte UX/UI (15)
 
 Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
@@ -656,7 +667,6 @@ processus pour les lots à venir, qu'aucun commit ne peut satisfaire.
 | #556 | high | [EPIC] Refonte UX multi-rôle + modèle ACP — pipeline Maury (39 stories, 7 slices) |
 | #798 | high | Refonte UX — le périmètre devient l'ACP dans le modèle de données et permissions.ts |
 | #802 | high | Refonte UX — adapter les tests sans en supprimer les règles produit qu'ils encodent |
-| #803 | high | Poser des data-testid là où il n'y en a pas : 29 % de couverture avant une refonte qui va tout dépl… |
 | #818 | high | Refonte UX — importer et implémenter la maquette Claude Design « Koprogo Review » |
 | #820 | high | Refonte UX — importer et implémenter la maquette Claude Design « Roles Mobile First » |
 | #823 | high | Refonte UX — importer et implémenter la maquette Claude Design « KoproSidebarV2 » |
@@ -669,9 +679,8 @@ processus pour les lots à venir, qu'aucun commit ne peut satisfaire.
 | #821 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Admin Dashboard (modernisé) » |
 | #822 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Accountant Dashboard (modernisé) » |
 | #827 | medium | Refonte UX — importer et implémenter la maquette Claude Design « Lists (modernisé) » |
-| #866 | medium | Six tableaux illisibles sur téléphone, dont trois qui coupent leurs colonnes en silence |
 
-### Track D — Documentation vivante multi-persona (14)
+### Track D — Documentation vivante multi-persona (12)
 
 Six personas, quatre workflows transverses, et la restructuration des cent
 specs e2e pour que les vidéos racontent le produit plutôt que ses modules.
@@ -682,7 +691,6 @@ vont changer produit une documentation périmée le jour de sa livraison.
 |---|---|---|
 | #805 | high | Documentation vivante multi-persona : expliquer le logiciel par rôle, sur le modèle de klaar |
 | #806 | high | Documentation vivante — parcours du SYNDIC, de la première connexion à la clôture d'une assemblée |
-| #807 | high | Documentation vivante — parcours du COPROPRIÉTAIRE, le rôle que cinq recettes n'ont jamais éprouvé |
 | #810 | high | Workflow multi-persona — le cycle de vie d'une assemblée générale, du syndic au copropriétaire |
 | #835 | high | Deux systèmes de liens magiques parallèles : le prestataire reçoit deux liens, sur deux PWA, pour u… |
 | #808 | medium | Documentation vivante — parcours du COMPTABLE, le rôle le mieux cadré du produit |
@@ -690,12 +698,11 @@ vont changer produit une documentation périmée le jour de sa livraison.
 | #811 | medium | Workflow multi-persona — le circuit d'une facture, du fournisseur au copropriétaire qui la paie |
 | #812 | medium | Workflow multi-persona — la naissance d'une copropriété, de l'administrateur au premier copropriéta… |
 | #813 | medium | Documentation vivante — restructurer les 100 tests e2e par persona pour que les vidéos racontent le… |
-| #815 | medium | Documentation vivante — parcours du prestataire : du ticket reçu au rapport d'intervention validé |
-| #816 | medium | Documentation vivante — parcours du conseil de copropriété : surveiller le syndic, valider les trav… |
 | #817 | medium | Workflow multi-persona — le ticket, du copropriétaire qui signale au prestataire qui est payé |
 | #595 | — | [Story Tx.3] Documentation docs/agent-activity/ (Tier 2 log) |
+| #963 | — | La vitrine expire au bout de 7 jours alors que la doc est permanente |
 
-### Track M — Modularité par ACP et RBAC communautaire (12)
+### Track M — Modularité par ACP et RBAC communautaire (10)
 
 Slice 5 de l'épopée #556. Une ACP active les modules dont elle a besoin ; le
 reste répond 403, pas 404. Ce track porte aussi les deux arbitrages ouverts
@@ -704,8 +711,6 @@ sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 
 | Issue | Prio | Intitulé |
 |---|---|---|
-| #867 | high | Un copropriétaire multi-ACP voit un montant unique : un virement groupé serait juridiquement faux |
-| #781 | medium | Les modules communautaires supposent que l'utilisateur est copropriétaire : le syndic ne peut rien … |
 | #856 | medium | Décision produit : le comptable doit-il voir un groupe « Communauté » réduit ? La remise de design … |
 | #585 | — | [Story 5.1] Table acp_enabled_modules + ModuleGuard middleware + ModuleDisabledError |
 | #586 | — | [Story 5.2] UI ModuleGate.svelte + store enabled_modules |
@@ -717,7 +722,7 @@ sur les droits communautaires — le syndic peut-il réserver au nom de l'ACP
 | #592 | — | [Story 5.8] Gate CI a11y axe-core + data-testid + Lighthouse |
 | #694 | — | Scoping user↔ACP absent : un syndic/comptable voit toute l'organisation, pas seulement ses ACPs |
 
-### Track S — Gouvernance d'assemblée avancée (9)
+### Track S — Gouvernance d'assemblée avancée (8)
 
 Slice 4 de #556 : assemblée hybride, vote à distance authentifié fort,
 procès-verbal signé eIDAS, conseil de copropriété élu, commissaire aux
@@ -734,7 +739,6 @@ décision prise sans son vote est attaquable.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
-| #848 | critical | Un lot détenu à deux ne peut jamais voter : la suspension de l'Art. 3.87 § 1er est appliquée, sa le… |
 | #576 | — | [Story 4.1] [cluster-coord] Meeting.mode hybrid + quorum agrégé Decimal |
 | #577 | — | [Story 4.2] Vote distant auth_method strong (itsme/eID) — closes #48 |
 | #578 | — | [Story 4.3] Minutes (PV) + 2 signatures eIDAS qualifiées |
@@ -744,7 +748,7 @@ décision prise sans son vote est attaquable.
 | #583 | — | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate |
 | #635 | — | Fonds affectés / thésaurisation : entité Fund dédiée aux travaux d'ampleur (v0.2.0) |
 
-### Track T — Dette d'infrastructure de test (7)
+### Track T — Dette d'infrastructure de test (3)
 
 Ce qui empêche la CI de dire la vérité. Les quatre jobs rouges en continu du
 2026-09-04 — `prettier`, le contrat OpenAPI, `oasdiff` et la suite BDD — sont
@@ -776,15 +780,11 @@ présent qui atteste d'autre chose que ce qu'il prétend.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
-| #847 | high | Le registre légal atteste des obligations que ses tests ne vérifient pas : l'Art. 3.89 § 1er est dé… |
-| #865 | high | L'audit d'accessibilité n'examine que l'écran de connexion : aucun écran authentifié n'est vérifié |
-| #832 | medium | Quinze specs Playwright échouent sans erreur d'identité : les ancrages existent mais l'élément n'es… |
+| #880 | high | Le gate e2e mesure contre un backend en hot reload : une recompilation en cours de campagne produit… |
 | #868 | medium | Deux sélecteurs d'immeuble coexistent, et partagent un ancrage de recette |
-| #696 | — | Instabilité smoke suite Playwright CI : 109 échecs sur specs pré-existantes (occurrence 2026-08-08) |
-| #869 | — | Aucune spec Playwright ne s'exécute à une largeur de téléphone, alors que tout le Track U est mobile |
-| #870 | — | La suite e2e ne peut plus se connecter à la démo : le repli admin123 est mort, exactement comme ann… |
+| #966 | — | Characterization E2E Gate rouge depuis le 2026-09-14 |
 
-### Track K — Dette de code et de contrat (8)
+### Track K — Dette de code et de contrat (5)
 
 Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -830,16 +830,13 @@ problème, et que le frontend n'appelait pas.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
-| #845 | critical | Trente routes ne vérifient aucune identité : modifier ou supprimer une assemblée générale ne demand… |
-| #850 | critical | Le vote en assemblée accepte l'identité du votant, son lot et sa puissance de vote depuis le corps … |
 | #864 | critical | 87 routes prennent une identité sans s'en servir pour décider : supprimer le budget d'une autre cop… |
 | #855 | high | Le notaire n'a pas d'identité : l'état daté est servi à qui connaît la référence, et le suivi des r… |
 | #555 | medium | EPIC: migrer Result<_, String> → Result<_, AppError> (1263 violations, CRITICAL.md rule 4) |
 | #846 | medium | Onze tables et une vue existent en base et ne sont lues par aucun code, dont celle qui devait valid… |
-| #852 | medium | Le champ unit_id est déclaré optionnel sur la création d'une quote-part, et refusé quand il manque |
 | #762 | — | Typer les erreurs applicatives au lieu de les classer par sous-chaînes |
 
-### Track F — Ops et infrastructure (10)
+### Track F — Ops et infrastructure (9)
 
 Sauvegardes, TLS, GitOps, et les vulnérabilités de dépendances. F3 a été joué
 le 2026-09-04 et son résultat est **négatif sur deux volets sur trois** : le
@@ -856,10 +853,9 @@ runbook n'existent pas sur la machine.
 | #515 | high | infra: ArgoCD GitOps fresh-cluster deployment fails on 5 gaps (dry-run Docker Desktop 2026-05-12) |
 | #731 | high | Collision d'alias DNS sur le réseau partagé ecosolva-web : 4 projets exposent tous `backend` et `fr… |
 | #453 | medium | Pipeline TLS dispatch dev/integration/staging via OVH DNS-01 |
-| #466 | — | RFC: Stratégie GitOps multi-environnement — branches infra/* + main + ApplicationSet refactor |
-| #718 | — | [BUG] 502 Bad Gateway / timeouts sur api.koprogo.com sous rafale de requêtes (constaté via run E2E … |
+| #967 | — | IaC lint : les rôles backup, hardening et security sont introuvables depuis molecule |
 
-### Track G — Gate humain et gouvernance documentaire (2)
+### Track G — Gate humain et gouvernance documentaire (3)
 
 Les deux actes non délégables — la revue humaine et la pose du tag — et ce
 qui les prépare : la taxonomie des tests comme gate de release, et le
@@ -868,6 +864,7 @@ désencombrement de la documentation.
 | Issue | Prio | Intitulé |
 |---|---|---|
 | #427 | critical | Validation — taxonomie tests 4 catégories + revue humaine+Cowork comme gate release |
+| #913 | high | Relire une promotion à l'envers de la pyramide : la vitrine d'abord, les tests unitaires en dernier |
 | #854 | low | Ranger la documentation avant la release : 29 markdown à la racine de docs/, aucun publié par le si… |
 
 <!-- INVENTAIRE:FIN -->
@@ -933,6 +930,37 @@ déclarerai pas mortes sans mesure.
 ### Le compte
 
 **106 issues au relevé ; 78 après les fermetures du 2026-09-06 — et deux issues neuves, #828 et #829, trouvées en éprouvant la preuve elle-même.**
+
+### Révision r4 — 2026-09-20
+
+**70 issues ouvertes au périmètre**, contre 83 à la révision précédente.
+
+Dix-huit ont été closes le 2026-09-20 au terme d'un tri (#970) qui a comparé
+chaque issue au CODE, et non à la prose de ses commits. Elles étaient
+livrées et n'attendaient qu'une vérification : #803, #845, #852, #869, #872,
+#718, #881, #850, #866, #867, #848, #807, #815, #816, #847, #696, #781,
+#466.
+
+Pourquoi ce tri a été nécessaire, et ce qu'il enseigne : trois issues
+portaient un commit affirmant leur achèvement sans qu'il soit vrai.
+
+- **#834** — commit « ramène le cliquet à **0** » ; mesure du jour : **591**
+  libellés en dur pour un plafond de 613.
+- **#555** — epic annoncée à 1263 violations `Result<_, String>` ;
+  **3362** aujourd'hui. Elle a grossi.
+- **#432** — issue de **sécurité** close sur « devalue 5.8.1, 5 alertes
+  résolues », alors que `devalue < 5.9.1` restait vulnérable
+  (GHSA-9rgm-9g3h-6x36). Révélé par l'audit npm de la promotion sur `main`.
+
+**Règle qui en découle** : sur ce dépôt, statuer sur une issue se fait en
+vérifiant l'artefact dans le code. Le dépôt travaille par cliquets
+(`const DETTE_AU_<date> = N`) — un cliquet à `0` vaut livraison, un cliquet
+non nul mesure le reliquat. Attention : c'est un **plafond**, pas la valeur
+courante.
+
+Cinq issues neuves entrent au périmètre, toutes trouvées par la **vitrine**
+ou le **balayage** des 95 écrans, conformément à l'arbitrage du PO du
+2026-09-20 : #963, #966, #967, #968, #969.
 
 Douze recouvrements ou caducités, validés par le porteur du projet, et six
 défauts critiques désormais corrigés, déployés et **gardés par un test
@@ -1095,14 +1123,45 @@ comme trace et ce qui n'en est pas.
 ## Vérification
 
 ```bash
-~/bin/kcargo test --lib -j 2            # 1724 tests de référence, jamais cargo natif
-~/bin/kcargo test --test architecture   # la règle de dépendance entre contextes
+cd backend                               # kcargo ne trouve pas Cargo.toml depuis la racine
+~/bin/kcargo build --tests               # d'ABORD : `--lib` ne compile pas les harnais
+KCARGO_JOBS=1 KCARGO_MEM=6g ~/bin/kcargo test --lib
+~/bin/kcargo test --test architecture    # la règle de dépendance entre contextes
 cargo sqlx prepare                       # SUR L'HÔTE, contre koprogo-prepare-db:5440
 ```
+
+**`--lib` ne suffit pas, et son vert est trompeur.** Il compile la
+bibliothèque et rien d'autre : les harnais `tests/*.rs` — e2e, BDD, gardes —
+ne sont pas même compilés. Après tout changement de signature, `--lib` passe
+au vert pendant que dix harnais ne compilent plus. `build --tests` d'abord,
+toujours.
+
+`KCARGO_JOBS=1 KCARGO_MEM=6g` n'est pas un détail de confort : à deux jobs,
+la machine part en swap et `rustc` tombe à 10 % de CPU — huit fois plus lent
+que sur un seul.
 
 **Le scénario qui compte** : créer une ACP, l'affecter au cabinet A, saisir un
 dossier complet, clore le mandat, ouvrir celui du cabinet B. B voit tout, A ne voit
 plus rien. C'est la traduction technique de l'Art. 3.89 § 5, 7°.
 
-E2E via `PLAYWRIGHT_BASE_URL=http://localhost` — viser la production rejoue le
+### ⚠️ E2E : ne jamais viser `http://localhost` nu
+
+L'instruction précédente de ce document disait
+`PLAYWRIGHT_BASE_URL=http://localhost`. **Elle est fausse depuis l'ADR 0050**,
+et dangereusement : le port 80 est le Traefik de la **DÉMO**. Une campagne
+lancée ainsi écrit dans la base de démonstration en production.
+
+La recette a ses propres ports depuis le 2026-09-12 :
+
+```bash
+PLAYWRIGHT_BASE_URL=http://localhost:8090 \
+PLAYWRIGHT_API_BASE=http://localhost:8090/api/v1 \
+  npx playwright test
+```
+
+Les **deux** variables ensemble, jamais l'une sans l'autre : `PLAYWRIGHT_BASE_URL`
+seul laisse les appels d'API partir vers la démo, et la campagne mélange
+alors deux bases sans le dire.
+
+Viser la production reste proscrit pour une seconde raison : cela rejoue le
 bannissement CrowdSec malgré l'exception.
