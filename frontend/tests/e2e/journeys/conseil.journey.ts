@@ -241,18 +241,32 @@ export const conseil: Parcours = {
         "mandat a été conféré.",
       action: async (scene) => {
         await scene.attendreChargement();
+        // L'étape s'intitule « Élire un membre » et n'accomplissait aucun
+        // geste (#974). Ouvrir le formulaire d'élection, c'est vérifier que
+        // la capacité est ATTEIGNABLE — pas seulement affichée.
+        //
+        // Le formulaire, et pas la soumission : `SyndicCreationJourneys`
+        // exerce déjà l'élection de bout en bout, et la refilmer ici
+        // allongerait la vidéo sans rien montrer de neuf. Ce qui manquait
+        // n'était pas la couverture, c'était le geste.
+        await scene.cliquer("board-elect-button");
+        await scene.attendreChargement();
       },
       assertion: async (page) => {
-        // L'écran d'élection est ouvert au syndic : le bouton qui bascule
-        // l'affichage des mandats échus n'existe que là. On vérifie la
-        // porte, pas le détail du formulaire — `SyndicCreationJourneys`
-        // l'exerce déjà de bout en bout, et le refilmer ici allongerait la
-        // vidéo sans rien montrer de neuf.
         // Le sélecteur d'immeuble est la porte de l'élection : on élit au
         // conseil D'UNE copropriété, jamais dans l'absolu.
         await expect(page.getByTestId("board-building-select")).toBeVisible({
           timeout: 20000,
         });
+        // Et le formulaire s'est réellement ouvert. Son champ « assemblée »
+        // porte la règle que la description énonce : le syndic propose,
+        // l'assemblée élit, et le mandat cite celle qui l'a conféré.
+        await expect(
+          page.getByTestId("board-elect-form"),
+          "Le bouton d'élection est visible mais n'ouvre aucun formulaire : " +
+            "la capacité est affichée sans être atteignable.",
+        ).toBeVisible({ timeout: 20000 });
+        await expect(page.getByTestId("board-elect-meeting")).toBeVisible();
       },
     },
     {

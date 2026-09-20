@@ -81,10 +81,28 @@ export const administration: Parcours = {
       action: async (scene) => {
         await scene.aller("/admin/organizations");
         await scene.attendreChargement();
+        // Chercher, c'est le geste quotidien de ce rôle : un administrateur
+        // de plateforme ne parcourt pas une liste de cabinets, il en isole
+        // un. L'étape se contentait auparavant de constater qu'un bouton
+        // « créer » s'affichait (#974) — un écran qui se rend n'est pas un
+        // écran dont on se sert.
+        await scene.saisir("organization-search-input", "a");
+        await scene.attendreChargement();
       },
       assertion: async (page) => {
         await expect(
           page.getByTestId("create-organization-button"),
+        ).toBeVisible({ timeout: 20000 });
+        // La table répond à la frappe : soit elle liste, soit elle dit
+        // qu'elle n'a rien trouvé. Ce qu'elle n'a pas le droit de faire,
+        // c'est rester muette.
+        await expect(
+          page
+            .getByTestId("organization-row")
+            .or(page.getByTestId("organizations-empty-row"))
+            .first(),
+          "La recherche ne rend ni résultat ni message : l'écran ne répond " +
+            "pas à ce qu'on lui demande.",
         ).toBeVisible({ timeout: 20000 });
       },
     },
