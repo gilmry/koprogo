@@ -67,7 +67,7 @@ export async function loadTickets(
 export async function transitionTicket(
   ticketId: string,
   action: Exclude<TicketAction, "delete">,
-  payload?: { contractorId?: string },
+  payload?: { contractorId?: string; motif?: string },
 ): Promise<Ticket> {
   switch (action) {
     case "assign":
@@ -77,12 +77,21 @@ export async function transitionTicket(
     case "start":
       return ticketsApi.start(ticketId);
     case "resolve":
-      return ticketsApi.resolve(ticketId);
+      // Le motif est exigé ICI, pas remplacé par un défaut. Trois DTO du
+      // backend portent un champ obligatoire, et l'appelant envoyait `{}` :
+      // les trois transitions rendaient 400 et le bouton ne faisait rien
+      // (#977). Un défaut silencieux aurait juste déplacé le mensonge du
+      // serveur vers le registre.
+      if (!payload?.motif)
+        throw new Error("motif required for resolve (resolution_notes)");
+      return ticketsApi.resolve(ticketId, payload.motif);
     case "close":
       return ticketsApi.close(ticketId);
     case "cancel":
-      return ticketsApi.cancel(ticketId);
+      if (!payload?.motif) throw new Error("motif required for cancel");
+      return ticketsApi.cancel(ticketId, payload.motif);
     case "reopen":
-      return ticketsApi.reopen(ticketId);
+      if (!payload?.motif) throw new Error("motif required for reopen");
+      return ticketsApi.reopen(ticketId, payload.motif);
   }
 }

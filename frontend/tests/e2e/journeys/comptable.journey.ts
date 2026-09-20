@@ -65,6 +65,15 @@ async function ok<T = any>(
   return (await resp.json()) as T;
 }
 
+/**
+ * Le libellé de la facture que le comptable saisit à l'étape 3.
+ *
+ * Unique par campagne : l'étape 4 la RETROUVE dans la liste, et un libellé
+ * partagé avec une exécution précédente rendrait cette vérification non
+ * concluante — elle passerait au vert sur la facture de la veille.
+ */
+let libelleDeLaFacture = "";
+
 export const comptable: Parcours = {
   slug: "comptable",
   titre: "Le comptable tient les comptes, et n'approuve pas ce qu'il saisit",
@@ -147,6 +156,8 @@ export const comptable: Parcours = {
     // connecté.
     await page.context().clearCookies();
 
+    libelleDeLaFacture = `Entretien de la chaudière ${horodatage}`;
+
     return {
       comptable: { email: emailComptable, motDePasse },
       syndic: { email: emailSyndic, motDePasse },
@@ -199,8 +210,7 @@ export const comptable: Parcours = {
         // L'étape s'intitule « Saisir une dépense ». Elle se contentait
         // d'atteindre l'écran et de constater qu'un bouton s'affichait : la
         // narration promettait un acte que le parcours n'accomplissait pas
-        // (#974). Ouvrir réellement le formulaire, c'est vérifier qu'on peut
-        // s'en servir — pas seulement que l'écran se rend.
+        // (#974). Elle le SAISIT désormais, en entier.
         await scene.cliquer("create-button");
         await scene.attendreChargement();
       },
@@ -212,6 +222,59 @@ export const comptable: Parcours = {
           "Le bouton « créer » est visible mais n'ouvre rien : la capacité " +
             "est affichée sans être atteignable.",
         ).toBeVisible({ timeout: 20000 });
+      },
+    },
+    {
+      id: "3bis-il-remplit-la-facture",
+      acteur: "comptable",
+      description:
+        "Il remplit : l'immeuble, le libellé, le montant hors TVA, le taux " +
+        "de 21 % et la date de facture. Le formulaire calcule le TTC — le " +
+        "comptable ne ressaisit pas ce que la machine sait faire.",
+      action: async (scene) => {
+        await scene.choisirQuiContient("building-select", "Résidence des Comptes");
+        await scene.saisir("description-input", libelleDeLaFacture);
+        await scene.saisir("amount-input", "1450");
+        await scene.choisir("vat-rate-select", "21.00");
+        await scene.saisir(
+          "invoice-date-input",
+          new Date().toISOString().slice(0, 10),
+        );
+      },
+      assertion: async (page) => {
+        // Le formulaire accepte la saisie : aucun message d'erreur, et le
+        // bouton d'envoi est atteignable. Une modale qui refuserait sans le
+        // dire produirait exactement l'écran « crédible et faux » que la
+        // recette des cahiers des charges a déjà rencontré (#968).
+        await expect(page.getByTestId("submit-button")).toBeEnabled();
+      },
+    },
+    {
+      id: "3ter-la-facture-existe",
+      acteur: "comptable",
+      description:
+        "Il envoie. La facture rejoint le registre des dépenses de la " +
+        "copropriété — c'est ce document que l'assemblée pourra consulter, " +
+        "et qui pèsera sur l'appel de fonds.",
+      action: async (scene) => {
+        await scene.cliquer("submit-button");
+        await scene.attendreChargement();
+      },
+      assertion: async (page) => {
+        // LA preuve : la modale s'est refermée ET la facture est dans la
+        // liste. Vérifier seulement la fermeture ne distinguerait pas un
+        // envoi réussi d'une annulation.
+        await expect(page.getByTestId("expense-form-cancel-button")).toHaveCount(
+          0,
+          { timeout: 20000 },
+        );
+        await expect(
+          page.getByTestId("expense-card").filter({
+            hasText: libelleDeLaFacture,
+          }),
+          "La facture saisie n'apparaît pas dans le registre : l'envoi a " +
+            "l'air d'aboutir sans rien enregistrer.",
+        ).toHaveCount(1, { timeout: 20000 });
       },
     },
     {

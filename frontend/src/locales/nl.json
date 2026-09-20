@@ -3930,7 +3930,13 @@
     "noAction": "— Geen actie —",
     "evidence": "Bewijs (foto's, video's, pdf)",
     "witnesses": "Getuigen",
-    "cannotBeOwnWitness": "U kunt uzelf niet als getuige van uw eigen klacht opgeven."
+    "cannotBeOwnWitness": "U kunt uzelf niet als getuige van uw eigen klacht opgeven.",
+    "transition": {
+      "resolutionNotes": "Wat hebt u gedaan om dit incident op te lossen?",
+      "cancelReason": "Waarom annuleert u dit incident?",
+      "reopenReason": "Waarom heropent u dit dossier?",
+      "whyRequired": "Deze tekst blijft in het dossier. Ze verklaart de beslissing aan wie ze later leest, ook maanden nadien."
+    }
   },
   "units": {
     "acp": "VME",

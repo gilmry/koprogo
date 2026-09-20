@@ -10,6 +10,7 @@
   import TicketAssignModal from "./TicketAssignModal.svelte";
   import Button from "../ui/Button.svelte";
   import ConfirmDialog from "../ui/ConfirmDialog.svelte";
+  import Modal from "../ui/Modal.svelte";
 
   // Story B6 (Phase B FE) — SLA badge + syndic responses (conversation
   // chronologique + form append-only). Affichés conditionnellement :
@@ -83,16 +84,80 @@
     }
   }
 
-  async function handleResolve() {
+  // ── Le motif d'une transition ────────────────────────────────────────────
+  //
+  // Trois transitions exigent un texte côté serveur — `resolution_notes`
+  // pour résoudre, `reason` pour annuler et pour rouvrir
+  // (`ticket_dto.rs:143-155`, champs `String` et non `Option<String>`).
+  //
+  // L'écran envoyait `{}` : les trois rendaient
+  // `400 missing field`, le toast d'échec passait inaperçu, et un incident
+  // assigné ne pouvait JAMAIS être clos depuis l'interface (#977).
+  //
+  // On demande donc le motif plutôt que d'en inventer un. Sur une plainte,
+  // qui peut finir devant un juge de paix, une clôture sans trace écrite
+  // vaut moins qu'un tableur.
+  type Transition = "resolve" | "cancel" | "reopen";
+  let transitionEnCours = $state<Transition | null>(null);
+  let motif = $state("");
+
+  const LIBELLES: Record<Transition, { titre: string; invite: string }> = {
+    resolve: {
+      titre: $_("tickets.mark_resolved"),
+      invite: $_("tickets.transition.resolutionNotes"),
+    },
+    cancel: {
+      titre: $_("common.cancel"),
+      invite: $_("tickets.transition.cancelReason"),
+    },
+    reopen: {
+      titre: $_("tickets.reopen"),
+      invite: $_("tickets.transition.reopenReason"),
+    },
+  };
+
+  function demanderLeMotif(quoi: Transition): void {
+    motif = "";
+    transitionEnCours = quoi;
+  }
+
+  function fermerLaDemande(): void {
+    transitionEnCours = null;
+    motif = "";
+  }
+
+  async function confirmerLaTransition() {
+    const quoi = transitionEnCours;
+    const texte = motif.trim();
+    if (quoi === null || texte.length === 0) return;
+
+    const appel = {
+      resolve: () => ticketsApi.resolve(ticket.id, texte),
+      cancel: () => ticketsApi.cancel(ticket.id, texte),
+      reopen: () => ticketsApi.reopen(ticket.id, texte),
+    }[quoi];
+
+    const messages: Record<Transition, string> = {
+      resolve: $_("tickets.marked_resolved"),
+      cancel: $_("tickets.cancelled"),
+      reopen: $_("tickets.reopened"),
+    };
+    const echecs: Record<Transition, string> = {
+      resolve: $_("tickets.resolve_failed"),
+      cancel: $_("tickets.cancel_failed"),
+      reopen: $_("tickets.reopen_failed"),
+    };
+
     const result = await withErrorHandling({
-      action: () => ticketsApi.resolve(ticket.id),
+      action: appel,
       setLoading: (v: boolean) => (actionLoading = v),
-      successMessage: $_("tickets.marked_resolved"),
-      errorMessage: $_("tickets.resolve_failed"),
+      successMessage: messages[quoi],
+      errorMessage: echecs[quoi],
     });
     if (result) {
       ticket = result;
       onupdated?.(ticket);
+      fermerLaDemande();
     }
   }
 
@@ -102,32 +167,6 @@
       setLoading: (v: boolean) => (actionLoading = v),
       successMessage: $_("tickets.closed"),
       errorMessage: $_("tickets.close_failed"),
-    });
-    if (result) {
-      ticket = result;
-      onupdated?.(ticket);
-    }
-  }
-
-  async function handleCancel() {
-    const result = await withErrorHandling({
-      action: () => ticketsApi.cancel(ticket.id),
-      setLoading: (v: boolean) => (actionLoading = v),
-      successMessage: $_("tickets.cancelled"),
-      errorMessage: $_("tickets.cancel_failed"),
-    });
-    if (result) {
-      ticket = result;
-      onupdated?.(ticket);
-    }
-  }
-
-  async function handleReopen() {
-    const result = await withErrorHandling({
-      action: () => ticketsApi.reopen(ticket.id),
-      setLoading: (v: boolean) => (actionLoading = v),
-      successMessage: $_("tickets.reopened"),
-      errorMessage: $_("tickets.reopen_failed"),
     });
     if (result) {
       ticket = result;
@@ -203,7 +242,7 @@
 
         {#if (isContractor || canManage) && ticket.status === TicketStatus.InProgress}
           <Button
-            onclick={handleResolve}
+            onclick={() => demanderLeMotif("resolve")}
             loading={actionLoading}
             size="sm"
             data-testid="ticket-resolve-btn"
@@ -225,7 +264,7 @@
 
         {#if canManage && (ticket.status === TicketStatus.Open || ticket.status === TicketStatus.InProgress)}
           <Button
-            onclick={handleCancel}
+            onclick={() => demanderLeMotif("cancel")}
             loading={actionLoading}
             variant="outline"
             size="sm"
@@ -237,7 +276,7 @@
 
         {#if ticket.status === TicketStatus.Closed || ticket.status === TicketStatus.Cancelled}
           <Button
-            onclick={handleReopen}
+            onclick={() => demanderLeMotif("reopen")}
             loading={actionLoading}
             variant="outline"
             size="sm"
@@ -410,6 +449,61 @@
   ticketId={ticket.id}
   onassigned={handleAssign}
 />
+
+<!-- Motif d'une transition (resoudre / annuler / rouvrir) — cf. #977 -->
+<Modal
+  isOpen={transitionEnCours !== null}
+  title={transitionEnCours ? LIBELLES[transitionEnCours].titre : ""}
+  size="sm"
+  onclose={fermerLaDemande}
+>
+  {#if transitionEnCours}
+    <form
+      onsubmit={(e) => {
+        e.preventDefault();
+        void confirmerLaTransition();
+      }}
+      data-testid="ticket-transition-form"
+    >
+      <label
+        for="ticket-transition-motif"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
+        {LIBELLES[transitionEnCours].invite} *
+      </label>
+      <textarea
+        id="ticket-transition-motif"
+        bind:value={motif}
+        rows="4"
+        required
+        maxlength="2000"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        data-testid="ticket-transition-motif"
+      ></textarea>
+      <p class="mt-1 text-xs text-gray-500">
+        {$_("tickets.transition.whyRequired")}
+      </p>
+
+      <div class="mt-4 flex justify-end space-x-2">
+        <Button
+          variant="outline"
+          onclick={fermerLaDemande}
+          data-testid="ticket-transition-cancel"
+        >
+          {$_("common.cancel")}
+        </Button>
+        <Button
+          type="submit"
+          loading={actionLoading}
+          disabled={motif.trim().length === 0}
+          data-testid="ticket-transition-submit"
+        >
+          {$_("common.confirm")}
+        </Button>
+      </div>
+    </form>
+  {/if}
+</Modal>
 
 <!-- Delete Confirmation -->
 <ConfirmDialog

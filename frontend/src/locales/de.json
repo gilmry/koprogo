@@ -3930,7 +3930,13 @@
     "noAction": "— Keine Maßnahme —",
     "evidence": "Nachweise (Fotos, Videos, PDF)",
     "witnesses": "Zeugen",
-    "cannotBeOwnWitness": "Sie können sich nicht als Zeuge Ihrer eigenen Beschwerde angeben."
+    "cannotBeOwnWitness": "Sie können sich nicht als Zeuge Ihrer eigenen Beschwerde angeben.",
+    "transition": {
+      "resolutionNotes": "Was haben Sie unternommen, um diesen Vorfall zu beheben?",
+      "cancelReason": "Warum stornieren Sie diesen Vorfall?",
+      "reopenReason": "Warum öffnen Sie diesen Vorgang erneut?",
+      "whyRequired": "Dieser Text bleibt im Vorgang. Er erklärt die Entscheidung allen, die ihn später lesen, auch nach Monaten."
+    }
   },
   "units": {
     "acp": "ACP",

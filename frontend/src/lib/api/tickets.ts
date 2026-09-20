@@ -208,35 +208,59 @@ export const ticketsApi = {
    * Start work on ticket
    */
   async start(id: string): Promise<Ticket> {
-    return api.put(`/tickets/${id}/start`, {});
+    // `/start` n'existe pas : le backend sert `/start-work`
+    // (`ticket_handlers.rs:585`). L'écart n'avait jamais mordu parce
+    // qu'aucun écran n'appelle cette méthode — du code mort qui attendait
+    // son premier appelant pour devenir un défaut (#977).
+    return api.put(`/tickets/${id}/start-work`, {});
   },
 
   /**
-   * Mark ticket as resolved
+   * Mark ticket as resolved.
+   *
+   * ── Pourquoi la note est un paramètre, et pas un défaut ────────────────
+   *
+   * `ResolveTicketRequest.resolution_notes` est un `String`, pas un
+   * `Option<String>` (`ticket_dto.rs:143`). Un corps vide ne rate pas la
+   * validation métier : il rate la DÉSÉRIALISATION, et le serveur rend
+   * `400 missing field \`resolution_notes\`` avant d'avoir regardé le
+   * ticket.
+   *
+   * Mesuré contre la recette le 2026-09-20 : les trois transitions
+   * `resolve`, `cancel` et `reopen` envoyaient `{}` et échouaient toutes
+   * les trois. Un incident assigné ne pouvait donc JAMAIS être clos depuis
+   * l'interface (#977).
+   *
+   * Le paramètre est requis ici à dessein. Le rendre optionnel avec une
+   * note par défaut aurait fabriqué une trace que personne n'a écrite —
+   * sur un registre de plaintes qui peut finir devant un juge de paix,
+   * c'est pire qu'une absence de trace.
    */
-  async resolve(id: string): Promise<Ticket> {
-    return api.put(`/tickets/${id}/resolve`, {});
+  async resolve(id: string, resolutionNotes: string): Promise<Ticket> {
+    return api.put(`/tickets/${id}/resolve`, {
+      resolution_notes: resolutionNotes,
+    });
   },
 
   /**
-   * Close ticket
+   * Close ticket.
+   *
+   * La seule des cinq transitions que le serveur accepte sans corps
+   * (`CloseTicketRequest` n'existe pas). Elle marchait déjà — mais on ne
+   * pouvait pas l'atteindre, puisqu'il faut être `Resolved` pour clôturer.
    */
   async close(id: string): Promise<Ticket> {
     return api.put(`/tickets/${id}/close`, {});
   },
 
-  /**
-   * Cancel ticket
-   */
-  async cancel(id: string): Promise<Ticket> {
-    return api.put(`/tickets/${id}/cancel`, {});
+  /** Cancel ticket. `CancelTicketRequest.reason` est requis (#977). */
+  async cancel(id: string, reason: string): Promise<Ticket> {
+    return api.put(`/tickets/${id}/cancel`, { reason });
   },
 
-  /**
-   * Reopen ticket
-   */
-  async reopen(id: string): Promise<Ticket> {
-    return api.put(`/tickets/${id}/reopen`, {});
+  /** Reopen ticket. `ReopenTicketRequest.reason` est requis (#977). */
+  async reopen(id: string, reason: string): Promise<Ticket> {
+    return api.put(`/tickets/${id}/reopen`, { reason });
   },
 
   /**

@@ -3930,7 +3930,13 @@
     "noAction": "— Aucune action —",
     "evidence": "Preuves (photos, vidéos, PDF)",
     "witnesses": "Témoins",
-    "cannotBeOwnWitness": "Vous ne pouvez pas vous désigner comme témoin de votre propre plainte."
+    "cannotBeOwnWitness": "Vous ne pouvez pas vous désigner comme témoin de votre propre plainte.",
+    "transition": {
+      "resolutionNotes": "Qu'avez-vous fait pour résoudre cet incident ?",
+      "cancelReason": "Pourquoi annulez-vous cet incident ?",
+      "reopenReason": "Pourquoi rouvrez-vous ce dossier ?",
+      "whyRequired": "Ce texte est conservé dans le dossier. Il explique la décision à qui le relira, y compris des mois plus tard."
+    }
   },
   "units": {
     "acp": "ACP",
