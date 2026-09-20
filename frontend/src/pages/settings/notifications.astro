@@ -94,11 +94,11 @@ import Layout from "../../layouts/Layout.astro";
     const userId = storedUser ? JSON.parse(storedUser).id : "";
 
     if (userId) {
+      // Aucune propriété : le serveur scope les préférences sur le jeton.
+      // `userId` ne sert plus qu'à vérifier qu'une session existe avant de
+      // monter l'écran.
       mount(NotificationPreferences as any, {
         target: preferencesContainer,
-        props: {
-          userId,
-        },
       });
     } else {
       preferencesContainer.innerHTML = `

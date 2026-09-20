@@ -152,33 +152,53 @@ export const notificationsApi = {
   },
 
   /**
-   * Get all notification preferences for user
+   * Les préférences de l'utilisateur AUTHENTIFIÉ.
+   *
+   * ── Le contrat, tel que le serveur le déclare ──────────────────────────
+   *
+   *   GET /notification-preferences                      → les siennes
+   *   GET /notification-preferences/{notification_type}  → une seule
+   *
+   * Le segment est un **type de notification**, pas un identifiant
+   * d'utilisateur. Cette fonction y passait pourtant un `userId` : le
+   * serveur tentait de lire un UUID comme un type et rendait **400**
+   * (relevé par le balayage sur `/settings/notifications`, #968).
+   *
+   * Aucun paramètre, donc : `get_user_preferences` scope sur
+   * `user.user_id` pris du jeton (`notification_handlers.rs:375-382`). Et
+   * c'est plus sûr — un identifiant d'utilisateur dans l'URL invite à
+   * demander celles d'un autre.
    */
-  async getPreferences(userId: string): Promise<NotificationPreference[]> {
-    return api.get(`/notification-preferences/${userId}`);
+  async getPreferences(): Promise<NotificationPreference[]> {
+    return api.get("/notification-preferences");
   },
 
   /**
    * Get specific notification preference
    */
   async getPreference(
-    userId: string,
     notificationType: NotificationType,
   ): Promise<NotificationPreference> {
-    return api.get(`/notification-preferences/${userId}/${notificationType}`);
+    return api.get(`/notification-preferences/${notificationType}`);
   },
 
   /**
-   * Update notification preference
+   * Modifie UNE préférence de l'utilisateur authentifié.
+   *
+   * Le chemin ne porte que le TYPE : `PUT
+   * /notification-preferences/{notification_type}`. Il portait auparavant
+   * `${userId}/${notificationType}`, soit un segment de plus que le serveur
+   * n'en déclare — la bascule échouait donc silencieusement, et l'écran de
+   * préférences ne pouvait rien enregistrer.
+   *
+   * Le `userId` disparaît des deux signatures pour la même raison que sur
+   * `getPreferences` : le serveur prend l'utilisateur dans le jeton, et un
+   * identifiant dans l'URL invite à demander les préférences d'un autre.
    */
   async updatePreference(
-    userId: string,
     notificationType: NotificationType,
     data: UpdateNotificationPreferenceDto,
   ): Promise<NotificationPreference> {
-    return api.put(
-      `/notification-preferences/${userId}/${notificationType}`,
-      data,
-    );
+    return api.put(`/notification-preferences/${notificationType}`, data);
   },
 };
