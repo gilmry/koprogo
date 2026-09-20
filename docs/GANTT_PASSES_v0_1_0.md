@@ -430,8 +430,9 @@ Ce que cette passe a trouvé, en une journée :
 | #979 | `isAuthor` compare un `owners.id` à un `users.id` : personne ne peut archiver ni supprimer sa propre annonce | `annonce`, le syndic ouvre la sienne |
 | #980 | élection du conseil : la règle d'un an n'est annoncée nulle part, son refus s'efface, l'élu s'affiche sous son UUID | `conseil`, élection menée à son terme |
 | #981 | le choix d'IMMEUBLE ne survit pas à une navigation : #841 n'avait refermé que la moitié du défaut signalé par le PO | `perimetre-multi-role`, clic de menu au lieu d'une URL |
+| #982 | `balayage-owner` réussissait et le gate le déclarait échoué : sa trace de 148 Mo dépassait le budget de démontage | la campagne des seize parcours, jouée d'un bloc |
 
-**Ce que ces cinq ont en commun.** Aucun n'est un défaut d'affichage.
+**Ce que les cinq premiers ont en commun.** Aucun n'est un défaut d'affichage.
 Tous sont des capacités présentes des deux côtés dont le raccordement
 manque, et qu'aucun écran ne signale. Et trois sur cinq sont sortis du
 même mécanisme : **un second acteur regarde ce que le premier a produit.**
@@ -443,7 +444,14 @@ saute le dépliage du menu et l'interception du lien. Le PO avait pourtant
 écrit « dès qu'on appuie sur un bouton ou qu'on va dans un menu », et
 c'était deux chemins, pas une tournure. #841 n'en avait refermé qu'un.
 
-Quatre des cinq sont corrigés, chacun avec son témoin daté. #977 reste
+Le sixième, #982, n'est pas un défaut du produit mais du HARNAIS, et il
+mérite d'être nommé à part : un gate rouge qui n'accuse rien de réel coûte
+plus cher qu'un gate absent. Celui-ci annonçait un dépassement de 30 s là où
+le plafond effectif était de 900, sans pile ni emplacement — de quoi
+chercher longtemps, puis renoncer à l'écouter. Il n'est sorti qu'en jouant
+les seize parcours d'un bloc : chacun passait isolément.
+
+Cinq des six sont corrigés, chacun avec son témoin daté. #977 reste
 ouvert sur une seule ligne de sa définition de terminé — « un échec de
 transition se dit » — parce que le toast qui s'efface est un motif
 d'interface commun à tout le produit, que #980 relève ailleurs, et que le
