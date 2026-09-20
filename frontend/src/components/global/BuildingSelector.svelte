@@ -167,6 +167,31 @@
   // Sélection / clear / favoris
   // -------------------------------------------------------------------------
 
+  /**
+   * Réafficher l'immeuble repris de la session.
+   *
+   * ── Pourquoi un effet, et pourquoi il ne coûte rien ────────────────────
+   *
+   * `query` n'est écrit que par la frappe de l'utilisateur et par
+   * `onResultClick`. Après un clic de menu, le document est rechargé : le
+   * périmètre revient de la session (#981), mais le champ reste VIDE —
+   * l'utilisateur voit un sélecteur vierge alors que son immeuble est bel
+   * et bien posé, et il resélectionne.
+   *
+   * C'est le même défaut, et le même correctif, que pour `AcpSelector`
+   * dans #841. Aucune requête n'est faite ici :
+   * `reprendreLImmeubleDeLaSession` a déjà rangé l'objet complet dans
+   * `scope.selectedBuilding`, avec son nom.
+   *
+   * La garde sur `query === ""` est essentielle : sans elle, l'effet
+   * écraserait ce que l'utilisateur est en train de taper.
+   */
+  $effect(() => {
+    const immeuble = scope.selectedBuilding;
+    if (immeuble === null || query !== "") return;
+    query = immeuble.name;
+  });
+
   function onResultClick(b: Building): void {
     setBuilding(b);
     isOpen = false;

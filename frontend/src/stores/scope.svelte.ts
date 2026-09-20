@@ -134,30 +134,71 @@ export function getScope(): ScopeSnapshot {
  */
 const MEMOIRE_PERIMETRE = "koprogo_perimetre_acp";
 
-function memoriser(acpId: string | null): void {
+/**
+ * La seconde moitié du périmètre — et pourquoi elle est arrivée après.
+ *
+ * #841 a posé la mémoire d'ACP. Le PO avait signalé les deux d'un seul
+ * geste : « quand on sélectionne une ACP, dès qu'on appuie sur un bouton ou
+ * qu'on va dans un menu il faut resélectionner ». La barre de contexte porte
+ * DEUX sélecteurs, et seul le premier avait reçu sa mémoire.
+ *
+ * `selectedBuildingId` repartait donc à `null` à chaque chargement de
+ * document — c'est-à-dire à chaque clic de menu, puisque le frontend est une
+ * application Astro multi-page. Douze écrans lisent ce périmètre ;
+ * `/journal-entries` s'ouvrait sur « choisissez un immeuble » à chaque visite,
+ * et un comptable qui saisit dix écritures sur le même immeuble le
+ * resélectionnait dix fois (#981).
+ */
+const MEMOIRE_IMMEUBLE = "koprogo_perimetre_immeuble";
+
+function ecrire(cle: string, valeur: string | null): void {
   if (typeof window === "undefined") return;
   try {
-    if (acpId === null) window.sessionStorage.removeItem(MEMOIRE_PERIMETRE);
-    else window.sessionStorage.setItem(MEMOIRE_PERIMETRE, acpId);
+    if (valeur === null) window.sessionStorage.removeItem(cle);
+    else window.sessionStorage.setItem(cle, valeur);
   } catch {
     // Un navigateur qui refuse le stockage de session ne doit pas casser la
     // sélection : on perd la mémoire, pas la fonctionnalité.
   }
 }
 
-function memorise(): string | null {
+function lire(cle: string): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return window.sessionStorage.getItem(MEMOIRE_PERIMETRE);
+    return window.sessionStorage.getItem(cle);
   } catch {
     return null;
   }
+}
+
+function memoriser(acpId: string | null): void {
+  ecrire(MEMOIRE_PERIMETRE, acpId);
+  // Une ACP qui tombe emporte l'immeuble : un immeuble mémorisé sans ACP
+  // décrirait un périmètre à moitié posé, ce qui est pire que pas de
+  // périmètre du tout — l'écran afficherait des données d'un immeuble sans
+  // dire de quelle copropriété il relève.
+  if (acpId === null) ecrire(MEMOIRE_IMMEUBLE, null);
+}
+
+function memorise(): string | null {
+  return lire(MEMOIRE_PERIMETRE);
+}
+
+function memoriserLImmeuble(buildingId: string | null): void {
+  ecrire(MEMOIRE_IMMEUBLE, buildingId);
+}
+
+function immeubleMemorise(): string | null {
+  return lire(MEMOIRE_IMMEUBLE);
 }
 
 export function setBuilding(building: Building | null): void {
   if (building === null) {
     _state.selectedBuildingId = null;
     _state.selectedBuilding = null;
+    // Désélectionner explicitement, c'est un choix : la mémoire doit le
+    // suivre, sans quoi l'immeuble reviendrait au prochain écran.
+    memoriserLImmeuble(null);
     return;
   }
   _state.selectedBuildingId = building.id;
@@ -165,6 +206,7 @@ export function setBuilding(building: Building | null): void {
   _state.selectedAcpId = building.acp_id ?? null;
   _state.scopeError = null;
   memoriser(_state.selectedAcpId);
+  memoriserLImmeuble(building.id);
 }
 
 /**
@@ -236,6 +278,10 @@ export function setScopeError(error: null | "forbidden" | "not_found"): void {
     // que l'utilisateur ne peut pas voir.
     _state.selectedBuildingId = null;
     _state.selectedBuilding = null;
+    // Un immeuble que le serveur vient de refuser ne doit pas ressurgir au
+    // chargement suivant : la mémoire périmée est la façon dont un refus se
+    // transforme en boucle.
+    memoriserLImmeuble(null);
   }
 }
 
@@ -457,6 +503,64 @@ export async function reprendreLeChoixDeLaSession(
   return souvenir;
 }
 
+/**
+ * Reprend l'immeuble choisi plus tôt dans la session — sans le croire.
+ *
+ * Même contrat que `reprendreLeChoixDeLaSession` pour l'ACP, plus une
+ * exigence que l'ACP n'a pas : la COHÉRENCE. Restaurer un immeuble qui
+ * relève d'une autre ACP que celle en cours donnerait un périmètre
+ * contradictoire — un écran qui affiche les dépenses d'un immeuble sous
+ * l'en-tête d'une autre copropriété. C'est pire qu'un périmètre vide, parce
+ * que ça se lit comme une donnée juste.
+ *
+ * L'immeuble est donc demandé au SERVEUR, et adopté seulement si son
+ * `acp_id` correspond au périmètre courant.
+ *
+ * @param charger Chargeur d'immeuble par identifiant, injecté pour rester
+ *                testable sans réseau.
+ */
+export async function reprendreLImmeubleDeLaSession(
+  charger: (id: string) => Promise<Building>,
+): Promise<string | null> {
+  // Un immeuble déjà posé — lien profond, ou clic pendant ce chargement —
+  // n'a pas besoin d'être repris, et surtout ne doit pas coûter une requête.
+  if (_state.selectedBuildingId !== null) return _state.selectedBuildingId;
+
+  const souvenir = immeubleMemorise();
+  if (souvenir === null) return null;
+
+  let immeuble: Building;
+  try {
+    immeuble = await charger(souvenir);
+  } catch {
+    // Serveur injoignable, ou immeuble refusé. On ne tranche pas et on
+    // n'efface pas : une panne de réseau ne doit pas faire oublier un choix
+    // légitime. Le cas « le serveur ne le sert plus » est couvert par la
+    // vérification de cohérence ci-dessous quand la requête aboutit, et par
+    // `setScopeError` quand elle rend 403.
+    return null;
+  }
+
+  // La cohérence. Un immeuble d'une autre ACP est ignoré, et oublié : le
+  // garder ferait rejouer le même écart à chaque écran.
+  const acpDeLImmeuble = immeuble.acp_id ?? null;
+  if (
+    _state.selectedAcpId !== null &&
+    acpDeLImmeuble !== null &&
+    acpDeLImmeuble !== _state.selectedAcpId
+  ) {
+    memoriserLImmeuble(null);
+    return null;
+  }
+
+  _state.selectedBuildingId = immeuble.id;
+  _state.selectedBuilding = immeuble;
+  if (_state.selectedAcpId === null && acpDeLImmeuble !== null) {
+    _state.selectedAcpId = acpDeLImmeuble;
+  }
+  return immeuble.id;
+}
+
 export async function resoudrePerimetreAuChargement(
   chargeurs: ChargeursPerimetre,
 ): Promise<void> {
@@ -473,9 +577,15 @@ export async function resoudrePerimetreAuChargement(
   if (idDemande !== null) return;
 
   const repris = await reprendreLeChoixDeLaSession(chargeurs.acps);
-  if (repris !== null) return;
+  if (repris === null) {
+    await resoudreLeDefautServeur(chargeurs.acps);
+  }
 
-  await resoudreLeDefautServeur(chargeurs.acps);
+  // L'immeuble se reprend APRÈS l'ACP, et jamais avant : la vérification de
+  // cohérence a besoin de savoir de quelle copropriété on parle. L'inverse
+  // laisserait passer un immeuble d'une autre ACP le temps d'un rendu — et
+  // un périmètre faux affiché une seconde est un périmètre faux.
+  await reprendreLImmeubleDeLaSession(chargeurs.building);
 }
 
 /**
@@ -485,6 +595,7 @@ export function resetScope(): void {
   // La mémoire de session part avec le périmètre : une déconnexion ou une
   // rotation d'organisation ne doit rien laisser derrière elle.
   memoriser(null);
+  memoriserLImmeuble(null);
   _state.selectedBuildingId = null;
   _state.selectedAcpId = null;
   _state.selectedPortfolioId = null;

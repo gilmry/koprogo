@@ -185,6 +185,52 @@ export const perimetreMultiRole: Parcours = {
       },
     },
     {
+      id: "et-l-immeuble-suit-aussi",
+      acteur: "syndic",
+      description:
+        "Il choisit maintenant un IMMEUBLE dans la même barre, puis change " +
+        "d'écran par le menu. Les deux le suivent : la copropriété ET " +
+        "l'immeuble. C'est le geste entier que le PO avait signalé.",
+      action: async (scene) => {
+        await scene.cliquer("building-selector-input");
+        const premier = scene.page
+          .locator('[data-testid^="building-selector-result-"]')
+          .first();
+        await premier.waitFor({ state: "visible", timeout: 15000 });
+        await premier.click();
+        await scene.attendreChargement();
+        await scene.cliquer("nav-link-expenses");
+        await scene.attendreChargement();
+      },
+      assertion: async (page) => {
+        // ── Ce que cette étape a mesuré, dans les deux sens ──────────────
+        //
+        // Écrite le 2026-09-20 pour DÉCRIRE un défaut : #841 avait posé la
+        // mémoire d'ACP, mais `scope.svelte.ts` ne mémorisait que l'ACP, et
+        // `selectedBuildingId` repartait à `null` à chaque chargement de
+        // document. Le PO avait pourtant signalé les deux d'un seul geste.
+        //
+        // Elle passait au vert en affirmant que le champ restait VIDE. Le
+        // correctif de #981 l'a fait tomber, avec le message qu'elle portait
+        // par avance :
+        //
+        //     Expected: ""
+        //     Received: "vitrine Immeuble 1789934267155"
+        //
+        // C'est le témoin de #981, et il est daté. L'étape dit désormais ce
+        // qui est.
+        await expect(
+          page.getByTestId("acp-selector-input"),
+          "L'ACP a été perdue : #841 a régressé.",
+        ).not.toHaveValue("");
+        await expect(
+          page.getByTestId("building-selector-input"),
+          "L'immeuble est perdu après un clic de menu : le syndic doit le " +
+            "resélectionner à chaque écran, et douze écrans le lisent (#981).",
+        ).not.toHaveValue("");
+      },
+    },
+    {
       id: "coproprietaire-prend-la-main",
       acteur: "copropriétaire",
       description:

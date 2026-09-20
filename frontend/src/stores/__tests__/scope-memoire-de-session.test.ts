@@ -29,9 +29,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   setAcp,
+  setBuilding,
   resetScope,
   getScope,
   reprendreLeChoixDeLaSession,
+  reprendreLImmeubleDeLaSession,
   resoudrePerimetreAuChargement,
 } from "../scope.svelte";
 
@@ -126,5 +128,120 @@ describe("Le périmètre survit à une navigation (#841)", () => {
     ).not.toHaveBeenCalled();
 
     window.history.replaceState({}, "", "/");
+  });
+});
+
+/**
+ * La seconde moitié du périmètre : l'immeuble (#981).
+ *
+ * #841 avait posé la mémoire d'ACP. Le PO avait signalé les deux d'un seul
+ * geste — la barre de contexte porte DEUX sélecteurs — et seul le premier
+ * l'avait reçue. `selectedBuildingId` repartait à `null` à chaque
+ * chargement de document, donc à chaque clic de menu.
+ *
+ * Les cas négatifs comptent autant que le cas nominal, et l'un d'eux
+ * n'existe pas pour l'ACP : la COHÉRENCE. Un immeuble restauré sous une
+ * autre ACP afficherait des données justes sous un en-tête faux, ce qui se
+ * lit comme une vérité.
+ */
+describe("L'immeuble survit à une navigation (#981)", () => {
+  const IMMEUBLE = "dddddddd-4444-4444-8444-dddddddddddd";
+
+  function unImmeuble(acpId: string) {
+    return { id: IMMEUBLE, acp_id: acpId, name: "Résidence Test" } as never;
+  }
+
+  it("@happy reprend l'immeuble quand il relève de l'ACP courante", async () => {
+    setAcp(ACP_A);
+    window.sessionStorage.setItem("koprogo_perimetre_immeuble", IMMEUBLE);
+    // Ce que fait une navigation : l'état en mémoire disparaît, la session
+    // survit. On repose l'ACP comme le ferait sa propre reprise.
+    resetScope();
+    window.sessionStorage.setItem("koprogo_perimetre_acp", ACP_A);
+    window.sessionStorage.setItem("koprogo_perimetre_immeuble", IMMEUBLE);
+    setAcp(ACP_A);
+
+    const repris = await reprendreLImmeubleDeLaSession(async () =>
+      unImmeuble(ACP_A),
+    );
+
+    expect(repris).toBe(IMMEUBLE);
+    expect(getScope().selectedBuildingId).toBe(IMMEUBLE);
+  });
+
+  it("@security n'adopte PAS un immeuble d'une autre ACP, et l'oublie", async () => {
+    setAcp(ACP_A);
+    window.sessionStorage.setItem("koprogo_perimetre_immeuble", IMMEUBLE);
+
+    // L'immeuble mémorisé relève de l'ACP B ; le périmètre courant est A.
+    const repris = await reprendreLImmeubleDeLaSession(async () =>
+      unImmeuble(ACP_B),
+    );
+
+    expect(
+      repris,
+      "Un immeuble d'une autre copropriété a été adopté : l'écran " +
+        "afficherait ses données sous l'en-tête de l'ACP courante.",
+    ).toBeNull();
+    expect(getScope().selectedBuildingId).toBeNull();
+    expect(
+      window.sessionStorage.getItem("koprogo_perimetre_immeuble"),
+      "L'incohérence survit en session : elle se rejouerait à chaque écran.",
+    ).toBeNull();
+  });
+
+  it("@edge un serveur injoignable ne fait pas oublier l'immeuble", async () => {
+    setAcp(ACP_A);
+    window.sessionStorage.setItem("koprogo_perimetre_immeuble", IMMEUBLE);
+
+    const repris = await reprendreLImmeubleDeLaSession(async () => {
+      throw new Error("réseau");
+    });
+
+    expect(repris).toBeNull();
+    expect(
+      window.sessionStorage.getItem("koprogo_perimetre_immeuble"),
+      "Une panne de réseau a effacé un choix légitime.",
+    ).toBe(IMMEUBLE);
+  });
+
+  it("@security une ACP oubliée emporte l'immeuble", async () => {
+    setAcp(ACP_A);
+    setBuilding({ id: IMMEUBLE, acp_id: ACP_A, name: "Résidence" } as never);
+    expect(window.sessionStorage.getItem("koprogo_perimetre_immeuble")).toBe(
+      IMMEUBLE,
+    );
+
+    // Une ACP qui tombe — rotation d'organisation, mandat clos.
+    setAcp(null);
+
+    expect(
+      window.sessionStorage.getItem("koprogo_perimetre_immeuble"),
+      "L'immeuble survit à la perte de son ACP : le périmètre serait à " +
+        "moitié posé, et l'écran afficherait un immeuble sans dire de quelle " +
+        "copropriété il relève.",
+    ).toBeNull();
+  });
+
+  it("@edge un immeuble déjà posé n'est pas redemandé au serveur", async () => {
+    setBuilding({ id: IMMEUBLE, acp_id: ACP_A, name: "Résidence" } as never);
+    const charger = vi.fn(async () => unImmeuble(ACP_A));
+
+    const repris = await reprendreLImmeubleDeLaSession(charger);
+
+    expect(repris).toBe(IMMEUBLE);
+    expect(
+      charger,
+      "Un lien profond, ou un clic pendant ce chargement, a déjà posé " +
+        "l'immeuble : le reprendre coûte une requête pour rien.",
+    ).not.toHaveBeenCalled();
+  });
+
+  it("@security une déconnexion efface aussi l'immeuble", () => {
+    setBuilding({ id: IMMEUBLE, acp_id: ACP_A, name: "Résidence" } as never);
+    resetScope();
+    expect(
+      window.sessionStorage.getItem("koprogo_perimetre_immeuble"),
+    ).toBeNull();
   });
 });
