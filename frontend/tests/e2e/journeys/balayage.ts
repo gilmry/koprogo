@@ -23,6 +23,19 @@
  * « la preuve de valeur n'est PAS un test : elle ne doit pas faire tomber le
  * build » (#876).
  *
+ * ── Ce qu'on DOIT faire de ce qu'il trouve ────────────────────────────────
+ *
+ * Arbitrage du PO du 2026-09-20 : **tout défaut trouvé par un balayage ou
+ * par la vitrine donne lieu à une issue, étiquetée `release:0.1.0`.**
+ *
+ * Ce n'est pas une formalité administrative. Un instrument qui ne rend aucun
+ * verdict ne peut rien bloquer : sans sortie écrite, « décrire, ne rien
+ * casser » devient « décrire, et que personne n'en fasse rien », et on
+ * cesse de le lire au bout de deux passes.
+ *
+ * Premières issues nées de ce balayage : #968 (sept écrans s'ouvrent et
+ * cassent) et #969 (tout 401 déconnecte globalement).
+ *
  * ── Comment il tient dans un film regardable ──────────────────────────────
  *
  * Narrer chaque page coûterait ~6 s l'unité, soit ~9 min par rôle. Les

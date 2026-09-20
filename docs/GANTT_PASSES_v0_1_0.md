@@ -398,9 +398,32 @@ quatre constats qui n'appartiennent à **aucune vague** :
 | #966 | `Characterization E2E Gate` rouge depuis le 2026-09-14 |
 | #967 | `IaC lint` rouge depuis la même date |
 
-C'était l'intérêt annoncé de la preuve de valeur — instruire la revue. Le
-plan n'ayant pas de créneau pour ce qu'elle découvre, ces issues resteront
-hors Gantt tant que le PO n'aura pas tranché où les placer.
+C'était l'intérêt annoncé de la preuve de valeur — instruire la revue.
+
+### Arbitrage du PO, 2026-09-20 — la règle permanente
+
+> **Quand un balayage ou la vitrine trouve un défaut : on ouvre une issue, et
+> on l'ajoute au périmètre de la release.**
+
+Concrètement, l'étiquette `release:0.1.0`. Les quatre ci-dessus la portent
+depuis ce jour, ainsi que #963.
+
+Ce que cette règle évite : une preuve de valeur qui trouve des défauts sans
+que rien ne les recueille finit par ne plus être lue. Le balayage ne rend
+aucun verdict — il ne PEUT donc rien bloquer — et c'est précisément pour ça
+qu'il lui faut une sortie écrite. Sans elle, « décrire, ne rien casser »
+devient « décrire, et que personne n'en fasse rien ».
+
+Le périmètre de la release grossit donc au fil des découvertes. C'est
+assumé : un périmètre qui n'accueille pas ce qu'on trouve n'est pas un
+périmètre, c'est une liste de souhaits.
+
+### Arbitrage du PO, 2026-09-20 — les partielles gardent leur issue
+
+Les sept issues partielles du tri #970 **ne sont pas scindées**. Leur
+reliquat reste sous leur numéro d'origine, avec sa mesure inscrite en
+commentaire. Six issues livrées ont été closes avec leur preuve : #803,
+#845, #852, #869, #872, #718.
 
 Lancer 84 chantiers en parallèle avant que la preuve existe reviendrait
 à produire 84 branches que **rien ne permet de relire**. Le parallélisme
