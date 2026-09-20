@@ -99,6 +99,61 @@ export function getScope(): ScopeSnapshot {
  * Sélectionne un building (et son ACP parent si disponible).
  * Reset l'erreur scope si elle était présente.
  */
+/**
+ * La clé sous laquelle le choix de l'utilisateur survit à une navigation.
+ *
+ * ── Pourquoi une mémoire est nécessaire, et l'URL ne suffit pas ───────────
+ *
+ * Le frontend est une application Astro MULTI-PAGE : chaque clic de menu est
+ * un chargement de document complet, et un `$state` de module repart à zéro.
+ * Un lien profond `?buildingId=` répond au cas « j'arrive par une URL » ; il
+ * ne répond pas au cas « je clique Dépenses », puisque ce lien ne porte
+ * aucune chaîne de requête.
+ *
+ * Le repli serveur ne comble pas le trou non plus : il n'adopte une ACP que
+ * si l'utilisateur en a **exactement une** (`resoudreLeDefautServeur`). Un
+ * syndic multi-ACP — la prémisse du produit — repartait donc sans périmètre
+ * à CHAQUE navigation, et devait re-sélectionner après chaque bouton.
+ *
+ * ── Pourquoi cela ne rouvre pas le risque que l'en-tête de ce module écarte ─
+ *
+ * L'en-tête refuse `localStorage` parce que persister le périmètre « crée un
+ * risque de scope violation post-rotation d'organisation ». Le raisonnement
+ * vaut, et il est respecté de deux façons :
+ *
+ *   1. **`sessionStorage`, pas `localStorage`** : la mémoire meurt avec
+ *      l'onglet. Elle ne traverse ni un redémarrage du navigateur, ni une
+ *      autre session.
+ *   2. **Rien n'est cru sur parole.** L'identifiant mémorisé n'est adopté
+ *      qu'après confirmation par la liste des ACP que le SERVEUR accorde à
+ *      l'appelant. Une ACP qui n'y figure plus — rotation d'organisation,
+ *      mandat clos, droit retiré — est ignorée et la mémoire effacée.
+ *
+ * C'est la même garantie que pour le lien profond : l'identifiant sert à
+ * DEMANDER, jamais à affirmer.
+ */
+const MEMOIRE_PERIMETRE = "koprogo_perimetre_acp";
+
+function memoriser(acpId: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (acpId === null) window.sessionStorage.removeItem(MEMOIRE_PERIMETRE);
+    else window.sessionStorage.setItem(MEMOIRE_PERIMETRE, acpId);
+  } catch {
+    // Un navigateur qui refuse le stockage de session ne doit pas casser la
+    // sélection : on perd la mémoire, pas la fonctionnalité.
+  }
+}
+
+function memorise(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(MEMOIRE_PERIMETRE);
+  } catch {
+    return null;
+  }
+}
+
 export function setBuilding(building: Building | null): void {
   if (building === null) {
     _state.selectedBuildingId = null;
@@ -109,6 +164,7 @@ export function setBuilding(building: Building | null): void {
   _state.selectedBuilding = building;
   _state.selectedAcpId = building.acp_id ?? null;
   _state.scopeError = null;
+  memoriser(_state.selectedAcpId);
 }
 
 /**
@@ -125,6 +181,7 @@ export function setPortfolio(portfolioId: string | null): void {
  */
 export function setAcp(acpId: string | null): void {
   _state.selectedAcpId = acpId;
+  memoriser(acpId);
 }
 
 /**
@@ -352,6 +409,54 @@ export interface ChargeursPerimetre {
  *                   Injectés pour que l'orchestrateur reste testable sans
  *                   réseau et n'importe pas la couche API.
  */
+/**
+ * Reprend le choix mémorisé pour la session, APRÈS confirmation du serveur.
+ *
+ * L'identifiant n'est jamais cru : il n'est adopté que s'il figure dans la
+ * liste des ACP que le serveur accorde à l'appelant. S'il n'y figure plus —
+ * rotation d'organisation, mandat clos, droit retiré — il est ignoré ET
+ * effacé, pour qu'une mémoire périmée ne resurgisse pas au chargement
+ * suivant.
+ *
+ * @returns L'ACP reprise, ou `null` si aucune mémoire ou si le serveur ne
+ *          la reconnaît plus.
+ */
+export async function reprendreLeChoixDeLaSession(
+  charger: () => Promise<{ id: string }[]>,
+): Promise<string | null> {
+  // Un périmètre déjà posé — par un lien profond, ou par un clic pendant ce
+  // même chargement — n'a pas besoin d'être repris, et surtout ne doit pas
+  // coûter une requête. Même garde que `resoudreLeDefautServeur` : le
+  // souvenir comble une absence, il n'arbitre pas.
+  //
+  // Sans elle, un test existant tombait en disant exactement cela :
+  // « un périmètre déjà posé avant l'appel n'est jamais écrasé par le
+  // défaut » vérifiait aussi qu'AUCUNE requête ne partait.
+  if (_state.selectedAcpId !== null) return _state.selectedAcpId;
+
+  const souvenir = memorise();
+  if (souvenir === null) return null;
+
+  let acps: { id: string }[];
+  try {
+    acps = await charger();
+  } catch {
+    // Serveur injoignable : on ne tranche pas, et surtout on n'efface pas —
+    // une panne de réseau ne doit pas faire oublier un choix légitime.
+    return null;
+  }
+
+  _state.acpsDisponibles = acps.length;
+  if (!acps.some((a) => a.id === souvenir)) {
+    memoriser(null);
+    return null;
+  }
+
+  _state.selectedAcpId = souvenir;
+  _state.scopeError = null;
+  return souvenir;
+}
+
 export async function resoudrePerimetreAuChargement(
   chargeurs: ChargeursPerimetre,
 ): Promise<void> {
@@ -360,9 +465,15 @@ export async function resoudrePerimetreAuChargement(
   const params = new URLSearchParams(window.location.search);
   const idDemande = params.get("buildingId") ?? params.get("building_id");
 
+  // L'ordre n'est pas arbitraire : ce que l'URL DEMANDE prime sur ce dont on
+  // se souvient, et le souvenir prime sur un défaut choisi à la place de
+  // l'utilisateur. Du plus explicite au moins explicite.
   const adopte = await rehydraterDepuisLurl(chargeurs.building);
   if (adopte !== null) return;
   if (idDemande !== null) return;
+
+  const repris = await reprendreLeChoixDeLaSession(chargeurs.acps);
+  if (repris !== null) return;
 
   await resoudreLeDefautServeur(chargeurs.acps);
 }
@@ -371,6 +482,9 @@ export async function resoudrePerimetreAuChargement(
  * Reset complet du scope (logout, switch organization, fin de session).
  */
 export function resetScope(): void {
+  // La mémoire de session part avec le périmètre : une déconnexion ou une
+  // rotation d'organisation ne doit rien laisser derrière elle.
+  memoriser(null);
   _state.selectedBuildingId = null;
   _state.selectedAcpId = null;
   _state.selectedPortfolioId = null;
