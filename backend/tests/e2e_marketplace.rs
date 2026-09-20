@@ -178,6 +178,87 @@ async fn test_marketplace_get_provider_slug_no_auth_required() {
 
 // ==================== Create Service Provider Tests (Auth Required) ====================
 
+/// @security Inscrire un prestataire au catalogue est réservé au syndic.
+///
+/// ── Le défaut figé ici ────────────────────────────────────────────────────
+///
+/// La documentation de la route portait « syndic/admin only » depuis sa
+/// création. **Aucun contrôle ne l'appliquait.** Un copropriétaire — ou
+/// n'importe quel rôle authentifié — pouvait inscrire une entreprise au
+/// catalogue de son cabinet.
+///
+/// Une règle écrite en commentaire et absente du code est pire qu'une règle
+/// absente : la revue la lit, la croit appliquée, et passe à la suite.
+///
+/// Le refus attendu est **403** et non 400 : l'appelant est authentifié et
+/// son organisation est connue ; ce qui lui manque est le droit.
+#[actix_web::test]
+#[serial]
+async fn security_un_coproprietaire_ne_peut_pas_inscrire_un_prestataire() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token_owner =
+        common::register_and_login_with_role(&app_state, org_id, "owner").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/service-providers")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_owner)))
+        .set_json(json!({
+            "company_name": "Faux Prestataire SPRL",
+            "trade_category": "Plombier",
+            "bce_number": "0987.654.321"
+        }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+
+    assert_eq!(
+        resp.status(),
+        403,
+        "Un copropriétaire a inscrit un prestataire au catalogue du cabinet : \
+         la règle « syndic/admin only » n'existait qu'en commentaire."
+    );
+}
+
+/// Le syndic, lui, doit pouvoir inscrire — cloisonner n'est pas aveugler.
+#[actix_web::test]
+#[serial]
+async fn security_le_syndic_inscrit_bien_un_prestataire() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token_syndic =
+        common::register_and_login_with_role(&app_state, org_id, "syndic").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/service-providers")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_syndic)))
+        .set_json(json!({
+            "company_name": "Toiture Meunier SPRL",
+            "trade_category": "Couvreur",
+            "bce_number": "0111.222.333"
+        }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+
+    assert_eq!(
+        resp.status(),
+        201,
+        "Le contrôle de rôle a trop coupé : le syndic ne peut plus inscrire \
+         un prestataire, ce qui est sa fonction."
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_marketplace_create_provider() {
