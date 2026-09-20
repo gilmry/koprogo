@@ -112,7 +112,24 @@ const DECISION: [&str; 9] = [
 /// `expense_handlers.rs` (5) et `unit_owner_handlers.rs` (3) quittent la
 /// liste. Le reliquat se concentre sur `iot` (6), `notification` (5),
 /// `gamification`, `mcp_sse` et `two_factor` (4 chacun).
-const SANS_DECISION_AU_2026_09_13: usize = 54;
+/// 54 → 52 le 2026-09-20, par du TRAVAIL cette fois.
+///
+/// Deux routes décident désormais là où elles ne décidaient pas :
+///
+///   `list_contractor_quotes`   — filtre par `verify_building_org_access`.
+///     Elle rendait tous les devis d'un prestataire, toutes ACP confondues :
+///     un cabinet lisait les prix remis à un concurrent (#976, `106478bc`).
+///
+///   `create_service_provider`  — refuse en 403 hors syndic/superadmin.
+///     Sa documentation portait « syndic/admin only » depuis sa création, et
+///     rien ne l'appliquait (`7dbd76ff`).
+///
+/// Le second enseigne quelque chose sur ce cliquet : « prendre une identité
+/// sans s'en servir pour décider » recouvre DEUX questions — de qui sont les
+/// données que je rends (cloisonnement), et qui a le droit de faire ce geste
+/// (autorisation). Cette route cloisonnait correctement et n'autorisait
+/// personne. Le cliquet la comptait, à raison.
+const SANS_DECISION_AU_2026_09_13: usize = 52;
 
 /// Les handlers qui prennent `AuthenticatedUser` sans trace de décision.
 fn sans_decision() -> BTreeMap<String, String> {
@@ -286,12 +303,6 @@ const EXCEPTIONS: &[(&str, &str)] = &[
     (
         "consent_handlers.rs::get_consent_status",
         "`get_consent_status(auth.user_id)` — le consentement de l'appelant",
-    ),
-    (
-        "marketplace_handlers.rs::create_service_provider",
-        "l'organisation vient du jeton (`user.organization_id`) et est \
-         passee au cas d'usage : le prestataire naît dans le perimetre de \
-         l'appelant, jamais ailleurs",
     ),
     (
         "dashboard_handlers.rs::get_recent_transactions",
