@@ -75,7 +75,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   // F1 / F16 — perte silencieuse de champs inconnus
   // ───────────────────────────────────────────────────────────────────────
 
-  test("F1 — PUT /units refuse `owner_id` au lieu de le jeter en silence", async ({
+  test("@negative F1 — PUT /units refuse `owner_id` au lieu de le jeter en silence", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithUnit(page, "fin-f1");
@@ -105,7 +105,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     expect(JSON.stringify(corps)).toContain("owner_id");
   });
 
-  test("F1 — le même corps SANS `owner_id` passe toujours", async ({
+  test("@edge F1 — le même corps SANS `owner_id` passe toujours", async ({
     page,
   }) => {
     // Contre-épreuve indispensable : `deny_unknown_fields` ne doit pas avoir
@@ -140,7 +140,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   /// `unit_owners`, alimentée par `POST /units/{id}/owners`.
   ///
   /// Ce test parcourt la chaîne de bout en bout, par la bonne porte.
-  test("F2 — un appel de fonds envoyé génère les quotes-parts par tantièmes", async ({
+  test("@happy F2 — un appel de fonds envoyé génère les quotes-parts par tantièmes", async ({
     page,
   }) => {
     // `loginAsSyndicWithUnit` et non `loginAsSyndicWithOwner` : le second passe
@@ -262,7 +262,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   /// `(quota / total_tantiemes) × ownership_percentage` existait dans
   /// `ChargeDistribution::resolve_owner_quota`, testée, et n'avait aucun
   /// appelant en production.
-  test("A1/A2 — charges et appels de fonds suivent les tantièmes sur 4 lots", async ({
+  test("@happy A1/A2 — charges et appels de fonds suivent les tantièmes sur 4 lots", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithBuilding(page, "regr-repartition", {
@@ -435,7 +435,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   /// Le domaine la gérait déjà (`resolve_owner_quota` multiplie par
   /// `ownership_percentage`, testé sur « 50/50 ») ; c'est le schéma qui
   /// l'interdisait.
-  test("A3 — indivision 50/50 : la répartition passe et les montants tiennent", async ({
+  test("@edge A3 — indivision 50/50 : la répartition passe et les montants tiennent", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithBuilding(page, "regr-indivis", {
@@ -566,7 +566,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   ///    que le grand livre comptabilise la charge à l'APPROBATION. Les deux
   ///    rapports se contredisaient sur le même engagement : grand livre
   ///    2 420 € de charges, suivi budgétaire 0 consommé.
-  test("A5 — écart budgétaire : pas de 502, et accord avec le grand livre", async ({
+  test("@edge A5 — écart budgétaire : pas de 502, et accord avec le grand livre", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithBuilding(page, "regr-budget", {
@@ -689,7 +689,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   /// facture approuvée sont des contournements du contrôle interne, pas des
   /// détails d'ergonomie. Un audit qui constate « c'est bon » sans laisser de
   /// preuve durable ne protège rien.
-  test("A6 — les transitions interdites du cycle de facture sont refusées", async ({
+  test("@negative A6 — les transitions interdites du cycle de facture sont refusées", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithBuilding(page, "regr-wf", {
@@ -837,7 +837,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   /// `organization_id` avec celui du JWT empêche d'ESTAMPILLER un
   /// enregistrement au nom d'autrui, pas de le RATTACHER au patrimoine
   /// d'autrui.
-  test("A7 — un cabinet ne peut pas écrire dans le patrimoine d'un autre", async ({
+  test("@security A7 — un cabinet ne peut pas écrire dans le patrimoine d'un autre", async ({
     page,
   }) => {
     const ts = Date.now();
@@ -1014,7 +1014,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   ///
   /// Ce test ne couvre encore que les CHARGES : c'est la première entité
   /// migrée. Budgets, écritures et copropriétaires suivront le même patron.
-  test("A8 — une ACP qui change de syndic emporte sa comptabilité", async ({
+  test("@security A8 — une ACP qui change de syndic emporte sa comptabilité", async ({
     page,
   }) => {
     const ts = Date.now();
@@ -1180,7 +1180,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   // F14 — tantièmes : somme de `Decimal` sérialisés en chaîne
   // ───────────────────────────────────────────────────────────────────────
 
-  test("F14 — le total des tantièmes s'affiche, et l'indicateur de conformité est fiable", async ({
+  test("@happy F14 — le total des tantièmes s'affiche, et l'indicateur de conformité est fiable", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithUnit(page, "fin-f14");
@@ -1203,7 +1203,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   // F5 — les boutons répondent (le rapport testait avec les dialogues rejetés)
   // ───────────────────────────────────────────────────────────────────────
 
-  test("F5 — « Créer des relances automatiques » déclenche bien l'appel", async ({
+  test("@happy F5 — « Créer des relances automatiques » déclenche bien l'appel", async ({
     page,
   }) => {
     await loginAsSyndicWithBuilding(page, "fin-f5a");
@@ -1239,7 +1239,9 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     ).toBe(true);
   });
 
-  test("F5 — « Nouveau budget » ouvre bien le formulaire", async ({ page }) => {
+  test("@happy F5 — « Nouveau budget » ouvre bien le formulaire", async ({
+    page,
+  }) => {
     await loginAsSyndicWithBuilding(page, "fin-f5b");
     await page.goto("/budgets");
 
@@ -1261,7 +1263,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   // F6 — la page des écritures n'avait aucune vue liste
   // ───────────────────────────────────────────────────────────────────────
 
-  test("F6 — /journal-entries affiche la liste des écritures, pas seulement le formulaire", async ({
+  test("@happy F6 — /journal-entries affiche la liste des écritures, pas seulement le formulaire", async ({
     page,
   }) => {
     // Compte COMPTABLE et non admin : `superadmin` n'appartient à aucune
@@ -1284,7 +1286,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     await expect(page.getByTestId("journal-start-filter")).toBeVisible();
   });
 
-  test("F6 — une écriture créée est retrouvable dans la liste, avec ses lignes", async ({
+  test("@happy F6 — une écriture créée est retrouvable dans la liste, avec ses lignes", async ({
     page,
   }) => {
     const ctx = await loginAsAccountantAvecImmeuble(page, "fin-f6b");
@@ -1343,7 +1345,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     await expect(lignes).toContainText("440");
   });
 
-  test("F16 — POST /journal-entries refuse `operation_date` et `reference`", async ({
+  test("@negative F16 — POST /journal-entries refuse `operation_date` et `reference`", async ({
     page,
   }) => {
     const ctx = await loginAsAccountantEmetteur(page, "fin-f16");
@@ -1378,7 +1380,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   // F3 — rapports comptables
   // ───────────────────────────────────────────────────────────────────────
 
-  test("F3 — le bilan se génère sans erreur pour un compte scopé", async ({
+  test("@happy F3 — le bilan se génère sans erreur pour un compte scopé", async ({
     page,
   }) => {
     // Les rapports PCMN sont réservés aux comptables et superadmins (403
@@ -1406,7 +1408,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   // F8 / F11 / F15 — libellés
   // ───────────────────────────────────────────────────────────────────────
 
-  test("F11 — le titre de la fiche budget porte son accent", async ({
+  test("@happy F11 — le titre de la fiche budget porte son accent", async ({
     page,
   }) => {
     await loginAsSyndicWithBuilding(page, "fin-f11");
@@ -1414,7 +1416,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     await expect(page).toHaveTitle(/Détail du Budget/);
   });
 
-  test("F15 — /owner-contributions ne porte plus le titre de /call-for-funds", async ({
+  test("@happy F15 — /owner-contributions ne porte plus le titre de /call-for-funds", async ({
     page,
   }) => {
     await loginAsSyndicWithBuilding(page, "fin-f15");
@@ -1436,7 +1438,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
   // F19 / F20 — fiche dépense
   // ───────────────────────────────────────────────────────────────────────
 
-  test("F19 — la ventilation par tantièmes est déclenchable depuis la fiche dépense", async ({
+  test("@happy F19 — la ventilation par tantièmes est déclenchable depuis la fiche dépense", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithExpense(page, "fin-f19");
@@ -1457,7 +1459,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
     ).toBeVisible();
   });
 
-  test("F20 — la fiche dépense montre la décomposition HT / TVA", async ({
+  test("@happy F20 — la fiche dépense montre la décomposition HT / TVA", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithBuilding(page, "fin-f20");

@@ -56,7 +56,19 @@ const RACINE = join(process.cwd(), "tests/e2e");
 // pas parce que le dépôt s'est dégradé** : son filtre ne retenait que
 // `.spec.ts` et ignorait les douze `.scenario.ts` du projet de documentation
 // vivante — ceux qu'on filme, donc les plus visibles.
-const SANS_ETIQUETTE_AU_2026_09_08 = 366;
+// 366 → 346 le 2026-09-20 : `FinancialRegressions.spec.ts` étiqueté, ses
+// vingt tests classés d'après le VERBE de leur titre — refuse/interdit →
+// `@negative`, cabinet/patrimoine d'un autre → `@security`, indivision/écart
+// → `@edge`, le reste `@happy`.
+//
+// Deux classements automatiques étaient faux et ont été rectifiés à la main :
+// « le bilan se génère sans erreur pour un compte scopé » n'est pas un test
+// de sécurité (ma regex avait vu « scopé »), et « ne porte plus le titre de
+// … » est une non-régression d'affichage, pas un refus.
+//
+// C'est le point de cette garde : une étiquette posée pour faire baisser un
+// chiffre ne classe rien. Le tri automatique propose, la relecture tranche.
+const SANS_ETIQUETTE_AU_2026_09_08 = 346;
 
 /** Total des specs. **Ne doit pas BAISSER.** */
 // 420 → 432, même cause : les douze scénarios entrent dans le décompte.
