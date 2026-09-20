@@ -400,6 +400,52 @@ quatre constats qui n'appartiennent à **aucune vague** :
 
 C'était l'intérêt annoncé de la preuve de valeur — instruire la revue.
 
+### Ce que la vitrine trouve quand elle CLIQUE — passe du 2026-09-20
+
+Arbitrage du PO, le même jour, dans ses mots : « la vitrine se consacre sur
+les écrans, parfois elle dit *sans cliquer* / *pour avoir testé l'interface* ».
+
+Le reproche était mesurable, et la mesure était pire que l'impression. Sur
+les sept parcours métier filmés à cette date, **43 étapes** produisaient
+12 gestes — 7 clics, 3 saisies, 2 sélections — contre 25 navigations. Le
+motif dominant était « aller à une URL, attendre, vérifier qu'un bouton
+s'affiche ». Un bouton visible n'est pas un bouton qui marche.
+
+Cinq parcours neufs et quatre enrichis plus tard : **111 gestes**.
+
+| parcours | ce qu'il joue |
+|---|---|
+| `incident` | un signalement déposé, cherché, assigné, résolu, clos |
+| `sondage` | une consultation rédigée, publiée, votée par un tiers, dépouillée |
+| `annonce` | une annonce rédigée, publiée, retrouvée par recherche, lue, archivée |
+| `lot` | le compteur de quotités qui passe de 800/1000 rouge à 1000/1000 vert |
+| `sel` | un service offert, demandé, rendu, et trois crédits qui changent de main |
+
+Ce que cette passe a trouvé, en une journée :
+
+| issue | trouvaille | par où |
+|---|---|---|
+| #977 | `resolve`, `cancel` et `reopen` envoient `{}` à des DTO qui exigent un champ : **un incident assigné ne pouvait jamais être clos** | `incident`, étape 9 |
+| #978 | **toute annonce reste en brouillon**, invisible de tous les copropriétaires ; `POST /notices/{id}/publish` existait, rien ne l'appelait | `annonce`, changement d'acteur |
+| #979 | `isAuthor` compare un `owners.id` à un `users.id` : personne ne peut archiver ni supprimer sa propre annonce | `annonce`, le syndic ouvre la sienne |
+| #980 | élection du conseil : la règle d'un an n'est annoncée nulle part, son refus s'efface, l'élu s'affiche sous son UUID | `conseil`, élection menée à son terme |
+
+**Ce que ces quatre ont en commun.** Aucun n'est un défaut d'affichage.
+Tous sont des capacités présentes des deux côtés dont le raccordement
+manque, et qu'aucun écran ne signale. Et trois sur quatre sont sortis du
+même mécanisme : **un second acteur regarde ce que le premier a produit.**
+Tant qu'un seul compte regardait, tout paraissait normal.
+
+C'est la différence entre un parcours qui clique et un parcours qui regarde,
+et elle ne se rattrape pas par plus de captures d'écran.
+
+`garde-gestes-des-parcours.test.ts` borne le retour en arrière : le total
+des gestes ne peut que monter, et tout parcours métier neuf agit ou nomme
+en clair ce qui l'en empêche. Deux y restent nommés — `moderation` (les
+sept routes communautaires le refusent tant que #962 n'est pas tranchée) et
+`prestataire` (pas d'écran, son point d'entrée est un lien magique qui
+n'existe pas, story 3.2).
+
 ### Arbitrage du PO, 2026-09-20 — la règle permanente
 
 > **Quand un balayage ou la vitrine trouve un défaut : on ouvre une issue, et
