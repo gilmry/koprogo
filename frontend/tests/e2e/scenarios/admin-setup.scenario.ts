@@ -72,7 +72,7 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Le SuperAdmin consulte organisations, immeubles et utilisateurs", async ({
+  test("@happy Le SuperAdmin consulte organisations, immeubles et utilisateurs", async ({
     page,
   }) => {
     // ============================================================

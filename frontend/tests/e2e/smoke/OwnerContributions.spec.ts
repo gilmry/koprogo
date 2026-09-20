@@ -31,7 +31,7 @@ async function premierLot(
 import { API_BASE } from "../helpers/adresses";
 
 test.describe("Owner Contributions - Payment Tracking", () => {
-  test("should display owner contributions page", async ({ page }) => {
+  test("@happy should display owner contributions page", async ({ page }) => {
     await loginAsSyndicWithOwner(page, "contrib");
     await page.goto("/owner-contributions");
 
@@ -41,7 +41,7 @@ test.describe("Owner Contributions - Payment Tracking", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a contribution via API", async ({ page }) => {
+  test("@happy should create a contribution via API", async ({ page }) => {
     const { token, ownerId, buildingId } = await loginAsSyndicWithOwner(
       page,
       "contrib",
@@ -73,7 +73,7 @@ test.describe("Owner Contributions - Payment Tracking", () => {
     ).toBe(201);
   });
 
-  test("should list contributions for owner", async ({ page }) => {
+  test("@happy should list contributions for owner", async ({ page }) => {
     const { token, ownerId } = await loginAsSyndicWithOwner(page, "contrib");
 
     const listResp = await page.request.get(
@@ -83,7 +83,9 @@ test.describe("Owner Contributions - Payment Tracking", () => {
     expect(listResp.ok()).toBeTruthy();
   });
 
-  test("should get outstanding contributions for owner", async ({ page }) => {
+  test("@happy should get outstanding contributions for owner", async ({
+    page,
+  }) => {
     const { token, ownerId } = await loginAsSyndicWithOwner(page, "contrib");
 
     const outstandingResp = await page.request.get(
@@ -96,7 +98,7 @@ test.describe("Owner Contributions - Payment Tracking", () => {
     ).toBe(200);
   });
 
-  test("should mark a contribution as paid", async ({ page }) => {
+  test("@happy should mark a contribution as paid", async ({ page }) => {
     const { token, ownerId, buildingId } = await loginAsSyndicWithOwner(
       page,
       "contrib",
@@ -144,7 +146,9 @@ test.describe("Owner Contributions - Payment Tracking", () => {
     ).toBe(200);
   });
 
-  test("should require auth for owner contributions API", async ({ page }) => {
+  test("@security should require auth for owner contributions API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/owner-contributions`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

@@ -211,7 +211,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       ).not.toBeVisible();
     });
 
-    test("should search organizations", async ({ page }) => {
+    test("@happy should search organizations", async ({ page }) => {
       await page
         .getByRole("navigation")
         .getByRole("link", { name: "Organisations" })
@@ -353,7 +353,9 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       await deleteOrganizationByName(page, organization.name);
     });
 
-    test("should filter users by role using test IDs", async ({ page }) => {
+    test("@happy should filter users by role using test IDs", async ({
+      page,
+    }) => {
       await page
         .getByRole("navigation")
         .getByRole("link", { name: "Utilisateurs" })
@@ -366,7 +368,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       await expect(adminRow).toBeVisible();
     });
 
-    test("should search users by name or email using test IDs", async ({
+    test("@happy should search users by name or email using test IDs", async ({
       page,
     }) => {
       await page

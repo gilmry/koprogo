@@ -8,7 +8,7 @@ import { API_BASE } from "./helpers/adresses";
 test.describe("Comptable — Workflow factures, cycle de vie rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("soumet, approuve puis marque payée une dépense (draft → pending_approval → approved → paid)", async ({
+  test("@happy soumet, approuve puis marque payée une dépense (draft → pending_approval → approved → paid)", async ({
     page,
   }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(

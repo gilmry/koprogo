@@ -15,7 +15,7 @@ async function setupOwnerWithBuilding(page: import("@playwright/test").Page) {
 }
 
 test.describe("Bookings - Resource Reservation Calendar", () => {
-  test("should display bookings page", async ({ page }) => {
+  test("@happy should display bookings page", async ({ page }) => {
     await setupOwnerWithBuilding(page);
     await page.goto("/bookings");
 
@@ -25,7 +25,7 @@ test.describe("Bookings - Resource Reservation Calendar", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a resource booking via API", async ({ page }) => {
+  test("@happy should create a resource booking via API", async ({ page }) => {
     const { token, buildingId } = await setupOwnerWithBuilding(page);
     const start = new Date();
     start.setDate(start.getDate() + 1);
@@ -49,7 +49,7 @@ test.describe("Bookings - Resource Reservation Calendar", () => {
     expect(bookingResp.status()).toBe(201);
   });
 
-  test("should list my resource bookings", async ({ page }) => {
+  test("@happy should list my resource bookings", async ({ page }) => {
     const { token } = await setupOwnerWithBuilding(page);
 
     const listResp = await page.request.get(
@@ -59,7 +59,7 @@ test.describe("Bookings - Resource Reservation Calendar", () => {
     expect(listResp.ok()).toBeTruthy();
   });
 
-  test("should navigate to booking detail page", async ({ page }) => {
+  test("@happy should navigate to booking detail page", async ({ page }) => {
     const { token, buildingId } = await setupOwnerWithBuilding(page);
     const start = new Date();
     start.setDate(start.getDate() + 2);

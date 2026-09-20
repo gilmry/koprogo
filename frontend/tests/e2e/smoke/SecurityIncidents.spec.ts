@@ -116,7 +116,7 @@ test.describe("Security Incidents - GDPR Art. 33 Breach Notification", () => {
     expect(Array.isArray(overdue)).toBeTruthy();
   });
 
-  test("should reject non-admin access to security incidents", async ({
+  test("@security should reject non-admin access to security incidents", async ({
     page,
   }) => {
     const { token } = await loginAsSyndic(page, "secincident");

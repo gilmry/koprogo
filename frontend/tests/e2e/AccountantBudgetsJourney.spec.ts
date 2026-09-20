@@ -5,7 +5,7 @@ import { failOnPageErrors } from "./helpers/pageErrors";
 test.describe("Comptable — Budgets, parcours de création rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("crée un budget annuel de bout en bout", async ({ page }) => {
+  test("@happy crée un budget annuel de bout en bout", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "journey-budget");
     await page.goto("/budgets", { waitUntil: "networkidle" });
     await page.waitForTimeout(500);

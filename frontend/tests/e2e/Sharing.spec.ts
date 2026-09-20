@@ -15,7 +15,7 @@ async function setupOwnerContext(page: import("@playwright/test").Page) {
 }
 
 test.describe("Sharing - Object Sharing Library", () => {
-  test("should display sharing page", async ({ page }) => {
+  test("@happy should display sharing page", async ({ page }) => {
     await loginAsSyndicWithLinkedOwner(page, "sharing");
     await page.goto("/sharing");
 
@@ -25,7 +25,7 @@ test.describe("Sharing - Object Sharing Library", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a shared object via API", async ({ page }) => {
+  test("@happy should create a shared object via API", async ({ page }) => {
     const { token, buildingId } = await setupOwnerContext(page);
     const timestamp = Date.now();
 
@@ -43,7 +43,7 @@ test.describe("Sharing - Object Sharing Library", () => {
     expect(objectResp.status()).toBe(201);
   });
 
-  test("should list shared objects for building", async ({ page }) => {
+  test("@happy should list shared objects for building", async ({ page }) => {
     const { token, buildingId } = await setupOwnerContext(page);
 
     const listResp = await page.request.get(
@@ -53,7 +53,7 @@ test.describe("Sharing - Object Sharing Library", () => {
     expect(listResp.ok()).toBeTruthy();
   });
 
-  test("should navigate to sharing detail page", async ({ page }) => {
+  test("@happy should navigate to sharing detail page", async ({ page }) => {
     const { token, buildingId } = await setupOwnerContext(page);
     const timestamp = Date.now();
 

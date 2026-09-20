@@ -14,7 +14,7 @@ async function setupOwnerWithBuilding(page: import("@playwright/test").Page) {
 }
 
 test.describe("Skills - Community Directory", () => {
-  test("should display skills page", async ({ page }) => {
+  test("@happy should display skills page", async ({ page }) => {
     await setupOwnerWithBuilding(page);
     await page.goto("/skills");
 
@@ -24,7 +24,7 @@ test.describe("Skills - Community Directory", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a skill offer via API", async ({ page }) => {
+  test("@happy should create a skill offer via API", async ({ page }) => {
     const { token, buildingId } = await setupOwnerWithBuilding(page);
     const timestamp = Date.now();
 
@@ -42,7 +42,7 @@ test.describe("Skills - Community Directory", () => {
     expect(skillResp.status()).toBe(201);
   });
 
-  test("should list skills for building", async ({ page }) => {
+  test("@happy should list skills for building", async ({ page }) => {
     const { token, buildingId } = await setupOwnerWithBuilding(page);
 
     const listResp = await page.request.get(
@@ -52,7 +52,7 @@ test.describe("Skills - Community Directory", () => {
     expect(listResp.ok()).toBeTruthy();
   });
 
-  test("should navigate to skill detail page", async ({ page }) => {
+  test("@happy should navigate to skill detail page", async ({ page }) => {
     const { token, buildingId } = await setupOwnerWithBuilding(page);
     const timestamp = Date.now();
 

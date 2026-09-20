@@ -8,7 +8,7 @@ import { failOnPageErrors } from "./helpers/pageErrors";
 test.describe("Copropriétaire — Mon profil, parcours de modification rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("modifie le prénom via le droit de rectification (Art. 16 RGPD)", async ({
+  test("@happy modifie le prénom via le droit de rectification (Art. 16 RGPD)", async ({
     page,
   }) => {
     await loginAsSyndicWithLinkedOwner(page, "journey-owner-profile");

@@ -14,7 +14,7 @@ import { loginAsSyndicWithMeeting } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Convocations - AG Automatic Invitations", () => {
-  test("should display convocations page", async ({ page }) => {
+  test("@happy should display convocations page", async ({ page }) => {
     await loginAsSyndicWithMeeting(page, "convoc");
     await page.goto("/convocations");
 
@@ -24,7 +24,7 @@ test.describe("Convocations - AG Automatic Invitations", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a convocation via API and see it in list", async ({
+  test("@happy should create a convocation via API and see it in list", async ({
     page,
   }) => {
     const { token, buildingId, meetingId } = await loginAsSyndicWithMeeting(
@@ -69,7 +69,9 @@ test.describe("Convocations - AG Automatic Invitations", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should navigate to convocation detail page", async ({ page }) => {
+  test("@happy should navigate to convocation detail page", async ({
+    page,
+  }) => {
     const { token, buildingId, meetingId } = await loginAsSyndicWithMeeting(
       page,
       "convoc",
@@ -95,7 +97,7 @@ test.describe("Convocations - AG Automatic Invitations", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should list building convocations", async ({ page }) => {
+  test("@happy should list building convocations", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithMeeting(
       page,
       "convoc",
@@ -110,7 +112,7 @@ test.describe("Convocations - AG Automatic Invitations", () => {
     expect(Array.isArray(convocations)).toBeTruthy();
   });
 
-  test("should validate legal deadline (< 15 days rejected)", async ({
+  test("@negative should validate legal deadline (< 15 days rejected)", async ({
     page,
   }) => {
     const { token, buildingId, meetingId } = await loginAsSyndicWithMeeting(
@@ -136,7 +138,7 @@ test.describe("Convocations - AG Automatic Invitations", () => {
     expect(convocResp.status()).toBe(400);
   });
 
-  test("should get convocation by meeting ID", async ({ page }) => {
+  test("@happy should get convocation by meeting ID", async ({ page }) => {
     const { token, buildingId, meetingId } = await loginAsSyndicWithMeeting(
       page,
       "convoc",
@@ -163,7 +165,9 @@ test.describe("Convocations - AG Automatic Invitations", () => {
     expect(getResp.status()).toBe(200);
   });
 
-  test("should require auth for convocations API", async ({ page }) => {
+  test("@security should require auth for convocations API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/convocations/some-id`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

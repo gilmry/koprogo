@@ -15,7 +15,7 @@ import { loginAsSyndic, ensureAcp } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Buildings - List and Detail", () => {
-  test("should display buildings list page", async ({ page }) => {
+  test("@happy should display buildings list page", async ({ page }) => {
     await loginAsSyndic(page, "building");
     await page.goto("/buildings");
 
@@ -27,7 +27,7 @@ test.describe("Buildings - List and Detail", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a new building via API and see it in the list", async ({
+  test("@happy should create a new building via API and see it in the list", async ({
     page,
   }) => {
     const { adminToken, orgId } = await loginAsSyndic(page, "building");
@@ -61,7 +61,7 @@ test.describe("Buildings - List and Detail", () => {
     });
   });
 
-  test("should navigate to building detail page", async ({ page }) => {
+  test("@happy should navigate to building detail page", async ({ page }) => {
     const { adminToken, orgId } = await loginAsSyndic(page, "building");
     const timestamp = Date.now();
     const buildingName = `Detail Building ${timestamp}`;
@@ -94,7 +94,7 @@ test.describe("Buildings - List and Detail", () => {
     });
   });
 
-  test("should display building units section", async ({ page }) => {
+  test("@happy should display building units section", async ({ page }) => {
     const { adminToken, orgId } = await loginAsSyndic(page, "building");
     const timestamp = Date.now();
     // Hotfix #602 — buildings.acp_id (FK acps.id) replaced organization_id.
@@ -124,7 +124,9 @@ test.describe("Buildings - List and Detail", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should handle non-existent building gracefully", async ({ page }) => {
+  test("@happy should handle non-existent building gracefully", async ({
+    page,
+  }) => {
     await loginAsSyndic(page, "building");
 
     // Try to access a building that doesn't exist

@@ -31,7 +31,7 @@ async function setupAccountant(page: Page) {
 }
 
 test.describe("Financial Reports - Balance Sheet & Income Statement", () => {
-  test("should display reports page", async ({ page }) => {
+  test("@happy should display reports page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "finreport");
     await page.goto("/reports");
 
@@ -41,7 +41,7 @@ test.describe("Financial Reports - Balance Sheet & Income Statement", () => {
     });
   });
 
-  test("should get balance sheet via API", async ({ page }) => {
+  test("@happy should get balance sheet via API", async ({ page }) => {
     const { accountantToken, buildingId } = await setupAccountant(page);
 
     const bsResp = await page.request.get(
@@ -54,7 +54,7 @@ test.describe("Financial Reports - Balance Sheet & Income Statement", () => {
     ).toBe(200);
   });
 
-  test("should get income statement via API", async ({ page }) => {
+  test("@happy should get income statement via API", async ({ page }) => {
     const { accountantToken } = await setupAccountant(page);
 
     const isResp = await page.request.get(
@@ -67,7 +67,9 @@ test.describe("Financial Reports - Balance Sheet & Income Statement", () => {
     ).toBe(200);
   });
 
-  test("should require auth for financial reports", async ({ page }) => {
+  test("@security should require auth for financial reports", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/reports/balance-sheet`);
     expect(
       resp.status(),

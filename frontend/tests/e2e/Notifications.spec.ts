@@ -55,7 +55,7 @@ async function registerAndLogin(
 }
 
 test.describe("Notifications - Multi-Channel System", () => {
-  test("should display notifications page", async ({ page }) => {
+  test("@happy should display notifications page", async ({ page }) => {
     await registerAndLogin(page);
     await page.goto("/notifications");
 
@@ -65,7 +65,9 @@ test.describe("Notifications - Multi-Channel System", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should show empty state when no notifications", async ({ page }) => {
+  test("@edge should show empty state when no notifications", async ({
+    page,
+  }) => {
     await registerAndLogin(page);
     await page.goto("/notifications");
 
@@ -73,7 +75,7 @@ test.describe("Notifications - Multi-Channel System", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should create a notification via API and see it in the list", async ({
+  test("@happy should create a notification via API and see it in the list", async ({
     page,
   }) => {
     const { token, userId } = await registerAndLogin(page);
@@ -100,7 +102,9 @@ test.describe("Notifications - Multi-Channel System", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display notification preferences page", async ({ page }) => {
+  test("@happy should display notification preferences page", async ({
+    page,
+  }) => {
     await registerAndLogin(page);
     await page.goto("/settings/notifications");
 
@@ -110,7 +114,7 @@ test.describe("Notifications - Multi-Channel System", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should handle mark-all-read action", async ({ page }) => {
+  test("@happy should handle mark-all-read action", async ({ page }) => {
     const { token, userId } = await registerAndLogin(page);
     const timestamp = Date.now();
 

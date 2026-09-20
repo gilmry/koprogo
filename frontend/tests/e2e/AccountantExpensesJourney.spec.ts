@@ -5,7 +5,7 @@ import { failOnPageErrors } from "./helpers/pageErrors";
 test.describe("Comptable — Dépenses, parcours de création rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("crée une dépense de bout en bout et la voit dans la liste", async ({
+  test("@happy crée une dépense de bout en bout et la voit dans la liste", async ({
     page,
   }) => {
     await loginAsSyndicWithBuilding(page, "journey-expense");

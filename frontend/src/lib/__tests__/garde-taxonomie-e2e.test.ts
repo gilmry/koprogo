@@ -87,7 +87,34 @@ const RACINE = join(process.cwd(), "tests/e2e");
 // authentification refusée, un badge tronqué, une session qui survit à une
 // URL inconnue et l'effacement RGPD qui exige son mot de passe. Aucune règle
 // automatique ne les aurait départagés.
-const SANS_ETIQUETTE_AU_2026_09_08 = 256;
+/// **0 le 2026-09-20.** La dette est soldée : les 432 specs déclarent leur
+/// catégorie.
+///
+/// ── Comment, et ce que la méthode a coûté ─────────────────────────────────
+///
+/// 366 specs classées dans la journée, par tri automatique puis RELECTURE.
+/// Neuf classements automatiques étaient faux, tous dans le même sens : une
+/// règle voyait un mot-clé et rangeait un chemin nominal ailleurs.
+///
+///   « le bilan se génère pour un compte **scopé** »      → pas @security
+///   « deadlines with **urgency** indicators »            → pas @edge
+///   « **ne porte plus** le titre de … »                  → pas @negative
+///   « should **not require auth** for public endpoint »  → pas @security
+///
+/// Le dernier est le plus instructif : « should NOT require auth » dit qu'un
+/// point d'entrée est PUBLIC, l'exact contraire d'un refus. Une règle qui
+/// cherche « require auth » sans lire la négation inverse le sens.
+///
+/// ── La règle qui a émergé, et qui vaut pour la suite ─────────────────────
+///
+/// **« should require auth for X » est un `@security`.** Ces tests vérifient
+/// qu'une route REFUSE sans jeton ; les ranger en `@happy` cachait quinze
+/// tests de cloisonnement à la revue de release. C'est précisément ce que
+/// cette taxonomie existe pour éviter : dire à la revue ce qu'elle regarde.
+///
+/// À zéro, ce cliquet change de rôle. Il ne mesure plus une dette : il
+/// interdit qu'une spec neuve arrive sans catégorie.
+const SANS_ETIQUETTE_AU_2026_09_08: number = 0;
 
 /** Total des specs. **Ne doit pas BAISSER.** */
 // 420 → 432, même cause : les douze scénarios entrent dans le décompte.

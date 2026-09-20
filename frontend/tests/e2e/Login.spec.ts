@@ -10,7 +10,7 @@ import { test, expect } from "@playwright/test";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Login - Authentication Flow", () => {
-  test("should display login form with email and password fields", async ({
+  test("@happy should display login form with email and password fields", async ({
     page,
   }) => {
     await page.goto("/login");
@@ -20,7 +20,9 @@ test.describe("Login - Authentication Flow", () => {
     await expect(page.getByTestId("login-submit")).toBeVisible();
   });
 
-  test("should show error on invalid credentials", async ({ page }) => {
+  test("@negative should show error on invalid credentials", async ({
+    page,
+  }) => {
     await page.goto("/login");
 
     await page.getByTestId("login-email").fill("invalid@example.com");
@@ -32,7 +34,7 @@ test.describe("Login - Authentication Flow", () => {
     });
   });
 
-  test("should login successfully and redirect to dashboard", async ({
+  test("@happy should login successfully and redirect to dashboard", async ({
     page,
   }) => {
     const timestamp = Date.now();
@@ -65,7 +67,7 @@ test.describe("Login - Authentication Flow", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should show validation for empty fields", async ({ page }) => {
+  test("@edge should show validation for empty fields", async ({ page }) => {
     await page.goto("/login");
 
     // Click submit without filling fields
@@ -76,7 +78,9 @@ test.describe("Login - Authentication Flow", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test("should navigate to register page from login", async ({ page }) => {
+  test("@happy should navigate to register page from login", async ({
+    page,
+  }) => {
     await page.goto("/login");
 
     // Look for a register link

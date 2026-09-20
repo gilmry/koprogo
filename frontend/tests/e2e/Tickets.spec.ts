@@ -11,7 +11,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Tickets - Maintenance Requests", () => {
-  test("should display tickets list page", async ({ page }) => {
+  test("@happy should display tickets list page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "ticket");
     await page.goto("/tickets");
 
@@ -21,7 +21,7 @@ test.describe("Tickets - Maintenance Requests", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a ticket via API and see it in the list", async ({
+  test("@happy should create a ticket via API and see it in the list", async ({
     page,
   }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
@@ -49,7 +49,7 @@ test.describe("Tickets - Maintenance Requests", () => {
     });
   });
 
-  test("should navigate to ticket detail page", async ({ page }) => {
+  test("@happy should navigate to ticket detail page", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
       page,
       "ticket",
@@ -76,7 +76,7 @@ test.describe("Tickets - Maintenance Requests", () => {
     });
   });
 
-  test("should show ticket priority indicator", async ({ page }) => {
+  test("@happy should show ticket priority indicator", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
       page,
       "ticket",
@@ -104,7 +104,7 @@ test.describe("Tickets - Maintenance Requests", () => {
     });
   });
 
-  test("should filter tickets by status", async ({ page }) => {
+  test("@happy should filter tickets by status", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "ticket");
     await page.goto("/tickets");
 
@@ -121,7 +121,7 @@ test.describe("Tickets - Maintenance Requests", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should display work reports page", async ({ page }) => {
+  test("@happy should display work reports page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "ticket");
     await page.goto("/work-reports");
 

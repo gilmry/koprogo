@@ -9,7 +9,7 @@ async function setupSyndicWithBuilding(page: import("@playwright/test").Page) {
 }
 
 test.describe("Technical Inspections - Mandatory Compliance", () => {
-  test("should display inspections page", async ({ page }) => {
+  test("@happy should display inspections page", async ({ page }) => {
     await setupSyndicWithBuilding(page);
     await page.goto("/inspections");
 
@@ -19,7 +19,9 @@ test.describe("Technical Inspections - Mandatory Compliance", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a technical inspection via API", async ({ page }) => {
+  test("@happy should create a technical inspection via API", async ({
+    page,
+  }) => {
     const { token, buildingId, orgId } = await setupSyndicWithBuilding(page);
     const timestamp = Date.now();
     const nextInspection = new Date();
@@ -47,7 +49,7 @@ test.describe("Technical Inspections - Mandatory Compliance", () => {
     expect(inspection.building_id).toBe(buildingId);
   });
 
-  test("should list upcoming inspections", async ({ page }) => {
+  test("@happy should list upcoming inspections", async ({ page }) => {
     const { token, buildingId } = await setupSyndicWithBuilding(page);
 
     const upcomingResp = await page.request.get(
@@ -59,7 +61,7 @@ test.describe("Technical Inspections - Mandatory Compliance", () => {
     expect(Array.isArray(inspections)).toBeTruthy();
   });
 
-  test("should list overdue inspections", async ({ page }) => {
+  test("@edge should list overdue inspections", async ({ page }) => {
     const { token, buildingId } = await setupSyndicWithBuilding(page);
 
     const overdueResp = await page.request.get(

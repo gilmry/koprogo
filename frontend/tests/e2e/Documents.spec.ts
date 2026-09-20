@@ -4,7 +4,7 @@ import { loginAsSyndic } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Documents - File Storage", () => {
-  test("should display documents page", async ({ page }) => {
+  test("@happy should display documents page", async ({ page }) => {
     await loginAsSyndic(page, "doc");
     await page.goto("/documents");
 
@@ -14,14 +14,14 @@ test.describe("Documents - File Storage", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display owner documents page", async ({ page }) => {
+  test("@happy should display owner documents page", async ({ page }) => {
     await loginAsSyndic(page, "doc");
     await page.goto("/owner/documents");
 
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should list documents via API", async ({ page }) => {
+  test("@happy should list documents via API", async ({ page }) => {
     const { token } = await loginAsSyndic(page, "doc");
 
     const listResp = await page.request.get(`${API_BASE}/documents`, {
@@ -37,7 +37,7 @@ test.describe("Documents - File Storage", () => {
     ).toBeTruthy();
   });
 
-  test("should require auth for documents", async ({ page }) => {
+  test("@security should require auth for documents", async ({ page }) => {
     const resp = await page.request.get(`${API_BASE}/documents`);
     expect(resp.status()).toBe(401);
   });

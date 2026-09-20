@@ -18,7 +18,7 @@ test.describe("Characterization 03 — Expense + Payment", () => {
     await setupContainerApiUrl(page);
   });
 
-  test("syndic creates expense → expense visible in list + retrievable", async ({
+  test("@happy syndic creates expense → expense visible in list + retrievable", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithBuilding(page, "char-exp");
@@ -55,7 +55,7 @@ test.describe("Characterization 03 — Expense + Payment", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("syndic creates expense + payment → payment retrievable", async ({
+  test("@happy syndic creates expense + payment → payment retrievable", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithBuilding(page, "char-pay");
@@ -122,7 +122,7 @@ test.describe("Characterization 03 — Expense + Payment", () => {
     ).toBeTruthy();
   });
 
-  test("syndic accesses call-for-funds page", async ({ page }) => {
+  test("@happy syndic accesses call-for-funds page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "char-cff");
     await page.goto("/call-for-funds");
 

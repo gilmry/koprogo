@@ -9,7 +9,7 @@ async function setupSyndicWithBuilding(page: import("@playwright/test").Page) {
 }
 
 test.describe("Notices - Community Board", () => {
-  test("should display notices page", async ({ page }) => {
+  test("@happy should display notices page", async ({ page }) => {
     await setupSyndicWithBuilding(page);
     await page.goto("/notices");
 
@@ -19,7 +19,7 @@ test.describe("Notices - Community Board", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a notice via API", async ({ page }) => {
+  test("@happy should create a notice via API", async ({ page }) => {
     const { token, buildingId } = await setupSyndicWithBuilding(page);
     const timestamp = Date.now();
 
@@ -38,7 +38,7 @@ test.describe("Notices - Community Board", () => {
     expect(notice.building_id).toBe(buildingId);
   });
 
-  test("should navigate to notice detail", async ({ page }) => {
+  test("@happy should navigate to notice detail", async ({ page }) => {
     const { token, buildingId } = await setupSyndicWithBuilding(page);
     const timestamp = Date.now();
 
@@ -58,7 +58,7 @@ test.describe("Notices - Community Board", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should list building notices via API", async ({ page }) => {
+  test("@happy should list building notices via API", async ({ page }) => {
     const { token, buildingId } = await setupSyndicWithBuilding(page);
 
     const listResp = await page.request.get(

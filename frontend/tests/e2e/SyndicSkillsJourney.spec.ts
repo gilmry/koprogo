@@ -12,7 +12,7 @@ import { API_BASE } from "./helpers/adresses";
 test.describe("Compétences — parcours de création rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("propose une compétence de bout en bout, en tant que propriétaire lié", async ({
+  test("@happy propose une compétence de bout en bout, en tant que propriétaire lié", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithLinkedOwner(page, "journey-skill");

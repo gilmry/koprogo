@@ -136,7 +136,7 @@ test.describe("Scenario: Francois consulte une convocation d'AG", () => {
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Francois consulte une convocation et verifie le delai legal", async ({
+  test("@happy Francois consulte une convocation et verifie le delai legal", async ({
     page,
   }) => {
     // ============================================================

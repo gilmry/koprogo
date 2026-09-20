@@ -31,7 +31,7 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
     await setupContainerApiUrl(page);
   });
 
-  test("syndic creates AG + resolution → owner login & view → syndic closes vote", async ({
+  test("@happy syndic creates AG + resolution → owner login & view → syndic closes vote", async ({
     page,
   }) => {
     test.setTimeout(120_000); // multi-rôle = plusieurs logins UI

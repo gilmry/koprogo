@@ -5,7 +5,7 @@ import { failOnPageErrors } from "./helpers/pageErrors";
 test.describe("Inspections techniques — parcours de création rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("planifie une inspection de bout en bout", async ({ page }) => {
+  test("@happy planifie une inspection de bout en bout", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "journey-inspection");
     await page.goto("/inspections", { waitUntil: "networkidle" });
     await page.waitForTimeout(500);

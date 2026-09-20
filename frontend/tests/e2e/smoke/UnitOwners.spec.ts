@@ -4,7 +4,7 @@ import { loginAsSyndicWithUnit } from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 test.describe("Unit Owners - Multi-Owner Support", () => {
-  test("should display units page", async ({ page }) => {
+  test("@happy should display units page", async ({ page }) => {
     await loginAsSyndicWithUnit(page, "unitowner");
     await page.goto("/units");
 
@@ -14,7 +14,7 @@ test.describe("Unit Owners - Multi-Owner Support", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create an owner and assign to unit", async ({ page }) => {
+  test("@happy should create an owner and assign to unit", async ({ page }) => {
     const { token, unitId, orgId } = await loginAsSyndicWithUnit(
       page,
       "unitowner",
@@ -53,7 +53,7 @@ test.describe("Unit Owners - Multi-Owner Support", () => {
     ).toBe(201);
   });
 
-  test("should list owners for a unit", async ({ page }) => {
+  test("@happy should list owners for a unit", async ({ page }) => {
     const { token, unitId } = await loginAsSyndicWithUnit(page, "unitowner");
 
     const listResp = await page.request.get(
@@ -65,7 +65,9 @@ test.describe("Unit Owners - Multi-Owner Support", () => {
     expect(Array.isArray(owners)).toBeTruthy();
   });
 
-  test("should get total ownership percentage for unit", async ({ page }) => {
+  test("@happy should get total ownership percentage for unit", async ({
+    page,
+  }) => {
     const { token, unitId } = await loginAsSyndicWithUnit(page, "unitowner");
 
     const pctResp = await page.request.get(

@@ -37,7 +37,7 @@ async function setupAccountant(page: Page) {
 }
 
 test.describe("Journal Entries - Double-Entry Accounting", () => {
-  test("should display journal entries page", async ({ page }) => {
+  test("@happy should display journal entries page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "journal");
     await page.goto("/journal-entries");
 
@@ -47,7 +47,9 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a balanced journal entry via API", async ({ page }) => {
+  test("@happy should create a balanced journal entry via API", async ({
+    page,
+  }) => {
     const { accountantToken, buildingId } = await setupAccountant(page);
     const timestamp = Date.now();
 
@@ -80,7 +82,7 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
     ).toBe(201);
   });
 
-  test("should reject unbalanced journal entry", async ({ page }) => {
+  test("@negative should reject unbalanced journal entry", async ({ page }) => {
     const { accountantToken, buildingId } = await setupAccountant(page);
 
     const entryResp = await page.request.post(`${API_BASE}/journal-entries`, {
@@ -109,7 +111,7 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
     expect([400, 422].includes(entryResp.status())).toBeTruthy();
   });
 
-  test("should list journal entries via API", async ({ page }) => {
+  test("@happy should list journal entries via API", async ({ page }) => {
     const { token } = await setupAccountant(page);
 
     const listResp = await page.request.get(`${API_BASE}/journal-entries`, {

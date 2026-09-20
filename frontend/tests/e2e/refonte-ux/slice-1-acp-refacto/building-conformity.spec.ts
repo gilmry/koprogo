@@ -21,7 +21,7 @@ import {
 import { API_BASE } from "../../helpers/adresses";
 
 test.describe("Building Conformity (Story 1.4)", () => {
-  test("admin sees non-conformant badge (orange/red) on a building with no units", async ({
+  test("@happy admin sees non-conformant badge (orange/red) on a building with no units", async ({
     page,
   }) => {
     // Admin login + create a building via API (admin path).
@@ -95,7 +95,7 @@ test.describe("Building Conformity (Story 1.4)", () => {
     expect(quotaDeltaText).toMatch(/1000/);
   });
 
-  test("syndic sees conformity metrics on building detail (count + quotas reflect reality)", async ({
+  test("@happy syndic sees conformity metrics on building detail (count + quotas reflect reality)", async ({
     page,
   }) => {
     // Helper créé building via admin token, login syndic page → /buildings detail.

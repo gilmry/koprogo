@@ -18,7 +18,7 @@ test.describe("Characterization 05 — Notifications + sync", () => {
     await setupContainerApiUrl(page);
   });
 
-  test("notifications page renders for syndic", async ({ page }) => {
+  test("@happy notifications page renders for syndic", async ({ page }) => {
     await loginAsSyndic(page, "char-notif");
     await page.goto("/notifications");
 
@@ -28,7 +28,7 @@ test.describe("Characterization 05 — Notifications + sync", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("notification preferences page renders", async ({ page }) => {
+  test("@happy notification preferences page renders", async ({ page }) => {
     await loginAsSyndic(page, "char-notif-prefs");
     await page.goto("/settings/notifications");
 
@@ -38,7 +38,7 @@ test.describe("Characterization 05 — Notifications + sync", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("API-created notification appears in UI list (sync)", async ({
+  test("@happy API-created notification appears in UI list (sync)", async ({
     page,
   }) => {
     const { token } = await loginAsSyndic(page, "char-notif-sync");
@@ -90,7 +90,9 @@ test.describe("Characterization 05 — Notifications + sync", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("syndic dashboard accessible — bell entry point", async ({ page }) => {
+  test("@happy syndic dashboard accessible — bell entry point", async ({
+    page,
+  }) => {
     await loginAsSyndic(page, "char-notif-bell");
     await page.goto("/syndic");
     await expect(page.locator("body")).toBeVisible();

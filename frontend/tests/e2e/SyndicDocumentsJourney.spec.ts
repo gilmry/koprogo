@@ -6,7 +6,7 @@ import { failOnPageErrors } from "./helpers/pageErrors";
 test.describe("Syndic — parcours de gestion documentaire rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("documents: upload, liste, téléchargement puis suppression de bout en bout", async ({
+  test("@happy documents: upload, liste, téléchargement puis suppression de bout en bout", async ({
     page,
   }) => {
     await loginAsSyndicWithBuilding(page, "journey-doc");

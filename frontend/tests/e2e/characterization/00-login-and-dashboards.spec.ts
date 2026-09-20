@@ -32,7 +32,9 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
     await setupContainerApiUrl(page);
   });
 
-  test("admin login (UI) + admin dashboard rendered", async ({ page }) => {
+  test("@happy admin login (UI) + admin dashboard rendered", async ({
+    page,
+  }) => {
     const start = Date.now();
 
     // Login via UI (real flow) — caractérise le path complet form -> redirect
@@ -58,7 +60,7 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
     ).toBeLessThan(30000);
   });
 
-  test("admin token injection (helper) + dashboard page accessible (body visible)", async ({
+  test("@happy admin token injection (helper) + dashboard page accessible (body visible)", async ({
     page,
   }) => {
     // Caractérise le flow helper loginAsAdmin (injectAuth) sans assertion URL stricte
@@ -69,7 +71,9 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
     await expect(page.locator("main").first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("syndic login (UI) + syndic dashboard rendered", async ({ page }) => {
+  test("@happy syndic login (UI) + syndic dashboard rendered", async ({
+    page,
+  }) => {
     const start = Date.now();
     const timestamp = Date.now();
     const email = `char-syndic-${timestamp}@example.com`;
@@ -123,7 +127,9 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
     ).toBeLessThan(30000);
   });
 
-  test("owner login (UI) + owner dashboard rendered", async ({ page }) => {
+  test("@happy owner login (UI) + owner dashboard rendered", async ({
+    page,
+  }) => {
     const start = Date.now();
     const timestamp = Date.now();
     const email = `char-owner-${timestamp}@example.com`;
@@ -177,7 +183,9 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
     ).toBeLessThan(30000);
   });
 
-  test("loginAsSyndic helper produces a usable token", async ({ page }) => {
+  test("@happy loginAsSyndic helper produces a usable token", async ({
+    page,
+  }) => {
     // Vérifie que le helper réutilisé partout fonctionne sur HEAD
     const ctx = await loginAsSyndic(page, "char-helper");
     expect(ctx.token).toBeTruthy();
@@ -186,7 +194,7 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
     expect(ctx.email).toContain("char-helper");
   });
 
-  test("loginAsSyndicWithBuilding helper provisions building", async ({
+  test("@happy loginAsSyndicWithBuilding helper provisions building", async ({
     page,
   }) => {
     // Vérifie que la création building via le helper passe sur HEAD

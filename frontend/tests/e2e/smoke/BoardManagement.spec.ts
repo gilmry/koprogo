@@ -12,7 +12,7 @@ import { loginAsSyndicWithOwner, ensureAcp } from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 test.describe("Board Management - Conseil de Copropriété", () => {
-  test("should display board dashboard page", async ({ page }) => {
+  test("@happy should display board dashboard page", async ({ page }) => {
     await loginAsSyndicWithOwner(page, "boardmgmt");
     await page.goto("/board-dashboard");
 
@@ -20,7 +20,9 @@ test.describe("Board Management - Conseil de Copropriété", () => {
     await expect(page.locator("main").first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("should elect a board member and retrieve it", async ({ page }) => {
+  test("@happy should elect a board member and retrieve it", async ({
+    page,
+  }) => {
     const { token, buildingId, orgId, ownerId, adminToken } =
       await loginAsSyndicWithOwner(page, "boardmgmt");
     const mandateStart = new Date();
@@ -94,7 +96,9 @@ test.describe("Board Management - Conseil de Copropriété", () => {
     expect(retrieved.id).toBe(member.id);
   });
 
-  test("should list active board members for building", async ({ page }) => {
+  test("@happy should list active board members for building", async ({
+    page,
+  }) => {
     const { token, buildingId } = await loginAsSyndicWithOwner(
       page,
       "boardmgmt",
@@ -109,7 +113,9 @@ test.describe("Board Management - Conseil de Copropriété", () => {
     expect(Array.isArray(members)).toBeTruthy();
   });
 
-  test("should create a board decision and retrieve it", async ({ page }) => {
+  test("@happy should create a board decision and retrieve it", async ({
+    page,
+  }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithOwner(
       page,
       "boardmgmt",
@@ -169,7 +175,7 @@ test.describe("Board Management - Conseil de Copropriété", () => {
     ).toBe(200);
   });
 
-  test("should list board decisions for building", async ({ page }) => {
+  test("@happy should list board decisions for building", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithOwner(
       page,
       "boardmgmt",
@@ -184,7 +190,7 @@ test.describe("Board Management - Conseil de Copropriété", () => {
     expect(Array.isArray(decisions)).toBeTruthy();
   });
 
-  test("should get board member statistics", async ({ page }) => {
+  test("@happy should get board member statistics", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithOwner(
       page,
       "boardmgmt",
@@ -200,7 +206,9 @@ test.describe("Board Management - Conseil de Copropriété", () => {
     ).toBe(200);
   });
 
-  test("should require auth for board management API", async ({ page }) => {
+  test("@security should require auth for board management API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/board-members/some-id`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

@@ -140,7 +140,7 @@ async function loginAsSuperAdmin(page: Page) {
 test.describe("GDPR - Complete User Journey (Idempotent)", () => {
   test.setTimeout(60_000);
 
-  test("should allow user to register, export data, and erase account", async ({
+  test("@happy should allow user to register, export data, and erase account", async ({
     page,
   }) => {
     // Debug: Listen to console logs
@@ -212,7 +212,9 @@ test.describe("GDPR - Complete User Journey (Idempotent)", () => {
 });
 
 test.describe("GDPR - Admin Operations (Idempotent)", () => {
-  test("should allow admin to export and erase user data", async ({ page }) => {
+  test("@happy should allow admin to export and erase user data", async ({
+    page,
+  }) => {
     // Step 1: Create test user
     const user = await registerAndLogin(page, "owner");
 
@@ -293,7 +295,7 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
   // rien a ce qu'il controle.
   test.describe.configure({ timeout: 90_000 });
 
-  test("should handle user creating data then admin exporting it", async ({
+  test("@happy should handle user creating data then admin exporting it", async ({
     page,
   }) => {
     // Step 1: User registers and creates some activity
@@ -372,7 +374,9 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
 });
 
 test.describe("GDPR - Audit Logs Verification", () => {
-  test("should record all GDPR operations in audit logs", async ({ page }) => {
+  test("@happy should record all GDPR operations in audit logs", async ({
+    page,
+  }) => {
     // Step 1: Create user and perform export
     const user = await registerAndLogin(page, "owner");
     await loginViaUI(page, user.email, user.password);
@@ -439,7 +443,7 @@ test.describe("GDPR - Audit Logs Verification", () => {
 });
 
 test.describe("GDPR - Cross-Organization Access", () => {
-  test("should allow SuperAdmin to access any user regardless of organization", async ({
+  test("@happy should allow SuperAdmin to access any user regardless of organization", async ({
     page,
   }) => {
     // Step 1: Create users in different contexts
