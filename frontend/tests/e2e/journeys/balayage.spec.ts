@@ -41,6 +41,51 @@ const BALAYAGES = [
   balayageAdministrateur,
 ];
 
+/**
+ * Pas de trace pour un balayage — et ce n'est pas une économie de confort.
+ *
+ * ── Ce que la trace faisait ───────────────────────────────────────────────
+ *
+ * Un balayage ouvre 93 écrans. La trace accumule captures, requêtes et
+ * instantanés DOM pour chacun, et atteint **148 Mo**. L'écrire dépasse le
+ * budget de démontage, et Playwright rapporte cela comme un dépassement de
+ * TEST :
+ *
+ *     ✘ @happy balayage-owner ouvre tous les écrans sans tomber (8.2m)
+ *       Test timeout of 30000ms exceeded.
+ *
+ * Aucune pile, aucun emplacement, et un plafond annoncé de 30 s là où
+ * `test.setTimeout(900_000)` en pose 900. Le corps du test avait réussi.
+ *
+ * Mesuré le 2026-09-20, trois exécutions sur la même recette (#982) :
+ *
+ *     balayage-owner  (trace: "on")  -> ✘  8.2 min
+ *     balayage-owner  (--trace=off)  -> ✓  6.6 min
+ *     balayage-syndic (trace: "on")  -> ✓  7.6 min
+ *
+ * `balayage-syndic` passait de justesse : ce n'est pas une différence de
+ * nature, c'est une marge — et elle se referme dès que le runner ralentit.
+ *
+ * ── Pourquoi on ne perd rien ──────────────────────────────────────────────
+ *
+ * Une trace de 148 Mo sur 93 écrans est illisible en pratique. Le balayage
+ * produit déjà l'artefact fait pour être lu : le tableau route par route
+ * (arrivée, taille rendue, erreurs console) et le `.json` de la vitrine avec
+ * ses chapitres. C'est lui qui a servi à écrire #968 et #969, jamais une
+ * trace Playwright.
+ *
+ * La vidéo reste : elle est bornée, et c'est elle qui alimente la galerie.
+ *
+ * ── Pourquoi un rouge faux coûte plus qu'un rouge absent ──────────────────
+ *
+ * Le Gantt le dit pour un motif voisin : « Un gate jamais lancé ne dit rien,
+ * et son silence se lit comme un accord. » Ici c'est la variante chère — le
+ * gate parle, il a tort, et la leçon qu'on en tire est d'arrêter de
+ * l'écouter. Le jour où le balayage trouvera une vraie régression, son rouge
+ * ressemblera aux précédents.
+ */
+test.use({ trace: "off" });
+
 for (const parcours of BALAYAGES) {
   test.describe(`Balayage — ${parcours.titre}`, () => {
     test(`@happy ${parcours.slug} ouvre tous les écrans sans tomber`, async ({
