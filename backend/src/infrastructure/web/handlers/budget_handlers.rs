@@ -46,7 +46,7 @@ use uuid::Uuid;
 /// signature de chaque handler, et son absence se lit.
 ///
 /// Rend `Some(réponse)` quand l'appel doit être refusé, `None` quand il peut
-/// continuer — le même idiome que `check_syndic_role` ailleurs dans ce dépôt.
+/// continuer — le même idiome que `verify_syndic_role` ailleurs dans ce dépôt.
 async fn verify_budget_org_access(
     state: &web::Data<AppState>,
     user: &AuthenticatedUser,

@@ -89,7 +89,30 @@ const DECISION: [&str; 9] = [
 /// modification de l'instrument. Les helpers ont été renommés `verify_*` —
 /// l'idiome que ce dépôt emploie déjà partout ailleurs — et le compteur a
 /// suivi le travail.
-const SANS_DECISION_AU_2026_09_13: usize = 73;
+/// 73 → 54 le 2026-09-20, **sans toucher à l'instrument**.
+///
+/// Cinq helpers décidaient déjà et n'étaient pas vus, faute de porter
+/// l'idiome que `DECISION` reconnaît :
+///
+///     check_write_permission           -> verify_write_permission
+///     check_owner_readonly             -> verify_owner_readonly
+///     check_syndic_role                -> verify_syndic_role
+///     check_accountant_role            -> verify_accountant_role
+///     check_unit_ownership_permission  -> verify_unit_ownership_permission
+///
+/// C'est la réponse que ce fichier prescrit lui-même, quelques lignes plus
+/// haut : les helpers s'appelaient d'abord `cloisonner_*`, le compteur est
+/// resté à 95 alors que dix trous étaient bouchés, et **allonger `DECISION`
+/// aurait fait tomber le chiffre par une modification de la mesure**. On
+/// renomme le code, jamais l'instrument.
+///
+/// Les `check_can_*` passaient déjà, par le marqueur `can_` — d'où cinq
+/// invisibles sur huit.
+///
+/// `expense_handlers.rs` (5) et `unit_owner_handlers.rs` (3) quittent la
+/// liste. Le reliquat se concentre sur `iot` (6), `notification` (5),
+/// `gamification`, `mcp_sse` et `two_factor` (4 chacun).
+const SANS_DECISION_AU_2026_09_13: usize = 54;
 
 /// Les handlers qui prennent `AuthenticatedUser` sans trace de décision.
 fn sans_decision() -> BTreeMap<String, String> {
