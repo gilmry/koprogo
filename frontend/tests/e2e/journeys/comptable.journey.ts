@@ -196,11 +196,22 @@ export const comptable: Parcours = {
       action: async (scene) => {
         await scene.aller("/expenses");
         await scene.attendreChargement();
+        // L'étape s'intitule « Saisir une dépense ». Elle se contentait
+        // d'atteindre l'écran et de constater qu'un bouton s'affichait : la
+        // narration promettait un acte que le parcours n'accomplissait pas
+        // (#974). Ouvrir réellement le formulaire, c'est vérifier qu'on peut
+        // s'en servir — pas seulement que l'écran se rend.
+        await scene.cliquer("create-button");
+        await scene.attendreChargement();
       },
       assertion: async (page) => {
-        await expect(page.getByTestId("create-button")).toBeVisible({
-          timeout: 20000,
-        });
+        // Le formulaire est ouvert, donc fermable : deux ancres qui
+        // n'existent QUE dans la modale de saisie.
+        await expect(
+          page.getByTestId("expense-form-cancel-button"),
+          "Le bouton « créer » est visible mais n'ouvre rien : la capacité " +
+            "est affichée sans être atteignable.",
+        ).toBeVisible({ timeout: 20000 });
       },
     },
     {
