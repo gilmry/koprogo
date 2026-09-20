@@ -27,21 +27,59 @@
   let showForm = $state<boolean>(false);
   let acps = $state<Array<{ id: string; name: string }>>([]);
   let selectedAcpId = $state<string>("");
+  /** Ce que le serveur a répondu quand il a refusé. Jamais avalé. */
+  let erreur = $state<string | null>(null);
 
+  /**
+   * Les ACP d'ABORD, les cahiers des charges ENSUITE.
+   *
+   * ── Ce que faisait la version précédente ─────────────────────────────────
+   *
+   * Elle lançait `listSpecs()` et `listAcps()` en parallèle, puis choisissait
+   * l'ACP courante. Or `acp_id` est **obligatoire** côté serveur
+   * (`ListTechnicalSpecsQuery.acp_id: Uuid`, non-`Option`), et
+   * `technical_specs.ts:147` le dit déjà en toutes lettres : appeler
+   * `listSpecs()` sans lui « échoue toujours en missing field `acp_id` ».
+   *
+   * L'appel partait donc sans ACP, le serveur rendait **400**, et le
+   * `.catch(() => [])` transformait ce refus en liste vide. L'écran
+   * annonçait « aucun cahier des charges » à un syndic qui en avait.
+   *
+   * C'est la dégradation silencieuse sous sa forme la plus coûteuse : un
+   * `catch` qui rend une valeur plausible. Vide et cassé se ressemblent, et
+   * seule la console les distinguait (#968).
+   *
+   * ── Ce qui change ────────────────────────────────────────────────────────
+   *
+   * La séquence devient nécessaire, donc elle est écrite comme telle. Et le
+   * refus n'est plus avalé : `erreur` porte ce que le serveur a dit, et
+   * l'écran le montre au lieu de mentir.
+   */
   async function loadInitial(): Promise<void> {
     loading = true;
+    erreur = null;
     try {
-      const [s, a] = await Promise.all([
-        listSpecs().catch(() => [] as TechnicalSpecDto[]),
-        listAcps().catch(() => []),
-      ]);
-      specs = s;
+      const a = await listAcps().catch(() => []);
       acps = (a ?? []).map((x: { id: string; name: string }) => ({
         id: x.id,
         name: x.name,
       }));
       if (acps.length > 0 && selectedAcpId === "") {
         selectedAcpId = acps[0].id;
+      }
+
+      if (selectedAcpId === "") {
+        // Sans ACP, il n'y a rien à lister et ce n'est pas une panne : le
+        // compte n'en gère aucune. L'écran vide est alors la vérité.
+        specs = [];
+        return;
+      }
+
+      try {
+        specs = await listSpecs(selectedAcpId);
+      } catch (e) {
+        specs = [];
+        erreur = e instanceof Error ? e.message : String(e);
       }
     } finally {
       loading = false;
@@ -97,6 +135,22 @@
   {#if loading}
     <p class="text-sm text-gray-500" role="status" aria-live="polite">
       {$_("common.loading2")}
+    </p>
+  {:else if erreur}
+    <!--
+      Un refus se dit, il ne se déguise pas en liste vide.
+
+      L'écran annonçait « aucun cahier des charges » alors que le serveur
+      avait répondu 400 : vide et cassé se ressemblent, et l'utilisateur
+      n'avait aucun moyen de les distinguer (#968). Le message porte ce que
+      le serveur a dit — c'est lui qui nomme la cause.
+    -->
+    <p
+      data-testid="tech-spec-list-error"
+      class="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800"
+      role="alert"
+    >
+      {erreur}
     </p>
   {:else if specs.length === 0}
     <p data-testid="tech-spec-list-empty" class="text-sm text-gray-500">
