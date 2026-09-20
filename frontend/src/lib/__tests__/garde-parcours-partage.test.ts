@@ -140,6 +140,34 @@ describe("documentation vivante — l'invariant anti-dette", () => {
     ).toBe(false);
   });
 
+  it("@negative la galerie MONTRE ce que la page a dit d'elle-même", () => {
+    // `enregistrer-vitrine.mjs` retient les erreurs, avertissements et
+    // requêtes échouées du navigateur depuis le 2026-09-18 — et
+    // `assembler-vitrine.mjs` ne les affichait pas.
+    //
+    // Un parcours qui se déroulait entièrement tout en crachant douze
+    // erreurs en console produisait une carte d'apparence impeccable.
+    // L'instrument relevait, personne ne lisait, rien n'arrivait.
+    //
+    // Cette garde ne juge pas la mise en forme. Elle vérifie que le journal
+    // atteint la galerie : un enregistreur qui collecte et un assembleur qui
+    // jette, c'est du travail dont le seul effet est de coûter du disque.
+    const enregistreur = lire("enregistrer-vitrine.mjs");
+    expect(
+      /console:\s*journalConsole/.test(enregistreur),
+      "L'enregistreur n'écrit plus le journal de la console dans son " +
+        "artefact : la galerie n'aura rien à montrer.",
+    ).toBe(true);
+
+    const galerie = lire("assembler-vitrine.mjs");
+    expect(
+      /m\.console/.test(galerie),
+      "La galerie ne lit pas le journal de la console. Ce que le navigateur " +
+        "a dit pendant le parcours est enregistré, puis perdu — et un " +
+        "parcours vert qui crache des erreurs passe pour impeccable.",
+    ).toBe(true);
+  });
+
   it("@edge la cadence est une constante nommée, pas un chiffre magique", () => {
     const scene = lire("scene.ts");
     expect(
