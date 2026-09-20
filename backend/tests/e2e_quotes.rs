@@ -410,6 +410,104 @@ async fn test_list_building_quotes() {
     assert_eq!(quotes.len(), 3, "Expected 3 quotes for building");
 }
 
+/// @security Les devis d'un prestataire ne traversent pas les organisations.
+///
+/// ── Le défaut figé ici ────────────────────────────────────────────────────
+///
+/// `list_contractor_quotes` prenait `_auth: AuthenticatedUser` — le
+/// préfixe `_` est la convention Rust pour « je ne m'en sers pas », et il
+/// disait vrai. La route rendait TOUS les devis du prestataire, toutes ACP
+/// confondues.
+///
+/// Les devis portent des **prix**. Un cabinet syndic lisait donc ceux qu'un
+/// prestataire avait remis à un cabinet concurrent — un renseignement
+/// commercial que le prestataire n'a pas consenti à partager (#976).
+///
+/// ── Pourquoi le filtrage, et pas la restriction de la route ──────────────
+///
+/// Restreindre au superadministrateur aurait privé le syndic d'une lecture
+/// légitime : les devis de SES immeubles, remis par ce prestataire. Le
+/// filtrage par ACP visibles rend à chacun ce qui le regarde.
+#[actix_web::test]
+#[serial]
+async fn security_les_devis_dun_prestataire_ne_traversent_pas_les_organisations() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let org_b = common::create_test_organization(&app_state).await;
+
+    // L'AMORÇAGE se fait en superadmin — créer des devis chez deux cabinets
+    // demande de traverser, et c'est légitime pour lui.
+    let (_ua, token_admin) = create_test_user(&app_state, org_a).await;
+
+    // La LECTURE se fait en syndic. `verify_building_org_access` laisse
+    // passer les superadmins par conception : lire avec le jeton
+    // d'amorçage aurait éprouvé le seul rôle autorisé à traverser, et le
+    // test serait passé au vert sur le correctif comme sans lui.
+    //
+    // C'est l'erreur exacte que le tri du Gantt avait relevée sur
+    // `e2e_owner_contributions` le même jour. Je l'ai refaite ici, et c'est
+    // le témoin qui l'a dit.
+    let token_syndic = common::register_and_login_with_role(&app_state, org_a, "syndic").await;
+
+    let immeuble_a = create_test_building(&app_state, org_a).await;
+    let immeuble_b = create_test_building(&app_state, org_b).await;
+
+    // LE MÊME prestataire travaille pour les deux cabinets. C'est le cas
+    // réel : un couvreur n'est pas exclusif à une copropriété.
+    let prestataire = create_test_contractor(&app_state, org_a).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    // Un devis chez A, un devis chez B, par le même prestataire.
+    for immeuble in [immeuble_a, immeuble_b] {
+        let validite = Utc::now() + Duration::days(30);
+        let req = test::TestRequest::post()
+            .uri("/api/v1/quotes")
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_admin)))
+            .set_json(json!({
+                "building_id": immeuble.to_string(),
+                "contractor_id": prestataire.to_string(),
+                "project_title": "Réfection de toiture",
+                "project_description": "Prix à ne pas divulguer au concurrent",
+                "amount_excl_vat": "18500.00",
+                "vat_rate": "0.21",
+                "validity_date": validite.to_rfc3339(),
+                "estimated_duration_days": 21,
+                "warranty_years": 10
+            }))
+            .to_request();
+        test::call_service(&app, req).await;
+    }
+
+    let req = test::TestRequest::get()
+        .uri(&format!("/api/v1/contractors/{}/quotes", prestataire))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_syndic)))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 200);
+
+    let devis: Vec<QuoteResponseDto> = test::read_body_json(resp).await;
+
+    // Le cabinet A voit le sien, et SEULEMENT le sien.
+    for d in &devis {
+        assert_ne!(
+            d.building_id,
+            immeuble_b.to_string(),
+            "FUITE COMMERCIALE : le cabinet A lit un devis remis au cabinet B \
+             par le même prestataire — donc ses prix (#976)."
+        );
+    }
+    assert!(
+        devis.iter().any(|d| d.building_id == immeuble_a.to_string()),
+        "Le filtrage a trop coupé : le cabinet A ne voit plus ses PROPRES \
+         devis. Cloisonner n'est pas aveugler."
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_list_contractor_quotes() {
