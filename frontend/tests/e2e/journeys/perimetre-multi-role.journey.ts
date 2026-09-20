@@ -82,6 +82,66 @@ export const perimetreMultiRole: Parcours = {
         await expect(page.getByTestId("navigation-menu-gestion")).toBeVisible();
       },
     },
+    // ── Ce parcours MANIPULE, il ne se contente plus de regarder ─────────
+    //
+    // Remarque du PO le 2026-09-20 : « la vitrine se consacre sur les écrans,
+    // parfois elle dit sans cliquer ». C'était vrai ici — ce parcours se
+    // connectait et contemplait deux tableaux de bord, sans toucher une seule
+    // commande.
+    //
+    // Les trois étapes qui suivent ouvrent le sélecteur, choisissent une ACP,
+    // puis NAVIGUENT. C'est le geste que le PO décrit dans le même message :
+    // « dès qu'on appuie sur un bouton ou qu'on va dans un menu il faut
+    // resélectionner ».
+    //
+    // Elles valent donc deux fois : elles montrent le produit qu'on utilise,
+    // et elles sont le témoin filmé de #841 — le périmètre ne survivait à
+    // aucune navigation, parce que rien ne mémorisait le choix.
+    {
+      id: "syndic-choisit-une-acp",
+      acteur: "syndic",
+      description:
+        "Le syndic ouvre le sélecteur et choisit l'ACP sur laquelle il " +
+        "travaille. Tout ce qu'il verra ensuite — charges, assemblées, " +
+        "écritures — sera cadré par ce choix.",
+      action: async (scene) => {
+        await scene.cliquer("acp-selector-input");
+        const premiere = scene.page
+          .getByTestId("acp-selector-listbox")
+          .locator('[data-testid^="acp-selector-result-"]')
+          .first();
+        await premiere.waitFor({ state: "visible", timeout: 15000 });
+        await premiere.click();
+        await scene.attendreChargement();
+      },
+      assertion: async (page) => {
+        await expect(
+          page.getByTestId("acp-selector-input"),
+          "Le sélecteur n'a rien retenu du clic.",
+        ).not.toHaveValue("");
+      },
+    },
+    {
+      id: "le-perimetre-suit-la-navigation",
+      acteur: "syndic",
+      description:
+        "Il ouvre un autre écran. Son ACP doit le suivre : re-choisir à " +
+        "chaque menu rendrait le multi-copropriété inutilisable.",
+      action: async (scene) => {
+        await scene.aller("/expenses");
+        await scene.attendreChargement();
+      },
+      assertion: async (page) => {
+        // Chaque navigation est un chargement de document complet : si le
+        // choix n'était pas mémorisé, le sélecteur repartirait vide. C'est
+        // exactement ce qui se passait avant #841.
+        await expect(
+          page.getByTestId("acp-selector-input"),
+          "Le périmètre est perdu après une navigation : l'utilisateur doit " +
+            "re-sélectionner son ACP à chaque écran (#841).",
+        ).not.toHaveValue("");
+      },
+    },
     {
       id: "coproprietaire-prend-la-main",
       acteur: "copropriétaire",

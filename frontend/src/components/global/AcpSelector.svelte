@@ -109,6 +109,51 @@
     void chargerPortefeuille();
   }
 
+  /**
+   * Réaffiche l'ACP courante après une navigation.
+   *
+   * ── Le défaut ────────────────────────────────────────────────────────────
+   *
+   * `query` — la valeur visible du champ — n'était posée QUE par un clic sur
+   * un résultat. Le frontend étant une application multi-page, chaque clic de
+   * menu recharge le document : le champ repartait donc vide, même quand le
+   * périmètre était correctement posé.
+   *
+   * Signalé par le PO le 2026-09-20 : « dès qu'on appuie sur un bouton ou
+   * qu'on va dans un menu il faut resélectionner ». Il avait raison deux
+   * fois — le périmètre n'était pas mémorisé (corrigé dans
+   * `scope.svelte.ts`), et **même mémorisé, il ne se voyait pas**. Un champ
+   * vide face à un périmètre actif est pire qu'un périmètre perdu : l'écran
+   * contredit son propre état.
+   *
+   * ── Pourquoi charger ici, alors que le reste est paresseux ───────────────
+   *
+   * Le portefeuille est chargé au premier focus, délibérément : cette barre
+   * est présente sur CHAQUE page, et la charger au montage multipliait les
+   * requêtes. La réhydratation ne casse pas cette règle — elle ne demande la
+   * liste que s'il y a effectivement une ACP à nommer.
+   */
+  // RÉACTIF, et pas `onMount` — la distinction m'a coûté un aller-retour.
+  //
+  // Le périmètre est restauré de façon ASYNCHRONE par `BarreDeContexte`
+  // (`resoudrePerimetreAuChargement`). Un `onMount` qui lit
+  // `scope.selectedAcpId` le trouve donc encore nul : les deux montages sont
+  // en course, et celui-ci gagne. Le champ restait vide alors que le
+  // périmètre arrivait une fraction de seconde plus tard.
+  //
+  // Un `$effect` attend que la valeur existe, quel que soit l'ordre.
+  $effect(() => {
+    const id = scope.selectedAcpId;
+    if (id === null || query !== "") return;
+    void (async () => {
+      await chargerPortefeuille();
+      const courante = allAcps.find((a) => a.id === id);
+      // `query` est relu ici : l'utilisateur a pu taper pendant le
+      // chargement, et on ne lui écrase pas sa frappe.
+      if (courante && query === "") query = courante.name;
+    })();
+  });
+
   function onInput(event: Event): void {
     const target = event.target as HTMLInputElement;
     query = target.value;
