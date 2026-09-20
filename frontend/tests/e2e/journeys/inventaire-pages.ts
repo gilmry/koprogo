@@ -26,7 +26,7 @@
  * Leurs versions « detail » sont visitées par les parcours métier, qui eux
  * savent de quoi ils parlent.
  */
-import { readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 
 const ICI = dirname(new URL(import.meta.url).pathname);
@@ -53,6 +53,41 @@ const PUBLIQUES = new Set([
   "/c",
 ]);
 
+/**
+ * Une page qui attend un jeton dans son URL ne se balaie pas.
+ *
+ * ── Ce que coûtait leur absence ────────────────────────────────────────────
+ *
+ * Le balayage du 2026-09-19 a signalé `/contractor` (100 caractères) et
+ * `/contractor-report` (66) comme des écrans quasi vides, et l'issue #968 les
+ * a inscrits comme défauts. **Ils n'en sont pas.** Ce sont des pages de lien
+ * magique : ouvertes sans `?token=`, elles affichent « Ce lien d'accès n'est
+ * plus valide. Contactez votre syndic pour obtenir un nouveau lien. » —
+ * exactement le refus qu'on attend d'elles.
+ *
+ * Deux faux positifs sur sept trouvailles. Un instrument qui crie au loup
+ * deux fois sur sept finit par ne plus être écouté, et c'est plus grave que
+ * de manquer un défaut : cela discrédite les cinq vrais.
+ *
+ * ── Détecté, pas listé ─────────────────────────────────────────────────────
+ *
+ * Une liste noire dériverait dès la prochaine page à jeton. On lit donc la
+ * source : une page qui va chercher `token` dans ses paramètres d'URL est,
+ * par construction, inatteignable sans lien.
+ */
+function attendUnJeton(chemin: string): boolean {
+  try {
+    const source = readFileSync(chemin, "utf8");
+    // `.get("token")`, quelle que soit la façon dont on est arrivé à
+    // l'objet : `new URLSearchParams(location.search).get("token")` est la
+    // forme employée dans ce dépôt, et exiger le mot `searchParams` juste
+    // avant le `.get` la ratait.
+    return /\.get\(\s*["'`]token["'`]\s*\)/.test(source);
+  } catch {
+    return false;
+  }
+}
+
 function fichiersAstro(racine: string, prefixe = ""): string[] {
   const trouves: string[] = [];
   for (const entree of readdirSync(racine)) {
@@ -60,6 +95,7 @@ function fichiersAstro(racine: string, prefixe = ""): string[] {
     if (statSync(chemin).isDirectory()) {
       trouves.push(...fichiersAstro(chemin, `${prefixe}/${entree}`));
     } else if (entree.endsWith(".astro")) {
+      if (attendUnJeton(chemin)) continue;
       trouves.push(`${prefixe}/${entree.replace(/\.astro$/, "")}`);
     }
   }
