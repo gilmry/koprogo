@@ -273,7 +273,11 @@
             {$_("units.primary_contact_help")}
           </p>
           <div class="flex gap-2 pt-4">
-            <Button type="submit" variant="primary" disabled={isSubmitDisabled}
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isSubmitDisabled}
+              data-testid="unit-owner-add-submit"
               >{loading ? $_("common.adding") : $_("common.add")}</Button
             ><Button type="button" variant="outline" onclick={handleClose}
               >{$_("common.cancel")}</Button

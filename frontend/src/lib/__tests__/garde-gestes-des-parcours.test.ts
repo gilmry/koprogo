@@ -120,7 +120,7 @@ function parcoursMetier(): Mesure[] {
  * cliquet qui recalcule sa référence à chaque exécution vaut toujours sa
  * valeur courante et ne peut jamais mordre.
  */
-const GESTES_AU_2026_09_20 = 65;
+const GESTES_AU_2026_09_20 = 78;
 
 /**
  * Le plancher par parcours. Trois gestes, c'est le minimum en dessous duquel
