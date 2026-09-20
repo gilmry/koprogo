@@ -94,7 +94,7 @@ test.describe("Board of Directors", () => {
     await loginAsAdmin(page);
   });
 
-  test("should display board dashboard with mandate and statistics", async ({
+  test("@happy should display board dashboard with mandate and statistics", async ({
     page,
   }) => {
     // Navigate to board dashboard
@@ -115,7 +115,7 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should elect board members (president, treasurer, member)", async ({
+  test("@happy should elect board members (president, treasurer, member)", async ({
     page,
   }) => {
     // Navigate to buildings page
@@ -153,7 +153,7 @@ test.describe("Board of Directors", () => {
     expect(await boardSection.count()).toBeGreaterThanOrEqual(0);
   });
 
-  test("should display board member list with mandate details", async ({
+  test("@happy should display board member list with mandate details", async ({
     page,
   }) => {
     // Navigate to board members page
@@ -179,7 +179,9 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should track AG decisions with status workflow", async ({ page }) => {
+  test("@happy should track AG decisions with status workflow", async ({
+    page,
+  }) => {
     const testData = generateTestData("DecisionTracking");
 
     // Navigate to decisions tracking
@@ -207,7 +209,7 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should show overdue decisions alert", async ({ page }) => {
+  test("@edge should show overdue decisions alert", async ({ page }) => {
     await page.goto("/board-dashboard");
 
     // Look for overdue section
@@ -227,7 +229,7 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should show mandate expiration alerts when < 60 days", async ({
+  test("@edge should show mandate expiration alerts when < 60 days", async ({
     page,
   }) => {
     await page.goto("/board-dashboard");
@@ -253,7 +255,7 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should display upcoming deadlines with urgency indicators", async ({
+  test("@happy should display upcoming deadlines with urgency indicators", async ({
     page,
   }) => {
     await page.goto("/board-dashboard");
@@ -275,7 +277,7 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should filter decisions by status", async ({ page }) => {
+  test("@happy should filter decisions by status", async ({ page }) => {
     await page.goto("/board-dashboard");
 
     // Look for status filter dropdown
@@ -295,7 +297,7 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should display legal compliance note (Article 577-8/4)", async ({
+  test("@happy should display legal compliance note (Article 577-8/4)", async ({
     page,
   }) => {
     await page.goto("/board-dashboard");
@@ -309,7 +311,7 @@ test.describe("Board of Directors", () => {
     ).toBeTruthy();
   });
 
-  test("should show board statistics (active members, positions)", async ({
+  test("@happy should show board statistics (active members, positions)", async ({
     page,
   }) => {
     await page.goto("/board-dashboard");
@@ -326,7 +328,7 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should allow updating decision status (pending → in_progress → completed)", async ({
+  test("@happy should allow updating decision status (pending → in_progress → completed)", async ({
     page,
   }) => {
     await page.goto("/board-dashboard");
@@ -351,7 +353,9 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should display board member positions with icons", async ({ page }) => {
+  test("@happy should display board member positions with icons", async ({
+    page,
+  }) => {
     await page.goto("/board-dashboard");
 
     // Should show position icons
@@ -367,7 +371,9 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should show empty state when no board members", async ({ page }) => {
+  test("@edge should show empty state when no board members", async ({
+    page,
+  }) => {
     // Navigate to board dashboard (without building_id = shows error state)
     await page.goto("/board-dashboard");
 

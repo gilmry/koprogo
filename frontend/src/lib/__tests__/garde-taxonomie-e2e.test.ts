@@ -68,7 +68,12 @@ const RACINE = join(process.cwd(), "tests/e2e");
 //
 // C'est le point de cette garde : une étiquette posée pour faire baisser un
 // chiffre ne classe rien. Le tri automatique propose, la relecture tranche.
-const SANS_ETIQUETTE_AU_2026_09_08 = 346;
+// 346 → 323 : `BoardOfDirectors.spec.ts` (13) et `OwnerDashboard.spec.ts`
+// (10). Un classement rectifié à la main — « display upcoming deadlines with
+// urgency indicators » affiche une liste avec ses indicateurs, c'est le rendu
+// nominal d'une fonctionnalité, pas un cas limite. Ma règle avait vu
+// « urgency ».
+const SANS_ETIQUETTE_AU_2026_09_08 = 323;
 
 /** Total des specs. **Ne doit pas BAISSER.** */
 // 420 → 432, même cause : les douze scénarios entrent dans le décompte.
