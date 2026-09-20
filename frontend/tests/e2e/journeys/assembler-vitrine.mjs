@@ -71,6 +71,14 @@ const cartes = metas
     // en console produisait donc une carte d'apparence impeccable. C'est un
     // instrument sans verdict : il relève, personne ne lit, rien n'arrive.
     //
+    // ── Pourquoi le libellé dit « tous ne sont pas des défauts » ────────
+    //
+    // Parce que c'est vrai, et qu'une formulation alarmante ferait plus de
+    // mal que le silence qu'elle remplace. Mesuré sur `lot` : ses deux
+    // entrées sont un 403 et un 401 tous deux DOCUMENTÉS comme attendus
+    // (`organizations.ts:45`, `api.ts:147`). Les filtrer demanderait une
+    // liste d'URL tolérées, qui masquerait le jour où l'une casse.
+    //
     // Ils sont ici REPLIÉS, et c'est délibéré. La vitrine s'adresse d'abord
     // à quelqu'un qui évalue le produit, pas à quelqu'un qui le débogue :
     // ouvrir sur une pile d'erreurs donnerait une impression fausse dans
@@ -84,8 +92,10 @@ const cartes = metas
       journal.length === 0
         ? ""
         : `<details class="journal">
-             <summary>${journal.length} message${journal.length > 1 ? "s" : ""} ` +
-          `de la console pendant ce parcours</summary>
+             <summary>${journal.length} échange${journal.length > 1 ? "s" : ""} ` +
+          `réseau refusé${journal.length > 1 ? "s" : ""} ou message` +
+          `${journal.length > 1 ? "s" : ""} de la console — ` +
+          `tous ne sont pas des défauts</summary>
              <ol>${journal
                .map((l) => `<li>${echapper(String(l))}</li>`)
                .join("")}</ol>
