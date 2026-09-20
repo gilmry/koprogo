@@ -429,12 +429,25 @@ Ce que cette passe a trouvé, en une journée :
 | #978 | **toute annonce reste en brouillon**, invisible de tous les copropriétaires ; `POST /notices/{id}/publish` existait, rien ne l'appelait | `annonce`, changement d'acteur |
 | #979 | `isAuthor` compare un `owners.id` à un `users.id` : personne ne peut archiver ni supprimer sa propre annonce | `annonce`, le syndic ouvre la sienne |
 | #980 | élection du conseil : la règle d'un an n'est annoncée nulle part, son refus s'efface, l'élu s'affiche sous son UUID | `conseil`, élection menée à son terme |
+| #981 | le choix d'IMMEUBLE ne survit pas à une navigation : #841 n'avait refermé que la moitié du défaut signalé par le PO | `perimetre-multi-role`, clic de menu au lieu d'une URL |
 
-**Ce que ces quatre ont en commun.** Aucun n'est un défaut d'affichage.
+**Ce que ces cinq ont en commun.** Aucun n'est un défaut d'affichage.
 Tous sont des capacités présentes des deux côtés dont le raccordement
-manque, et qu'aucun écran ne signale. Et trois sur quatre sont sortis du
+manque, et qu'aucun écran ne signale. Et trois sur cinq sont sortis du
 même mécanisme : **un second acteur regarde ce que le premier a produit.**
 Tant qu'un seul compte regardait, tout paraissait normal.
+
+Le cinquième est sorti d'un autre : **cliquer le geste réel au lieu de son
+raccourci.** `scene.aller("/expenses")` est une navigation par URL ; elle
+saute le dépliage du menu et l'interception du lien. Le PO avait pourtant
+écrit « dès qu'on appuie sur un bouton ou qu'on va dans un menu », et
+c'était deux chemins, pas une tournure. #841 n'en avait refermé qu'un.
+
+Quatre des cinq sont corrigés, chacun avec son témoin daté. #977 reste
+ouvert sur une seule ligne de sa définition de terminé — « un échec de
+transition se dit » — parce que le toast qui s'efface est un motif
+d'interface commun à tout le produit, que #980 relève ailleurs, et que le
+trancher sur un écran créerait une troisième façon de signaler une erreur.
 
 C'est la différence entre un parcours qui clique et un parcours qui regarde,
 et elle ne se rattrape pas par plus de captures d'écran.
