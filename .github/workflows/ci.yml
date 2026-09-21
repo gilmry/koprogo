@@ -840,9 +840,27 @@ jobs:
   playwright:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
-    # Observé 44 min le 2026-09-07 ; plafond à ~2x pour absorber la
-    # variance d'un runner sans laisser un job pendu six heures.
-    timeout-minutes: 90
+    # ── Le budget du job, et la somme qu'il doit couvrir ───────────────
+    #
+    # Quatre étapes portent chacune un `--global-timeout` explicite, et leur
+    # somme doit tenir SOUS ce plafond — sinon GitHub fauche le job sans
+    # rapport, sans détail d'erreur et sans vidéo, ce qui est arrivé le
+    # 2026-09-08 puis le 2026-09-21.
+    #
+    #     chromium   45 min
+    #     journeys   60 min   ← nouveau : les parcours filmés ont quitté
+    #     smoke      10 min      chromium, qu'ils faisaient déborder (#974)
+    #     scenarios  25 min
+    #     ─────────────────
+    #     total     140 min
+    #
+    # 170 min laisse trente minutes à l'amorçage — conteneurs, toolchain
+    # Rust, compilation du backend, démarrage du frontend — et à la
+    # variance. Le plafond doit EXCÉDER la somme, pas la frôler.
+    #
+    # Le tournage de la vitrine (~57 min) n'y est plus : il appartient à
+    # `vitrine.yml`, qui a son propre plafond. Voir plus bas.
+    timeout-minutes: 170
     needs: [frontend-check]
     services:
       postgres:
@@ -1003,6 +1021,32 @@ jobs:
           PLAYWRIGHT_HTML_REPORT=playwright-report/chromium \
             npx playwright test --project=chromium --global-timeout=2700000 --output=test-results/chromium
 
+      # ── Les parcours filmés, avec leur propre budget ────────────────────
+      #
+      # Ils tournaient DANS le projet chromium, et ils l'ont fait déborder :
+      # le 2026-09-21, la campagne a atteint 45,0 min — son budget exact — et
+      # Playwright a interrompu un test en vol. 262 recettes passées, un
+      # rapport tronqué, et un rouge qui n'accusait aucun défaut produit.
+      #
+      # Ce harnais est d'une autre nature. Il joue des cycles entiers et
+      # quatre balayages de 93 écrans : mesuré localement, **46,8 min pour
+      # les seize specs**, dont 25 pour les seuls balayages. Il coûte à lui
+      # seul plus que le budget entier du projet de bureau (#974).
+      #
+      # 60 min de budget : la mesure plus une marge d'un tiers, parce qu'un
+      # plafond frôlé transforme la lenteur d'un runner en rouge imaginaire.
+      # `continue-on-error` n'est PAS posé : ces parcours rendent un verdict,
+      # contrairement à la vitrine qui les rejoue en cadence.
+      - name: Run Playwright journeys project (parcours filmés)
+        if: ${{ !cancelled() }}
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
+        run: |
+          cd frontend
+          PLAYWRIGHT_HTML_REPORT=playwright-report/journeys \
+            npx playwright test --project=journeys --global-timeout=3600000 --output=test-results/journeys
+
       # Le projet `smoke` (98 tests) devient BLOQUANT le 2026-09-09.
       #
       # Il avait été réintroduit en « report only » parce que son état réel
@@ -1124,29 +1168,41 @@ jobs:
       # On ne téléverse QUE les `video.webm`, pas `test-results/` entier :
       # les traces et captures d'écran pèsent lourd et ne servent pas à
       # juger la valeur.
-      # Le harnais de valeur — SÉPARÉ du gate, non bloquant par construction.
-      # Il rejoue le parcours partagé en cadence, narré, et assemble la
-      # galerie. `continue-on-error` n'est pas une précaution : c'est
-      # l'élément 3 du skill — « la preuve de valeur n'est PAS un test :
-      # elle ne doit pas faire tomber le build ». Cf. #876.
-      - name: Enregistrer la vitrine (preuve de valeur)
-        if: ${{ !cancelled() }}
-        continue-on-error: true
-        env:
-          PLAYWRIGHT_BASE_URL: http://localhost:3000
-          PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
-        run: |
-          cd frontend
-          node tests/e2e/journeys/enregistrer-vitrine.mjs || true
-          node tests/e2e/journeys/assembler-vitrine.mjs || true
+      # ── Le tournage de la vitrine a quitté ce job ──────────────────────
+      #
+      # Il vivait ici, sans budget à lui, et le 2026-09-21 GitHub l'a fauché
+      # avec le job entier : étape `cancelled`, job `cancelled`, et un rouge
+      # sur `Playwright E2E Tests` qui n'accusait aucun défaut produit.
+      #
+      # Trois faits l'ont décidé, tous mesurés :
+      #
+      #   1. `vitrine.yml` POSSÈDE déjà ce tournage, avec un plafond de
+      #      110 min assis sur une mesure — 15 parcours en 57 min 40 s le
+      #      2026-09-20. Ici il n'en avait aucun.
+      #   2. Il était `continue-on-error` : son verdict n'a JAMAIS compté.
+      #      Seul son artefact servait, et `vitrine.yml` téléverse le même,
+      #      plus la publication sur `vitrine-publiee` que `docs.yml` sert.
+      #   3. Il coûtait ~57 min de runner, en double, à chaque poussée.
+      #
+      # Ce que ce job garde, lui, c'est le GATE des parcours — l'étape
+      # `--project=journeys` plus haut, qui rend un verdict. Les deux
+      # lectures du parcours partagé restent donc en place : le gate ici, la
+      # preuve de valeur dans `vitrine.yml`. C'est l'élément 3 du skill —
+      # « la preuve de valeur n'est PAS un test » — et le séparer en deux
+      # workflows le respecte mieux que de les empiler dans un seul job.
 
-      - name: Upload vitrine (galerie + vidéos narrées)
+      # Renommé : ce job ne produit plus la GALERIE — elle appartient à
+      # `vitrine.yml`. Il produit les vidéos brutes de ses quatre campagnes,
+      # qui servent à diagnostiquer un échec, pas à juger la valeur.
+      #
+      # Le chemin de la galerie reste listé : `upload-artifact` accepte un
+      # chemin absent, et le garder documente où elle vit pour qui ouvre ce
+      # fichier en cherchant la vitrine.
+      - name: Upload vidéos des campagnes (diagnostic)
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: vitrine
-          # La galerie d'abord : c'est elle que l'arbitre ouvre. Les vidéos
-          # brutes du gate suivent, utiles au diagnostic d'un échec.
           path: |
             frontend/tests/e2e/journeys/vitrine/
             frontend/test-results/**/video.webm
