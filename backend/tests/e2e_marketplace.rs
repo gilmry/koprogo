@@ -196,8 +196,7 @@ async fn test_marketplace_get_provider_slug_no_auth_required() {
 #[serial]
 async fn security_un_coproprietaire_ne_peut_pas_inscrire_un_prestataire() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
-    let token_owner =
-        common::register_and_login_with_role(&app_state, org_id, "owner").await;
+    let token_owner = common::register_and_login_with_role(&app_state, org_id, "owner").await;
 
     let app = test::init_service(
         App::new()
@@ -230,8 +229,7 @@ async fn security_un_coproprietaire_ne_peut_pas_inscrire_un_prestataire() {
 #[serial]
 async fn security_le_syndic_inscrit_bien_un_prestataire() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
-    let token_syndic =
-        common::register_and_login_with_role(&app_state, org_id, "syndic").await;
+    let token_syndic = common::register_and_login_with_role(&app_state, org_id, "syndic").await;
 
     let app = test::init_service(
         App::new()

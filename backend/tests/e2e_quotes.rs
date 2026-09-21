@@ -502,7 +502,9 @@ async fn security_les_devis_dun_prestataire_ne_traversent_pas_les_organisations(
         );
     }
     assert!(
-        devis.iter().any(|d| d.building_id == immeuble_a.to_string()),
+        devis
+            .iter()
+            .any(|d| d.building_id == immeuble_a.to_string()),
         "Le filtrage a trop coupé : le cabinet A ne voit plus ses PROPRES \
          devis. Cloisonner n'est pas aveugler."
     );
