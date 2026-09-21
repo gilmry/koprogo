@@ -505,9 +505,29 @@ ci: ## ✅ Vérifications CI locales via containers Docker (tout dans Docker, pa
 	@# croire le contraire — et sur un hôte où les deux réseaux se rejoindraient,
 	@# la campagne aurait amorcé son monde dans la base vivante (ADR 0050, #872).
 	docker compose exec -T -e PLAYWRIGHT_BASE_URL=http://localhost:3000 -e PLAYWRIGHT_API_BASE=http://koprogo-dev-backend:8080/api/v1 frontend sh -c "npx playwright test --project=chromium" || echo "$(YELLOW)⚠️  Playwright: certains tests échouent en Docker local (networking). Vérifier en CI.$(NC)"
+	@echo "$(GREEN)🔁 Dérive des types générés (api.d.ts ← openapi.json)...$(NC)"
+	@# `Contract Types Check` porte DEUX barrières, et celle-ci était absente
+	@# d'ici. La spec commise descend jusqu'au type TypeScript, et la CI
+	@# compare au byte près : une description enrichie d'un handler suffit à
+	@# faire rougir la promotion (#880, mesuré le 2026-09-21).
+	@#
+	@# Elle coûte quelques secondes — elle ne relit que le JSON déjà commis.
+	cd frontend && npm run types:generate >/dev/null 2>&1
+	@if ! git diff --quiet frontend/src/types/api.d.ts; then \
+		echo "$(YELLOW)❌ frontend/src/types/api.d.ts a dérivé du spec commis.$(NC)"; \
+		echo "   Lancer : cd frontend && npm run types:generate, puis commit."; \
+		git diff --stat frontend/src/types/api.d.ts; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✅ api.d.ts suit le spec$(NC)"
 	@echo ""
 	@echo "$(GREEN)🎉 Tous les checks CI passés!$(NC)"
 	@echo "$(GREEN)✅ Prêt à push$(NC)"
+	@echo ""
+	@echo "$(YELLOW)⚠️  Une barrière de CI n'est PAS couverte ici : la synchro de$(NC)"
+	@echo "$(YELLOW)   docs/api/openapi.json avec la source Rust. Elle exige de$(NC)"
+	@echo "$(YELLOW)   recompiler export_openapi (~15 min) et n'a de sens que si$(NC)"
+	@echo "$(YELLOW)   backend/src a bougé. Dans ce cas : make openapi-check$(NC)"
 
 pre-commit: format lint ## 🎯 Pre-commit hook (format + lint)
 	@echo "$(GREEN)✅ Pre-commit OK$(NC)"
