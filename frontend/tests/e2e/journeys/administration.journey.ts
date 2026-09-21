@@ -106,11 +106,30 @@ export const administration: Parcours = {
         );
         await scene.cliquer("organization-submit-button");
         await scene.attendreChargement();
+        // ── Chercher, et pourquoi ce n'est pas un contournement ──────────
+        //
+        // La table ne charge qu'UNE page, filtrée par le serveur
+        // (`OrganizationList.svelte:62`) : le composant chargeait jadis les
+        // 3006 lignes et filtrait en mémoire, ce qui coûtait 8,2 s d'écran
+        // blanc (#943). Un cabinet créé à l'instant n'est donc pas
+        // forcément sur la page affichée.
+        //
+        // L'assertion sans recherche passait sur ma recette — peu peuplée —
+        // et tombait en CI :
+        //
+        //     44 × locator resolved to 0 elements
+        //
+        // Chercher est d'ailleurs le geste RÉEL de ce rôle : un
+        // administrateur de plateforme qui gère des milliers de cabinets
+        // n'en fait pas défiler la liste, il en isole un. La recherche
+        // serveur couvre le nom, le slug et le courriel de contact.
+        await scene.saisir("organization-search-input", nomDuCabinet);
+        await scene.attendreChargement();
       },
       assertion: async (page) => {
-        // La modale s'est refermée ET le cabinet est dans la table.
-        // Vérifier seulement la fermeture ne distinguerait pas une création
-        // d'une annulation.
+        // La modale s'est refermée ET le cabinet se retrouve. Vérifier
+        // seulement la fermeture ne distinguerait pas une création d'une
+        // annulation.
         await expect(page.getByTestId("organization-form")).toHaveCount(0, {
           timeout: 20000,
         });
@@ -118,9 +137,9 @@ export const administration: Parcours = {
           page.getByTestId("organization-row").filter({
             hasText: nomDuCabinet,
           }),
-          "Le cabinet créé n'apparaît pas dans la table : sans lui, aucune " +
-            "copropriété n'a de syndic, et tous les autres parcours " +
-            "s'arrêtent avant de commencer.",
+          "Le cabinet créé ne se retrouve pas, même en le cherchant par son " +
+            "nom : sans lui, aucune copropriété n'a de syndic, et tous les " +
+            "autres parcours s'arrêtent avant de commencer.",
         ).toHaveCount(1, { timeout: 20000 });
       },
     },
