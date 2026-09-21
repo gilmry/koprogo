@@ -123,7 +123,7 @@ test.describe("Scenario: Workflow d'approbation d'une facture", () => {
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Francois soumet et approuve une facture via l'interface", async ({
+  test("@happy Francois soumet et approuve une facture via l'interface", async ({
     page,
   }) => {
     // ============================================================

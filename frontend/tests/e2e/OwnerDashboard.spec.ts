@@ -64,7 +64,9 @@ async function registerAndLoginAsOwner(page: Page): Promise<{
 }
 
 test.describe("Owner Dashboard - Main Portal", () => {
-  test("should display owner dashboard after login", async ({ page }) => {
+  test("@happy should display owner dashboard after login", async ({
+    page,
+  }) => {
     await registerAndLoginAsOwner(page);
     await page.goto("/owner");
 
@@ -74,7 +76,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display owner profile page", async ({ page }) => {
+  test("@happy should display owner profile page", async ({ page }) => {
     await registerAndLoginAsOwner(page);
     await page.goto("/owner/profile");
 
@@ -84,7 +86,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display owner documents page", async ({ page }) => {
+  test("@happy should display owner documents page", async ({ page }) => {
     await registerAndLoginAsOwner(page);
     await page.goto("/owner/documents");
 
@@ -94,7 +96,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display owner expenses page", async ({ page }) => {
+  test("@happy should display owner expenses page", async ({ page }) => {
     await registerAndLoginAsOwner(page);
     await page.goto("/owner/expenses");
 
@@ -104,7 +106,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display owner tickets page", async ({ page }) => {
+  test("@happy should display owner tickets page", async ({ page }) => {
     await registerAndLoginAsOwner(page);
     await page.goto("/owner/tickets");
 
@@ -116,7 +118,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
 });
 
 test.describe("Owner Dashboard - Payments", () => {
-  test("should display owner payments page", async ({ page }) => {
+  test("@happy should display owner payments page", async ({ page }) => {
     await registerAndLoginAsOwner(page);
     await page.goto("/owner/payments");
 
@@ -126,7 +128,7 @@ test.describe("Owner Dashboard - Payments", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display owner payment methods page", async ({ page }) => {
+  test("@happy should display owner payment methods page", async ({ page }) => {
     await registerAndLoginAsOwner(page);
     await page.goto("/owner/payment-methods");
 
@@ -138,7 +140,9 @@ test.describe("Owner Dashboard - Payments", () => {
 });
 
 test.describe("Owner Dashboard - Navigation", () => {
-  test("should navigate between owner pages via sidebar", async ({ page }) => {
+  test("@happy should navigate between owner pages via sidebar", async ({
+    page,
+  }) => {
     await registerAndLoginAsOwner(page);
     await page.goto("/owner");
 
@@ -162,7 +166,7 @@ test.describe("Owner Dashboard - Navigation", () => {
     await expect(page.getByTestId("sidebar-desktop")).toBeVisible();
   });
 
-  test("should display owner units page", async ({ page }) => {
+  test("@happy should display owner units page", async ({ page }) => {
     await registerAndLoginAsOwner(page);
     await page.goto("/owner/units");
 
@@ -172,7 +176,7 @@ test.describe("Owner Dashboard - Navigation", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display owner contact page", async ({ page }) => {
+  test("@happy should display owner contact page", async ({ page }) => {
     await registerAndLoginAsOwner(page);
     await page.goto("/owner/contact");
 

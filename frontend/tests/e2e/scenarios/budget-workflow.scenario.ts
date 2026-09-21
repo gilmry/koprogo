@@ -77,7 +77,7 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Francois cree un budget annuel et le soumet pour approbation", async ({
+  test("@happy Francois cree un budget annuel et le soumet pour approbation", async ({
     page,
   }) => {
     // ============================================================

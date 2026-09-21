@@ -318,7 +318,11 @@
             </p>
           </div>
           <div class="flex gap-2 pt-4">
-            <Button type="submit" variant="primary" disabled={loading}
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={loading}
+              data-testid="unit-create-submit"
               >{loading
                 ? $_("common.creating")
                 : $_("units.create_unit")}</Button

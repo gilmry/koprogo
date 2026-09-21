@@ -7,7 +7,7 @@ import { API_BASE } from "./helpers/adresses";
 test.describe("Sondages — parcours de création rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("crée un sondage Oui/Non de bout en bout", async ({ page }) => {
+  test("@happy crée un sondage Oui/Non de bout en bout", async ({ page }) => {
     const ctx = await loginAsSyndicWithBuilding(page, "journey-poll");
 
     // Un sondage exige total_eligible_voters > 0, calculé côté backend à

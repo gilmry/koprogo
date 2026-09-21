@@ -320,6 +320,40 @@ openapi-export: ## 📤 Exporter docs/api/openapi.json depuis ApiDoc
 	@docker compose exec -T backend sh -c "cd /app && SQLX_OFFLINE=true cargo run --quiet --bin export_openapi 2>/dev/null" > docs/api/openapi.json
 	@echo "$(GREEN)✅ docs/api/openapi.json written ($$(wc -c < docs/api/openapi.json) bytes)$(NC)"
 
+openapi-export-conteneur: ## 📤 Exporter openapi.json SANS la pile de démo
+	@# ── Pourquoi un second chemin d'export ────────────────────────────────
+	@#
+	@# `openapi-export` passe par `docker compose exec backend`, c'est-à-dire
+	@# par le conteneur de la DÉMO. Il exige donc que la démo tourne, et il
+	@# désigne la mauvaise pile sur un hôte qui en porte plusieurs — le même
+	@# piège qu'ADR 0050 décrit pour les campagnes e2e (#872).
+	@#
+	@# Celui-ci compile dans le conteneur de build, sur les volumes de cache
+	@# partagés. Incrémental : quelques secondes si `backend/src` n'a pas
+	@# bougé depuis la dernière compilation, ~15 min sinon — c'est-à-dire le
+	@# prix d'une recompilation qu'on paierait de toute façon.
+	@echo "$(GREEN)📤 Export OpenAPI (conteneur de build)...$(NC)"
+	@mkdir -p docs/api
+	@sudo docker run --rm --user $$(id -u):$$(id -g) --memory 6g --memory-swap 6g \
+		-v $(PWD):$(PWD) -v rustbuild-target-koprogo:/target -v rustbuild-cargo-home:/cargo \
+		-e CARGO_TARGET_DIR=/target -e CARGO_HOME=/cargo -e HOME=/tmp \
+		-e CARGO_BUILD_JOBS=1 -e SQLX_OFFLINE=true \
+		-w $(PWD)/backend rust-buildenv:1.98 \
+		cargo run --quiet --bin export_openapi 2>/dev/null > docs/api/openapi.json
+	@python3 -c "import json,sys; json.load(open('docs/api/openapi.json'))" || { \
+		echo "$(YELLOW)❌ L'export n'a pas produit de JSON valide.$(NC)"; exit 1; }
+	@echo "$(GREEN)✅ docs/api/openapi.json écrit ($$(wc -c < docs/api/openapi.json) octets)$(NC)"
+
+openapi-check-conteneur: openapi-export-conteneur ## 🔍 Synchro openapi.json, sans la démo
+	@if ! git diff --quiet docs/api/openapi.json; then \
+		echo "$(YELLOW)❌ docs/api/openapi.json a dérivé de la source Rust.$(NC)"; \
+		echo "   Un DTO, une énumération ou une annotation de handler a changé."; \
+		git diff --stat docs/api/openapi.json; \
+		echo "   Le fichier vient d'être régénéré : vérifiez-le, puis committez."; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✅ openapi.json suit la source Rust$(NC)"
+
 openapi-check: openapi-export ## 🔍 Vérifier que docs/api/openapi.json est à jour
 	@if ! git diff --quiet docs/api/openapi.json; then \
 		echo "$(YELLOW)❌ docs/api/openapi.json has diverged. Run 'make openapi-export' and commit.$(NC)"; \
@@ -505,9 +539,29 @@ ci: ## ✅ Vérifications CI locales via containers Docker (tout dans Docker, pa
 	@# croire le contraire — et sur un hôte où les deux réseaux se rejoindraient,
 	@# la campagne aurait amorcé son monde dans la base vivante (ADR 0050, #872).
 	docker compose exec -T -e PLAYWRIGHT_BASE_URL=http://localhost:3000 -e PLAYWRIGHT_API_BASE=http://koprogo-dev-backend:8080/api/v1 frontend sh -c "npx playwright test --project=chromium" || echo "$(YELLOW)⚠️  Playwright: certains tests échouent en Docker local (networking). Vérifier en CI.$(NC)"
+	@echo "$(GREEN)🔁 Dérive des types générés (api.d.ts ← openapi.json)...$(NC)"
+	@# `Contract Types Check` porte DEUX barrières, et celle-ci était absente
+	@# d'ici. La spec commise descend jusqu'au type TypeScript, et la CI
+	@# compare au byte près : une description enrichie d'un handler suffit à
+	@# faire rougir la promotion (#880, mesuré le 2026-09-21).
+	@#
+	@# Elle coûte quelques secondes — elle ne relit que le JSON déjà commis.
+	cd frontend && npm run types:generate >/dev/null 2>&1
+	@if ! git diff --quiet frontend/src/types/api.d.ts; then \
+		echo "$(YELLOW)❌ frontend/src/types/api.d.ts a dérivé du spec commis.$(NC)"; \
+		echo "   Lancer : cd frontend && npm run types:generate, puis commit."; \
+		git diff --stat frontend/src/types/api.d.ts; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✅ api.d.ts suit le spec$(NC)"
 	@echo ""
 	@echo "$(GREEN)🎉 Tous les checks CI passés!$(NC)"
 	@echo "$(GREEN)✅ Prêt à push$(NC)"
+	@echo ""
+	@echo "$(YELLOW)⚠️  Une barrière de CI n'est PAS couverte ici : la synchro de$(NC)"
+	@echo "$(YELLOW)   docs/api/openapi.json avec la source Rust. Elle exige de$(NC)"
+	@echo "$(YELLOW)   recompiler export_openapi (~15 min) et n'a de sens que si$(NC)"
+	@echo "$(YELLOW)   backend/src a bougé. Dans ce cas : make openapi-check$(NC)"
 
 pre-commit: format lint ## 🎯 Pre-commit hook (format + lint)
 	@echo "$(GREEN)✅ Pre-commit OK$(NC)"

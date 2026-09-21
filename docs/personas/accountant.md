@@ -33,6 +33,21 @@ sous-rôles héritent.
 
 ## Parcours nominal
 
+> **Ce parcours est filmé.** Les dix étapes ci-dessous sont rejouées par
+> `frontend/tests/e2e/journeys/comptable.journey.ts`, que **deux** harnais
+> consomment : le gate E2E (`comptable.spec.ts`, verdict vert ou rouge) et
+> l'enregistreur de la vitrine (narration, chapitres horodatés).
+>
+> La vidéo est publiée sur **https://doc.koprogo.com/vitrine/** — onze
+> chapitres, `interrompu: null`, mesuré le 2026-09-20.
+>
+> Ce n'est pas une illustration : c'est **le même artefact**. Un écart entre
+> ce document et la vidéo ferait échouer l'invariant anti-dette du skill
+> « documentation vivante », qui exige que les deux harnais rejouent le même
+> parcours. La double-maintenance est
+> structurellement impossible, pas confiée à la discipline.
+
+
 Le marqueur 🔒 signale une étape que le serveur refuse si l'immeuble n'est
 pas conforme à son acte de base — voir « Cas dégradé » ci-dessous, c'est la
 question de support la plus fréquente du produit.

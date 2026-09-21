@@ -4,7 +4,9 @@ import { ensureAcp, adminLogin } from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 test.describe("Public Syndic Info - Belgian Legal Requirement", () => {
-  test("should return 404 for non-existent building slug", async ({ page }) => {
+  test("@happy should return 404 for non-existent building slug", async ({
+    page,
+  }) => {
     const resp = await page.request.get(
       `${API_BASE}/public/buildings/immeuble-inexistant-00000/syndic`,
     );
@@ -14,7 +16,9 @@ test.describe("Public Syndic Info - Belgian Legal Requirement", () => {
     ).toBe(404);
   });
 
-  test("should expose public syndic info without auth", async ({ page }) => {
+  test("@happy should expose public syndic info without auth", async ({
+    page,
+  }) => {
     const timestamp = Date.now();
     const adminToken = await adminLogin(page);
     // Create org
@@ -64,7 +68,7 @@ test.describe("Public Syndic Info - Belgian Legal Requirement", () => {
     }
   });
 
-  test("should not require Bearer token for public endpoint", async ({
+  test("@happy should not require Bearer token for public endpoint", async ({
     page,
   }) => {
     // No auth header - should not return 401
@@ -74,7 +78,9 @@ test.describe("Public Syndic Info - Belgian Legal Requirement", () => {
     expect(resp.status()).not.toBe(401);
   });
 
-  test("should load public contractor page without auth", async ({ page }) => {
+  test("@happy should load public contractor page without auth", async ({
+    page,
+  }) => {
     // The contractor PWA page should be accessible without auth
     await page.goto("/contractor/invalid-token");
     await expect(page.locator("body")).toBeVisible();

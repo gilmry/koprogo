@@ -15,7 +15,7 @@ import { test, expect } from "@playwright/test";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Contractor Report - Magic Link PWA", () => {
-  test("should show error state for invalid magic link token", async ({
+  test("@negative should show error state for invalid magic link token", async ({
     page,
   }) => {
     // Access contractor report with an invalid token (query param format)
@@ -38,7 +38,7 @@ test.describe("Contractor Report - Magic Link PWA", () => {
     ).toBeTruthy();
   });
 
-  test("should display the contractor report form elements", async ({
+  test("@happy should display the contractor report form elements", async ({
     page,
   }) => {
     // Navigate to the form page with a token (form HTML is rendered server-side)
@@ -70,7 +70,7 @@ test.describe("Contractor Report - Magic Link PWA", () => {
     expect(formExists + dateInputExists + nameInputExists).toBeGreaterThan(0);
   });
 
-  test("should not redirect to login page for contractor report", async ({
+  test("@happy should not redirect to login page for contractor report", async ({
     page,
   }) => {
     // Contractor report pages are public (magic link access)

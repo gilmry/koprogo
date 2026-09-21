@@ -344,13 +344,153 @@ gates, pas le code.
 
 ## ⚠️ La précondition — le filet avant le saut
 
-**Le mécanisme choisi pour porter le répondre-de n'est pas
+**Le mécanisme choisi pour porter le répondre-de n'était pas
 opérationnel.** Au 2026-09-12 :
 
 | Gate | État | Cause |
 |---|---|---|
 | `e2e` | 🔴 | vise la démo via Traefik — #872 |
 | `doc-vivante` (vitrine) | 🔴 | `make docs-with-videos` — #872 |
+
+### Mesure du 2026-09-20 — le filet est tendu
+
+Cette table avait **huit jours**. La laisser telle quelle conduisait à la
+mauvaise décision : qui la lisait concluait que le filet n'existait pas et
+reportait le lancement des vagues.
+
+| Gate | État | Mesure |
+|---|---|---|
+| `e2e` | 🟢 | ADR 0050 appliqué : recette sur `8090`, démo inchangée sur `80`. `GET localhost:8090/` et `/api/v1/health` → **200** |
+| `doc-vivante` (vitrine) | 🟢 | Publiée sur `doc.koprogo.com`, en **première page**. `GET /vitrine/index.html` → **200**, les 7 vidéos → **206**, 59 chapitres |
+
+**Les trois vagues d'habilitation sont fermées** : V1 #873, V2 #876,
+V3 #874. C'est-à-dire la vitrine publiée, le moule Foyer respecté (parcours
+partagé + invariant anti-dette), et le fan-out CI réglé.
+
+Deux réserves honnêtes, qui ne sont pas des détails :
+
+**#872 reste OUVERTE** alors que sa substance est livrée. Son titre porte sur
+la pile de développement qui revendiquait les conteneurs de la démo ; les
+ports sont décalés depuis le 2026-09-12 et la recette tourne à côté de la
+démo sans la toucher. L'issue devrait être relue et close, ou son reliquat
+explicité.
+
+**Le fan-out n'a jamais tourné sur un vrai créneau.** #874 est fermée, donc
+l'outillage existe ; mais les neuf issues fermées du Gantt l'ont toutes été
+**en série, en session**. Le plan promet dix agents en parallèle sur V4.1 —
+cette promesse n'est pas encore éprouvée, et le premier créneau lancé sera
+autant un test de l'orchestration que du travail lui-même.
+
+> La réserve inscrite en frontmatter par le PO le 2026-09-12 (« le mécanisme
+> de preuve n'est pas encore opérationnel ») paraît levée au vu de ces
+> mesures. Elle porte une **signature humaine** : elle n'est pas modifiée
+> ici, et sa levée revient au signataire.
+
+### Ce que le Gantt ne prévoit pas : ce que la vitrine trouve
+
+Le balayage des 95 écrans, ajouté le 2026-09-19, a produit en une passe
+quatre constats qui n'appartiennent à **aucune vague** :
+
+| issue | trouvaille |
+|---|---|
+| #968 | sept écrans s'ouvrent sans rebondir et cassent — dont `/legal-rules` (`each_key_duplicate`) |
+| #969 | tout 401 déconnecte globalement : ouvrir `/booking-detail` suffit à perdre sa session |
+| #966 | `Characterization E2E Gate` rouge depuis le 2026-09-14 |
+| #967 | `IaC lint` rouge depuis la même date |
+
+C'était l'intérêt annoncé de la preuve de valeur — instruire la revue.
+
+### Ce que la vitrine trouve quand elle CLIQUE — passe du 2026-09-20
+
+Arbitrage du PO, le même jour, dans ses mots : « la vitrine se consacre sur
+les écrans, parfois elle dit *sans cliquer* / *pour avoir testé l'interface* ».
+
+Le reproche était mesurable, et la mesure était pire que l'impression. Sur
+les sept parcours métier filmés à cette date, **43 étapes** produisaient
+12 gestes — 7 clics, 3 saisies, 2 sélections — contre 25 navigations. Le
+motif dominant était « aller à une URL, attendre, vérifier qu'un bouton
+s'affiche ». Un bouton visible n'est pas un bouton qui marche.
+
+Cinq parcours neufs et quatre enrichis plus tard : **111 gestes**.
+
+| parcours | ce qu'il joue |
+|---|---|
+| `incident` | un signalement déposé, cherché, assigné, résolu, clos |
+| `sondage` | une consultation rédigée, publiée, votée par un tiers, dépouillée |
+| `annonce` | une annonce rédigée, publiée, retrouvée par recherche, lue, archivée |
+| `lot` | le compteur de quotités qui passe de 800/1000 rouge à 1000/1000 vert |
+| `sel` | un service offert, demandé, rendu, et trois crédits qui changent de main |
+
+Ce que cette passe a trouvé, en une journée :
+
+| issue | trouvaille | par où |
+|---|---|---|
+| #977 | `resolve`, `cancel` et `reopen` envoient `{}` à des DTO qui exigent un champ : **un incident assigné ne pouvait jamais être clos** | `incident`, étape 9 |
+| #978 | **toute annonce reste en brouillon**, invisible de tous les copropriétaires ; `POST /notices/{id}/publish` existait, rien ne l'appelait | `annonce`, changement d'acteur |
+| #979 | `isAuthor` compare un `owners.id` à un `users.id` : personne ne peut archiver ni supprimer sa propre annonce | `annonce`, le syndic ouvre la sienne |
+| #980 | élection du conseil : la règle d'un an n'est annoncée nulle part, son refus s'efface, l'élu s'affiche sous son UUID | `conseil`, élection menée à son terme |
+| #981 | le choix d'IMMEUBLE ne survit pas à une navigation : #841 n'avait refermé que la moitié du défaut signalé par le PO | `perimetre-multi-role`, clic de menu au lieu d'une URL |
+| #982 | `balayage-owner` réussissait et le gate le déclarait échoué : sa trace de 148 Mo dépassait le budget de démontage | la campagne des seize parcours, jouée d'un bloc |
+
+**Ce que les cinq premiers ont en commun.** Aucun n'est un défaut d'affichage.
+Tous sont des capacités présentes des deux côtés dont le raccordement
+manque, et qu'aucun écran ne signale. Et trois sur cinq sont sortis du
+même mécanisme : **un second acteur regarde ce que le premier a produit.**
+Tant qu'un seul compte regardait, tout paraissait normal.
+
+Le cinquième est sorti d'un autre : **cliquer le geste réel au lieu de son
+raccourci.** `scene.aller("/expenses")` est une navigation par URL ; elle
+saute le dépliage du menu et l'interception du lien. Le PO avait pourtant
+écrit « dès qu'on appuie sur un bouton ou qu'on va dans un menu », et
+c'était deux chemins, pas une tournure. #841 n'en avait refermé qu'un.
+
+Le sixième, #982, n'est pas un défaut du produit mais du HARNAIS, et il
+mérite d'être nommé à part : un gate rouge qui n'accuse rien de réel coûte
+plus cher qu'un gate absent. Celui-ci annonçait un dépassement de 30 s là où
+le plafond effectif était de 900, sans pile ni emplacement — de quoi
+chercher longtemps, puis renoncer à l'écouter. Il n'est sorti qu'en jouant
+les seize parcours d'un bloc : chacun passait isolément.
+
+Cinq des six sont corrigés, chacun avec son témoin daté. #977 reste
+ouvert sur une seule ligne de sa définition de terminé — « un échec de
+transition se dit » — parce que le toast qui s'efface est un motif
+d'interface commun à tout le produit, que #980 relève ailleurs, et que le
+trancher sur un écran créerait une troisième façon de signaler une erreur.
+
+C'est la différence entre un parcours qui clique et un parcours qui regarde,
+et elle ne se rattrape pas par plus de captures d'écran.
+
+`garde-gestes-des-parcours.test.ts` borne le retour en arrière : le total
+des gestes ne peut que monter, et tout parcours métier neuf agit ou nomme
+en clair ce qui l'en empêche. Deux y restent nommés — `moderation` (les
+sept routes communautaires le refusent tant que #962 n'est pas tranchée) et
+`prestataire` (pas d'écran, son point d'entrée est un lien magique qui
+n'existe pas, story 3.2).
+
+### Arbitrage du PO, 2026-09-20 — la règle permanente
+
+> **Quand un balayage ou la vitrine trouve un défaut : on ouvre une issue, et
+> on l'ajoute au périmètre de la release.**
+
+Concrètement, l'étiquette `release:0.1.0`. Les quatre ci-dessus la portent
+depuis ce jour, ainsi que #963.
+
+Ce que cette règle évite : une preuve de valeur qui trouve des défauts sans
+que rien ne les recueille finit par ne plus être lue. Le balayage ne rend
+aucun verdict — il ne PEUT donc rien bloquer — et c'est précisément pour ça
+qu'il lui faut une sortie écrite. Sans elle, « décrire, ne rien casser »
+devient « décrire, et que personne n'en fasse rien ».
+
+Le périmètre de la release grossit donc au fil des découvertes. C'est
+assumé : un périmètre qui n'accueille pas ce qu'on trouve n'est pas un
+périmètre, c'est une liste de souhaits.
+
+### Arbitrage du PO, 2026-09-20 — les partielles gardent leur issue
+
+Les sept issues partielles du tri #970 **ne sont pas scindées**. Leur
+reliquat reste sous leur numéro d'origine, avec sa mesure inscrite en
+commentaire. Six issues livrées ont été closes avec leur preuve : #803,
+#845, #852, #869, #872, #718.
 
 Lancer 84 chantiers en parallèle avant que la preuve existe reviendrait
 à produire 84 branches que **rien ne permet de relire**. Le parallélisme

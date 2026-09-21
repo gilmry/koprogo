@@ -11,7 +11,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Invoices - Expense Approval Workflow", () => {
-  test("should display invoice workflow page", async ({ page }) => {
+  test("@happy should display invoice workflow page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "invoice");
     await page.goto("/invoice-workflow");
 
@@ -21,7 +21,7 @@ test.describe("Invoices - Expense Approval Workflow", () => {
     });
   });
 
-  test("should display expenses page", async ({ page }) => {
+  test("@happy should display expenses page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "invoice");
     await page.goto("/expenses");
 
@@ -29,7 +29,7 @@ test.describe("Invoices - Expense Approval Workflow", () => {
     await expect(page.locator("h1").first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create an expense via API and see it in the list", async ({
+  test("@happy should create an expense via API and see it in the list", async ({
     page,
   }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
@@ -63,7 +63,7 @@ test.describe("Invoices - Expense Approval Workflow", () => {
     });
   });
 
-  test("should navigate to expense detail page and see content", async ({
+  test("@happy should navigate to expense detail page and see content", async ({
     page,
   }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
@@ -92,7 +92,7 @@ test.describe("Invoices - Expense Approval Workflow", () => {
     });
   });
 
-  test("should submit expense for approval (Draft → PendingApproval)", async ({
+  test("@happy should submit expense for approval (Draft → PendingApproval)", async ({
     page,
   }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
@@ -123,7 +123,7 @@ test.describe("Invoices - Expense Approval Workflow", () => {
     expect(updated.approval_status).toBe("pending_approval");
   });
 
-  test("should approve an expense (PendingApproval → Approved)", async ({
+  test("@happy should approve an expense (PendingApproval → Approved)", async ({
     page,
   }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
@@ -161,7 +161,7 @@ test.describe("Invoices - Expense Approval Workflow", () => {
     expect(approved.approval_status).toBe("approved");
   });
 
-  test("should list building expenses", async ({ page }) => {
+  test("@happy should list building expenses", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
       page,
       "invoice",

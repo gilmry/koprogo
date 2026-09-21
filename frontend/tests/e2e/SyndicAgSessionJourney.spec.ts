@@ -5,7 +5,7 @@ import { failOnPageErrors } from "./helpers/pageErrors";
 test.describe("Sessions AG vidéo — parcours de création rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("crée une session vidéo puis la démarre, depuis la fiche réunion", async ({
+  test("@happy crée une session vidéo puis la démarre, depuis la fiche réunion", async ({
     page,
   }) => {
     const { meetingId } = await loginAsSyndicWithMeeting(

@@ -7,7 +7,9 @@ import { API_BASE } from "./helpers/adresses";
 test.describe("Copropriétaire — Tickets de maintenance, parcours de création rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("crée un ticket de maintenance de bout en bout", async ({ page }) => {
+  test("@happy crée un ticket de maintenance de bout en bout", async ({
+    page,
+  }) => {
     const ctx = await loginAsSyndicWithLinkedOwner(
       page,
       "journey-owner-ticket",

@@ -15,7 +15,7 @@ use validator::Validate;
 
 /// Helper function to check if user role can modify unit ownership
 /// Only SuperAdmin and Syndic can modify unit ownership (who owns what)
-fn check_unit_ownership_permission(user: &AuthenticatedUser) -> Option<HttpResponse> {
+fn verify_unit_ownership_permission(user: &AuthenticatedUser) -> Option<HttpResponse> {
     if user.role == "owner" || user.role == "accountant" {
         Some(HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin and Syndic can modify unit ownership"
@@ -33,7 +33,7 @@ pub async fn add_owner_to_unit(
     unit_id: web::Path<String>,
     dto: web::Json<AddOwnerToUnitDto>,
 ) -> impl Responder {
-    if let Some(response) = check_unit_ownership_permission(&user) {
+    if let Some(response) = verify_unit_ownership_permission(&user) {
         return response;
     }
 
@@ -114,7 +114,7 @@ pub async fn remove_owner_from_unit(
     user: AuthenticatedUser,
     path: web::Path<(String, String)>,
 ) -> impl Responder {
-    if let Some(response) = check_unit_ownership_permission(&user) {
+    if let Some(response) = verify_unit_ownership_permission(&user) {
         return response;
     }
 
@@ -141,7 +141,7 @@ pub async fn remove_owner_from_unit(
 
     // Cloisonnement AVANT la suppression (#864).
     //
-    // `check_unit_ownership_permission` plus haut vérifie le RÔLE : seuls un
+    // `verify_unit_ownership_permission` plus haut vérifie le RÔLE : seuls un
     // syndic ou un superadministrateur peuvent toucher aux titularités. Il ne
     // vérifie pas l'ORGANISATION — un syndic du cabinet A pouvait donc détacher
     // un copropriétaire d'un lot du cabinet B.
@@ -195,7 +195,7 @@ pub async fn update_unit_owner(
     id: web::Path<String>,
     dto: web::Json<UpdateOwnershipDto>,
 ) -> impl Responder {
-    if let Some(response) = check_unit_ownership_permission(&user) {
+    if let Some(response) = verify_unit_ownership_permission(&user) {
         return response;
     }
 
@@ -462,7 +462,7 @@ pub async fn transfer_ownership(
     unit_id: web::Path<String>,
     dto: web::Json<TransferOwnershipDto>,
 ) -> impl Responder {
-    if let Some(response) = check_unit_ownership_permission(&user) {
+    if let Some(response) = verify_unit_ownership_permission(&user) {
         return response;
     }
 
@@ -613,7 +613,7 @@ pub async fn designate_voting_representative(
     unit_id: web::Path<String>,
     dto: web::Json<DesignateVotingRepresentativeDto>,
 ) -> impl Responder {
-    if let Some(response) = check_unit_ownership_permission(&user) {
+    if let Some(response) = verify_unit_ownership_permission(&user) {
         return response;
     }
 

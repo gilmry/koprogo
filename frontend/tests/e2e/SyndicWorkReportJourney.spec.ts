@@ -5,7 +5,7 @@ import { failOnPageErrors } from "./helpers/pageErrors";
 test.describe("Syndic — parcours de création remplis jusqu'au bout (work-reports)", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("work-reports: crée un rapport de travaux de bout en bout", async ({
+  test("@happy work-reports: crée un rapport de travaux de bout en bout", async ({
     page,
   }) => {
     await loginAsSyndicWithBuilding(page, "journey-workreport");

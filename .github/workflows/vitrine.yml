@@ -52,10 +52,33 @@ jobs:
   vitrine:
     name: Enregistrer la vitrine
     runs-on: ubuntu-latest
-    # Cinq parcours en cadence d'une action par seconde. Observé ~2 min par
-    # parcours en local ; plafond large pour absorber la variance d'un
-    # exécuteur, sans laisser un job pendu six heures.
-    timeout-minutes: 45
+    # Le plafond doit EXCÉDER la mesure, pas la frôler : un plafond égal à la
+    # durée observée transforme la moindre lenteur de runner en tournage
+    # perdu, et un tournage perdu ne publie rien.
+    #
+    # ── Historique des mesures ───────────────────────────────────────────
+    #
+    # 2026-09-19 — 7 parcours métier + 4 balayages, ~45 min
+    #   (métier ~10 min, tournage de 12:18:04 à 12:28:22 ; balayages ~6 min
+    #    chacun, 95 écrans à ~3 s). Plafond posé à 75.
+    #
+    # 2026-09-20 — 15 parcours, **57 min 40 s** mesuré de bout en bout
+    #   (19:17:30 → 20:15:10, sur un hôte qui portait en parallèle la démo,
+    #    la recette et une campagne Playwright). Répartition relevée aux
+    #    horodatages des `.json` : 11 métier en ~25 min, 4 balayages en
+    #    ~33 min.
+    #
+    # Les parcours métier ont triplé de durée parce qu'ils CLIQUENT
+    # désormais au lieu de regarder : `incident` joue dix étapes et dix-sept
+    # gestes, `sel` en joue quatorze, chacun à la cadence d'une action par
+    # seconde (#974).
+    #
+    # Le seizième parcours (`sel`) est arrivé après ce tournage : compter
+    # ~61 min pour la liste actuelle. 75 min le FRÔLERAIT — exactement ce
+    # que le paragraphe ci-dessus interdit. Le même rapport mesure/plafond
+    # qu'en septembre (45 → 75, soit 1,67) donne ~100 ; on prend 110 pour
+    # absorber un runner plus lent que cet hôte.
+    timeout-minutes: 110
     services:
       postgres:
         image: postgres:16
@@ -226,7 +249,12 @@ jobs:
       # douze vidéos des scénarios. Or ce sont les captures qui ont permis de
       # résoudre les scénarios — modale non confirmée, barre d'outils d'Astro,
       # table vide sous un bandeau rouge. On jetait l'outil qui marche.
-      - name: Enregistrer les cinq parcours, en cadence
+      # Sans nombre dans le nom, délibérément : il en portait « cinq » alors
+      # qu'il y en avait sept, puis onze. Un nom d'étape qui compte dérive à
+      # chaque ajout, et un nom faux égare le prochain diagnostic — c'est
+      # exactement ce qui est arrivé à « Run Playwright smoke tests », qui
+      # excluait smoke (cf. la note plus haut).
+      - name: Enregistrer les parcours, en cadence
         # `continue-on-error` n'est pas une précaution : c'est l'élément 3 du
         # skill `documentation-vivante`. « La preuve de valeur n'est PAS un
         # test : elle ne doit pas faire tomber le build » (#876). Lui confier

@@ -203,7 +203,84 @@ export default defineConfig({
       // La liste est tenue par `garde-projets-playwright`, qui la recalcule
       // depuis les `testDir` déclarés plutôt que de faire confiance à la
       // mémoire du prochain qui ajoutera un répertoire.
-      testIgnore: [/scenarios\//, /smoke\//, /characterization\//, /mobile\//],
+      testIgnore: [
+        /scenarios\//,
+        /smoke\//,
+        /characterization\//,
+        /mobile\//,
+        // ── Pourquoi les parcours filmés quittent le projet de bureau ────
+        //
+        // Ils y vivaient, et ils l'ont fait déborder. Mesuré en CI le
+        // 2026-09-21 : la campagne chromium a atteint **45,0 min** — son
+        // budget exact — et Playwright a interrompu le test en vol
+        // (`Payments.spec.ts` : « Test was interrupted »). 262 tests passés,
+        // et un rapport tronqué.
+        //
+        // La cause n'est pas un test lent parmi d'autres : les parcours
+        // filmés sont un harnais d'une NATURE différente. Ils jouent des
+        // cycles entiers — un incident signalé puis clos, une consultation
+        // publiée puis dépouillée — et les quatre balayages ouvrent 93
+        // écrans chacun. Mesuré localement : **46,8 min pour les seize**,
+        // dont 25 pour les seuls balayages (#974).
+        //
+        // Autrement dit, ce harnais coûte à lui seul plus que le budget
+        // entier du projet de bureau. Le garder dedans revenait à faire
+        // payer à 262 recettes rapides le prix de seize recettes longues,
+        // et à tronquer les deux.
+        //
+        // Il rejoint donc `scenarios`, `smoke` et `characterization` : un
+        // répertoire, un projet, un budget. C'est ce que l'en-tête
+        // ci-dessus réclame — « Chaque répertoire revendiqué AILLEURS doit
+        // être écarté ici » — et `garde-projets-playwright` le vérifie.
+        /journeys\//,
+      ],
+    },
+
+    /**
+     * Les parcours filmés — le gate de la documentation vivante.
+     *
+     * Ce projet rejoue les `*.journey.ts` À LA VITESSE et rend vert ou
+     * rouge. C'est la première des deux lectures du parcours partagé ; la
+     * seconde est la vitrine, qui le rejoue en cadence et ne rend aucun
+     * verdict (`enregistrer-vitrine.mjs`).
+     *
+     * ── Pourquoi un projet à lui, et pas une option de ligne de commande ─
+     *
+     * Parce qu'un budget se déclare là où il se lit. Ces recettes sont
+     * longues PAR CONSTRUCTION : un parcours qui clique le cycle entier
+     * d'un incident ne peut pas être rapide, et un balayage qui ouvre 93
+     * écrans non plus. Les mêler aux 262 recettes rapides du projet de
+     * bureau obligeait à choisir entre tronquer les unes ou surdimensionner
+     * le budget des autres.
+     *
+     * Run: npx playwright test --project=journeys
+     */
+    {
+      name: "journeys",
+      testDir: "./tests/e2e/journeys",
+      // Un seul worker : chaque parcours sème son propre monde — une
+      // organisation, une ACP, un immeuble, des comptes — et deux parcours
+      // concurrents se disputent le même backend. Mesuré le 2026-09-20 :
+      // avec deux workers, une connexion a dépassé son délai et le parcours
+      // est tombé sur un faux défaut ; seul, il passe.
+      fullyParallel: false,
+      workers: 1,
+      // Dix étapes, deux connexions, plusieurs transitions d'état côté
+      // serveur. Le plafond par test de 30 s ne couvre pas l'amorçage seul ;
+      // chaque spec pose déjà le sien par `test.setTimeout`, celui-ci n'est
+      // qu'un filet.
+      timeout: 300_000,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 720 },
+        locale: "fr-BE",
+        // Pas de trace : un balayage ouvre 93 écrans et la sienne atteint
+        // 148 Mo, que la teardown n'arrive pas à écrire — Playwright le
+        // rapporte alors comme un dépassement de TEST, sur un test qui a
+        // réussi (#982). `balayage.spec.ts` le pose déjà pour lui-même ;
+        // ici c'est le défaut du projet.
+        trace: "off",
+      },
     },
 
     /**

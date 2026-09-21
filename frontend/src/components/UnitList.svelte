@@ -164,6 +164,7 @@
     <p class="text-gray-600">{totalItems} lot{totalItems !== 1 ? "s" : ""}</p>
     {#if buildingId && peutCreerUnLot}<Button
         variant="primary"
+        data-testid="unit-add-button"
         onclick={() => (showCreateModal = true)}>+ {$_("units.addUnit")}</Button
       >{/if}
   </div>

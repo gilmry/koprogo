@@ -2741,7 +2741,12 @@
       "Other": "Autre"
     },
     "fieldTitle": "Titre",
-    "loadFailed": "Impossible de charger l'annonce."
+    "loadFailed": "Impossible de charger l'annonce.",
+    "publish": "Publier",
+    "publishing": "Publication…",
+    "published_successfully": "Annonce publiée : elle est désormais visible des copropriétaires",
+    "publish_failed": "La publication a échoué",
+    "publish_confirmation": "Publier cette annonce ? Elle deviendra visible de tous les copropriétaires de l'immeuble."
   },
   "notifications": {
     "channels": {
@@ -3930,7 +3935,13 @@
     "noAction": "— Aucune action —",
     "evidence": "Preuves (photos, vidéos, PDF)",
     "witnesses": "Témoins",
-    "cannotBeOwnWitness": "Vous ne pouvez pas vous désigner comme témoin de votre propre plainte."
+    "cannotBeOwnWitness": "Vous ne pouvez pas vous désigner comme témoin de votre propre plainte.",
+    "transition": {
+      "resolutionNotes": "Qu'avez-vous fait pour résoudre cet incident ?",
+      "cancelReason": "Pourquoi annulez-vous cet incident ?",
+      "reopenReason": "Pourquoi rouvrez-vous ce dossier ?",
+      "whyRequired": "Ce texte est conservé dans le dossier. Il explique la décision à qui le relira, y compris des mois plus tard."
+    }
   },
   "units": {
     "acp": "ACP",

@@ -67,7 +67,7 @@ async function ensureBuildingHasOwner(
 }
 
 test.describe("Polls - Board Decision Polling", () => {
-  test("should display polls page", async ({ page }) => {
+  test("@happy should display polls page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "poll");
     await page.goto("/polls");
 
@@ -159,7 +159,7 @@ test.describe("Polls - Board Decision Polling", () => {
     expect(published.status).toBe("active");
   });
 
-  test("should list active polls for building", async ({ page }) => {
+  test("@happy should list active polls for building", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(page, "poll");
 
     const listResp = await page.request.get(
@@ -171,7 +171,7 @@ test.describe("Polls - Board Decision Polling", () => {
     expect(Array.isArray(polls)).toBeTruthy();
   });
 
-  test("should list all building polls", async ({ page }) => {
+  test("@happy should list all building polls", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(page, "poll");
 
     const listResp = await page.request.get(
@@ -222,14 +222,14 @@ test.describe("Polls - Board Decision Polling", () => {
     expect(resultsResp.status()).toBe(200);
   });
 
-  test("should navigate to new poll page", async ({ page }) => {
+  test("@happy should navigate to new poll page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "poll");
     await page.goto("/polls/new");
 
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should require auth for polls API", async ({ page }) => {
+  test("@security should require auth for polls API", async ({ page }) => {
     const resp = await page.request.get(`${API_BASE}/polls/some-id`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

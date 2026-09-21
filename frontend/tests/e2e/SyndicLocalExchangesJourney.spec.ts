@@ -12,7 +12,7 @@ import { API_BASE } from "./helpers/adresses";
 test.describe("Échanges locaux (SEL) — parcours de création rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("crée une offre d'échange de bout en bout, en tant que propriétaire lié", async ({
+  test("@happy crée une offre d'échange de bout en bout, en tant que propriétaire lié", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithLinkedOwner(page, "journey-exch");

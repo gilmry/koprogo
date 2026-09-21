@@ -29,6 +29,7 @@
 import type { Page } from "@playwright/test";
 import {
   humanClick,
+  humanClickLocator,
   humanFill,
   humanGoto,
   humanLogin,
@@ -163,6 +164,34 @@ export class Scene {
     await this.tempo();
   }
 
+  /**
+   * Ouvrir un écran à l'allure d'un CONSTAT, pas d'une démonstration.
+   *
+   * `aller()` impose 2,5 s d'attente pure par page — 1,5 s après navigation
+   * plus la cadence — parce qu'un spectateur doit avoir le temps de lire.
+   * Le balayage en ouvre 95 par rôle : la même allure lui coûterait quatre
+   * minutes d'attente immobile par rôle, sans rien montrer de plus.
+   *
+   * ── Pourquoi pas simplement un délai plus court ────────────────────────
+   *
+   * Parce que le balayage MESURE ce que l'écran rend. Raccourcir à l'aveugle
+   * le ferait mesurer la page avant l'hydratation de ses îlots, et conclure
+   * « écran vide » sur des écrans pleins : l'instrument mentirait, et dans le
+   * sens le plus coûteux — celui qui fabrique des défauts inexistants.
+   *
+   * On attend donc le RÉSEAU, pas une horloge. Le plafond est une sécurité,
+   * pas une cible : une page qui se calme en 300 ms repart en 300 ms.
+   */
+  async survoler(url: string): Promise<void> {
+    await this.page.goto(url, { waitUntil: "domcontentloaded" });
+    await this.page
+      .waitForLoadState("networkidle", { timeout: 4000 })
+      .catch(() => {
+        // Un écran qui n'atteint jamais le repos réseau (sondage, flux) ne
+        // doit pas faire tomber le balayage : on le mesure tel qu'il est.
+      });
+  }
+
   async saisir(testId: string, valeur: string): Promise<void> {
     await humanFill(this.page, testId, valeur);
     await this.tempo();
@@ -173,7 +202,56 @@ export class Scene {
     await this.tempo();
   }
 
+  /**
+   * Cliquer le PREMIER élément portant ce testId.
+   *
+   * Une liste rend N lignes sous le même `data-testid` — `ticket-row`,
+   * `expense-row`, `poll-card`. `cliquer()` échouerait sur la résolution
+   * stricte de Playwright (« resolved to 3 elements »), et un parcours qui
+   * ne peut pas ouvrir une ligne de liste ne peut rien démontrer au-delà de
+   * l'écran d'accueil.
+   *
+   * Le premier, et pas un index : un parcours qui viserait la troisième
+   * ligne dépendrait d'un ordre que rien ne lui garantit. Quand il faut LA
+   * bonne ligne, on filtre AVANT (une recherche, un filtre) — et le geste de
+   * filtrage fait alors partie de ce que la vitrine montre.
+   */
+  async cliquerLePremier(testId: string): Promise<void> {
+    await humanClickLocator(this.page, this.page.getByTestId(testId).first());
+    await this.tempo();
+  }
+
   async choisir(testId: string, valeur: string): Promise<void> {
+    await humanSelect(this.page, testId, valeur);
+    await this.tempo();
+  }
+
+  /**
+   * Choisir l'option dont le LIBELLÉ contient ce fragment.
+   *
+   * Certaines listes n'ont pas de valeurs stables : `ticket-assignee-select`
+   * porte des UUID de comptes créés à l'amorçage, et son ordre dépend de ce
+   * que rend `GET /tickets/assignable-users`.
+   *
+   * Choisir par index y serait un pari : si le syndic se retrouvait en tête
+   * de sa propre liste d'assignables, le parcours confierait l'incident à
+   * elle-même tout en narrant qu'elle le confie au plombier. La vidéo
+   * mentirait, et rien ne l'aurait signalé — c'est exactement le défaut que
+   * la vitrine est censée débusquer, pas produire.
+   */
+  async choisirQuiContient(testId: string, fragment: string): Promise<void> {
+    const liste = this.page.getByTestId(testId);
+    const option = liste.locator("option", { hasText: fragment }).first();
+    const valeur = await option.getAttribute("value");
+    if (valeur === null || valeur === "") {
+      const offert = (await liste.locator("option").allInnerTexts()).join(
+        " | ",
+      );
+      throw new Error(
+        `Aucune option ne contient « ${fragment} » dans ${testId}.\n` +
+          `Options offertes : ${offert || "aucune"}.`,
+      );
+    }
     await humanSelect(this.page, testId, valeur);
     await this.tempo();
   }

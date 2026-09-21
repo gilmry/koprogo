@@ -9,7 +9,7 @@ async function setupSyndicWithBuilding(page: import("@playwright/test").Page) {
 }
 
 test.describe("Work Reports - Digital Maintenance Logbook", () => {
-  test("should display work reports page", async ({ page }) => {
+  test("@happy should display work reports page", async ({ page }) => {
     await setupSyndicWithBuilding(page);
     await page.goto("/work-reports");
 
@@ -19,7 +19,7 @@ test.describe("Work Reports - Digital Maintenance Logbook", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a work report via API", async ({ page }) => {
+  test("@happy should create a work report via API", async ({ page }) => {
     const { token, buildingId, orgId } = await setupSyndicWithBuilding(page);
     const timestamp = Date.now();
 
@@ -46,7 +46,7 @@ test.describe("Work Reports - Digital Maintenance Logbook", () => {
     expect(report.building_id).toBe(buildingId);
   });
 
-  test("should list work reports for building", async ({ page }) => {
+  test("@happy should list work reports for building", async ({ page }) => {
     const { token, buildingId } = await setupSyndicWithBuilding(page);
 
     const listResp = await page.request.get(
@@ -58,7 +58,7 @@ test.describe("Work Reports - Digital Maintenance Logbook", () => {
     expect(Array.isArray(reports) || reports.data !== undefined).toBeTruthy();
   });
 
-  test("happy_should check active warranties", async ({ page }) => {
+  test("@happy happy_should check active warranties", async ({ page }) => {
     const { token, buildingId } = await setupSyndicWithBuilding(page);
 
     const warrantiesResp = await page.request.get(

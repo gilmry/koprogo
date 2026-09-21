@@ -13,7 +13,7 @@ import { loginAsSyndicWithOwner } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
-  test("should display age-requests page", async ({ page }) => {
+  test("@happy should display age-requests page", async ({ page }) => {
     await loginAsSyndicWithOwner(page, "agereq");
     await page.goto("/age-requests");
 
@@ -23,7 +23,9 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create an AGE request and retrieve it", async ({ page }) => {
+  test("@happy should create an AGE request and retrieve it", async ({
+    page,
+  }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithOwner(
       page,
       "agereq",
@@ -60,7 +62,7 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
     expect(retrieved.id).toBe(ageRequest.id);
   });
 
-  test("should open an AGE request for signatures (Draft → Open)", async ({
+  test("@happy should open an AGE request for signatures (Draft → Open)", async ({
     page,
   }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithOwner(
@@ -95,7 +97,7 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
     expect(opened.status).toBe("open");
   });
 
-  test("should list AGE requests for building", async ({ page }) => {
+  test("@happy should list AGE requests for building", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithOwner(page, "agereq");
 
     const listResp = await page.request.get(
@@ -107,7 +109,9 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
     expect(Array.isArray(requests)).toBeTruthy();
   });
 
-  test("should add a cosignatory to an AGE request", async ({ page }) => {
+  test("@happy should add a cosignatory to an AGE request", async ({
+    page,
+  }) => {
     const { token, buildingId, orgId, ownerId } = await loginAsSyndicWithOwner(
       page,
       "agereq",
@@ -145,14 +149,16 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
     expect(cosignResp.status()).toBe(200);
   });
 
-  test("should navigate to new age-request page", async ({ page }) => {
+  test("@happy should navigate to new age-request page", async ({ page }) => {
     await loginAsSyndicWithOwner(page, "agereq");
     await page.goto("/age-requests/new");
 
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should require auth for AGE requests API", async ({ page }) => {
+  test("@security should require auth for AGE requests API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(
       `${API_BASE}/buildings/some-id/age-requests`,
     );

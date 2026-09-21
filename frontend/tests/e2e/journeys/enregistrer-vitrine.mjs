@@ -54,6 +54,26 @@ const PARCOURS_A_FILMER = [
   { fichier: "conseil.journey.ts", export: "conseil" },
   { fichier: "prestataire.journey.ts", export: "prestataire" },
   { fichier: "moderation.journey.ts", export: "moderation" },
+  { fichier: "incident.journey.ts", export: "incident" },
+  { fichier: "sondage.journey.ts", export: "sondage" },
+  { fichier: "annonce.journey.ts", export: "annonce" },
+  { fichier: "lot.journey.ts", export: "lot" },
+  { fichier: "sel.journey.ts", export: "sel" },
+
+  // ── Les balayages, après les parcours métier ────────────────────────────
+  //
+  // L'ordre compte pour qui regarde la galerie : les sept premiers RACONTENT
+  // le produit, les quatre suivants le CONSTATENT. Mettre un état des lieux
+  // en tête donnerait à un visiteur l'impression que le produit se résume à
+  // une liste d'écrans.
+  //
+  // Ils sont ici parce que 72 des 95 écrans n'avaient jamais été ouverts par
+  // un navigateur dans ce dépôt. Ils ne rendent aucun verdict : arbitrage du
+  // PO du 2026-09-19, « décrire, ne rien casser ».
+  { fichier: "balayage-syndic.journey.ts", export: "parcours" },
+  { fichier: "balayage-coproprietaire.journey.ts", export: "parcours" },
+  { fichier: "balayage-comptable.journey.ts", export: "parcours" },
+  { fichier: "balayage-administrateur.journey.ts", export: "parcours" },
 ];
 
 if (!existsSync(DOSSIER_VIDEOS)) mkdirSync(DOSSIER_VIDEOS, { recursive: true });
@@ -96,14 +116,80 @@ for (const { fichier, export: nomExport } of PARCOURS_A_FILMER) {
   const retenir = (entree) => {
     if (journalConsole.length < PLAFOND_JOURNAL) journalConsole.push(entree);
   };
+
+  // ── Ce que le journal doit ÉCARTER, et pourquoi ce n'est pas du confort
+  //
+  // Première galerie qui affichait ce journal, le 2026-09-20 : chaque carte
+  // annonçait « 30 messages de la console », le plafond. Regroupés par
+  // forme, sur six parcours :
+  //
+  //     62  [warning] Ignoring Event: localhost
+  //     25  [error] Failed to load resource: … 403 (Forbidden)
+  //      6  [error] … 401       4  [error] … 404
+  //
+  // Deux tiers étaient un avertissement du serveur de développement, sans
+  // rapport avec le produit. Pire que du bruit : le plafond se REMPLIT avec
+  // et tronque le signal. Un instrument qui noie sa mesure ne mesure plus.
+  const BRUIT = [/Ignoring Event/i, /\[vite\]/i, /HMR/i];
+  const estDuBruit = (texte) => BRUIT.some((r) => r.test(texte));
+
   page.on("console", (msg) => {
-    if (msg.type() === "error" || msg.type() === "warning") {
-      retenir(`[${msg.type()}] ${msg.text().slice(0, 300)}`);
-    }
+    if (msg.type() !== "error" && msg.type() !== "warning") return;
+    const texte = msg.text();
+    // « Failed to load resource: the server responded with a status of 403 »
+    // ne nomme PAS la ressource — c'est le listener `response` ci-dessous
+    // qui la donne. Retenir les deux ferait compter chaque refus deux fois,
+    // dont une fois sans rien dire d'exploitable.
+    if (estDuBruit(texte) || /Failed to load resource/i.test(texte)) return;
+    retenir(`[${msg.type()}] ${texte.slice(0, 300)}`);
   });
+
   page.on("pageerror", (err) =>
     retenir(`[pageerror] ${String(err).slice(0, 300)}`),
   );
+
+  // ── Les refus du serveur, avec leur adresse ──────────────────────────────
+  //
+  // `requestfailed` ne couvre que les échecs RÉSEAU. Un 403 est une réponse
+  // qui aboutit : la requête a réussi, le serveur a dit non. Sans ce
+  // listener, la galerie affichait « une ressource a échoué » sans jamais
+  // dire laquelle — de quoi savoir qu'un problème existe, jamais de quoi
+  // écrire l'issue qui le ferme.
+  //
+  // ── Tout refus n'est PAS un défaut, et il faut le savoir en lisant ─────
+  //
+  // Mesuré sur le parcours `lot` après ce changement — deux entrées, contre
+  // huit avant filtrage :
+  //
+  //     [401] POST /api/v1/auth/refresh
+  //     [403] GET  /api/v1/organizations?per_page=1000
+  //
+  // Le 403 est **voulu et documenté** : `tryGetOrganizationName` appelle
+  // cette route en best-effort avec `silent: true`, et
+  // `organizations.ts:45-48` écrit noir sur blanc « un 403 est attendu et
+  // déclenche juste la dégradation à 2 niveaux côté composant ».
+  //
+  // Le 401 l'est aussi : `api.ts:147` décrit le rafraîchissement silencieux
+  // qui part avant qu'un jeton soit en mémoire — « au pire : 1 POST 401,
+  // puis clearSession ; rien de cassé ».
+  //
+  // On ne les filtre pas. La couche réseau ne voit pas `silent: true`, et un
+  // filtre fondé sur une liste d'URL tolérées finirait par masquer le jour
+  // où l'une d'elles casse vraiment. C'est la GALERIE qui doit rester
+  // neutre dans ses mots : elle annonce des « échanges réseau refusés », pas
+  // des erreurs — la lecture appartient à qui regarde.
+  page.on("response", (resp) => {
+    if (resp.status() < 400) return;
+    const url = resp.url();
+    // Les ressources du serveur de dev (modules Vite, cartes de source) ne
+    // relèvent pas du produit.
+    if (!url.includes("/api/")) return;
+    retenir(
+      `[${resp.status()}] ${resp.request().method()} ` +
+        `${url.replace(/^https?:\/\/[^/]+/, "").slice(0, 160)}`,
+    );
+  });
+
   page.on("requestfailed", (req) =>
     retenir(
       `[requestfailed] ${req.method()} ${req.url().slice(0, 160)} — ` +

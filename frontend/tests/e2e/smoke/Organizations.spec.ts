@@ -4,7 +4,7 @@ import { loginAsAdmin, adminLogin } from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 test.describe("Organizations - SuperAdmin Management", () => {
-  test("should display admin organizations page", async ({ page }) => {
+  test("@happy should display admin organizations page", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/organizations");
 
@@ -14,7 +14,7 @@ test.describe("Organizations - SuperAdmin Management", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should list organizations via API", async ({ page }) => {
+  test("@happy should list organizations via API", async ({ page }) => {
     const { adminToken } = await loginAsAdmin(page);
 
     const listResp = await page.request.get(`${API_BASE}/organizations`, {
@@ -25,7 +25,7 @@ test.describe("Organizations - SuperAdmin Management", () => {
     expect(Array.isArray(orgs) || orgs.data !== undefined).toBeTruthy();
   });
 
-  test("should create an organization via API", async ({ page }) => {
+  test("@happy should create an organization via API", async ({ page }) => {
     const { adminToken } = await loginAsAdmin(page);
     const timestamp = Date.now();
 
@@ -46,7 +46,9 @@ test.describe("Organizations - SuperAdmin Management", () => {
     expect(org.name).toBe(`New Org ${timestamp}`);
   });
 
-  test("should require superadmin to list organizations", async ({ page }) => {
+  test("@happy should require superadmin to list organizations", async ({
+    page,
+  }) => {
     const timestamp = Date.now();
     // Create regular user
     const adminToken = await adminLogin(page);

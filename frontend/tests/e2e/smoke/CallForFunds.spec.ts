@@ -4,7 +4,7 @@ import { loginAsSyndicWithBuilding } from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 test.describe("Call For Funds - Revenue Management", () => {
-  test("should display call-for-funds page", async ({ page }) => {
+  test("@happy should display call-for-funds page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "cff");
     await page.goto("/call-for-funds");
 
@@ -14,7 +14,7 @@ test.describe("Call For Funds - Revenue Management", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a call for funds via API", async ({ page }) => {
+  test("@happy should create a call for funds via API", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(page, "cff");
     const timestamp = Date.now();
     const dueDate = new Date();
@@ -40,7 +40,7 @@ test.describe("Call For Funds - Revenue Management", () => {
     expect(cff.building_id).toBe(buildingId);
   });
 
-  test("should list calls for funds via API", async ({ page }) => {
+  test("@happy should list calls for funds via API", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(page, "cff");
 
     const listResp = await page.request.get(
@@ -52,7 +52,7 @@ test.describe("Call For Funds - Revenue Management", () => {
     expect(Array.isArray(response)).toBeTruthy();
   });
 
-  test("should get call for funds by ID", async ({ page }) => {
+  test("@happy should get call for funds by ID", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(page, "cff");
     const timestamp = Date.now();
     const dueDate = new Date();
@@ -88,7 +88,9 @@ test.describe("Call For Funds - Revenue Management", () => {
     expect(retrieved.id).toBe(cff.id);
   });
 
-  test("should require auth for call-for-funds API", async ({ page }) => {
+  test("@security should require auth for call-for-funds API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/call-for-funds`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

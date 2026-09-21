@@ -4,7 +4,9 @@ import { loginAsSyndicWithExpense } from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 test.describe("Charge Distribution - Invoice Allocation", () => {
-  test("should calculate charge distribution via API", async ({ page }) => {
+  test("@happy should calculate charge distribution via API", async ({
+    page,
+  }) => {
     const { token, expenseId, buildingId, orgId, adminToken } =
       await loginAsSyndicWithExpense(page, "chargedist");
     const timestamp = Date.now();
@@ -105,7 +107,9 @@ test.describe("Charge Distribution - Invoice Allocation", () => {
     ).toBe(200);
   });
 
-  test("should get charge distribution for invoice", async ({ page }) => {
+  test("@happy should get charge distribution for invoice", async ({
+    page,
+  }) => {
     const { token, expenseId } = await loginAsSyndicWithExpense(
       page,
       "chargedist",
@@ -120,7 +124,9 @@ test.describe("Charge Distribution - Invoice Allocation", () => {
     expect(Array.isArray(distributions)).toBeTruthy();
   });
 
-  test("should require auth for charge distribution", async ({ page }) => {
+  test("@security should require auth for charge distribution", async ({
+    page,
+  }) => {
     const resp = await page.request.get(
       `${API_BASE}/invoices/some-id/distribution`,
     );
@@ -130,7 +136,7 @@ test.describe("Charge Distribution - Invoice Allocation", () => {
     ).toBe(401);
   });
 
-  test("should display accountant page where distributions are shown", async ({
+  test("@happy should display accountant page where distributions are shown", async ({
     page,
   }) => {
     await loginAsSyndicWithExpense(page, "chargedist");

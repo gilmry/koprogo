@@ -16,7 +16,7 @@ import { API_BASE } from "./helpers/adresses";
 const CONTRACTOR_UUID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 
 test.describe("Quotes - Contractor Quote Management", () => {
-  test("should display quotes page", async ({ page }) => {
+  test("@happy should display quotes page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "quote");
     await page.goto("/quotes");
 
@@ -26,7 +26,7 @@ test.describe("Quotes - Contractor Quote Management", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display quote comparison page", async ({ page }) => {
+  test("@happy should display quote comparison page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "quote");
     await page.goto("/quotes/compare");
 
@@ -34,7 +34,7 @@ test.describe("Quotes - Contractor Quote Management", () => {
     await expect(page.locator("h1").first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a quote request via API and retrieve it", async ({
+  test("@happy should create a quote request via API and retrieve it", async ({
     page,
   }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
@@ -86,7 +86,7 @@ test.describe("Quotes - Contractor Quote Management", () => {
     expect(quotes.some((q: { id: string }) => q.id === quote.id)).toBe(true);
   });
 
-  test("should list quotes for a building", async ({ page }) => {
+  test("@happy should list quotes for a building", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
       page,
       "quote",
@@ -101,7 +101,7 @@ test.describe("Quotes - Contractor Quote Management", () => {
     expect(Array.isArray(quotes)).toBeTruthy();
   });
 
-  test("should count quotes for a building", async ({ page }) => {
+  test("@happy should count quotes for a building", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
       page,
       "quote",
@@ -114,7 +114,9 @@ test.describe("Quotes - Contractor Quote Management", () => {
     expect(countResp.ok()).toBeTruthy();
   });
 
-  test("should submit a quote (Requested → Received)", async ({ page }) => {
+  test("@happy should submit a quote (Requested → Received)", async ({
+    page,
+  }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
       page,
       "quote",
@@ -153,7 +155,7 @@ test.describe("Quotes - Contractor Quote Management", () => {
     expect(submitted.status).toBe("Received");
   });
 
-  test("should request a quote without pricing then submit real pricing (2-phase workflow)", async ({
+  test("@edge should request a quote without pricing then submit real pricing (2-phase workflow)", async ({
     page,
   }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
@@ -204,7 +206,9 @@ test.describe("Quotes - Contractor Quote Management", () => {
     expect(submitted.amount_incl_vat_cents).toBe(580800);
   });
 
-  test("should require auth to access quotes API", async ({ page }) => {
+  test("@security should require auth to access quotes API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/quotes/some-id`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

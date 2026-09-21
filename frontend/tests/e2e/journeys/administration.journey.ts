@@ -36,6 +36,17 @@ import { expect } from "@playwright/test";
 import type { Parcours } from "./parcours";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "../helpers/identifiants";
 
+/**
+ * Ce que le parcours crée à la caméra, et que les étapes suivantes
+ * retrouvent.
+ *
+ * Horodaté : l'étape 3 CHERCHE cette organisation par son nom pour y
+ * rattacher l'ACP. Un nom partagé avec une campagne précédente ferait
+ * rattacher l'ACP au mauvais cabinet, et l'assertion passerait au vert sans
+ * rien prouver de la chaîne.
+ */
+let nomDuCabinet = "";
+
 export const administration: Parcours = {
   slug: "administration",
   titre: "L'administration de la plateforme, au-dessus du multi-tenant",
@@ -49,6 +60,7 @@ export const administration: Parcours = {
     // Ses identifiants viennent de l'environnement, jamais d'ici — le mot
     // de passe du superadministrateur tourne au déploiement.
     await page.context().clearCookies();
+    nomDuCabinet = `Cabinet Verhaeren ${Date.now()}`;
     return {
       administrateur: { email: ADMIN_EMAIL, motDePasse: ADMIN_PASSWORD },
     };
@@ -81,11 +93,54 @@ export const administration: Parcours = {
       action: async (scene) => {
         await scene.aller("/admin/organizations");
         await scene.attendreChargement();
+        // L'étape se contentait d'atteindre l'écran et de constater qu'un
+        // bouton « créer » s'affichait (#974). Elle CRÉE désormais : c'est
+        // le premier maillon de la chaîne, et le narrer sans le faire
+        // laissait le maillon non vérifié.
+        await scene.cliquer("create-organization-button");
+        await scene.attendreChargement();
+        await scene.saisir("organization-name-input", nomDuCabinet);
+        await scene.saisir(
+          "organization-email-input",
+          `contact-${Date.now()}@verhaeren.be`,
+        );
+        await scene.cliquer("organization-submit-button");
+        await scene.attendreChargement();
+        // ── Chercher, et pourquoi ce n'est pas un contournement ──────────
+        //
+        // La table ne charge qu'UNE page, filtrée par le serveur
+        // (`OrganizationList.svelte:62`) : le composant chargeait jadis les
+        // 3006 lignes et filtrait en mémoire, ce qui coûtait 8,2 s d'écran
+        // blanc (#943). Un cabinet créé à l'instant n'est donc pas
+        // forcément sur la page affichée.
+        //
+        // L'assertion sans recherche passait sur ma recette — peu peuplée —
+        // et tombait en CI :
+        //
+        //     44 × locator resolved to 0 elements
+        //
+        // Chercher est d'ailleurs le geste RÉEL de ce rôle : un
+        // administrateur de plateforme qui gère des milliers de cabinets
+        // n'en fait pas défiler la liste, il en isole un. La recherche
+        // serveur couvre le nom, le slug et le courriel de contact.
+        await scene.saisir("organization-search-input", nomDuCabinet);
+        await scene.attendreChargement();
       },
       assertion: async (page) => {
+        // La modale s'est refermée ET le cabinet se retrouve. Vérifier
+        // seulement la fermeture ne distinguerait pas une création d'une
+        // annulation.
+        await expect(page.getByTestId("organization-form")).toHaveCount(0, {
+          timeout: 20000,
+        });
         await expect(
-          page.getByTestId("create-organization-button"),
-        ).toBeVisible({ timeout: 20000 });
+          page.getByTestId("organization-row").filter({
+            hasText: nomDuCabinet,
+          }),
+          "Le cabinet créé ne se retrouve pas, même en le cherchant par son " +
+            "nom : sans lui, aucune copropriété n'a de syndic, et tous les " +
+            "autres parcours s'arrêtent avant de commencer.",
+        ).toHaveCount(1, { timeout: 20000 });
       },
     },
     {
@@ -98,11 +153,35 @@ export const administration: Parcours = {
       action: async (scene) => {
         await scene.aller("/admin/acps");
         await scene.attendreChargement();
+        await scene.cliquer("acp-create-toggle");
+        await scene.saisir("acp-form-name", `Les Peupliers ${Date.now()}`);
+        // On CHERCHE le cabinet créé à l'étape 2, puis on l'attache. La
+        // liste des organisations est plafonnée côté serveur : sans la
+        // recherche, un cabinet créé à l'instant peut ne pas y figurer, et
+        // l'ACP se retrouverait « en autogestion » alors que la narration
+        // annonce un syndic mandaté.
+        await scene.saisir("acp-form-org-search", nomDuCabinet);
+        await scene.attendreChargement();
+        await scene.choisirQuiContient("acp-form-org-id", nomDuCabinet);
+        await scene.saisir("acp-form-street", "12 Avenue des Peupliers");
+        await scene.saisir("acp-form-postal", "1180");
+        await scene.saisir("acp-form-city", "Uccle");
+        await scene.cliquer("acp-form-submit");
+        await scene.attendreChargement();
       },
       assertion: async (page) => {
-        await expect(page.getByTestId("acp-create-toggle")).toBeVisible({
+        await expect(page.getByTestId("acp-create-form")).toHaveCount(0, {
           timeout: 20000,
         });
+        // La copropriété est provisionnée ET porte le nom de son syndic
+        // mandaté. C'est ce rattachement qui fait la différence entre une
+        // ACP en autogestion et une ACP gérée — et il ne se voit nulle part
+        // ailleurs.
+        await expect(
+          page.getByTestId("acps-table"),
+          "La copropriété créée n'apparaît pas, ou n'est pas rattachée au " +
+            "cabinet qui vient de la recevoir en mandat.",
+        ).toContainText(nomDuCabinet, { timeout: 20000 });
       },
     },
     {

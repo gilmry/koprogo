@@ -46,13 +46,37 @@ pub async fn get_provider_by_slug(
 }
 
 /// POST /api/v1/service-providers
-/// Create a new service provider (authenticated - syndic/admin only)
+///
+/// Réservée au syndic et au superadministrateur.
+///
+/// ── Ce que la documentation disait, et ce que le code faisait ────────────
+///
+/// Le commentaire portait déjà « syndic/admin only ». **Aucun contrôle ne
+/// l'appliquait** : la route se contentait de lire l'organisation de
+/// l'appelant, si bien qu'un copropriétaire — ou tout rôle authentifié —
+/// pouvait inscrire un prestataire au catalogue de son cabinet.
+///
+/// Une règle écrite en commentaire et absente du code est pire qu'une règle
+/// absente : la revue la lit, la croit appliquée, et passe à la suite. Le
+/// cliquet #864 comptait d'ailleurs cette route parmi celles qui prennent
+/// une identité sans s'en servir pour décider — il avait raison, et sur ce
+/// point précis, pas sur le cloisonnement qui, lui, était bien là.
+///
+/// Le refus est un **403**, pas un 400 : l'appelant est authentifié et son
+/// organisation est connue ; ce qui manque est le droit, pas la donnée.
 #[post("/service-providers")]
 pub async fn create_service_provider(
     state: web::Data<AppState>,
     request: web::Json<CreateServiceProviderDto>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
+    if !matches!(user.role.as_str(), "syndic" | "superadmin") {
+        return Ok(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only syndic or superadmin can register a service provider",
+            "code": "invalid_role",
+        })));
+    }
+
     let org_id = user
         .organization_id
         .ok_or_else(|| actix_web::error::ErrorBadRequest("Organization ID required"))?;

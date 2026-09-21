@@ -72,7 +72,7 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Alice ajoute un moyen de paiement via l'interface", async ({
+  test("@happy Alice ajoute un moyen de paiement via l'interface", async ({
     page,
   }) => {
     // ============================================================

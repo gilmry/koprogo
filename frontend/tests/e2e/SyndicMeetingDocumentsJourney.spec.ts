@@ -9,7 +9,7 @@ import { failOnPageErrors } from "./helpers/pageErrors";
 test.describe("Syndic — documents liés à une AG, upload puis téléchargement de bout en bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("upload un document lié à l'AG puis le télécharge avec succès", async ({
+  test("@happy upload un document lié à l'AG puis le télécharge avec succès", async ({
     page,
   }) => {
     const { meetingId } = await loginAsSyndicWithMeeting(

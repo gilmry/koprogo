@@ -56,7 +56,65 @@ const RACINE = join(process.cwd(), "tests/e2e");
 // pas parce que le dépôt s'est dégradé** : son filtre ne retenait que
 // `.spec.ts` et ignorait les douze `.scenario.ts` du projet de documentation
 // vivante — ceux qu'on filme, donc les plus visibles.
-const SANS_ETIQUETTE_AU_2026_09_08 = 366;
+// 366 → 346 le 2026-09-20 : `FinancialRegressions.spec.ts` étiqueté, ses
+// vingt tests classés d'après le VERBE de leur titre — refuse/interdit →
+// `@negative`, cabinet/patrimoine d'un autre → `@security`, indivision/écart
+// → `@edge`, le reste `@happy`.
+//
+// Deux classements automatiques étaient faux et ont été rectifiés à la main :
+// « le bilan se génère sans erreur pour un compte scopé » n'est pas un test
+// de sécurité (ma regex avait vu « scopé »), et « ne porte plus le titre de
+// … » est une non-régression d'affichage, pas un refus.
+//
+// C'est le point de cette garde : une étiquette posée pour faire baisser un
+// chiffre ne classe rien. Le tri automatique propose, la relecture tranche.
+// 346 → 323 : `BoardOfDirectors.spec.ts` (13) et `OwnerDashboard.spec.ts`
+// (10). Un classement rectifié à la main — « display upcoming deadlines with
+// urgency indicators » affiche une liste avec ses indicateurs, c'est le rendu
+// nominal d'une fonctionnalité, pas un cas limite. Ma règle avait vu
+// « urgency ».
+// 323 → 256. Huit fichiers de plus : Accessibility (10), AuditRegressions
+// (10), Quotes, Payments, Resolutions, LocalExchanges, Gamification (8
+// chacun), PaymentRecovery (7).
+//
+// Une règle a émergé et mérite d'être écrite : **« should require auth to
+// access X API » est un `@security`, pas un `@happy`.** Ces tests vérifient
+// qu'une route REFUSE sans jeton — ils défendent le cloisonnement, et les
+// ranger en chemin nominal aurait caché six tests de sécurité à la revue de
+// release.
+//
+// `AuditRegressions` a été classé titre par titre : ses dix cas mêlent une
+// authentification refusée, un badge tronqué, une session qui survit à une
+// URL inconnue et l'effacement RGPD qui exige son mot de passe. Aucune règle
+// automatique ne les aurait départagés.
+/// **0 le 2026-09-20.** La dette est soldée : les 432 specs déclarent leur
+/// catégorie.
+///
+/// ── Comment, et ce que la méthode a coûté ─────────────────────────────────
+///
+/// 366 specs classées dans la journée, par tri automatique puis RELECTURE.
+/// Neuf classements automatiques étaient faux, tous dans le même sens : une
+/// règle voyait un mot-clé et rangeait un chemin nominal ailleurs.
+///
+///   « le bilan se génère pour un compte **scopé** »      → pas @security
+///   « deadlines with **urgency** indicators »            → pas @edge
+///   « **ne porte plus** le titre de … »                  → pas @negative
+///   « should **not require auth** for public endpoint »  → pas @security
+///
+/// Le dernier est le plus instructif : « should NOT require auth » dit qu'un
+/// point d'entrée est PUBLIC, l'exact contraire d'un refus. Une règle qui
+/// cherche « require auth » sans lire la négation inverse le sens.
+///
+/// ── La règle qui a émergé, et qui vaut pour la suite ─────────────────────
+///
+/// **« should require auth for X » est un `@security`.** Ces tests vérifient
+/// qu'une route REFUSE sans jeton ; les ranger en `@happy` cachait quinze
+/// tests de cloisonnement à la revue de release. C'est précisément ce que
+/// cette taxonomie existe pour éviter : dire à la revue ce qu'elle regarde.
+///
+/// À zéro, ce cliquet change de rôle. Il ne mesure plus une dette : il
+/// interdit qu'une spec neuve arrive sans catégorie.
+const SANS_ETIQUETTE_AU_2026_09_08: number = 0;
 
 /** Total des specs. **Ne doit pas BAISSER.** */
 // 420 → 432, même cause : les douze scénarios entrent dans le décompte.

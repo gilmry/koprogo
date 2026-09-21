@@ -33,8 +33,11 @@
   /// Archiver une annonce la retire du tableau d'affichage de la copropriété,
   /// la supprimer l'efface. Les deux redirigent ensuite vers la liste, donc
   /// sans confirmation atteignable l'utilisateur ne voit qu'un bouton inerte.
-  let actionEnAttente = $state<"archiver" | "supprimer" | null>(null);
+  let actionEnAttente = $state<"publier" | "archiver" | "supprimer" | null>(
+    null,
+  );
   let archiving = $state(false);
+  let publishing = $state(false);
 
   $effect(() => {
     loadNotice();
@@ -52,6 +55,33 @@
       setError: () => {},
       onSuccess: (data) => (notice = data),
       errorMessage: $_("notices.loadFailed"),
+    });
+  }
+
+  /**
+   * Publier : le geste qui manquait.
+   *
+   * Confirmé, comme l'archivage et la suppression — et pour la même raison
+   * qu'un sondage l'est (`PollDetail.svelte`) : une annonce diffusée à
+   * trente foyers ne se reprend pas. On relit, puis on diffuse.
+   */
+  function handlePublish() {
+    actionEnAttente = "publier";
+  }
+
+  async function executer_publier() {
+    actionEnAttente = null;
+    await withErrorHandling({
+      action: () => noticesApi.publish(noticeId),
+      setLoading: (v: boolean) => (publishing = v),
+      successMessage: $_("notices.published_successfully"),
+      errorMessage: $_("notices.publish_failed"),
+      onSuccess: (publiee) => {
+        // On recharge plutôt que de rediriger : l'auteur doit VOIR le badge
+        // passer de « Brouillon » à « Publiée ». Une redirection vers la
+        // liste le renverrait à un écran où rien ne dit ce qui a changé.
+        notice = publiee;
+      },
     });
   }
 
@@ -122,6 +152,21 @@
 
         {#if isAuthor}
           <div class="flex gap-2">
+            <!--
+              Publier n'apparaît QUE sur un brouillon. Les deux conditions
+              sont exclusives : une annonce publiée ne se republie pas, et
+              laisser le bouton inviterait à un geste sans effet (#978).
+            -->
+            {#if notice.status === NoticeStatus.Draft}
+              <button
+                onclick={handlePublish}
+                disabled={publishing}
+                data-testid="notice-publish-btn"
+                class="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {publishing ? $_("notices.publishing") : $_("notices.publish")}
+              </button>
+            {/if}
             <button
               onclick={handleArchive}
               disabled={archiving || notice.status === "Archived"}
@@ -225,14 +270,17 @@
 <ConfirmDialog
   isOpen={actionEnAttente !== null}
   title={$_("common.confirm")}
-  message={actionEnAttente === "archiver"
-    ? $_("notices.archive_confirmation")
-    : actionEnAttente === "supprimer"
-      ? $_("notices.delete_confirmation")
-      : ""}
-  variant="danger"
+  message={actionEnAttente === "publier"
+    ? $_("notices.publish_confirmation")
+    : actionEnAttente === "archiver"
+      ? $_("notices.archive_confirmation")
+      : actionEnAttente === "supprimer"
+        ? $_("notices.delete_confirmation")
+        : ""}
+  variant={actionEnAttente === "publier" ? "primary" : "danger"}
   onconfirm={() => {
-    if (actionEnAttente === "archiver") executer_archiver();
+    if (actionEnAttente === "publier") executer_publier();
+    else if (actionEnAttente === "archiver") executer_archiver();
     else if (actionEnAttente === "supprimer") executer_supprimer();
   }}
   oncancel={() => (actionEnAttente = null)}

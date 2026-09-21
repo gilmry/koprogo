@@ -74,7 +74,7 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Charlie signale une fuite, Francois assigne le ticket", async ({
+  test("@happy Charlie signale une fuite, Francois assigne le ticket", async ({
     page,
   }) => {
     // ============================================================

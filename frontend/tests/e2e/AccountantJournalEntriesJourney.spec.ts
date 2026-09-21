@@ -94,7 +94,7 @@ async function loginAsAccountant(page: Page, prefix: string) {
 test.describe("Comptable — Écritures comptables, parcours de création rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("crée une écriture comptable équilibrée de bout en bout", async ({
+  test("@happy crée une écriture comptable équilibrée de bout en bout", async ({
     page,
   }) => {
     const { buildingId } = await loginAsAccountant(page, "journey-journal");

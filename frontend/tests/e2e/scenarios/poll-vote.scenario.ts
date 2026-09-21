@@ -151,7 +151,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Francois consulte, Alice vote, Francois cloture et voit les resultats", async ({
+  test("@happy Francois consulte, Alice vote, Francois cloture et voit les resultats", async ({
     page,
   }) => {
     // ============================================================

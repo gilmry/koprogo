@@ -10,7 +10,7 @@ use validator::Validate;
 
 /// Helper function to check if owner role is trying to modify data
 /// Owners can view their own reminders but cannot create/modify them
-fn check_write_permission(user: &AuthenticatedUser) -> Option<HttpResponse> {
+fn verify_write_permission(user: &AuthenticatedUser) -> Option<HttpResponse> {
     if user.role == "owner" {
         Some(HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Owner role cannot create or modify payment reminders"
@@ -27,7 +27,7 @@ pub async fn create_reminder(
     user: AuthenticatedUser,
     mut dto: web::Json<CreatePaymentReminderDto>,
 ) -> impl Responder {
-    if let Some(response) = check_write_permission(&user) {
+    if let Some(response) = verify_write_permission(&user) {
         return response;
     }
 
@@ -229,7 +229,7 @@ pub async fn mark_as_sent(
     id: web::Path<Uuid>,
     dto: web::Json<MarkReminderSentDto>,
 ) -> impl Responder {
-    if let Some(response) = check_write_permission(&user) {
+    if let Some(response) = verify_write_permission(&user) {
         return response;
     }
 
@@ -278,7 +278,7 @@ pub async fn mark_as_opened(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    if let Some(response) = check_write_permission(&user) {
+    if let Some(response) = verify_write_permission(&user) {
         return response;
     }
 
@@ -316,7 +316,7 @@ pub async fn mark_as_paid(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    if let Some(response) = check_write_permission(&user) {
+    if let Some(response) = verify_write_permission(&user) {
         return response;
     }
 
@@ -355,7 +355,7 @@ pub async fn cancel_reminder(
     id: web::Path<Uuid>,
     dto: web::Json<CancelReminderDto>,
 ) -> impl Responder {
-    if let Some(response) = check_write_permission(&user) {
+    if let Some(response) = verify_write_permission(&user) {
         return response;
     }
 
@@ -405,7 +405,7 @@ pub async fn escalate_reminder(
     id: web::Path<Uuid>,
     dto: web::Json<EscalateReminderDto>,
 ) -> impl Responder {
-    if let Some(response) = check_write_permission(&user) {
+    if let Some(response) = verify_write_permission(&user) {
         return response;
     }
 
@@ -451,7 +451,7 @@ pub async fn add_tracking_number(
     id: web::Path<Uuid>,
     dto: web::Json<AddTrackingNumberDto>,
 ) -> impl Responder {
-    if let Some(response) = check_write_permission(&user) {
+    if let Some(response) = verify_write_permission(&user) {
         return response;
     }
 
@@ -527,7 +527,7 @@ pub async fn find_overdue_without_reminders(
     user: AuthenticatedUser,
     query: web::Query<serde_json::Value>,
 ) -> impl Responder {
-    if let Some(response) = check_write_permission(&user) {
+    if let Some(response) = verify_write_permission(&user) {
         return response;
     }
 
@@ -564,7 +564,7 @@ pub async fn bulk_create_reminders(
     user: AuthenticatedUser,
     mut dto: web::Json<BulkCreateRemindersDto>,
 ) -> impl Responder {
-    if let Some(response) = check_write_permission(&user) {
+    if let Some(response) = verify_write_permission(&user) {
         return response;
     }
 
@@ -617,7 +617,7 @@ pub async fn delete_reminder(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    if let Some(response) = check_write_permission(&user) {
+    if let Some(response) = verify_write_permission(&user) {
         return response;
     }
 

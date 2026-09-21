@@ -26,7 +26,7 @@ fn user_role(user: &AuthenticatedUser) -> Option<UserRole> {
 
 /// Helper function to check if owner role is trying to modify data.
 /// Note: Accountant CAN create expenses and mark them as paid.
-fn check_owner_readonly(user: &AuthenticatedUser) -> Option<HttpResponse> {
+fn verify_owner_readonly(user: &AuthenticatedUser) -> Option<HttpResponse> {
     if user.role == "owner" {
         Some(HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Owner role has read-only access",
@@ -38,7 +38,7 @@ fn check_owner_readonly(user: &AuthenticatedUser) -> Option<HttpResponse> {
 }
 
 /// Helper function to check if user has syndic role (for approval workflow).
-fn check_syndic_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
+fn verify_syndic_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
     match user_role(user) {
         Some(UserRole::Syndic) | Some(UserRole::SuperAdmin) => None,
         _ => Some(HttpResponse::Forbidden().json(serde_json::json!({
@@ -76,7 +76,7 @@ fn check_can_encode_invoices(user: &AuthenticatedUser) -> Option<HttpResponse> {
 /// Helper function to check if user has accountant role (for creating/editing invoices).
 ///
 /// Story 3.1: alias kept for backwards-compat — delegates to `check_can_encode_invoices`.
-fn check_accountant_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
+fn verify_accountant_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
     check_can_encode_invoices(user)
 }
 
@@ -151,7 +151,7 @@ pub async fn create_expense(
     user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
     mut dto: web::Json<CreateExpenseDto>,
 ) -> impl Responder {
-    if let Some(response) = check_owner_readonly(&user) {
+    if let Some(response) = verify_owner_readonly(&user) {
         return response;
     }
     // Story 3.1 INV-10 : un encodeur ne peut PAS émettre. POST /expenses est une
@@ -405,7 +405,7 @@ pub async fn mark_expense_paid(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    if let Some(response) = check_owner_readonly(&user) {
+    if let Some(response) = verify_owner_readonly(&user) {
         return response;
     }
     // Story 3.1 INV-10 : marquage payé = mouvement financier sortant.
@@ -631,7 +631,7 @@ pub async fn create_invoice_draft(
     user: AuthenticatedUser,
     mut dto: web::Json<CreateInvoiceDraftDto>,
 ) -> impl Responder {
-    if let Some(response) = check_accountant_role(&user) {
+    if let Some(response) = verify_accountant_role(&user) {
         return response;
     }
 
@@ -737,7 +737,7 @@ pub async fn update_invoice_draft(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateInvoiceDraftDto>,
 ) -> impl Responder {
-    if let Some(response) = check_accountant_role(&user) {
+    if let Some(response) = verify_accountant_role(&user) {
         return response;
     }
 
@@ -790,7 +790,7 @@ pub async fn submit_invoice_for_approval(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    if let Some(response) = check_accountant_role(&user) {
+    if let Some(response) = verify_accountant_role(&user) {
         return response;
     }
 
@@ -838,7 +838,7 @@ pub async fn approve_invoice(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    if let Some(response) = check_syndic_role(&user) {
+    if let Some(response) = verify_syndic_role(&user) {
         return response;
     }
 
@@ -887,7 +887,7 @@ pub async fn reject_invoice(
     id: web::Path<Uuid>,
     dto: web::Json<RejectInvoiceDto>,
 ) -> impl Responder {
-    if let Some(response) = check_syndic_role(&user) {
+    if let Some(response) = verify_syndic_role(&user) {
         return response;
     }
 
@@ -941,7 +941,7 @@ pub async fn get_pending_invoices(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> impl Responder {
-    if let Some(response) = check_syndic_role(&user) {
+    if let Some(response) = verify_syndic_role(&user) {
         return response;
     }
 

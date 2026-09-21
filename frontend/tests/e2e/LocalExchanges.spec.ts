@@ -13,7 +13,7 @@ import { loginAsSyndicWithLinkedOwner } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Local Exchanges - SEL Community System", () => {
-  test("should display exchanges page", async ({ page }) => {
+  test("@happy should display exchanges page", async ({ page }) => {
     await loginAsSyndicWithLinkedOwner(page, "exchange");
     await page.goto("/exchanges");
 
@@ -23,7 +23,9 @@ test.describe("Local Exchanges - SEL Community System", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create an exchange offer and retrieve it", async ({ page }) => {
+  test("@happy should create an exchange offer and retrieve it", async ({
+    page,
+  }) => {
     const { ownerToken, buildingId, ownerId } =
       await loginAsSyndicWithLinkedOwner(page, "exchange");
     const timestamp = Date.now();
@@ -57,7 +59,9 @@ test.describe("Local Exchanges - SEL Community System", () => {
     expect(retrieved.id).toBe(exchange.id);
   });
 
-  test("should list available exchanges for building", async ({ page }) => {
+  test("@happy should list available exchanges for building", async ({
+    page,
+  }) => {
     const { ownerToken, buildingId } = await loginAsSyndicWithLinkedOwner(
       page,
       "exchange",
@@ -72,7 +76,7 @@ test.describe("Local Exchanges - SEL Community System", () => {
     expect(Array.isArray(exchanges)).toBeTruthy();
   });
 
-  test("should list all building exchanges", async ({ page }) => {
+  test("@happy should list all building exchanges", async ({ page }) => {
     const { ownerToken, buildingId } = await loginAsSyndicWithLinkedOwner(
       page,
       "exchange",
@@ -87,7 +91,7 @@ test.describe("Local Exchanges - SEL Community System", () => {
     expect(Array.isArray(exchanges)).toBeTruthy();
   });
 
-  test("should get SEL statistics for a building", async ({ page }) => {
+  test("@happy should get SEL statistics for a building", async ({ page }) => {
     const { ownerToken, buildingId } = await loginAsSyndicWithLinkedOwner(
       page,
       "exchange",
@@ -100,7 +104,7 @@ test.describe("Local Exchanges - SEL Community System", () => {
     expect(statsResp.status()).toBe(200);
   });
 
-  test("should get owner credit balance", async ({ page }) => {
+  test("@happy should get owner credit balance", async ({ page }) => {
     const { ownerToken, buildingId, ownerId } =
       await loginAsSyndicWithLinkedOwner(page, "exchange");
 
@@ -111,7 +115,7 @@ test.describe("Local Exchanges - SEL Community System", () => {
     expect(balanceResp.status()).toBe(200);
   });
 
-  test("should get building leaderboard", async ({ page }) => {
+  test("@happy should get building leaderboard", async ({ page }) => {
     const { ownerToken, buildingId } = await loginAsSyndicWithLinkedOwner(
       page,
       "exchange",
@@ -124,7 +128,7 @@ test.describe("Local Exchanges - SEL Community System", () => {
     expect(leaderboardResp.status()).toBe(200);
   });
 
-  test("should navigate to new exchange page", async ({ page }) => {
+  test("@happy should navigate to new exchange page", async ({ page }) => {
     await loginAsSyndicWithLinkedOwner(page, "exchange");
     await page.goto("/exchanges/new");
 

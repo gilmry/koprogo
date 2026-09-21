@@ -19,7 +19,7 @@ test.describe("Characterization 01 — Building Creation Flow", () => {
     await setupContainerApiUrl(page);
   });
 
-  test("admin creates building assigned to org → syndic of that org sees it", async ({
+  test("@happy admin creates building assigned to org → syndic of that org sees it", async ({
     page,
   }) => {
     const timestamp = Date.now();
@@ -114,7 +114,7 @@ test.describe("Characterization 01 — Building Creation Flow", () => {
     await expect(page.locator("main").first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("admin GET /buildings/<id> retrieves the building (API characterization)", async ({
+  test("@happy admin GET /buildings/<id> retrieves the building (API characterization)", async ({
     page,
   }) => {
     // Caractérise le contrat API building retrieve (pas la page detail UI car

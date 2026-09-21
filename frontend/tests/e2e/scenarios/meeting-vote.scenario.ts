@@ -72,7 +72,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Francois prepare l'AG, Alice vote, Francois cloture", async ({
+  test("@happy Francois prepare l'AG, Alice vote, Francois cloture", async ({
     page,
   }) => {
     // ============================================================

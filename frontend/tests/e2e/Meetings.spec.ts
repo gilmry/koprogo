@@ -18,7 +18,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Meetings - General Assembly", () => {
-  test("should display meetings list page", async ({ page }) => {
+  test("@happy should display meetings list page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "meeting");
     await page.goto("/meetings");
 
@@ -28,7 +28,7 @@ test.describe("Meetings - General Assembly", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a meeting via API and see it in the list", async ({
+  test("@happy should create a meeting via API and see it in the list", async ({
     page,
   }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
@@ -57,7 +57,7 @@ test.describe("Meetings - General Assembly", () => {
     });
   });
 
-  test("should navigate to meeting detail page", async ({ page }) => {
+  test("@happy should navigate to meeting detail page", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
       page,
       "meeting",
@@ -84,7 +84,7 @@ test.describe("Meetings - General Assembly", () => {
     });
   });
 
-  test("should display convocations page", async ({ page }) => {
+  test("@happy should display convocations page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "meeting");
     await page.goto("/convocations");
 
@@ -94,7 +94,7 @@ test.describe("Meetings - General Assembly", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display polls page", async ({ page }) => {
+  test("@happy should display polls page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "meeting");
     await page.goto("/polls");
 

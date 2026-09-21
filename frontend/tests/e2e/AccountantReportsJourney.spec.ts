@@ -91,7 +91,7 @@ async function loginAsAccountant(page: Page, prefix: string) {
 test.describe("Comptable — Rapports PCMN, parcours rempli jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("génère le bilan comptable de bout en bout", async ({ page }) => {
+  test("@happy génère le bilan comptable de bout en bout", async ({ page }) => {
     const { buildingId } = await loginAsAccountant(page, "journey-reports");
     // `load` et non `networkidle`, puis attente de l'élément réellement
     // attendu. Mesuré sur `/reports` : 427 ms pour `load`, 2000 ms et 236

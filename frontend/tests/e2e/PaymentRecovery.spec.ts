@@ -13,7 +13,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Payment Recovery - Reminder Workflow", () => {
-  test("should display payment reminders page", async ({ page }) => {
+  test("@happy should display payment reminders page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "recovery");
     await page.goto("/payment-reminders");
 
@@ -23,7 +23,7 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
     );
   });
 
-  test("should get payment reminder stats", async ({ page }) => {
+  test("@happy should get payment reminder stats", async ({ page }) => {
     const { token } = await loginAsSyndicWithBuilding(page, "recovery");
 
     const statsResp = await page.request.get(
@@ -33,7 +33,9 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
     expect(statsResp.ok()).toBeTruthy();
   });
 
-  test("should create a payment reminder and retrieve it", async ({ page }) => {
+  test("@happy should create a payment reminder and retrieve it", async ({
+    page,
+  }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
       page,
       "recovery",
@@ -100,7 +102,7 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
     expect(retrieved.id).toBe(reminder.id);
   });
 
-  test("should list reminders for an expense", async ({ page }) => {
+  test("@happy should list reminders for an expense", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
       page,
       "recovery",
@@ -128,7 +130,7 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
     expect(Array.isArray(reminders)).toBeTruthy();
   });
 
-  test("should escalate a reminder (FirstReminder → SecondReminder)", async ({
+  test("@happy should escalate a reminder (FirstReminder → SecondReminder)", async ({
     page,
   }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
@@ -196,13 +198,17 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
     expect(escalated.level).toBe("SecondReminder");
   });
 
-  test("should navigate to payment reminder detail page", async ({ page }) => {
+  test("@happy should navigate to payment reminder detail page", async ({
+    page,
+  }) => {
     await loginAsSyndicWithBuilding(page, "recovery");
     await page.goto("/payment-reminders");
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should require auth for payment reminders API", async ({ page }) => {
+  test("@security should require auth for payment reminders API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/payment-reminders`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

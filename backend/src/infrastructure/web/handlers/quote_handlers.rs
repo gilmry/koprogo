@@ -137,28 +137,88 @@ pub async fn list_building_quotes(
 /// List all quotes for a contractor
 ///
 /// Cloisonnement (#882) : classée, non corrigée. `list_by_contractor` rend
-/// TOUS les devis soumis par ce prestataire, toutes ACP confondues — la même
-/// donnée (prix, projet) que `list_building_quotes` protège déjà par
-/// immeuble. La clé de cette route est le PRESTATAIRE, pas un immeuble ou une
-/// ACP : aucun garde de ce fichier ne s'y applique directement, il faudrait
-/// soit filtrer côté repository par les ACP visibles de l'appelant, soit
-/// restreindre la route au superadministrateur ou au prestataire lui-même.
+/// Les devis de ce prestataire, **restreints aux immeubles de l'appelant**.
+///
+/// La clé de cette route est le PRESTATAIRE, pas un immeuble : aucun garde
+/// de ce fichier ne s'y appliquait directement, et elle rendait donc TOUS
+/// ses devis, toutes ACP confondues — la même donnée (prix, projet) que
+/// `list_building_quotes` protège déjà par immeuble.
+///
+/// Un cabinet syndic pouvait ainsi lire les prix qu'un prestataire avait
+/// remis à un cabinet concurrent (#976).
+///
+/// Des deux voies envisagées — filtrer par les ACP visibles, ou restreindre
+/// la route au superadministrateur — c'est la première qui est retenue : la
+/// seconde priverait le syndic d'une lecture légitime, celle des devis de
+/// SES immeubles.
 #[get("/contractors/{contractor_id}/quotes")]
 pub async fn list_contractor_quotes(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     contractor_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data
+    let quotes = match data
         .quote_use_cases
         .list_by_contractor(contractor_id.into_inner())
         .await
     {
-        Ok(quotes) => HttpResponse::Ok().json(quotes),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": e
-        })),
+        Ok(quotes) => quotes,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": e
+            }))
+        }
+    };
+
+    // ── Le filtrage par ACP visibles, retenu parmi les deux voies ──────────
+    //
+    // Le commentaire ci-dessus posait le choix : filtrer par les ACP visibles
+    // de l'appelant, ou restreindre la route. C'est la première, parce que la
+    // seconde retirerait au syndic une lecture légitime — les devis de SES
+    // immeubles, remis par ce prestataire.
+    //
+    // Le paramètre s'appelait `_auth` : la convention Rust pour « je prends
+    // cette identité et je ne m'en sers pas ». Il disait vrai, et c'était le
+    // défaut — n'importe quel utilisateur authentifié lisait les devis de
+    // n'importe quel prestataire, donc **les prix pratiqués chez un cabinet
+    // concurrent** (#976).
+    //
+    // Chaque immeuble n'est vérifié qu'UNE fois : un prestataire remet
+    // typiquement plusieurs devis sur la même copropriété, et interroger le
+    // serveur par devis transformerait une lecture en rafale de requêtes.
+    let mut vus: std::collections::HashMap<Uuid, bool> = std::collections::HashMap::new();
+    let mut visibles = Vec::with_capacity(quotes.len());
+
+    for devis in quotes {
+        let building_id = match Uuid::parse_str(&devis.building_id) {
+            Ok(id) => id,
+            // Un identifiant illisible ne s'affiche pas « par défaut » : on
+            // écarte, faute de pouvoir prouver que l'appelant y a droit.
+            Err(_) => continue,
+        };
+
+        let autorise = match vus.get(&building_id) {
+            Some(deja) => *deja,
+            None => {
+                let ok = verify_building_org_access(
+                    &auth,
+                    building_id,
+                    &data.building_use_cases,
+                    &data.acp_use_cases,
+                )
+                .await
+                .is_ok();
+                vus.insert(building_id, ok);
+                ok
+            }
+        };
+
+        if autorise {
+            visibles.push(devis);
+        }
     }
+
+    HttpResponse::Ok().json(visibles)
 }
 
 /// GET /api/v1/buildings/:building_id/quotes/status/:status

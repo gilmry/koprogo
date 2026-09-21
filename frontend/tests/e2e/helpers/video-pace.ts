@@ -58,7 +58,15 @@ export async function humanFill(
   const locator = page.getByTestId(testId);
   await locator.scrollIntoViewIfNeeded();
   await page.waitForTimeout(PACE.BEFORE_TYPE);
-  await locator.clear();
+  // `clear()` vaut `fill("")`, et un `<input type="number">` le refuse :
+  // Chromium rend « Malformed value » parce que la chaîne vide ne satisfait
+  // pas la contrainte du champ. Constaté le 2026-09-20 sur
+  // `exchange-credits-input`, qui porte une valeur par défaut de 1.
+  //
+  // Le `fill()` qui suit remplace de toute façon le contenu entier ; le
+  // `clear()` n'est là que pour les champs qui résistent (masques de saisie,
+  // composants contrôlés). L'échec de l'un ne doit donc pas emporter l'autre.
+  await locator.clear().catch(() => {});
   await locator.fill(text);
   await page.waitForTimeout(PACE.AFTER_TYPE);
 }

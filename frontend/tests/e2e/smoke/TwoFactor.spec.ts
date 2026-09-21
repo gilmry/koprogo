@@ -11,7 +11,7 @@ import { loginAsSyndic } from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 test.describe("Two-Factor Authentication (2FA)", () => {
-  test("should display settings page", async ({ page }) => {
+  test("@happy should display settings page", async ({ page }) => {
     await loginAsSyndic(page, "2fa");
     await page.goto("/settings");
 
@@ -19,7 +19,7 @@ test.describe("Two-Factor Authentication (2FA)", () => {
     await expect(page.locator("h1").first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("should check 2FA status via API (disabled by default)", async ({
+  test("@happy should check 2FA status via API (disabled by default)", async ({
     page,
   }) => {
     const { token } = await loginAsSyndic(page, "2fa");
@@ -33,7 +33,7 @@ test.describe("Two-Factor Authentication (2FA)", () => {
     expect(status.is_enabled).toBe(false);
   });
 
-  test("should initiate 2FA setup and return QR code + backup codes", async ({
+  test("@happy should initiate 2FA setup and return QR code + backup codes", async ({
     page,
   }) => {
     const { token } = await loginAsSyndic(page, "2fa");
@@ -57,7 +57,7 @@ test.describe("Two-Factor Authentication (2FA)", () => {
     ).toBeTruthy();
   });
 
-  test("should allow calling setup multiple times (idempotent)", async ({
+  test("@edge should allow calling setup multiple times (idempotent)", async ({
     page,
   }) => {
     test.setTimeout(60_000); // 2FA setup involves bcrypt, can be slow
@@ -78,7 +78,9 @@ test.describe("Two-Factor Authentication (2FA)", () => {
     expect([200, 201, 400, 409].includes(setup2.status())).toBeTruthy();
   });
 
-  test("should reject invalid TOTP code during enable", async ({ page }) => {
+  test("@negative should reject invalid TOTP code during enable", async ({
+    page,
+  }) => {
     test.setTimeout(60_000);
     const { token } = await loginAsSyndic(page, "2fa");
 
@@ -97,7 +99,9 @@ test.describe("Two-Factor Authentication (2FA)", () => {
     expect([400, 401, 422].includes(enableResp.status())).toBeTruthy();
   });
 
-  test("should reject invalid TOTP code during verify", async ({ page }) => {
+  test("@negative should reject invalid TOTP code during verify", async ({
+    page,
+  }) => {
     const { token } = await loginAsSyndic(page, "2fa");
 
     const verifyResp = await page.request.post(`${API_BASE}/2fa/verify`, {
@@ -108,7 +112,7 @@ test.describe("Two-Factor Authentication (2FA)", () => {
     expect([400, 401, 422].includes(verifyResp.status())).toBeTruthy();
   });
 
-  test("should require auth for 2FA endpoints", async ({ page }) => {
+  test("@security should require auth for 2FA endpoints", async ({ page }) => {
     const statusResp = await page.request.get(`${API_BASE}/2fa/status`);
     expect([401, 403].includes(statusResp.status())).toBeTruthy();
 

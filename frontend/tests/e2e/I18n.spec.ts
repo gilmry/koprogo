@@ -10,7 +10,9 @@ import { API_BASE } from "./helpers/adresses";
  */
 
 test.describe("I18n - Internationalization", () => {
-  test("should display login page with French content", async ({ page }) => {
+  test("@happy should display login page with French content", async ({
+    page,
+  }) => {
     await page.goto("/login");
 
     await expect(page.locator("body")).toBeVisible();
@@ -20,19 +22,21 @@ test.describe("I18n - Internationalization", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display the homepage without errors", async ({ page }) => {
+  test("@happy should display the homepage without errors", async ({
+    page,
+  }) => {
     await page.goto("/");
 
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should display legal mentions page", async ({ page }) => {
+  test("@happy should display legal mentions page", async ({ page }) => {
     await page.goto("/mentions-legales");
 
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should handle Belgian characters in building names", async ({
+  test("@happy should handle Belgian characters in building names", async ({
     page,
   }) => {
     const timestamp = Date.now();
@@ -70,7 +74,7 @@ test.describe("I18n - Internationalization", () => {
     expect(building.name).toContain("Résidence");
   });
 
-  test("should handle Dutch building names (Flemish copropriété)", async ({
+  test("@happy should handle Dutch building names (Flemish copropriété)", async ({
     page,
   }) => {
     const timestamp = Date.now();

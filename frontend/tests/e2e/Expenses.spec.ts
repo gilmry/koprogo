@@ -15,7 +15,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Expenses - Invoice Management", () => {
-  test("should display expenses list page", async ({ page }) => {
+  test("@happy should display expenses list page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "expense");
     await page.goto("/expenses");
 
@@ -25,7 +25,7 @@ test.describe("Expenses - Invoice Management", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display invoice workflow page", async ({ page }) => {
+  test("@happy should display invoice workflow page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "expense");
     await page.goto("/invoice-workflow");
 
@@ -35,7 +35,7 @@ test.describe("Expenses - Invoice Management", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create an expense via API and see it in the list", async ({
+  test("@happy should create an expense via API and see it in the list", async ({
     page,
   }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
@@ -66,7 +66,7 @@ test.describe("Expenses - Invoice Management", () => {
     });
   });
 
-  test("should navigate to expense detail page", async ({ page }) => {
+  test("@happy should navigate to expense detail page", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
       page,
       "expense",
@@ -95,7 +95,7 @@ test.describe("Expenses - Invoice Management", () => {
     });
   });
 
-  test("should display Belgian VAT information on expense", async ({
+  test("@happy should display Belgian VAT information on expense", async ({
     page,
   }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
@@ -125,7 +125,7 @@ test.describe("Expenses - Invoice Management", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should show payment reminders page", async ({ page }) => {
+  test("@happy should show payment reminders page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "expense");
     await page.goto("/payment-reminders");
 

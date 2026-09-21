@@ -219,7 +219,9 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Francois compare les devis de 3 entrepreneurs", async ({ page }) => {
+  test("@happy Francois compare les devis de 3 entrepreneurs", async ({
+    page,
+  }) => {
     // ============================================================
     // ETAPE 1 : Connexion (visible dans la video)
     // ============================================================

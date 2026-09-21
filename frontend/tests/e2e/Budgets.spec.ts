@@ -12,7 +12,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Budgets - Annual Budget Management", () => {
-  test("should display budgets page", async ({ page }) => {
+  test("@happy should display budgets page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "budget");
     await page.goto("/budgets");
 
@@ -22,7 +22,9 @@ test.describe("Budgets - Annual Budget Management", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a budget via API and retrieve it", async ({ page }) => {
+  test("@happy should create a budget via API and retrieve it", async ({
+    page,
+  }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
       page,
       "budget",
@@ -54,7 +56,7 @@ test.describe("Budgets - Annual Budget Management", () => {
     expect(retrieved.id).toBe(budget.id);
   });
 
-  test("should list budgets for a building", async ({ page }) => {
+  test("@happy should list budgets for a building", async ({ page }) => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(
       page,
       "budget",
@@ -69,7 +71,7 @@ test.describe("Budgets - Annual Budget Management", () => {
     expect(Array.isArray(budgets)).toBeTruthy();
   });
 
-  test("should navigate to budget detail page", async ({ page }) => {
+  test("@happy should navigate to budget detail page", async ({ page }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
       page,
       "budget",
@@ -92,7 +94,7 @@ test.describe("Budgets - Annual Budget Management", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should submit budget for approval (Draft → Submitted)", async ({
+  test("@happy should submit budget for approval (Draft → Submitted)", async ({
     page,
   }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
@@ -124,7 +126,7 @@ test.describe("Budgets - Annual Budget Management", () => {
     expect(submitted.status).toBe("Submitted");
   });
 
-  test("should get variance analysis for a budget", async ({ page }) => {
+  test("@happy should get variance analysis for a budget", async ({ page }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
       page,
       "budget",
@@ -150,7 +152,7 @@ test.describe("Budgets - Annual Budget Management", () => {
     expect(varianceResp.status()).toBe(200);
   });
 
-  test("should require auth for budgets API", async ({ page }) => {
+  test("@security should require auth for budgets API", async ({ page }) => {
     const resp = await page.request.get(`${API_BASE}/budgets`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

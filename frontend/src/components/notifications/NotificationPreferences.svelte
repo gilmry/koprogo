@@ -9,11 +9,19 @@
   import { toast } from "../../stores/toast";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  let {
-    userId,
-  }: {
-    userId: string;
-  } = $props();
+  /**
+   * Aucune propriété : le serveur prend l'utilisateur dans le jeton.
+   *
+   * Ce composant recevait un `userId` et le plaçait dans l'URL —
+   * `/notification-preferences/${userId}` — là où le serveur déclare
+   * `/notification-preferences/{notification_type}`. Il envoyait donc un
+   * UUID à la place d'un type, d'où le **400** relevé sur
+   * `/settings/notifications` (#968), et la bascule d'une préférence
+   * partait vers une route à un segment de trop.
+   *
+   * La page conserve sa vérification de session avant de monter ce
+   * composant : c'est un garde d'accès, pas un paramètre d'API.
+   */
 
   let preferences = $state<NotificationPreference[]>([]);
   let loading = $state(true);
@@ -45,7 +53,7 @@
   async function loadPreferences() {
     loading = true;
     const result = await withErrorHandling({
-      action: () => notificationsApi.getPreferences(userId),
+      action: () => notificationsApi.getPreferences(),
       errorMessage: $_("notifications.load_preferences_failed"),
     });
     if (result) preferences = result;
@@ -58,11 +66,9 @@
   ) {
     const updated = await withErrorHandling({
       action: () =>
-        notificationsApi.updatePreference(
-          userId,
-          preference.notification_type,
-          { [field]: !(preference as any)[field] },
-        ),
+        notificationsApi.updatePreference(preference.notification_type, {
+          [field]: !(preference as any)[field],
+        }),
       setLoading: (v: boolean) => (saving = v),
       successMessage: $_("notifications.preference_updated"),
       errorMessage: $_("notifications.update_preference_failed"),

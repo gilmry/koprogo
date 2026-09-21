@@ -33,7 +33,7 @@ async function seedOwner(
 test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("owner-contributions: crée une contribution de bout en bout", async ({
+  test("@happy owner-contributions: crée une contribution de bout en bout", async ({
     page,
   }) => {
     // Un LOT est nécessaire, pas seulement un immeuble.
@@ -69,7 +69,7 @@ test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
     await attendCode(resp, 201);
   });
 
-  test("budgets: crée un budget de bout en bout", async ({ page }) => {
+  test("@happy budgets: crée un budget de bout en bout", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "journey-budget");
     await page.goto("/budgets", { waitUntil: "networkidle" });
     await page.getByTestId("create-budget-button").click();
@@ -87,7 +87,9 @@ test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
     await attendCode(resp, 201);
   });
 
-  test("etats-dates: génère un état daté de bout en bout", async ({ page }) => {
+  test("@happy etats-dates: génère un état daté de bout en bout", async ({
+    page,
+  }) => {
     // Un état daté porte sur un lot avec un propriétaire actif — il faut
     // lier explicitement le owner créé au unit via POST /units/{id}/owners
     // (sinon 400 "Unit has no active owners", règle métier légitime).
@@ -130,7 +132,7 @@ test.describe("Syndic — parcours de création remplis jusqu'au bout", () => {
     expect([200, 201]).toContain(resp.status());
   });
 
-  test("syndic/board-members: élit un membre de bout en bout", async ({
+  test("@happy syndic/board-members: élit un membre de bout en bout", async ({
     page,
   }) => {
     // Conseil de copropriété requis uniquement > 20 lots (règle métier belge) —

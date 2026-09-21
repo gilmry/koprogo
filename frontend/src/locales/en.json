@@ -2741,7 +2741,12 @@
       "Other": "Other"
     },
     "fieldTitle": "Title",
-    "loadFailed": "Failed to load the notice."
+    "loadFailed": "Failed to load the notice.",
+    "publish": "Publish",
+    "publishing": "Publishing…",
+    "published_successfully": "Notice published — co-owners can now see it",
+    "publish_failed": "Publishing failed",
+    "publish_confirmation": "Publish this notice? It will become visible to every co-owner in the building."
   },
   "notifications": {
     "channels": {
@@ -3930,7 +3935,13 @@
     "noAction": "— No action —",
     "evidence": "Evidence (photos, videos, PDF)",
     "witnesses": "Witnesses",
-    "cannotBeOwnWitness": "You cannot list yourself as a witness to your own complaint."
+    "cannotBeOwnWitness": "You cannot list yourself as a witness to your own complaint.",
+    "transition": {
+      "resolutionNotes": "What did you do to resolve this issue?",
+      "cancelReason": "Why are you cancelling this issue?",
+      "reopenReason": "Why are you reopening this case?",
+      "whyRequired": "This text stays in the record. It explains the decision to whoever reads it later, months from now included."
+    }
   },
   "units": {
     "acp": "ACP",

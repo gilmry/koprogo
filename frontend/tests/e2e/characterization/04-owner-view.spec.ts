@@ -94,7 +94,7 @@ async function registerOwnerWithBuilding(
 }
 
 test.describe("Characterization 04 — Owner view", () => {
-  test("owner dashboard renders", async ({ page }) => {
+  test("@happy owner dashboard renders", async ({ page }) => {
     await registerOwnerWithBuilding(page, "char-owner-dash");
     await page.goto("/owner");
     await expect(page.locator("body")).toBeVisible();
@@ -103,7 +103,7 @@ test.describe("Characterization 04 — Owner view", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("owner units page renders (his lots)", async ({ page }) => {
+  test("@happy owner units page renders (his lots)", async ({ page }) => {
     await registerOwnerWithBuilding(page, "char-owner-units");
     await page.goto("/owner/units");
     await expect(page.locator("body")).toBeVisible();
@@ -112,7 +112,7 @@ test.describe("Characterization 04 — Owner view", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("owner expenses page renders", async ({ page }) => {
+  test("@happy owner expenses page renders", async ({ page }) => {
     await registerOwnerWithBuilding(page, "char-owner-exp");
     await page.goto("/owner/expenses");
     await expect(page.locator("body")).toBeVisible();
@@ -121,7 +121,7 @@ test.describe("Characterization 04 — Owner view", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("owner payments page renders", async ({ page }) => {
+  test("@happy owner payments page renders", async ({ page }) => {
     await registerOwnerWithBuilding(page, "char-owner-pay");
     await page.goto("/owner/payments");
     await expect(page.locator("body")).toBeVisible();
@@ -130,7 +130,7 @@ test.describe("Characterization 04 — Owner view", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("owner profile page renders", async ({ page }) => {
+  test("@happy owner profile page renders", async ({ page }) => {
     await registerOwnerWithBuilding(page, "char-owner-prof");
     await page.goto("/owner/profile");
     await expect(page.locator("body")).toBeVisible();
@@ -139,7 +139,7 @@ test.describe("Characterization 04 — Owner view", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("owner tickets page renders", async ({ page }) => {
+  test("@happy owner tickets page renders", async ({ page }) => {
     await registerOwnerWithBuilding(page, "char-owner-tix");
     await page.goto("/owner/tickets");
     await expect(page.locator("body")).toBeVisible();

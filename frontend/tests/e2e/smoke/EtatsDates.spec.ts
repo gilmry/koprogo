@@ -50,7 +50,7 @@ async function setupWithUnitAndOwner(page: Page) {
 }
 
 test.describe("Etats Dates - Belgian Property Sales Document", () => {
-  test("should display etats-dates page", async ({ page }) => {
+  test("@happy should display etats-dates page", async ({ page }) => {
     await loginAsSyndicWithUnit(page, "etat");
     await page.goto("/etats-dates");
 
@@ -60,7 +60,9 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create an etat date and retrieve it", async ({ page }) => {
+  test("@happy should create an etat date and retrieve it", async ({
+    page,
+  }) => {
     const { token, buildingId, unitId, orgId } =
       await setupWithUnitAndOwner(page);
     const timestamp = Date.now();
@@ -100,7 +102,7 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
     expect(retrieved.id).toBe(etat.id);
   });
 
-  test("should list etats-dates for building", async ({ page }) => {
+  test("@happy should list etats-dates for building", async ({ page }) => {
     const { token, buildingId } = await setupWithUnitAndOwner(page);
 
     const listResp = await page.request.get(
@@ -112,7 +114,7 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
     expect(Array.isArray(etats)).toBeTruthy();
   });
 
-  test("should mark etat date as in-progress (Requested → InProgress)", async ({
+  test("@happy should mark etat date as in-progress (Requested → InProgress)", async ({
     page,
   }) => {
     const { token, buildingId, unitId, orgId } =
@@ -151,7 +153,7 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
     expect(updated.status).toBe("in_progress"); // EtatDateStatus uses serde snake_case
   });
 
-  test("should list etats-dates for a unit", async ({ page }) => {
+  test("@happy should list etats-dates for a unit", async ({ page }) => {
     const { token, unitId } = await setupWithUnitAndOwner(page);
 
     const listResp = await page.request.get(
@@ -163,7 +165,7 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
     expect(Array.isArray(etats)).toBeTruthy();
   });
 
-  test("should get overdue etats-dates", async ({ page }) => {
+  test("@edge should get overdue etats-dates", async ({ page }) => {
     const { token } = await setupWithUnitAndOwner(page);
 
     const overdueResp = await page.request.get(
@@ -176,7 +178,9 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
     ).toBe(200);
   });
 
-  test("should require auth for etats-dates API", async ({ page }) => {
+  test("@security should require auth for etats-dates API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/etats-dates`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

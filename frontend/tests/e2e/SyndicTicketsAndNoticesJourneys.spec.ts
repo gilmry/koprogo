@@ -5,7 +5,7 @@ import { failOnPageErrors } from "./helpers/pageErrors";
 test.describe("Syndic — parcours de création remplis jusqu'au bout (tickets, notices)", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("tickets: crée un ticket de bout en bout", async ({ page }) => {
+  test("@happy tickets: crée un ticket de bout en bout", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "journey-ticket");
     await page.goto("/tickets", { waitUntil: "networkidle" });
     // La sélection du building se fait automatiquement (un seul building) via
@@ -27,7 +27,7 @@ test.describe("Syndic — parcours de création remplis jusqu'au bout (tickets, 
     expect(resp.status()).toBe(201);
   });
 
-  test("notices: crée une annonce de bout en bout", async ({ page }) => {
+  test("@happy notices: crée une annonce de bout en bout", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "journey-notice");
     await page.goto("/notices", { waitUntil: "networkidle" });
     await page.waitForTimeout(500);

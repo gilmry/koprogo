@@ -9,7 +9,7 @@ import { failOnPageErrors } from "./helpers/pageErrors";
 test.describe("Syndic — documents liés à une dépense, upload puis téléchargement de bout en bout", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("upload un document lié à la dépense puis le télécharge avec succès", async ({
+  test("@happy upload un document lié à la dépense puis le télécharge avec succès", async ({
     page,
   }) => {
     const { expenseId } = await loginAsSyndicWithExpense(

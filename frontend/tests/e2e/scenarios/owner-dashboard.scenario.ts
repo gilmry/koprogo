@@ -68,7 +68,9 @@ test.describe("Scenario: Alice consulte son tableau de bord", () => {
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Alice se connecte et explore son tableau de bord", async ({ page }) => {
+  test("@happy Alice se connecte et explore son tableau de bord", async ({
+    page,
+  }) => {
     // ============================================================
     // ETAPE 1 : Connexion (visible dans la video)
     // ============================================================

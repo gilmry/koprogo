@@ -10,7 +10,7 @@ async function setupAccountant(page: Page) {
 }
 
 test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
-  test("should display accountant page", async ({ page }) => {
+  test("@happy should display accountant page", async ({ page }) => {
     await setupAccountant(page);
     await page.goto("/accountant");
 
@@ -20,7 +20,7 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should seed Belgian PCMN accounts via API", async ({ page }) => {
+  test("@happy should seed Belgian PCMN accounts via API", async ({ page }) => {
     const { orgId } = await setupAccountant(page);
     // Use admin (superadmin) token for seeding
     const adminToken = await adminLogin(page);
@@ -35,7 +35,7 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
     expect([200, 409].includes(seedResp.status())).toBeTruthy();
   });
 
-  test("should list accounts via API", async ({ page }) => {
+  test("@happy should list accounts via API", async ({ page }) => {
     const { token } = await setupAccountant(page);
 
     const listResp = await page.request.get(`${API_BASE}/accounts`, {
@@ -46,7 +46,7 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
     expect(Array.isArray(accounts) || accounts.data !== undefined).toBeTruthy();
   });
 
-  test("should find account by code", async ({ page }) => {
+  test("@happy should find account by code", async ({ page }) => {
     const { token, orgId } = await setupAccountant(page);
     const adminToken = await adminLogin(page);
     // Seed with admin token (superadmin required)

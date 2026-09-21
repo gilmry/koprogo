@@ -13,7 +13,9 @@ import { loginAsSyndic } from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 test.describe("Marketplace - Service Provider Directory", () => {
-  test("should search providers without authentication", async ({ page }) => {
+  test("@happy should search providers without authentication", async ({
+    page,
+  }) => {
     // Marketplace search is a public endpoint
     const resp = await page.request.get(`${API_BASE}/marketplace/providers`);
 
@@ -22,7 +24,7 @@ test.describe("Marketplace - Service Provider Directory", () => {
     expect(Array.isArray(providers)).toBeTruthy();
   });
 
-  test("should filter providers by trade category", async ({ page }) => {
+  test("@edge should filter providers by trade category", async ({ page }) => {
     // Create a provider first so we have data to filter
     const { token } = await loginAsSyndic(page, "mkfilter");
     const timestamp = Date.now();
@@ -62,7 +64,9 @@ test.describe("Marketplace - Service Provider Directory", () => {
     expect(providers.length).toBeGreaterThanOrEqual(1);
   });
 
-  test("should return 404 for non-existent provider slug", async ({ page }) => {
+  test("@edge should return 404 for non-existent provider slug", async ({
+    page,
+  }) => {
     const resp = await page.request.get(
       `${API_BASE}/marketplace/providers/non-existent-provider-slug`,
     );
@@ -73,7 +77,7 @@ test.describe("Marketplace - Service Provider Directory", () => {
     ).toBe(404);
   });
 
-  test("should create a service provider as syndic", async ({ page }) => {
+  test("@edge should create a service provider as syndic", async ({ page }) => {
     const { token } = await loginAsSyndic(page, "marketplace");
     const timestamp = Date.now();
 
@@ -100,7 +104,7 @@ test.describe("Marketplace - Service Provider Directory", () => {
     ).toBe(201);
   });
 
-  test("should not require auth for marketplace search endpoint", async ({
+  test("@happy should not require auth for marketplace search endpoint", async ({
     page,
   }) => {
     // Verify marketplace is truly public (no 401)

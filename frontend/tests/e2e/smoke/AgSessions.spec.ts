@@ -13,7 +13,7 @@ import { loginAsSyndicWithMeeting } from "../helpers/auth";
 import { API_BASE } from "../helpers/adresses";
 
 test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
-  test("should display AG sessions page", async ({ page }) => {
+  test("@happy should display AG sessions page", async ({ page }) => {
     await loginAsSyndicWithMeeting(page, "agsess");
     await page.goto("/ag-sessions");
 
@@ -23,7 +23,7 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a video session for a meeting and retrieve it", async ({
+  test("@edge should create a video session for a meeting and retrieve it", async ({
     page,
   }) => {
     const { token, meetingId } = await loginAsSyndicWithMeeting(page, "agsess");
@@ -66,7 +66,9 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
     expect(retrieved.id).toBe(session.id);
   });
 
-  test("should start an AG session (Scheduled → Live)", async ({ page }) => {
+  test("@happy should start an AG session (Scheduled → Live)", async ({
+    page,
+  }) => {
     const { token, meetingId } = await loginAsSyndicWithMeeting(page, "agsess");
 
     const sessionResp = await page.request.post(
@@ -105,7 +107,7 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
     expect(started.status).toBe("live");
   });
 
-  test("should record remote participant joining", async ({ page }) => {
+  test("@happy should record remote participant joining", async ({ page }) => {
     const { token, meetingId } = await loginAsSyndicWithMeeting(page, "agsess");
 
     const sessionResp = await page.request.post(
@@ -154,7 +156,7 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
     ).toBe(200);
   });
 
-  test("should get combined quorum for AG session", async ({ page }) => {
+  test("@happy should get combined quorum for AG session", async ({ page }) => {
     const { token, meetingId } = await loginAsSyndicWithMeeting(page, "agsess");
 
     const sessionResp = await page.request.post(
@@ -206,7 +208,7 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
     ).toBe(200);
   });
 
-  test("should get AG session by meeting ID", async ({ page }) => {
+  test("@happy should get AG session by meeting ID", async ({ page }) => {
     const { token, meetingId } = await loginAsSyndicWithMeeting(page, "agsess");
 
     await page.request.post(`${API_BASE}/meetings/${meetingId}/ag-session`, {
@@ -233,7 +235,9 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
     ).toBe(200);
   });
 
-  test("should require auth for AG sessions API", async ({ page }) => {
+  test("@security should require auth for AG sessions API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/ag-sessions`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

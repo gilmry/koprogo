@@ -19,14 +19,37 @@
    * l'ouverture. Un lien qui dépose au milieu d'une liste de cent règles sans
    * dire laquelle n'aide personne.
    */
+  /**
+   * Le contrat RÉEL de `GET /legal/rules`, relevé le 2026-09-20.
+   *
+   * ── Ce que cette interface disait avant, et ce qui en découlait ─────────
+   *
+   * Elle déclarait sept champs — `code`, `category`, `roles`, `article`,
+   * `content`, `keywords`, `title`. Le serveur en sert cinq, dont **un
+   * seul** en commun : `title`.
+   *
+   * Conséquences, toutes mesurées :
+   *
+   *   1. `{#each … (regle.code)}` indexait sur un champ absent. Vingt règles
+   *      partageaient donc la clé `undefined`, d'où le `each_key_duplicate`
+   *      que le balayage a relevé (#968).
+   *   2. `regle.article` et `regle.content` rendaient vide : la page servait
+   *      vingt cartes ne portant que leur titre — 478 caractères en tout.
+   *   3. Le filtre de recherche appelait `.toLowerCase()` sur `r.article`
+   *      et `r.content`, donc sur `undefined` : **toute frappe dans le champ
+   *      de recherche levait une exception.**
+   *
+   * Le troisième point ne se voyait pas au balayage, qui ne tape rien. Il
+   * apparaît en lisant le contrat.
+   */
   interface RegleLegale {
-    code: string;
-    category: string;
-    roles: string[];
-    article: string;
+    /** `art_3_84`, `rgpd_15`… C'est aussi l'ancre portée par `?code=`. */
+    id: string;
     title: string;
-    content: string;
-    keywords: string[];
+    summary: string;
+    key_points: string[];
+    /** « Code Civil Belge », « RGPD »… la source, pas l'article. */
+    reference: string;
   }
 
   let regles = $state<RegleLegale[]>([]);
@@ -60,9 +83,9 @@
     return regles.filter(
       (r) =>
         r.title.toLowerCase().includes(q) ||
-        r.article.toLowerCase().includes(q) ||
-        r.content.toLowerCase().includes(q) ||
-        r.keywords.some((k) => k.toLowerCase().includes(q)),
+        r.reference.toLowerCase().includes(q) ||
+        r.summary.toLowerCase().includes(q) ||
+        r.key_points.some((k) => k.toLowerCase().includes(q)),
     );
   });
 </script>
@@ -112,11 +135,11 @@
   </p>
 {:else}
   <ul class="mt-6 space-y-3">
-    {#each filtrees as regle (regle.code)}
-      {@const vise = regle.code === codeVise}
+    {#each filtrees as regle (regle.id)}
+      {@const vise = regle.id === codeVise}
       <li
-        data-testid="legal-rule-{regle.code}"
-        data-rule-code={regle.code}
+        data-testid="legal-rule-{regle.id}"
+        data-rule-code={regle.id}
         data-targeted={vise ? "true" : "false"}
         class="rounded-card border border-border-soft bg-surface p-4 {vise
           ? 'border-l-[3px] border-l-primary bg-primary-tint'
@@ -131,11 +154,20 @@
           <div class="min-w-0">
             <p class="text-[14.5px] font-semibold text-ink">{regle.title}</p>
             <p class="mt-0.5 font-mono text-[11px] text-muted-strong">
-              {regle.article}
+              {regle.reference}
             </p>
             <p class="mt-2 text-[12.5px] leading-relaxed text-ink-3">
-              {regle.content}
+              {regle.summary}
             </p>
+            {#if regle.key_points?.length}
+              <ul
+                class="mt-2 list-disc space-y-1 pl-4 text-[12.5px] leading-relaxed text-ink-3"
+              >
+                {#each regle.key_points as point}
+                  <li>{point}</li>
+                {/each}
+              </ul>
+            {/if}
           </div>
         </div>
       </li>

@@ -1253,3 +1253,110 @@ export async function provisionneComptesDuParcours(
     coproprietaire: { email: emailCoproprietaire, motDePasse },
   };
 }
+
+/**
+ * Rattache un compte de copropriétaire à un lot — et pourquoi ça ne va pas
+ * de soi.
+ *
+ * ── Ce que `seedConformantUnits` ne fait pas ──────────────────────────────
+ *
+ * Il bâtit : des lots dont les quotités somment à l'acte de base. Il ne
+ * peuple pas — aucun `unit_owners` n'existe après son passage, et l'immeuble
+ * reste vide au sens du produit.
+ *
+ * Deux conséquences mesurées contre la recette le 2026-09-20, sur deux
+ * parcours filmés distincts :
+ *
+ *   - `POST /polls` rend `400 {"error":"Total eligible voters must be
+ *     positive"}`. `poll_use_cases.rs:92` dérive le corps électoral des
+ *     `unit_owners` ACTIFS, et `Poll::new` refuse un total nul. Règle juste :
+ *     on ne consulte pas une copropriété sans copropriétaires.
+ *
+ *   - `/notices` affiche « Aucun immeuble trouvé » à un copropriétaire. Le
+ *     sélecteur d'immeuble d'une page ne liste que les immeubles où le compte
+ *     a un lot ; sans rattachement, le produit lui répond correctement qu'il
+ *     n'est chez lui nulle part.
+ *
+ * Aucun des deux n'est un défaut. Les deux sont des amorçages incomplets, et
+ * le même : un compte `owner` n'est pas un copropriétaire tant qu'il ne
+ * possède rien.
+ *
+ * ── Pourquoi ici, et pas dans chaque parcours ─────────────────────────────
+ *
+ * Deux parcours l'ont redécouvert le même jour, chacun par un symptôme
+ * différent. Le troisième le redécouvrirait par un troisième. Une correction
+ * recopiée n'a pas de lieu où être corrigée — c'est l'argument de
+ * `adresses.ts`, et il vaut ici aussi.
+ *
+ * @param lotIndex quel lot de l'immeuble attribuer. Par défaut le premier.
+ * @returns l'identifiant de la FICHE de copropriétaire (≠ celui du compte).
+ */
+export async function rattacherLeCoproprietaire(
+  page: Page,
+  adminToken: string,
+  params: {
+    orgId: string;
+    buildingId: string;
+    /** L'identifiant du COMPTE, rendu par `POST /auth/register`. */
+    userId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    lotIndex?: number;
+  },
+): Promise<string> {
+  const entete = { Authorization: `Bearer ${adminToken}` };
+
+  const lotsResp = await page.request.get(
+    `${API_BASE}/buildings/${params.buildingId}/units`,
+    { headers: entete },
+  );
+  const lots = await expectOk<Array<{ id: string }>>(
+    lotsResp,
+    "rattachement:lots",
+  );
+  const lot = lots[params.lotIndex ?? 0];
+  if (!lot) {
+    throw new Error(
+      `L'immeuble ${params.buildingId} n'a pas de lot n°${
+        (params.lotIndex ?? 0) + 1
+      } (${lots.length} au total). Appelez seedConformantUnits d'abord : ` +
+        "sans lot, il n'y a rien à rattacher, et le compte restera un " +
+        "copropriétaire qui ne possède rien.",
+    );
+  }
+
+  const ficheResp = await page.request.post(`${API_BASE}/owners`, {
+    data: {
+      organization_id: params.orgId,
+      first_name: params.firstName,
+      last_name: params.lastName,
+      email: params.email,
+      address: "1 Rue Test",
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+      user_id: params.userId,
+    },
+    headers: entete,
+  });
+  const fiche = await expectOk<{ id: string }>(
+    ficheResp,
+    "rattachement:fiche-coproprietaire",
+  );
+
+  const lienResp = await page.request.post(
+    `${API_BASE}/units/${lot.id}/owners`,
+    {
+      data: {
+        owner_id: fiche.id,
+        ownership_percentage: 1,
+        is_primary_contact: true,
+      },
+      headers: entete,
+    },
+  );
+  await expectOk(lienResp, "rattachement:lien-lot-proprietaire");
+
+  return fiche.id;
+}

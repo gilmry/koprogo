@@ -60,6 +60,47 @@ const cartes = metas
       ? `<p class="alerte">Parcours interrompu : ${echapper(m.interrompu)}. ` +
         `Cette vitrine est partielle — elle montre où ça s'arrête.</p>`
       : "";
+
+    // ── Ce que la page a dit d'elle-même ─────────────────────────────────
+    //
+    // `enregistrer-vitrine.mjs` retient les erreurs, avertissements et
+    // requêtes échouées du navigateur depuis le 2026-09-18, et les écrit
+    // dans chaque `.json`. **La galerie ne les montrait pas.**
+    //
+    // Un parcours qui se déroule entièrement tout en crachant douze erreurs
+    // en console produisait donc une carte d'apparence impeccable. C'est un
+    // instrument sans verdict : il relève, personne ne lit, rien n'arrive.
+    //
+    // ── Pourquoi le libellé dit « tous ne sont pas des défauts » ────────
+    //
+    // Parce que c'est vrai, et qu'une formulation alarmante ferait plus de
+    // mal que le silence qu'elle remplace. Mesuré sur `lot` : ses deux
+    // entrées sont un 403 et un 401 tous deux DOCUMENTÉS comme attendus
+    // (`organizations.ts:45`, `api.ts:147`). Les filtrer demanderait une
+    // liste d'URL tolérées, qui masquerait le jour où l'une casse.
+    //
+    // Ils sont ici REPLIÉS, et c'est délibéré. La vitrine s'adresse d'abord
+    // à quelqu'un qui évalue le produit, pas à quelqu'un qui le débogue :
+    // ouvrir sur une pile d'erreurs donnerait une impression fausse dans
+    // l'autre sens. Le compte reste visible, le détail à un clic.
+    //
+    // Et ce n'est toujours pas un verdict — la preuve de valeur ne fait pas
+    // tomber le build (`garde-parcours-partage`, @security). C'est ce qu'il
+    // faut pour qu'une issue soit écrite après.
+    const journal = m.console ?? [];
+    const console_ =
+      journal.length === 0
+        ? ""
+        : `<details class="journal">
+             <summary>${journal.length} échange${journal.length > 1 ? "s" : ""} ` +
+          `réseau refusé${journal.length > 1 ? "s" : ""} ou message` +
+          `${journal.length > 1 ? "s" : ""} de la console — ` +
+          `tous ne sont pas des défauts</summary>
+             <ol>${journal
+               .map((l) => `<li>${echapper(String(l))}</li>`)
+               .join("")}</ol>
+           </details>`;
+
     return `
       <article class="carte">
         <h2>${echapper(m.title)}</h2>
@@ -68,6 +109,7 @@ const cartes = metas
         ${alerte}
         <video controls preload="metadata" src="videos/${echapper(m.slug)}.webm"></video>
         <ol class="chapitres">${chapitres}</ol>
+        ${console_}
       </article>`;
   })
   .join("");
@@ -93,6 +135,11 @@ const html = `<!DOCTYPE html>
   .alerte { background: #fef2f2; color: #991b1b; border-left: 3px solid #dc2626;
             padding: 8px 12px; font-size: 14px; border-radius: 4px; }
   video { width: 100%; border-radius: 8px; background: #000; margin-top: 10px; }
+  .journal { margin: 12px 0 0; font-size: 13px; color: #6b7280; }
+  .journal summary { cursor: pointer; padding: 6px 0; }
+  .journal ol { margin: 6px 0 0; padding-left: 20px; }
+  .journal li { font-family: ui-monospace, monospace; font-size: 12px;
+    word-break: break-word; margin: 3px 0; }
   .chapitres { margin: 12px 0 0; padding: 0; list-style: none; }
   .chapitres button { display: flex; gap: 10px; align-items: baseline; width: 100%;
                       text-align: left; background: none; border: 0; padding: 5px 6px;

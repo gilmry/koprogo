@@ -155,7 +155,7 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Alice consulte ses offres, Bob parcourt la marketplace", async ({
+  test("@happy Alice consulte ses offres, Bob parcourt la marketplace", async ({
     page,
   }) => {
     // ============================================================

@@ -241,27 +241,111 @@ export const conseil: Parcours = {
         "mandat a été conféré.",
       action: async (scene) => {
         await scene.attendreChargement();
+        // ── Pourquoi cette étape va maintenant jusqu'au bout ─────────────
+        //
+        // Elle ouvrait le formulaire et s'arrêtait là, au motif que
+        // `SyndicCreationJourneys` exerce déjà l'élection. C'était vrai, et
+        // c'était le mauvais argument : le gate couvrait l'élection, la
+        // VITRINE montrait un formulaire ouvert sous un titre qui annonçait
+        // une élection. L'étape suivante s'appelle « l'élue découvre son
+        // mandat » — elle ne pouvait découvrir aucun mandat, puisque
+        // personne ne l'avait élue (#974).
+        await scene.cliquer("board-elect-button");
+        await scene.attendreChargement();
       },
       assertion: async (page) => {
-        // L'écran d'élection est ouvert au syndic : le bouton qui bascule
-        // l'affichage des mandats échus n'existe que là. On vérifie la
-        // porte, pas le détail du formulaire — `SyndicCreationJourneys`
-        // l'exerce déjà de bout en bout, et le refilmer ici allongerait la
-        // vidéo sans rien montrer de neuf.
         // Le sélecteur d'immeuble est la porte de l'élection : on élit au
         // conseil D'UNE copropriété, jamais dans l'absolu.
         await expect(page.getByTestId("board-building-select")).toBeVisible({
           timeout: 20000,
         });
+        await expect(
+          page.getByTestId("board-elect-form"),
+          "Le bouton d'élection est visible mais n'ouvre aucun formulaire : " +
+            "la capacité est affichée sans être atteignable.",
+        ).toBeVisible({ timeout: 20000 });
+        await expect(page.getByTestId("board-elect-meeting")).toBeVisible();
+      },
+    },
+    {
+      id: "2bis-le-mandat-est-confere",
+      acteur: "syndic",
+      description:
+        "Il désigne Alice Dubois comme présidente, cite l'assemblée qui l'a " +
+        "élue, et borne le mandat à UN AN. Ce n'est pas un réglage : " +
+        "l'Art. 3.90 du Code civil fixe la durée, et le serveur refuse tout " +
+        "ce qui s'en écarte de plus de deux mois.",
+      action: async (scene) => {
+        await scene.choisirQuiContient("board-elect-owner", "Dubois");
+        await scene.choisir("board-elect-position", "president");
+        // L'assemblée qui confère : la seule de cet immeuble, semée à
+        // l'amorçage. C'est le champ qui matérialise « le syndic propose,
+        // l'assemblée élit ».
+        await scene.page
+          .getByTestId("board-elect-meeting")
+          .selectOption({ index: 1 });
+        // ── Un an, et pas trois ──────────────────────────────────────────
+        //
+        // Ma première version posait trois ans, en citant l'Art. 3.88. Le
+        // produit m'a corrigé : `BoardMember::new` exige une durée de
+        // 330 à 395 jours et cite l'Art. 3.90 CC, « conseil de
+        // copropriété ». La contrainte de base `mandate_duration_one_year`
+        // dit la même chose.
+        //
+        // L'échec était SILENCIEUX : le formulaire accepte les deux dates,
+        // le serveur rend 400, et le refus passe par un toast qui s'efface.
+        // Rien dans le formulaire n'annonce la règle (#980).
+        const aujourdHui = new Date();
+        const dansUnAn = new Date(aujourdHui);
+        dansUnAn.setFullYear(dansUnAn.getFullYear() + 1);
+        await scene.saisir(
+          "board-elect-mandate-start",
+          aujourdHui.toISOString().slice(0, 10),
+        );
+        await scene.saisir(
+          "board-elect-mandate-end",
+          dansUnAn.toISOString().slice(0, 10),
+        );
+        await scene.cliquer("board-elect-submit-button");
+        await scene.attendreChargement();
+      },
+      assertion: async (page) => {
+        // Le formulaire s'est refermé ET le conseil compte un membre.
+        // Vérifier seulement la fermeture ne distinguerait pas une élection
+        // d'une annulation.
+        await expect(page.getByTestId("board-elect-form")).toHaveCount(0, {
+          timeout: 20000,
+        });
+        await expect(
+          page.getByTestId("board-member-remove-button"),
+          "L'élection a l'air d'aboutir mais le conseil reste vide : " +
+            "l'étape suivante montrerait une élue sans mandat.",
+        ).toHaveCount(1, { timeout: 20000 });
+        // ── Ce que la carte du membre montre, et ce qu'elle devrait ──────
+        //
+        // Le mandat est bien conféré : poste, dates et jours restants s'y
+        // lisent. Mais l'élue y figure sous son UUID —
+        // « ID du copropriétaire: 553e245c-… » — et non sous son nom
+        // (`BoardManagement.svelte:300`).
+        //
+        // L'assertion porte donc sur ce qui EST vrai, avec l'issue qui le
+        // ferme (#980). Écrire `toContainText("Dubois")` ferait échouer le
+        // parcours sur un défaut d'affichage qu'il n'est pas là pour
+        // corriger, et une assertion qu'on souhaite ferait mentir la
+        // vitrine.
+        await expect(page.getByTestId("board-management")).toContainText(
+          "Président",
+        );
+        await expect(page.getByTestId("board-management")).toContainText("365");
       },
     },
     {
       id: "3-l-elu-decouvre-son-mandat",
       acteur: "conseil",
       description:
-        "Au tour de l'élue. Elle n'a rien demandé : un mandat se reçoit de " +
-        "l'assemblée, il ne se prend pas. C'est ce qui distingue le conseil " +
-        "d'un comité de volontaires.",
+        "Au tour de l'élue. Elle n'a rien demandé : le mandat vient d'être " +
+        "conféré sous nos yeux, et elle le reçoit. C'est ce qui distingue " +
+        "le conseil d'un comité de volontaires.",
       action: async (scene) => {
         await scene.devenir("conseil");
       },

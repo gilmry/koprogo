@@ -14,7 +14,7 @@ import { API_BASE } from "./helpers/adresses";
 test.describe("Copropriétaire — écrans en lecture seule, données réelles", () => {
   test.beforeEach(async ({ page }) => failOnPageErrors(page));
 
-  test("dashboard, mes lots, mes dépenses, mes documents : rendu peuplé pour un owner réellement lié", async ({
+  test("@happy dashboard, mes lots, mes dépenses, mes documents : rendu peuplé pour un owner réellement lié", async ({
     page,
   }) => {
     const ctx = await loginAsSyndicWithLinkedOwner(page, "journey-owner");

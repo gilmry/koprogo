@@ -122,6 +122,15 @@ export interface paths {
     /**
      * Health check endpoint
      * @description Returns system health status. No authentication required.
+     *
+     *     Also carries this instance's fingerprint: `instance_id`, a UUID drawn once
+     *     at boot, and `started_at`, a Unix timestamp. Two calls that return
+     *     different values mean the server restarted in between — which lets a test
+     *     campaign tell an interrupted run from a real regression (#880).
+     *
+     *     The fingerprint discloses no secret and no host path: answering "is this
+     *     the same process?" needs nothing more than a value that changes when the
+     *     process does.
      */
     get: operations["health_check"];
     put?: never;
@@ -5315,7 +5324,9 @@ export interface operations {
         content: {
           /**
            * @example {
+           *       "instance_id": "3f2a0c1e-…",
            *       "service": "koprogo-api",
+           *       "started_at": 1789900000,
            *       "status": "ok"
            *     }
            */

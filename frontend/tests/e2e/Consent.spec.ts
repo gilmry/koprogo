@@ -64,7 +64,7 @@ test.describe("Consent - Privacy Policy Consent Modal", () => {
     ).not.toBeVisible();
   });
 
-  test("should record consent via API when user is authenticated", async ({
+  test("@happy should record consent via API when user is authenticated", async ({
     page,
   }) => {
     const timestamp = Date.now();

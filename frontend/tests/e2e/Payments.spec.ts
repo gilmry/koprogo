@@ -15,7 +15,7 @@ import {
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Payments - Stripe & SEPA", () => {
-  test("should display owner payments page", async ({ page }) => {
+  test("@happy should display owner payments page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "payment");
     await page.goto("/owner/payments");
 
@@ -23,7 +23,7 @@ test.describe("Payments - Stripe & SEPA", () => {
     await expect(page.locator("h1").first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("should display owner payment methods page", async ({ page }) => {
+  test("@happy should display owner payment methods page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "payment");
     await page.goto("/owner/payment-methods");
 
@@ -31,7 +31,9 @@ test.describe("Payments - Stripe & SEPA", () => {
     await expect(page.locator("h1").first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create a payment via API and retrieve it", async ({ page }) => {
+  test("@happy should create a payment via API and retrieve it", async ({
+    page,
+  }) => {
     const { token, expenseId, buildingId, orgId } =
       await loginAsSyndicWithExpense(page, "payment");
     const timestamp = Date.now();
@@ -79,7 +81,7 @@ test.describe("Payments - Stripe & SEPA", () => {
     expect(retrieved.id).toBe(payment.id);
   });
 
-  test("should list payments for an expense", async ({ page }) => {
+  test("@happy should list payments for an expense", async ({ page }) => {
     const { token, expenseId } = await loginAsSyndicWithExpense(
       page,
       "payment",
@@ -94,7 +96,9 @@ test.describe("Payments - Stripe & SEPA", () => {
     expect(Array.isArray(payments)).toBeTruthy();
   });
 
-  test("should transition payment pending → processing", async ({ page }) => {
+  test("@happy should transition payment pending → processing", async ({
+    page,
+  }) => {
     const { token, expenseId, buildingId, orgId } =
       await loginAsSyndicWithExpense(page, "payment");
     const timestamp = Date.now();
@@ -139,7 +143,7 @@ test.describe("Payments - Stripe & SEPA", () => {
     expect(updated.status).toBe("processing");
   });
 
-  test("should create and list payment methods for an owner", async ({
+  test("@happy should create and list payment methods for an owner", async ({
     page,
   }) => {
     const { token, ownerId } = await loginAsSyndicWithOwner(page, "paymethod");
@@ -173,7 +177,7 @@ test.describe("Payments - Stripe & SEPA", () => {
     expect(methods.some((m: { id: string }) => m.id === method.id)).toBe(true);
   });
 
-  test("should get owner payment statistics", async ({ page }) => {
+  test("@happy should get owner payment statistics", async ({ page }) => {
     const { token, ownerId } = await loginAsSyndicWithOwner(page, "paystats");
 
     const statsResp = await page.request.get(
@@ -183,7 +187,9 @@ test.describe("Payments - Stripe & SEPA", () => {
     expect(statsResp.status()).toBe(200);
   });
 
-  test("should require auth to access payments API", async ({ page }) => {
+  test("@security should require auth to access payments API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/payments/some-id`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });

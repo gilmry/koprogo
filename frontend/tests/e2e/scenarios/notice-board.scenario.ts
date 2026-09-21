@@ -155,7 +155,9 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
   // `globalTeardown` — c'est-à-dire à quelqu'un qui possède le fixture.
   // Cf. #942 et #876.
 
-  test("Francois cree une annonce, Alice la consulte", async ({ page }) => {
+  test("@happy Francois cree une annonce, Alice la consulte", async ({
+    page,
+  }) => {
     // ============================================================
     // ETAPE 1 : Francois se connecte et navigue vers les annonces
     // ============================================================

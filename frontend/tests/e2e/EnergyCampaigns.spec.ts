@@ -12,7 +12,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
 import { API_BASE } from "./helpers/adresses";
 
 test.describe("Energy Campaigns - Group Buying", () => {
-  test("should display energy campaigns page", async ({ page }) => {
+  test("@happy should display energy campaigns page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "energy");
     await page.goto("/energy-campaigns");
 
@@ -22,7 +22,9 @@ test.describe("Energy Campaigns - Group Buying", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create an energy campaign and retrieve it", async ({ page }) => {
+  test("@happy should create an energy campaign and retrieve it", async ({
+    page,
+  }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
       page,
       "energy",
@@ -61,7 +63,9 @@ test.describe("Energy Campaigns - Group Buying", () => {
     expect(retrieved.id).toBe(campaign.id);
   });
 
-  test("should list energy campaigns for organization", async ({ page }) => {
+  test("@happy should list energy campaigns for organization", async ({
+    page,
+  }) => {
     const { token } = await loginAsSyndicWithBuilding(page, "energy");
 
     const listResp = await page.request.get(`${API_BASE}/energy-campaigns`, {
@@ -72,7 +76,7 @@ test.describe("Energy Campaigns - Group Buying", () => {
     expect(Array.isArray(campaigns)).toBeTruthy();
   });
 
-  test("should add a provider offer to a campaign", async ({ page }) => {
+  test("@edge should add a provider offer to a campaign", async ({ page }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
       page,
       "energy",
@@ -129,7 +133,7 @@ test.describe("Energy Campaigns - Group Buying", () => {
     expect(offerResp.status()).toBe(201);
   });
 
-  test("should list offers for a campaign", async ({ page }) => {
+  test("@happy should list offers for a campaign", async ({ page }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
       page,
       "energy",
@@ -165,14 +169,16 @@ test.describe("Energy Campaigns - Group Buying", () => {
     expect(Array.isArray(offers)).toBeTruthy();
   });
 
-  test("should navigate to new campaign page", async ({ page }) => {
+  test("@happy should navigate to new campaign page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "energy");
     await page.goto("/energy-campaigns/new");
 
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should require auth for energy campaigns API", async ({ page }) => {
+  test("@security should require auth for energy campaigns API", async ({
+    page,
+  }) => {
     const resp = await page.request.get(`${API_BASE}/energy-campaigns`);
     expect([401, 403].includes(resp.status())).toBeTruthy();
   });
