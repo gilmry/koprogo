@@ -1,0 +1,112 @@
+{
+  "slug": "incident",
+  "title": "Un incident signalé, reçu, confié, clos",
+  "propos": "Le cycle de vie complet d'un incident, de la copropriétaire qui constate une fuite au syndic qui clôture le dossier. Dix étapes, toutes des gestes : on remplit le formulaire, on l'envoie, on cherche le ticket dans la liste, on l'ouvre, on l'assigne, on le résout, on le clôture. C'est le cas d'usage qui justifie un logiciel de syndic.",
+  "acteurs": [
+    "copropriétaire",
+    "syndic"
+  ],
+  "interrompu": null,
+  "console": [
+    "[401] POST /api/v1/auth/refresh",
+    "[404] GET /api/v1/buildings/4c3cf4bc-d0d3-4fd6-85de-116a2cad07ac/owners",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a",
+    "[403] GET /api/v1/acps/1fea2233-54e0-4df9-ac29-c6a753b6666a"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Le cycle de vie complet d'un incident, de la copropriétaire qui constate une fuite au syndic qui clôture le dossier. Dix étapes, toutes des gestes : on remplit le formulaire, on l'envoie, on cherche le ticket dans la liste, on l'ouvre, on l'assigne, on le résout, on le clôture. C'est le cas d'usage qui justifie un logiciel de syndic."
+    },
+    {
+      "t": 6,
+      "texte": "Carine rentre chez elle et trouve une flaque dans le hall. Elle se connecte à KoproGo pour le signaler — pas pour téléphoner au syndic un vendredi à 19 h.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 28,
+      "texte": "Le formulaire de signalement, pour son immeuble. Il s'ouvre sur une demande simple ; c'est elle qui décidera d'en faire une plainte.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 39,
+      "texte": "Elle bascule sur « plainte » : la fuite dure depuis une semaine et elle veut que ce soit consigné. Le formulaire s'ouvre alors sur la gravité, la date de l'incident, les preuves et les témoins.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 47,
+      "texte": "Elle décrit : où, depuis quand, ce qu'elle a constaté. Le titre fait au moins cinq caractères, la description au moins vingt — le produit refuse les signalements qu'un syndic ne pourrait pas traiter.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 57,
+      "texte": "Plomberie, priorité haute, gravité élevée, constaté hier. Cette qualification n'est pas cosmétique : la priorité fixe le délai de réponse que le syndic s'engage à tenir.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 72,
+      "texte": "Elle envoie. C'est ici que tout se joue : le signalement existe désormais, il porte son nom, et il attend quelqu'un.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 84,
+      "texte": "Lundi matin. Sophie ouvre la liste des incidents de l'immeuble et cherche celui-là. Elle n'a pas été prévenue par téléphone : le signalement l'attendait.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 90,
+      "texte": "Le copropriétaire se déconnecte. C'est au tour du syndic."
+    },
+    {
+      "t": 95,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 118,
+      "texte": "Elle ouvre le dossier et le confie à Pierre, le plombier. L'incident passe « en cours » — et le bouton « assigner » disparaît, parce qu'il n'y a plus rien à assigner.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 139,
+      "texte": "Le plombier est passé. Sophie consigne ce qui a été fait — le produit le lui demande, parce qu'une plainte close sans explication ne vaut pas mieux qu'une ligne effacée d'un tableur.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 156,
+      "texte": "Elle clôture. Le dossier reste consultable et rouvrable — un incident clos n'est pas un incident effacé, et c'est ce qui permet d'y revenir si la fuite recommence. La clôture, elle, ne demande rien de plus : ce qui devait être écrit l'a été à l'étape précédente.",
+      "acteur": "syndic"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "slug": "annonce",
+  "title": "Le panneau d'affichage, et qui le lit",
+  "propos": "Remplace la feuille scotchée près des boîtes aux lettres. Le syndic rédige une annonce de travaux et la publie ; une copropriétaire la retrouve en cherchant « ascenseur », l'ouvre et lit le texte entier. Puis le syndic archive : une annonce périmée cesse d'encombrer le panneau sans disparaître de l'historique.",
+  "acteurs": [
+    "syndic",
+    "copropriétaire"
+  ],
+  "interrompu": null,
+  "console": [
+    "[401] POST /api/v1/auth/refresh",
+    "[404] POST /api/v1/notices/bdf80ff9-8c1e-4c6c-bd02-ea6de4686b0a/view",
+    "[error] Failed to increment view count: ApiError: API Error: 404\n    at g (http://localhost:3000/_astro/api.DAbgY1FE.js:2:4085)",
+    "[404] POST /api/v1/notices/bdf80ff9-8c1e-4c6c-bd02-ea6de4686b0a/view",
+    "[error] Failed to increment view count: ApiError: API Error: 404\n    at g (http://localhost:3000/_astro/api.DAbgY1FE.js:2:4085)",
+    "[404] POST /api/v1/notices/bdf80ff9-8c1e-4c6c-bd02-ea6de4686b0a/view",
+    "[error] Failed to increment view count: ApiError: API Error: 404\n    at g (http://localhost:3000/_astro/api.DAbgY1FE.js:2:4085)"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Remplace la feuille scotchée près des boîtes aux lettres. Le syndic rédige une annonce de travaux et la publie ; une copropriétaire la retrouve en cherchant « ascenseur », l'ouvre et lit le texte entier. Puis le syndic archive : une annonce périmée cesse d'encombrer le panneau sans disparaître de l'historique."
+    },
+    {
+      "t": 6,
+      "texte": "Les câbles de l'ascenseur doivent être remplacés. Avant, Sophie imprimait une feuille et la scotchait près des boîtes aux lettres.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 38,
+      "texte": "Elle qualifie : une annonce d'entretien, pas une petite annonce. Le classement n'est pas décoratif — c'est lui qui permettra à quelqu'un de filtrer six mois plus tard.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 53,
+      "texte": "Elle enregistre. L'annonce existe, mais en BROUILLON : elle n'est encore visible que d'elle. Une note diffusée à trente foyers ne se reprend pas — on relit d'abord.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 64,
+      "texte": "Elle ouvre son brouillon, le relit, et le publie. C'est ce geste qui le fait passer du bureau du syndic au hall d'entrée.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 84,
+      "texte": "Carine se demande ce qui avait été dit sur l'ascenseur. Elle cherche le mot — elle ne fait pas défiler six mois d'annonces.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 90,
+      "texte": "Le syndic se déconnecte. C'est au tour du copropriétaire."
+    },
+    {
+      "t": 95,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 118,
+      "texte": "Elle ouvre et lit : les dates, le monte-charge provisoire, et à qui signaler un besoin d'assistance. L'information complète, pas un titre.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 130,
+      "texte": "Les travaux sont finis. Sophie archive, et confirme : l'annonce quitte le panneau sans quitter l'historique. Supprimer effacerait la preuve que l'information a bien été donnée.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 136,
+      "texte": "Le copropriétaire se déconnecte. C'est au tour du syndic."
+    },
+    {
+      "t": 141,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    }
+  ]
+}

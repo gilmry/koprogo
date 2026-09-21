@@ -1,0 +1,48 @@
+{
+  "slug": "administration",
+  "title": "L'administration de la plateforme, au-dessus du multi-tenant",
+  "propos": "Montre la chaîne de provisionnement — organisation, ACP, comptes — qui précède tous les autres parcours. Et la contrainte qui la borne : le superadmin n'appartient à aucune organisation.",
+  "acteurs": [
+    "administrateur"
+  ],
+  "interrompu": null,
+  "console": [
+    "[401] POST /api/v1/auth/refresh"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Montre la chaîne de provisionnement — organisation, ACP, comptes — qui précède tous les autres parcours. Et la contrainte qui la borne : le superadmin n'appartient à aucune organisation."
+    },
+    {
+      "t": 6,
+      "texte": "KoproGo — l'administration de la plateforme. C'est le seul rôle qui opère AU-DESSUS du multi-tenant : il crée les organisations plutôt que d'appartenir à l'une d'elles.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que administrateur.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 28,
+      "texte": "Les organisations : chaque cabinet de syndic en est une, et chacune est étanche aux autres. C'est le premier maillon de la chaîne — sans organisation, aucune copropriété.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 60,
+      "texte": "Les ACP — les associations de copropriétaires. Le superadmin les provisionne ; c'est le syndic mandaté qui retranscrira ensuite leur acte de base. Provisionner n'est pas gérer.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 94,
+      "texte": "Les comptes, et les rôles qu'ils portent. Chaque rôle ouvre un périmètre différent : le comptable ne voit pas ce que voit le syndic, et aucun des deux ne voit les autres copropriétés.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 106,
+      "texte": "Le registre RGPD : exporter ce qu'on détient d'une personne, ou l'effacer. Chaque geste y est journalisé — c'est une obligation, pas une commodité.",
+      "acteur": "administrateur"
+    }
+  ]
+}

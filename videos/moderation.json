@@ -1,0 +1,54 @@
+{
+  "slug": "moderation",
+  "title": "Le modérateur communauté, et la porte qu'il ne peut pas franchir",
+  "propos": "Montre ce que vit quelqu'un à qui on a donné un rôle que le produit ne sert pas encore. Le compte existe, la connexion aboutit, et chaque module communautaire le renvoie à l'accueil.",
+  "acteurs": [
+    "modérateur"
+  ],
+  "interrompu": null,
+  "console": [
+    "[401] POST /api/v1/auth/refresh",
+    "[warning] Unrecognized feature: 'web-share'.",
+    "[warning] No available adapters.",
+    "[warning] [RouteGuard] Access denied to /notices for role community.moderator",
+    "[warning] Unrecognized feature: 'web-share'.",
+    "[warning] No available adapters.",
+    "[warning] [RouteGuard] Access denied to /polls for role community.moderator",
+    "[warning] Unrecognized feature: 'web-share'.",
+    "[warning] No available adapters.",
+    "[warning] [RouteGuard] Access denied to /exchanges for role community.moderator",
+    "[warning] Unrecognized feature: 'web-share'.",
+    "[warning] No available adapters."
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Montre ce que vit quelqu'un à qui on a donné un rôle que le produit ne sert pas encore. Le compte existe, la connexion aboutit, et chaque module communautaire le renvoie à l'accueil."
+    },
+    {
+      "t": 6,
+      "texte": "KoproGo — le modérateur communauté. Celui qui veille sur les échanges entre voisins : le SEL, les annonces, les objets prêtés. Le serveur délivre bien ce rôle, et la connexion aboutit.",
+      "acteur": "modérateur"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que modérateur.",
+      "acteur": "modérateur"
+    },
+    {
+      "t": 28,
+      "texte": "Les annonces de la copropriété — ce qu'il est censé modérer. L'écran ne s'ouvre pas : il est renvoyé à l'accueil, sans un mot.",
+      "acteur": "modérateur"
+    },
+    {
+      "t": 39,
+      "texte": "Les sondages : même porte, même refus. Ce n'est pas un écran cassé, c'est un rôle que deux fichiers décrivent différemment.",
+      "acteur": "modérateur"
+    },
+    {
+      "t": 51,
+      "texte": "Un rôle qu'on attribue et qui ne donne accès à rien coûte plus qu'un rôle absent : la personne croit pouvoir agir, et cherche l'erreur chez elle.",
+      "acteur": "modérateur"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "slug": "conseil",
+  "title": "Le conseil de copropriété, obligatoire au-delà de vingt lots",
+  "propos": "Montre une élection à deux voix : le syndic élit un copropriétaire au conseil, et l'élu découvre son mandat. Le conseil surveille le syndic — ce n'est pas un comité de plus, c'est un contre-pouvoir que la loi impose aux grandes copropriétés.",
+  "acteurs": [
+    "syndic",
+    "conseil"
+  ],
+  "interrompu": null,
+  "console": [
+    "[401] POST /api/v1/auth/refresh"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Montre une élection à deux voix : le syndic élit un copropriétaire au conseil, et l'élu découvre son mandat. Le conseil surveille le syndic — ce n'est pas un comité de plus, c'est un contre-pouvoir que la loi impose aux grandes copropriétés."
+    },
+    {
+      "t": 6,
+      "texte": "KoproGo — le conseil de copropriété. Au-delà de vingt lots, la loi belge l'impose : un contre-pouvoir élu qui surveille le syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 33,
+      "texte": "Élire un membre. Le syndic propose, mais c'est l'assemblée qui élit — le formulaire demande d'ailleurs par QUELLE assemblée le mandat a été conféré.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 47,
+      "texte": "Il désigne Alice Dubois comme présidente, cite l'assemblée qui l'a élue, et borne le mandat à UN AN. Ce n'est pas un réglage : l'Art. 3.90 du Code civil fixe la durée, et le serveur refuse tout ce qui s'en écarte de plus de deux mois.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 67,
+      "texte": "Au tour de l'élue. Elle n'a rien demandé : le mandat vient d'être conféré sous nos yeux, et elle le reçoit. C'est ce qui distingue le conseil d'un comité de volontaires.",
+      "acteur": "conseil"
+    },
+    {
+      "t": 73,
+      "texte": "Le syndic se déconnecte. C'est au tour du conseil."
+    },
+    {
+      "t": 78,
+      "texte": "Connexion en tant que conseil.",
+      "acteur": "conseil"
+    },
+    {
+      "t": 93,
+      "texte": "Le tableau du conseil : les décisions de l'assemblée et leur suivi. Surveiller le syndic, c'est d'abord savoir ce qui a été décidé et ce qui ne l'a pas encore été fait.",
+      "acteur": "conseil"
+    }
+  ]
+}

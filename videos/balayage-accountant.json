@@ -1,0 +1,352 @@
+{
+  "slug": "balayage-accountant",
+  "title": "Balayage complet — comptable",
+  "propos": "Tous les écrans du produit, ouverts un par un par un comptable. Ce parcours ne démontre pas une valeur : il établit un état des lieux, et rend visibles les écrans que personne n'avait jamais ouverts.",
+  "acteurs": [
+    "comptable"
+  ],
+  "interrompu": null,
+  "console": [
+    "[403] GET /api/v1/stats/dashboard",
+    "[warning] [RouteGuard] Access denied to /admin for role accountant",
+    "[warning] [RouteGuard] Access denied to /documents for role accountant",
+    "[error] Failed to load models: Error: Failed to fetch models\n    at se (http://localhost:3000/_astro/McpChatbot.DmhA_x1O.js:1:783)\n    at async http://localhost:3000/_astro/McpChatbot.DmhA_x1O.js:1:4323",
+    "[requestfailed] GET http://localhost:8080/mcp/v1/models — net::ERR_ABORTED",
+    "[warning] [RouteGuard] Access denied to /meetings for role accountant",
+    "[warning] [RouteGuard] Access denied to /owner for role accountant",
+    "[warning] [RouteGuard] Access denied to /syndic for role accountant",
+    "[warning] [RouteGuard] Access denied to /tickets for role accountant",
+    "[403] GET /api/v1/organizations?per_page=50&page=1",
+    "[error] Error loading organizations: ApiError: Only SuperAdmin can access all organizations\n    at g (http://localhost:3000/_astro/api.DAbgY1FE.js:2:4085)\n    at async t (http://localhost:3000/_astro/organisations-recherche.Cj5b5EgA.js:1:157)\n    at async de (http://localhost:3000/_astro/AcpList.Ci6tqNjP.js",
+    "[warning] [RouteGuard] Access denied to /admin/acps for role accountant",
+    "[warning] [RouteGuard] Access denied to /admin/acps/onboarding for role accountant",
+    "[warning] [RouteGuard] Access denied to /admin/board-members for role accountant",
+    "[warning] [RouteGuard] Access denied to /admin/gamification for role accountant",
+    "[403] GET /api/v1/users?per_page=50&page=1",
+    "[warning] [RouteGuard] Access denied to /admin/gdpr for role accountant",
+    "[warning] [RouteGuard] Access denied to /admin/monitoring for role accountant",
+    "[warning] [RouteGuard] Access denied to /admin/organization-detail for role accountant",
+    "[403] GET /api/v1/organizations?per_page=50&page=1",
+    "[error] Error loading organizations: ApiError: Only SuperAdmin can access all organizations\n    at g (http://localhost:3000/_astro/api.DAbgY1FE.js:2:4085)\n    at async t (http://localhost:3000/_astro/organisations-recherche.Cj5b5EgA.js:1:157)\n    at async $ (http://localhost:3000/_astro/OrganizationList.DXB",
+    "[warning] [RouteGuard] Access denied to /admin/organizations for role accountant",
+    "[403] GET /api/v1/role-assignments",
+    "[warning] [RouteGuard] Access denied to /admin/role-assignments for role accountant",
+    "[403] GET /api/v1/stats/seed-data",
+    "[error] Failed to load seed stats: ApiError: Only SuperAdmin can access seed data statistics\n    at g (http://localhost:3000/_astro/api.DAbgY1FE.js:2:4085)\n    at async G (http://localhost:3000/_astro/SeedManager.De08weho.js:4:1712)\n    at async http://localhost:3000/_astro/SeedManager.De08weho.js:4:1657",
+    "[warning] [RouteGuard] Access denied to /admin/seed for role accountant",
+    "[warning] [RouteGuard] Access denied to /admin/subscriptions for role accountant",
+    "[403] GET /api/v1/users?per_page=1000&page=1",
+    "[warning] [RouteGuard] Access denied to /admin/user-owner-links for role accountant"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Tous les écrans du produit, ouverts un par un par un comptable. Ce parcours ne démontre pas une valeur : il établit un état des lieux, et rend visibles les écrans que personne n'avait jamais ouverts."
+    },
+    {
+      "t": 6,
+      "texte": "Balayage systématique du produit vu par le comptable : 93 écrans ouverts un par un. Ce parcours ne raconte rien — il constate.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que comptable.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 27,
+      "texte": "Section « racine /accountant → /building-detail » — 10 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 35,
+      "texte": "/admin ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 43,
+      "texte": "/booking-detail ne s'ouvre pas pour ce rôle : on atterrit sur /bookings.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 52,
+      "texte": "Section « racine /buildings → /exchange-detail » — 10 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 62,
+      "texte": "/documents ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 70,
+      "texte": "Section « racine /exchanges → /mcp-chat » — 10 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 82,
+      "texte": "/mcp-chat s'ouvre, mais la console proteste : Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "acteur": "comptable"
+    },
+    {
+      "t": 88,
+      "texte": "Section « racine /meeting-detail → /payment-reminder-detail » — 10 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 96,
+      "texte": "/meetings ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 103,
+      "texte": "/notice-detail ne s'ouvre pas pour ce rôle : on atterrit sur /notices.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 111,
+      "texte": "/owner ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 119,
+      "texte": "Section « racine /payment-reminders → /skills » — 10 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 130,
+      "texte": "/sharing-detail ne s'ouvre pas pour ce rôle : on atterrit sur /sharing.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 137,
+      "texte": "/skill-detail ne s'ouvre pas pour ce rôle : on atterrit sur /skills.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 143,
+      "texte": "Section « racine /syndic → /work-reports » — 5 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 149,
+      "texte": "/syndic ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 156,
+      "texte": "/tickets ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 164,
+      "texte": "Section « admin /admin/acps → /admin/seed » — 10 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 170,
+      "texte": "/admin/acps ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 176,
+      "texte": "/admin/acps/onboarding ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 183,
+      "texte": "/admin/board-members ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 190,
+      "texte": "/admin/gamification ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 197,
+      "texte": "/admin/gdpr ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 204,
+      "texte": "/admin/monitoring ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 211,
+      "texte": "/admin/organization-detail ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 218,
+      "texte": "/admin/organizations ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 225,
+      "texte": "/admin/role-assignments ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 232,
+      "texte": "/admin/seed ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 238,
+      "texte": "Section « admin /admin/subscriptions → /admin/users » — 3 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 244,
+      "texte": "/admin/subscriptions ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 251,
+      "texte": "/admin/user-owner-links ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 258,
+      "texte": "/admin/users ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 264,
+      "texte": "Section « age-requests » — 1 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 268,
+      "texte": "Section « energy-campaigns » — 2 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 274,
+      "texte": "Section « exchanges » — 1 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 278,
+      "texte": "Section « owner » — 8 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 282,
+      "texte": "/owner/contact ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 289,
+      "texte": "/owner/documents ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 296,
+      "texte": "/owner/expenses ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 303,
+      "texte": "/owner/payment-methods ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 310,
+      "texte": "/owner/payments ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 316,
+      "texte": "/owner/profile s'ouvre mais ne montre presque rien (44 caractères).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 323,
+      "texte": "/owner/tickets ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 330,
+      "texte": "/owner/units ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 336,
+      "texte": "Section « polls » — 2 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 340,
+      "texte": "Section « quotes » — 1 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 344,
+      "texte": "/quotes/compare ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 350,
+      "texte": "Section « settings » — 2 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 355,
+      "texte": "Section « syndic » — 7 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 359,
+      "texte": "/syndic/board-members ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 366,
+      "texte": "/syndic/contractor-evaluations ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 373,
+      "texte": "/syndic/magic-links ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 380,
+      "texte": "/syndic/mandates ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 387,
+      "texte": "/syndic/role-delegations ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 394,
+      "texte": "/syndic/technical-spec ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 401,
+      "texte": "/syndic/technical-specs ne s'ouvre pas pour ce rôle : on atterrit sur /accountant.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 407,
+      "texte": "Section « tickets » — 1 écran(s).",
+      "acteur": "comptable"
+    },
+    {
+      "t": 411,
+      "texte": "Bilan du balayage.",
+      "acteur": "comptable"
+    },
+    {
+      "t": 413,
+      "texte": "93 écrans ouverts : 38 rebondissent, 1 ne montrent presque rien, 9 jettent des erreurs, et 0 ont déconnecté l'utilisateur. Le détail est dans le journal.",
+      "acteur": "comptable"
+    }
+  ]
+}
