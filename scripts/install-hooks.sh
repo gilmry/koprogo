@@ -136,6 +136,40 @@ make ci || {
     exit 1
 }
 
+# ── La synchro OpenAPI, et seulement quand elle peut avoir bougé ──────────
+#
+# `Contract Types Check` compare `docs/api/openapi.json` à ce que la source
+# Rust produit. Un commentaire de handler suffit à le faire rougir : c'est
+# arrivé sur la promotion du 2026-09-21, découvert à distance faute d'être
+# vérifié ici.
+#
+# Il n'est PAS dans `make ci` parce qu'il exige de recompiler
+# `export_openapi`. Mais cette recompilation n'a de sens que si `backend/src`
+# a changé — et dans ce cas elle est de toute façon due.
+#
+# On compare donc à ce que le distant connaît déjà. Pas de changement
+# backend, pas d'export : le chemin courant reste instantané.
+BASE_REF=""
+for candidat in "origin/$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" origin/feature/dev origin/main; do
+    if git rev-parse --verify --quiet "$candidat" >/dev/null 2>&1; then
+        BASE_REF="$candidat"
+        break
+    fi
+done
+
+if [ -n "$BASE_REF" ] && ! git diff --quiet "$BASE_REF" -- backend/src 2>/dev/null; then
+    echo "🔁 backend/src a changé vs $BASE_REF — vérification de la synchro OpenAPI..."
+    make openapi-check-conteneur || {
+        echo "❌ docs/api/openapi.json (ou api.d.ts) a dérivé."
+        echo "   Le fichier vient d'être régénéré ; relancez aussi :"
+        echo "     cd frontend && npm run types:generate"
+        echo "   puis committez les deux avant de pousser."
+        exit 1
+    }
+else
+    echo "🟢 backend/src inchangé vs ${BASE_REF:-origin} — synchro OpenAPI non requise."
+fi
+
 echo "✅ All pre-push checks passed!"
 echo "🎉 Safe to push to remote!"
 EOF

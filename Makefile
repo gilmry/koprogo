@@ -320,6 +320,40 @@ openapi-export: ## 📤 Exporter docs/api/openapi.json depuis ApiDoc
 	@docker compose exec -T backend sh -c "cd /app && SQLX_OFFLINE=true cargo run --quiet --bin export_openapi 2>/dev/null" > docs/api/openapi.json
 	@echo "$(GREEN)✅ docs/api/openapi.json written ($$(wc -c < docs/api/openapi.json) bytes)$(NC)"
 
+openapi-export-conteneur: ## 📤 Exporter openapi.json SANS la pile de démo
+	@# ── Pourquoi un second chemin d'export ────────────────────────────────
+	@#
+	@# `openapi-export` passe par `docker compose exec backend`, c'est-à-dire
+	@# par le conteneur de la DÉMO. Il exige donc que la démo tourne, et il
+	@# désigne la mauvaise pile sur un hôte qui en porte plusieurs — le même
+	@# piège qu'ADR 0050 décrit pour les campagnes e2e (#872).
+	@#
+	@# Celui-ci compile dans le conteneur de build, sur les volumes de cache
+	@# partagés. Incrémental : quelques secondes si `backend/src` n'a pas
+	@# bougé depuis la dernière compilation, ~15 min sinon — c'est-à-dire le
+	@# prix d'une recompilation qu'on paierait de toute façon.
+	@echo "$(GREEN)📤 Export OpenAPI (conteneur de build)...$(NC)"
+	@mkdir -p docs/api
+	@sudo docker run --rm --user $$(id -u):$$(id -g) --memory 6g --memory-swap 6g \
+		-v $(PWD):$(PWD) -v rustbuild-target-koprogo:/target -v rustbuild-cargo-home:/cargo \
+		-e CARGO_TARGET_DIR=/target -e CARGO_HOME=/cargo -e HOME=/tmp \
+		-e CARGO_BUILD_JOBS=1 -e SQLX_OFFLINE=true \
+		-w $(PWD)/backend rust-buildenv:1.98 \
+		cargo run --quiet --bin export_openapi 2>/dev/null > docs/api/openapi.json
+	@python3 -c "import json,sys; json.load(open('docs/api/openapi.json'))" || { \
+		echo "$(YELLOW)❌ L'export n'a pas produit de JSON valide.$(NC)"; exit 1; }
+	@echo "$(GREEN)✅ docs/api/openapi.json écrit ($$(wc -c < docs/api/openapi.json) octets)$(NC)"
+
+openapi-check-conteneur: openapi-export-conteneur ## 🔍 Synchro openapi.json, sans la démo
+	@if ! git diff --quiet docs/api/openapi.json; then \
+		echo "$(YELLOW)❌ docs/api/openapi.json a dérivé de la source Rust.$(NC)"; \
+		echo "   Un DTO, une énumération ou une annotation de handler a changé."; \
+		git diff --stat docs/api/openapi.json; \
+		echo "   Le fichier vient d'être régénéré : vérifiez-le, puis committez."; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✅ openapi.json suit la source Rust$(NC)"
+
 openapi-check: openapi-export ## 🔍 Vérifier que docs/api/openapi.json est à jour
 	@if ! git diff --quiet docs/api/openapi.json; then \
 		echo "$(YELLOW)❌ docs/api/openapi.json has diverged. Run 'make openapi-export' and commit.$(NC)"; \
