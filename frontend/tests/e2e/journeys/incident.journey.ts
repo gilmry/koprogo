@@ -454,9 +454,12 @@ export const incident: Parcours = {
       },
       assertion: async (page) => {
         // La demande de motif s'est refermée : la transition a abouti.
-        await expect(page.getByTestId("ticket-transition-form")).toHaveCount(0, {
-          timeout: 20000,
-        });
+        await expect(page.getByTestId("ticket-transition-form")).toHaveCount(
+          0,
+          {
+            timeout: 20000,
+          },
+        );
         // `ticket-close-btn` ⇔ `Resolved`. C'est ici que le parcours est
         // tombé au rouge la première fois : `ticketsApi.resolve()` envoyait
         // un corps vide à un serveur qui exige `resolution_notes`, le bouton

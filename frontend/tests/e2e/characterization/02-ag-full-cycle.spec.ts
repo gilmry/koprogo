@@ -221,6 +221,43 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
     });
     const ownerRecord = await ownerRecordResp.json();
 
+    // ── Ce que cette étape caractérisait, et ce qu'elle caractérise ──────
+    //
+    // Elle attendait `201` : le syndic déposait un vote au nom d'un
+    // copropriétaire, en désignant l'électeur dans le corps de la requête.
+    //
+    // **#850 a fermé ce chemin, et c'était le but.** `cast_vote` résout
+    // désormais le votant depuis l'utilisateur authentifié — plus jamais
+    // depuis `request.owner_id` — et un compte sans fiche de copropriétaire
+    // se voit refuser :
+    //
+    //     403  {"error":"Aucune fiche de copropriétaire n'est rattachée à ce
+    //           compte : voter à une assemblée est réservé aux
+    //           copropriétaires.", "kind":"owner_not_linked"}
+    //
+    // Le syndic n'a pas de fiche : il gère la copropriété, il n'en est pas
+    // membre. Le refus est donc exact.
+    //
+    // ── Pourquoi ce test était rouge depuis une semaine ─────────────────
+    //
+    // Le correctif de #850 est daté du 2026-09-13 ; `Characterization E2E
+    // Gate` a rougi le 2026-09-14 et ne s'est plus relevé (#966). Ce gate ne
+    // tourne que sur `pull_request`, et il n'y a pas eu de PR dans
+    // l'intervalle : la régression n'en était pas une, c'était ce test qui
+    // décrivait un produit qui avait changé.
+    //
+    // Un test de caractérisation décrit ce qui EST. Quand le produit change
+    // volontairement, c'est la caractérisation qui suit — sinon elle devient
+    // un gardien de l'ancien monde, et son rouge cesse d'être lu.
+    //
+    // ── Ce qui reste ouvert, et n'est pas tranché ici ───────────────────
+    //
+    // `resolution_handlers.rs:369` pose la question sans y répondre : « le
+    // syndic doit-il pouvoir saisir des votes en séance ? ». Si l'usage
+    // l'exige, cela demande une route DÉDIÉE — réservée au syndic,
+    // journalisée comme saisie pour compte de tiers, soumise à la limite des
+    // procurations — pas la réouverture de celle-ci. Ce test ne préjuge pas
+    // de cette décision : il constate l'état d'aujourd'hui.
     const voteResp = await page.request.post(
       `${API_BASE}/resolutions/${resolution.id}/vote`,
       {
@@ -233,9 +270,21 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
         headers: { Authorization: `Bearer ${syndicToken}` },
       },
     );
-    expect(voteResp.status()).toBe(201);
+    expect(
+      voteResp.status(),
+      "Le syndic dépose à nouveau un vote au nom d'un copropriétaire. Si " +
+        "c'est voulu, cela passe par une route dédiée et journalisée — pas " +
+        "par celle-ci, que #850 a fermée pour que l'identité du votant ne " +
+        "vienne plus du corps de la requête.",
+    ).toBe(403);
+    expect((await voteResp.json()).kind).toBe("owner_not_linked");
 
-    // Clôture du vote (action syndic finale)
+    // Clôture du vote (action syndic finale).
+    //
+    // Elle reste ouverte au syndic, et c'est cohérent : clôturer un scrutin
+    // est un acte de GESTION, pas un suffrage. Aucune voix n'ayant pu être
+    // déposée ci-dessus, la résolution se clôt sans quorum atteint — le
+    // statut rendu reste l'un des deux verdicts possibles.
     const closeResp = await page.request.put(
       `${API_BASE}/resolutions/${resolution.id}/close`,
       {

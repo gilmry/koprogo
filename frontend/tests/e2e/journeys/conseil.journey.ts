@@ -336,9 +336,7 @@ export const conseil: Parcours = {
         await expect(page.getByTestId("board-management")).toContainText(
           "Président",
         );
-        await expect(page.getByTestId("board-management")).toContainText(
-          "365",
-        );
+        await expect(page.getByTestId("board-management")).toContainText("365");
       },
     },
     {

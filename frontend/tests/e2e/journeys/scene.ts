@@ -244,7 +244,9 @@ export class Scene {
     const option = liste.locator("option", { hasText: fragment }).first();
     const valeur = await option.getAttribute("value");
     if (valeur === null || valeur === "") {
-      const offert = (await liste.locator("option").allInnerTexts()).join(" | ");
+      const offert = (await liste.locator("option").allInnerTexts()).join(
+        " | ",
+      );
       throw new Error(
         `Aucune option ne contient « ${fragment} » dans ${testId}.\n` +
           `Options offertes : ${offert || "aucune"}.`,

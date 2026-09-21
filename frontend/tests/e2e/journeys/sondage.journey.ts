@@ -176,7 +176,11 @@ export const sondage: Parcours = {
     ];
     let idDuCompteCopro = "";
     for (const [email, prenom, nom, role] of comptes) {
-      const cree = await ok<{ token: string; user?: { id?: string }; id?: string }>(
+      const cree = await ok<{
+        token: string;
+        user?: { id?: string };
+        id?: string;
+      }>(
         await api.post(`${API_BASE}/auth/register`, {
           data: {
             email,
@@ -268,9 +272,9 @@ export const sondage: Parcours = {
         // l'étape suivante doit donc les saisir. Si des options « Oui / Non »
         // survivaient ici, la consultation partirait avec des choix que
         // personne n'a écrits.
-        await expect(page.getByTestId("poll-create-option-text-input")).toHaveCount(
-          0,
-        );
+        await expect(
+          page.getByTestId("poll-create-option-text-input"),
+        ).toHaveCount(0);
       },
     },
     {
@@ -385,10 +389,7 @@ export const sondage: Parcours = {
         "Elle choisit la solution intermédiaire — réparer maintenant, " +
         "provisionner le remplacement — et dépose sa voix.",
       action: async (scene) => {
-        await scene.page
-          .getByTestId("poll-detail-option-input")
-          .nth(1)
-          .check();
+        await scene.page.getByTestId("poll-detail-option-input").nth(1).check();
         await scene.cliquer("poll-vote-button");
         await scene.attendreChargement();
       },

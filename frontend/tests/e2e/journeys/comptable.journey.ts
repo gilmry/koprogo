@@ -232,7 +232,10 @@ export const comptable: Parcours = {
         "de 21 % et la date de facture. Le formulaire calcule le TTC — le " +
         "comptable ne ressaisit pas ce que la machine sait faire.",
       action: async (scene) => {
-        await scene.choisirQuiContient("building-select", "Résidence des Comptes");
+        await scene.choisirQuiContient(
+          "building-select",
+          "Résidence des Comptes",
+        );
         await scene.saisir("description-input", libelleDeLaFacture);
         await scene.saisir("amount-input", "1450");
         await scene.choisir("vat-rate-select", "21.00");
@@ -264,10 +267,9 @@ export const comptable: Parcours = {
         // LA preuve : la modale s'est refermée ET la facture est dans la
         // liste. Vérifier seulement la fermeture ne distinguerait pas un
         // envoi réussi d'une annulation.
-        await expect(page.getByTestId("expense-form-cancel-button")).toHaveCount(
-          0,
-          { timeout: 20000 },
-        );
+        await expect(
+          page.getByTestId("expense-form-cancel-button"),
+        ).toHaveCount(0, { timeout: 20000 });
         await expect(
           page.getByTestId("expense-card").filter({
             hasText: libelleDeLaFacture,

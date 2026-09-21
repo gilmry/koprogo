@@ -150,7 +150,8 @@ describe("les parcours filmés agissent (#974)", () => {
       `Les parcours filmés ne totalisent plus que ${total} gestes.\n\n` +
         mesures
           .map(
-            (m) => `  ${m.fichier.padEnd(34)} ${m.gestes} gestes · ` +
+            (m) =>
+              `  ${m.fichier.padEnd(34)} ${m.gestes} gestes · ` +
               `${m.regards} regards`,
           )
           .join("\n") +

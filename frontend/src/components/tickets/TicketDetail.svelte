@@ -478,8 +478,7 @@
         required
         maxlength="2000"
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-        data-testid="ticket-transition-motif"
-      ></textarea>
+        data-testid="ticket-transition-motif"></textarea>
       <p class="mt-1 text-xs text-gray-500">
         {$_("tickets.transition.whyRequired")}
       </p>
