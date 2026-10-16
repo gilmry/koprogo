@@ -1,6 +1,10 @@
 # KoproGo K3s - Integration Environment
 module "k3s" {
-  source = "../../../_shared/terraform/modules/ovh-k3s"
+  source = "../../../../_shared/terraform/modules/ovh-k3s"
+
+  providers = {
+    openstack.ovh = openstack.ovh
+  }
 
   instance_name        = var.instance_name
   environment          = var.environment
@@ -18,15 +22,36 @@ provider "openstack" {
   region = var.region
 }
 
-variable "instance_name"        { type = string }
-variable "environment"          { type = string }
-variable "k3s_master_flavor"    { type = string; default = "b2-7" }
-variable "k3s_agent_flavor"     { type = string; default = "b2-7" }
-variable "k3s_agent_count"      { type = number; default = 0 }
-variable "region"               { type = string; default = "GRA" }
-variable "ssh_public_key_path"  { type = string; default = "~/.ssh/id_rsa.pub" }
-variable "ssh_private_key_path" { type = string; default = "~/.ssh/id_rsa" }
-variable "ovh_endpoint"         { type = string; default = "ovh-eu" }
+variable "instance_name" { type = string }
+variable "environment" { type = string }
+variable "k3s_master_flavor" {
+  type    = string
+  default = "b2-7"
+}
+variable "k3s_agent_flavor" {
+  type    = string
+  default = "b2-7"
+}
+variable "k3s_agent_count" {
+  type    = number
+  default = 0
+}
+variable "region" {
+  type    = string
+  default = "GRA"
+}
+variable "ssh_public_key_path" {
+  type    = string
+  default = "~/.ssh/id_rsa.pub"
+}
+variable "ssh_private_key_path" {
+  type    = string
+  default = "~/.ssh/id_rsa"
+}
+variable "ovh_endpoint" {
+  type    = string
+  default = "ovh-eu"
+}
 
-output "master_ip"    { value = module.k3s.master_ip_public }
+output "master_ip" { value = module.k3s.master_ip_public }
 output "cluster_info" { value = module.k3s.cluster_info }
