@@ -8,6 +8,13 @@ services:
     image: traefik:latest
     container_name: koprogo-traefik
     restart: unless-stopped
+    # CyFun PR.PT-3 / PR.AC-4: least privilege at container level.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]  # binds :80/:443
+    read_only: true              # only writes acme.json to the volume
+    tmpfs: [/tmp]
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -33,6 +40,12 @@ services:
     image: postgres:15-alpine
     container_name: koprogo-postgres
     restart: unless-stopped
+    # CyFun PR.PT-3 / PR.AC-4: least privilege at container level.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    # Entrypoint fixes data dir ownership then drops to the postgres user.
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
     environment:
       POSTGRES_DB: koprogo_db
       POSTGRES_USER: koprogo
@@ -88,6 +101,12 @@ services:
     image: ghcr.io/${GITHUB_REPOSITORY:-gilmry/koprogo}/backend:${IMAGE_TAG:-latest}
     container_name: koprogo-backend
     restart: unless-stopped
+    # CyFun PR.PT-3 / PR.AC-4: least privilege at container level.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    read_only: true  # writes only to the uploads/logs volumes
+    tmpfs: [/tmp]
     environment:
       # `koprogo-postgres`, pas `postgres` — même raison que `koprogo-minio`
       # ci-dessous (#731) : le container_name est unique sur l'hôte quel que
@@ -103,6 +122,9 @@ services:
       DB_POOL_MIN_CONNECTIONS: ${DB_POOL_MIN_CONNECTIONS:-2}
       ENABLE_RATE_LIMITING: ${ENABLE_RATE_LIMITING:-false}
       JWT_SECRET: ${JWT_SECRET}
+      # Encrypts users' 2FA secrets at rest. Without it the backend falls back
+      # to a hardcoded development key (64 hex chars: openssl rand -hex 32).
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-s3}
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
       S3_BUCKET: ${S3_BUCKET:-koprogo-documents}
@@ -158,6 +180,12 @@ services:
     image: ghcr.io/${GITHUB_REPOSITORY:-gilmry/koprogo}/frontend:${IMAGE_TAG:-latest}
     container_name: koprogo-frontend
     restart: unless-stopped
+    # CyFun PR.PT-3 / PR.AC-4: least privilege at container level.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    # Not read_only yet: 99-generate-config.sh writes config.js into the web
+    # root at startup. Move it to /tmp (+ symlink in the image) to enable it.
     environment:
       PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080/api/v1}
     depends_on:
@@ -215,6 +243,8 @@ services:
     image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: koprogo-minio
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     command: server /data --console-address :9001
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY:-koprogo}
@@ -237,6 +267,8 @@ services:
   # que le cache servait — `mc --version` dans le conteneur.
     image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
     container_name: koprogo-minio-bootstrap
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       minio:
         condition: service_healthy
