@@ -475,6 +475,11 @@ jobs:
 
       # --- ansible-lint: prod playbook + shared roles (scoped .ansible-lint, profile=min) ---
       - name: ansible-lint (prod playbook + 14 shared roles)
+        # Molecule scenarios reference roles by bare name (`role: backup`);
+        # without this path ansible-lint cannot resolve them (red since
+        # aecc4ed, 2026-09-19).
+        env:
+          ANSIBLE_ROLES_PATH: ${{ github.workspace }}/infrastructure/_shared/ansible/roles
         run: |
           set -euo pipefail
           ansible-lint -c .ansible-lint \
