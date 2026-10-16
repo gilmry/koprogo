@@ -28,7 +28,8 @@ jobs:
     permissions:
       contents: read
       packages: write
-      id-token: write
+      id-token: write # cosign keyless signing
+      security-events: write # Trivy SARIF upload
 
     steps:
       - name: Checkout repository
@@ -73,6 +74,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Backend Docker image
+        id: build-backend
         uses: docker/build-push-action@v7
         with:
           context: ./backend
@@ -82,15 +84,70 @@ jobs:
           labels: ${{ steps.meta-backend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Supply chain (CyFun ID.SC / PR.DS-6): SBOM + SLSA provenance
+          # attestations attached to the image in GHCR.
+          sbom: true
+          provenance: mode=max
           build-args: |
             SQLX_OFFLINE=true
+
+      # CyFun ID.RA-1 / DE.CM-8: block images with fixable CRITICAL CVEs.
+      - name: Scan Backend image (Trivy)
+        # v0.36.0, pinned by commit
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend@${{ steps.build-backend.outputs.digest }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-backend.sarif
+          exit-code: "0"
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Backend image findings to Code Scanning
+        # v4.39.0, pinned by commit
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee
+        if: always() && github.event_name == 'push'
+        with:
+          sarif_file: trivy-backend.sarif
+          category: trivy-image-backend
+
+      - name: Block on fixable CRITICAL vulnerabilities (Backend)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend@${{ steps.build-backend.outputs.digest }}
+          severity: CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: "1"
+          skip-setup-trivy: true
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      # Keyless signature (GitHub OIDC -> Sigstore) of the exact digest, so
+      # deployments can verify origin before pulling (cosign verify).
+      - name: Install cosign
+        if: github.event_name == 'push'
+        # v4.1.2, pinned by commit
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6
+
+      - name: Sign Backend image by digest
+        if: github.event_name == 'push'
+        env:
+          DIGEST: ${{ steps.build-backend.outputs.digest }}
+        run: |
+          cosign sign --yes "${REGISTRY}/${IMAGE_NAME}/backend@${DIGEST}"
 
   build-and-push-frontend:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      id-token: write
+      id-token: write # cosign keyless signing
+      security-events: write # Trivy SARIF upload
 
     steps:
       - name: Checkout repository
@@ -128,6 +185,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Frontend Docker image
+        id: build-frontend
         uses: docker/build-push-action@v7
         with:
           context: ./frontend
@@ -137,5 +195,59 @@ jobs:
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Supply chain (CyFun ID.SC / PR.DS-6): SBOM + SLSA provenance
+          # attestations attached to the image in GHCR.
+          sbom: true
+          provenance: mode=max
           build-args: |
             PUBLIC_API_URL=https://api2.koprogo.com/api/v1
+
+      # CyFun ID.RA-1 / DE.CM-8: block images with fixable CRITICAL CVEs.
+      - name: Scan Frontend image (Trivy)
+        # v0.36.0, pinned by commit
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend@${{ steps.build-frontend.outputs.digest }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-frontend.sarif
+          exit-code: "0"
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Frontend image findings to Code Scanning
+        # v4.39.0, pinned by commit
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee
+        if: always() && github.event_name == 'push'
+        with:
+          sarif_file: trivy-frontend.sarif
+          category: trivy-image-frontend
+
+      - name: Block on fixable CRITICAL vulnerabilities (Frontend)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend@${{ steps.build-frontend.outputs.digest }}
+          severity: CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: "1"
+          skip-setup-trivy: true
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      # Keyless signature (GitHub OIDC -> Sigstore) of the exact digest, so
+      # deployments can verify origin before pulling (cosign verify).
+      - name: Install cosign
+        if: github.event_name == 'push'
+        # v4.1.2, pinned by commit
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6
+
+      - name: Sign Frontend image by digest
+        if: github.event_name == 'push'
+        env:
+          DIGEST: ${{ steps.build-frontend.outputs.digest }}
+        run: |
+          cosign sign --yes "${REGISTRY}/${IMAGE_NAME}/frontend@${DIGEST}"

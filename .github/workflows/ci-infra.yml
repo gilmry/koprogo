@@ -49,7 +49,7 @@ env:
   KUBECTL_VERSION: "v1.34.1"
   HELM_VERSION: "v3.16.4"
   KUBECONFORM_VERSION: "0.6.7"
-  TERRAFORM_VERSION: "1.9.8"
+  TERRAFORM_VERSION: "1.13.3" # >= 1.10 required by use_lockfile in the S3 backends
 
 jobs:
   kustomize-build:
@@ -438,12 +438,11 @@ jobs:
           shellcheck --version
 
       # --- Terraform: fmt -check + validate (VPS subset only) ---
-      - name: Terraform fmt -check (ovh-vps module + prod vps)
+      - name: Terraform fmt -check (all modules + all envs)
         run: |
           set -euo pipefail
-          terraform fmt -check -recursive infrastructure/_shared/terraform/modules/ovh-vps
-          terraform fmt -check -recursive infrastructure/monosite/vps/production/terraform
-          echo "::notice::terraform fmt OK (ovh-vps module + prod vps)"
+          terraform fmt -check -recursive infrastructure
+          echo "::notice::terraform fmt OK (infrastructure/**)"
 
       # Le module ovh-vps déclare `configuration_aliases = [openstack.ovh]`
       # (versions.tf) : un module recevant un provider *aliasé* de son
@@ -452,12 +451,20 @@ jobs:
       # not present"). Sa correction est validée transitivement via le root
       # prod-vps ci-dessous (qui l'instancie + configure openstack.ovh).
       # Le `fmt -check` standalone (au-dessus) reste valable. (#354 / WP-E1)
-      - name: Terraform validate (prod vps)
+      # Every root config (vps/k3s/k8s x 4 envs). Validating only prod vps let
+      # the 11 others drift into a non-parsable state unnoticed.
+      - name: Terraform validate (all root configs)
         run: |
           set -euo pipefail
-          terraform -chdir=infrastructure/monosite/vps/production/terraform init -backend=false -input=false
-          terraform -chdir=infrastructure/monosite/vps/production/terraform validate
-          echo "::notice::terraform validate OK (prod vps)"
+          roots=$(find infrastructure -path '*/terraform/backend.tf' -not -path '*/.terraform/*' -exec dirname {} \; | sort)
+          [ -n "$roots" ] || { echo "::error::no Terraform root found"; exit 1; }
+          for d in $roots; do
+            echo "::group::validate $d"
+            terraform -chdir="$d" init -backend=false -input=false
+            terraform -chdir="$d" validate
+            echo "::endgroup::"
+          done
+          echo "::notice::terraform validate OK ($(echo "$roots" | wc -l) root configs)"
 
       # --- yamllint: prod VPS yaml subset (scoped .yamllint config) ---
       - name: yamllint (prod vps)
@@ -475,12 +482,37 @@ jobs:
             infrastructure/_shared/ansible/roles
           echo "::notice::ansible-lint OK (prod playbook + shared roles)"
 
+      # Every environment playbook must resolve its roles (catches path
+      # regressions like the monosite ../../../_shared off-by-one).
+      - name: ansible-playbook --syntax-check (all environment playbooks)
+        run: |
+          set -euo pipefail
+          for p in $(find infrastructure -path '*/ansible/playbook.yml' | sort); do
+            echo "::group::syntax-check $p"
+            ansible-playbook --syntax-check -i localhost, "$p"
+            echo "::endgroup::"
+          done
+
       # --- shellcheck: HARD GATE on the prod deployment script ---
       - name: shellcheck gitops-deploy.sh (HARD gate — executes prod deploy)
         run: |
           set -euo pipefail
           shellcheck infrastructure/_shared/scripts/gitops-deploy.sh
           echo "::notice::shellcheck OK (gitops-deploy.sh — clean, hard gate passed)"
+
+      - name: shellcheck provisioning and backup scripts
+        run: |
+          set -euo pipefail
+          shellcheck \
+            infrastructure/_shared/scripts/setup-infra.sh \
+            infrastructure/_shared/scripts/tfstate-bucket-hardening.sh \
+            infrastructure/_shared/scripts/backup-bucket-object-lock.sh \
+            infrastructure/_shared/scripts/tests/test-backup-restore.sh
+
+      # The host only holds the backup public key: this round trip proves
+      # backups are restorable off-host and NOT decryptable on the server.
+      - name: Backup/restore GPG round-trip test
+        run: bash infrastructure/_shared/scripts/tests/test-backup-restore.sh
 
 
   summary:
