@@ -84,8 +84,11 @@ FROM debian:bookworm-slim
 
 WORKDIR /app
 
-# Install runtime dependencies only
+# Install runtime dependencies only. `apt-get upgrade` pulls Debian security
+# fixes newer than the base image snapshot (e.g. perl-base CVE-2026-13221,
+# CVE-2026-42496, CVE-2026-8376), which the CI image scan blocks on.
 RUN apt-get update && \
+    apt-get upgrade -y --no-install-recommends && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         libpq5 \
