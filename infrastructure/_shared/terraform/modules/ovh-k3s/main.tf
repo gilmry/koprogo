@@ -53,15 +53,64 @@ resource "openstack_compute_secgroup_v2" "k3s_cluster_sg" {
   name        = "${var.instance_name}-k3s-sg"
   description = "K3s Kubernetes cluster security group"
 
-  rule { from_port = 22;    to_port = 22;    ip_protocol = "tcp"; cidr = "0.0.0.0/0" }
-  rule { from_port = 6443;  to_port = 6443;  ip_protocol = "tcp"; cidr = "10.0.0.0/24" }
-  rule { from_port = 8472;  to_port = 8472;  ip_protocol = "udp"; cidr = "10.0.0.0/24" }
-  rule { from_port = 80;    to_port = 80;    ip_protocol = "tcp"; cidr = "0.0.0.0/0" }
-  rule { from_port = 443;   to_port = 443;   ip_protocol = "tcp"; cidr = "0.0.0.0/0" }
-  rule { from_port = 10250; to_port = 10250; ip_protocol = "tcp"; cidr = "10.0.0.0/24" }
-  rule { from_port = 9100;  to_port = 9100;  ip_protocol = "tcp"; cidr = "10.0.0.0/24" }
-  rule { from_port = -1;    to_port = -1;    ip_protocol = "tcp"; cidr = "10.0.0.0/24" }
-  rule { from_port = -1;    to_port = -1;    ip_protocol = "udp"; cidr = "10.0.0.0/24" }
+  # SSH restricted to admin source ranges (CyFun PR.AC-3 / PR.AC-5)
+  dynamic "rule" {
+    for_each = toset(var.admin_ssh_cidrs)
+    content {
+      from_port   = 22
+      to_port     = 22
+      ip_protocol = "tcp"
+      cidr        = rule.value
+    }
+  }
+  rule {
+    from_port   = 6443
+    to_port     = 6443
+    ip_protocol = "tcp"
+    cidr        = "10.0.0.0/24"
+  }
+  rule {
+    from_port   = 8472
+    to_port     = 8472
+    ip_protocol = "udp"
+    cidr        = "10.0.0.0/24"
+  }
+  rule {
+    from_port   = 80
+    to_port     = 80
+    ip_protocol = "tcp"
+    cidr        = "0.0.0.0/0"
+  }
+  rule {
+    from_port   = 443
+    to_port     = 443
+    ip_protocol = "tcp"
+    cidr        = "0.0.0.0/0"
+  }
+  rule {
+    from_port   = 10250
+    to_port     = 10250
+    ip_protocol = "tcp"
+    cidr        = "10.0.0.0/24"
+  }
+  rule {
+    from_port   = 9100
+    to_port     = 9100
+    ip_protocol = "tcp"
+    cidr        = "10.0.0.0/24"
+  }
+  rule {
+    from_port   = -1
+    to_port     = -1
+    ip_protocol = "tcp"
+    cidr        = "10.0.0.0/24"
+  }
+  rule {
+    from_port   = -1
+    to_port     = -1
+    ip_protocol = "udp"
+    cidr        = "10.0.0.0/24"
+  }
 }
 
 data "openstack_networking_network_v2" "ext_net" {

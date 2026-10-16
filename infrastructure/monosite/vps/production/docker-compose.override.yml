@@ -20,12 +20,32 @@ services:
     ports:
       - "80:80"
       - "443:443"
+  # Production never falls back to the base file's development defaults
+  # (koprogo123, empty JWT/TOTP keys, wildcard CORS): a missing secret
+  # aborts `docker compose up` instead of starting with a weak value.
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in production}
   backend:
     labels:
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
     environment:
       RUST_LOG: warn
+      DATABASE_URL: postgresql://koprogo:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in production}@koprogo-postgres:5432/koprogo_db
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in production}
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY:?TOTP_ENCRYPTION_KEY must be set in production (openssl rand -hex 32)}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS must be set in production}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY must be set in production}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY must be set in production}
+  minio:
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?S3_ACCESS_KEY must be set in production}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?S3_SECRET_KEY must be set in production}
+  minio-bootstrap:
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY must be set in production}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY must be set in production}
     deploy:
       resources:
         limits:

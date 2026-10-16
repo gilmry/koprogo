@@ -10,3 +10,7 @@ enable_backup: false
 rust_log: info
 cors_allowed_origins: "*"
 acme_email: "admin@example.com"
+# CIDRs allowed to reach SSH (admin IPs, bastion, VPN). Required: the common
+# role refuses to run with an empty list or 0.0.0.0/0. Keep real values out of
+# git (ansible-vault, inventory host_vars or -e).
+ssh_admin_cidrs: []

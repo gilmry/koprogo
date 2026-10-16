@@ -9,3 +9,14 @@ api_domain: "api.koprogo.be"
 koprogo_domain: "koprogo.be"
 acme_email: "admin@koprogo.be"
 grafana_admin_password: "{{ vault_grafana_admin_password }}"
+
+# --- Backups (role: backup) ---------------------------------------------
+# Public key of the backup keypair generated OFFLINE. The private key must
+# never be on the server: store it in the team password manager / safe.
+gpg_backup_public_key: "{{ vault_gpg_backup_public_key }}"
+# Off-site copy (mandatory: the backup job fails without it). The bucket
+# must have Object Lock enabled (scripts/backup-bucket-object-lock.sh).
+s3_provider: ovh
+s3_access_key: "{{ vault_s3_backup_access_key }}"
+s3_secret_key: "{{ vault_s3_backup_secret_key }}"
+s3_backup_bucket: koprogo-backups

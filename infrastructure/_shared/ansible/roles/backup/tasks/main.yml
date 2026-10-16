@@ -1,36 +1,82 @@
 ---
-# Backup setup: GPG encrypted backups + S3
+# Backup setup: GPG-encrypted backups + off-site S3 copy
+#
+# CyFun PR.IP-4 / PR.DS-1 / RC.RP-1:
+# - Encryption uses a PUBLIC key generated offline. The matching private key
+#   never lives on the server, so compromising the host does not expose past
+#   backups.
+# - The off-site copy is mandatory by default; a failed upload makes the
+#   backup job fail and is visible in Prometheus.
+# - Immutability comes from S3 Object Lock on the backup bucket
+#   (see scripts/backup-bucket-object-lock.sh).
 
 - name: Install backup tools
   apt:
     name: [gnupg, s3cmd, gzip]
     state: present
 
-- name: Generate GPG key parameters file
-  template:
-    src: gpg-key-params.j2
-    dest: /root/gpg-key-params
+- name: Assert an offline-generated public key is provided
+  assert:
+    that:
+      - gpg_backup_public_key is defined
+      - "'BEGIN PGP PUBLIC KEY BLOCK' in gpg_backup_public_key"
+      - "'PRIVATE KEY' not in gpg_backup_public_key"
+    fail_msg: >-
+      gpg_backup_public_key must contain the ASCII-armored PUBLIC key of a
+      backup keypair generated offline (gpg --armor --export <id>). Never
+      provide the private key to this role.
+
+- name: Create backup configuration directory
+  file:
+    path: /etc/koprogo
+    state: directory
     owner: root
     group: root
-    mode: '0600'
+    mode: '0755'
 
-- name: Check if GPG key exists
-  shell: gpg --list-keys "{{ gpg_backup_email | default('backup@koprogo.local') }}"
-  register: gpg_key_check
+- name: Deploy backup encryption public key
+  copy:
+    content: "{{ gpg_backup_public_key }}"
+    dest: /etc/koprogo/backup-pubkey.asc
+    owner: root
+    group: root
+    mode: '0644'
+
+# Hosts provisioned by earlier versions of this role generated the keypair
+# locally. Deleting it automatically could make existing backups
+# unrecoverable, so stop and ask the operator to export it offline first.
+- name: Look for a backup private key left on the host by older versions
+  command: gpg --batch --list-secret-keys "{{ gpg_backup_email | default('backup@koprogo.local') }}"
+  register: legacy_secret_key
   failed_when: false
   changed_when: false
 
-- name: Generate GPG backup key
-  command: gpg --batch --gen-key /root/gpg-key-params
-  when: gpg_key_check.rc != 0
+- name: Refuse to continue while a backup private key is on the host
+  assert:
+    that:
+      - legacy_secret_key.rc != 0 or (backup_allow_legacy_private_key | default(false) | bool)
+    fail_msg: >-
+      A backup private key for {{ gpg_backup_email | default('backup@koprogo.local') }}
+      is present on this host. Export it to offline storage
+      (gpg --armor --export-secret-keys), verify you can decrypt an existing
+      backup with it, then delete it from the host
+      (gpg --delete-secret-keys). Set backup_allow_legacy_private_key=true
+      only to run the playbook during that migration.
 
-- name: Deploy encrypted backup script
+- name: Remove legacy key generation parameters (contained the passphrase)
+  file:
+    path: /root/gpg-key-params
+    state: absent
+
+- name: Deploy s3cmd configuration for the off-site copy
   template:
-    src: backup-encrypted.sh.j2
-    dest: "{{ koprogo_dir }}/scripts/backup-encrypted.sh"
-    owner: "{{ koprogo_user }}"
-    group: "{{ koprogo_user }}"
-    mode: '0755'
+    src: s3cfg.j2
+    dest: /root/.s3cfg
+    owner: root
+    group: root
+    mode: '0600'
+  when: s3_access_key is defined and s3_secret_key is defined
+  no_log: true
 
 - name: Create scripts directory
   file:
@@ -40,6 +86,20 @@
     group: "{{ koprogo_user }}"
     mode: '0755'
 
+- name: Create node-exporter textfile directory for backup metrics
+  file:
+    path: /var/lib/node_exporter/textfile_collector
+    state: directory
+    mode: '0755'
+
+- name: Deploy encrypted backup script
+  template:
+    src: backup-encrypted.sh.j2
+    dest: "{{ koprogo_dir }}/scripts/backup-encrypted.sh"
+    owner: root
+    group: root
+    mode: '0750'
+
 - name: Setup encrypted backup cron job
   cron:
     name: "KoproGo Daily Encrypted Backup"
@@ -47,20 +107,3 @@
     hour: "2"
     job: "{{ koprogo_dir }}/scripts/backup-encrypted.sh >> /var/log/koprogo-backup.log 2>&1"
     user: root
-
-- name: Create monitoring script
-  template:
-    src: health-check.sh.j2
-    dest: "{{ koprogo_dir }}/scripts/health-check.sh"
-    owner: "{{ koprogo_user }}"
-    group: "{{ koprogo_user }}"
-    mode: '0755'
-  when: false  # Health check moved to monitoring role
-
-- name: Setup health check cron job (every 5 min)
-  cron:
-    name: "KoproGo Health Check"
-    minute: "*/5"
-    job: "{{ koprogo_dir }}/scripts/health-check.sh >> /var/log/koprogo-health.log 2>&1"
-    user: "{{ koprogo_user }}"
-  when: false  # Health check moved to monitoring role

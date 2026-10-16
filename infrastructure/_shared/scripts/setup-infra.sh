@@ -15,6 +15,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INFRA_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TARGET="${INFRA_DIR}/${SITE}/${ARCH}/${ENV}"
 
+# SSH admin source ranges, shared by Terraform (security groups) and Ansible
+# (ufw). Comma-separated, e.g. ADMIN_SSH_CIDRS="203.0.113.10/32,2001:db8::/48".
+# Not committed: export it in your shell or load it from your secret manager.
+ADMIN_SSH_CIDRS="${ADMIN_SSH_CIDRS:?Set ADMIN_SSH_CIDRS (comma-separated CIDRs allowed to reach SSH)}"
+ADMIN_SSH_CIDRS_JSON="$(python3 -c 'import json,sys; print(json.dumps([c.strip() for c in sys.argv[1].split(",") if c.strip()]))' "${ADMIN_SSH_CIDRS}")"
+export TF_VAR_admin_ssh_cidrs="${ADMIN_SSH_CIDRS_JSON}"
+
 echo "========================================="
 echo "KoproGo Infrastructure Setup"
 echo "Environment: ${ENV}"
@@ -29,10 +36,12 @@ if [ -d "${TARGET}/terraform" ]; then
     echo ">>> Step 1: Terraform (provisioning infrastructure)..."
     cd "${TARGET}/terraform"
     terraform init
-    terraform plan
+    terraform plan -out=tfplan
     read -p "Apply Terraform changes? (y/N) " -n 1 -r
     echo
-    [[ $REPLY =~ ^[Yy]$ ]] && terraform apply -auto-approve
+    # Apply exactly the plan that was reviewed above, not a fresh one.
+    [[ $REPLY =~ ^[Yy]$ ]] && terraform apply tfplan
+    rm -f tfplan
 fi
 
 # Step 2: Ansible
@@ -40,7 +49,8 @@ if [ -d "${TARGET}/ansible" ] && [ -f "${TARGET}/ansible/inventory.ini" ]; then
     echo ""
     echo ">>> Step 2: Ansible (configuring servers)..."
     cd "${TARGET}/ansible"
-    ansible-playbook -i inventory.ini playbook.yml
+    ansible-playbook -i inventory.ini playbook.yml \
+        -e "{\"ssh_admin_cidrs\": ${ADMIN_SSH_CIDRS_JSON}}"
 fi
 
 # Step 3: Deploy
