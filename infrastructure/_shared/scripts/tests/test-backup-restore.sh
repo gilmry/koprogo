@@ -1,23 +1,21 @@
 #!/usr/bin/env bash
 # Automated backup/restore round-trip test (#354 WP-E2, Phase 3).
 #
-# Mirrors the encrypt -> compress -> decrypt -> integrity-check logic of
-# test_restore() in roles/backup/templates/backup-encrypted.sh.j2, so a
-# regression there (e.g. a compression flag mismatch, or a swapped
-# recipient) is caught without needing a live production backup.
+# Mirrors the key model of roles/backup/templates/backup-encrypted.sh.j2:
+# the server only holds the PUBLIC key (--recipient-file) and cannot decrypt;
+# restores happen off-host with the offline private key. A regression there
+# (compression flag mismatch, swapped recipient, private key back on the
+# host) is caught without needing a live production backup.
 #
-# Uses a fast ECC key (`--quick-generate-key ... default`) rather than the
-# role's actual RSA-4096 (see roles/backup/templates/gpg-key-params.j2) —
-# key algorithm/size is irrelevant to what this script verifies (the
-# encrypt/decrypt/corruption-detection round trip), and RSA-4096 key
-# generation is exercised separately by the backup role's molecule scenario
-# (roles/backup/molecule/default/), where haveged supplies entropy.
+# Uses a fast ECC key (`--quick-generate-key ... default`); the algorithm is
+# irrelevant to what this script verifies.
 set -euo pipefail
 
 WORKDIR=$(mktemp -d)
 trap 'rm -rf "$WORKDIR"' EXIT
 
-GNUPGHOME="$WORKDIR/gnupg"
+# Offline keyring: holds the private key (operator workstation / vault).
+GNUPGHOME="$WORKDIR/offline"
 export GNUPGHOME
 mkdir -m 700 "$GNUPGHOME"
 echo "allow-loopback-pinentry" > "$GNUPGHOME/gpg-agent.conf"
@@ -26,12 +24,26 @@ RECIPIENT="backup-restore-test@koprogo.local"
 
 gpg --batch --yes --passphrase '' --pinentry-mode loopback \
   --quick-generate-key "$RECIPIENT" default default never
+gpg --batch --armor --export "$RECIPIENT" > "$WORKDIR/backup-pubkey.asc"
 
 echo "koprogo backup/restore test payload $(date +%s)" > "$WORKDIR/plain.sql"
 
+# "Server" side: empty keyring, public key file only - as deployed by the role.
+HOST_GNUPGHOME="$WORKDIR/host"
+mkdir -m 700 "$HOST_GNUPGHOME"
 gzip -9 < "$WORKDIR/plain.sql" \
-  | gpg --encrypt --recipient "$RECIPIENT" --trust-model always \
+  | GNUPGHOME="$HOST_GNUPGHOME" gpg --batch --encrypt \
+      --recipient-file "$WORKDIR/backup-pubkey.asc" \
       --compress-algo none --output "$WORKDIR/backup.sql.gz.gpg"
+
+# @security - the server keyring must not be able to decrypt its own backups.
+if GNUPGHOME="$HOST_GNUPGHOME" gpg --batch --decrypt --quiet \
+    "$WORKDIR/backup.sql.gz.gpg" >/dev/null 2>&1; then
+  echo "FAIL @security: backup is decryptable on the host" >&2
+  exit 1
+else
+  echo "PASS @security: host cannot decrypt (no private key on the server)"
+fi
 
 # @happy — a valid encrypted backup must decrypt and pass gunzip's integrity
 # check, exactly like test_restore() expects.

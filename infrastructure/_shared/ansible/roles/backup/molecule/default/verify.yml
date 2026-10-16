@@ -5,30 +5,67 @@
   vars:
     koprogo_dir: /home/koprogo/koprogo
   tasks:
-    # @happy — a real GPG keypair was generated for backup encryption.
-    - name: Check the backup GPG key exists
-      ansible.builtin.command: gpg --list-keys backup-test@koprogo.local
-      register: gpg_key_check
-      failed_when: false
-      changed_when: false
+    # @happy — the offline public key is deployed and used for encryption.
+    - name: Read the deployed backup public key
+      ansible.builtin.slurp:
+        src: /etc/koprogo/backup-pubkey.asc
+      register: pubkey
 
-    - name: Assert the backup GPG key was generated
+    - name: Assert the deployed key is a public key only
       ansible.builtin.assert:
         that:
-          - gpg_key_check.rc == 0
-        fail_msg: "A.8.24/#40: no GPG key was generated for encrypted backups"
+          - "'BEGIN PGP PUBLIC KEY BLOCK' in (pubkey.content | b64decode)"
+          - "'PRIVATE KEY' not in (pubkey.content | b64decode)"
+        fail_msg: "A.8.24/#40: /etc/koprogo/backup-pubkey.asc is not a public-only key"
 
     - name: Slurp the deployed backup script
       ansible.builtin.slurp:
         src: "{{ koprogo_dir }}/scripts/backup-encrypted.sh"
       register: backup_script
 
-    - name: Assert the backup script actually encrypts with GPG (not a plaintext dump)
+    - name: Assert the backup script encrypts to the public key file
       ansible.builtin.assert:
         that:
-          - "'gpg --encrypt' in (backup_script.content | b64decode)"
-          - "'backup-test@koprogo.local' in (backup_script.content | b64decode)"
-        fail_msg: "A.12.3 backup: deployed script does not GPG-encrypt with the configured recipient"
+          - "'gpg --batch --yes --encrypt' in (backup_script.content | b64decode)"
+          - "'--recipient-file \"$PUBKEY_FILE\"' in (backup_script.content | b64decode)"
+        fail_msg: "A.12.3 backup: deployed script does not GPG-encrypt to the backup public key"
+
+    # @security — the server must not be able to decrypt its own backups.
+    - name: List secret keys in the root keyring
+      ansible.builtin.command: gpg --batch --list-secret-keys --with-colons
+      register: secret_keys
+      failed_when: false
+      changed_when: false
+
+    - name: Assert no private key is present on the host
+      ansible.builtin.assert:
+        that:
+          - "'sec:' not in secret_keys.stdout"
+        fail_msg: "CyFun PR.DS-1: a GPG private key is present on the backed-up host"
+
+    - name: Check the legacy key-generation parameters file is gone
+      ansible.builtin.stat:
+        path: /root/gpg-key-params
+      register: legacy_params
+
+    - name: Assert the legacy parameters file (passphrase) does not exist
+      ansible.builtin.assert:
+        that:
+          - not legacy_params.stat.exists
+
+    # @security — a script run by root's cron must not be writable by others.
+    - name: Stat the backup script
+      ansible.builtin.stat:
+        path: "{{ koprogo_dir }}/scripts/backup-encrypted.sh"
+      register: script_stat
+
+    - name: Assert the backup script is root-owned and not group/world writable
+      ansible.builtin.assert:
+        that:
+          - script_stat.stat.pw_name == 'root'
+          - not script_stat.stat.wgrp
+          - not script_stat.stat.woth
+        fail_msg: "Privilege escalation: root cron runs a script writable by a non-root user"
 
     - name: Check the daily backup cron job is scheduled
       ansible.builtin.command: crontab -l -u root
@@ -41,22 +78,18 @@
           - "'backup-encrypted.sh' in root_crontab.stdout"
         fail_msg: "A.12.3 backup: no cron job schedules the daily encrypted backup"
 
-    # @negative — documented, known gap (see docs/agent-activity/2026-09-14
-    # WP-E2 log): `s3cfg.j2` is an orphaned template, never deployed by any
-    # task, so `~/.s3cfg` never exists and `sync_to_s3()` in the deployed
-    # script silently no-ops. This assertion pins that *current* behavior so
-    # a future fix to wire up S3 config is a deliberate, visible change to
-    # this test — not a silent regression either way.
-    - name: Check that S3 config was NOT deployed (known gap, tracked not hidden)
+    # @negative — no S3 credentials were given to this scenario, so no
+    # s3cfg is deployed, and the script must FAIL rather than silently keep
+    # backups local only (previous behavior, now fixed).
+    - name: Check that S3 config was not deployed without credentials
       ansible.builtin.stat:
         path: /root/.s3cfg
       register: s3cfg
 
-    - name: Assert current (gap) state — S3 sync has no credentials configured
+    - name: Assert missing off-site config is fatal, not silent
       ansible.builtin.assert:
         that:
           - not s3cfg.stat.exists
-        fail_msg: >-
-          /root/.s3cfg now exists — if S3 config wiring was added, update this
-          assertion (and the gap note in docs/agent-activity/2026-09-14-wp-e2-iac-tests.md)
-          rather than deleting it.
+          - "'OFFSITE_REQUIRED=\"true\"' in (backup_script.content | b64decode)"
+          - "'Off-site copy REQUIRED but /root/.s3cfg is missing' in (backup_script.content | b64decode)"
+        fail_msg: "Off-site copy must be mandatory by default"

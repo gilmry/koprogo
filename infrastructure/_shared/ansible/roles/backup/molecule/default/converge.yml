@@ -6,27 +6,40 @@
     koprogo_user: koprogo
     koprogo_dir: /home/koprogo/koprogo
     gpg_backup_email: backup-test@koprogo.local
-    gpg_key_expiry: "1y"
   pre_tasks:
-    # Test scaffolding only (not part of the role): a fresh container has no
-    # entropy source, so `gpg --batch --gen-key` with a 4096-bit RSA key can
-    # hang for minutes. haveged gives it enough entropy to complete in
-    # seconds. Also create the koprogo user the role's `owner:`/`group:`
-    # params expect — normally provisioned by the `common` role, which this
-    # scenario deliberately doesn't include (keeps the backup role testable
-    # in isolation, same rationale as the `security` scenario).
-    - name: Install haveged for fast entropy (test-only)
+    # Test scaffolding only (not part of the role): stand in for the operator
+    # generating the backup keypair OFFLINE. The keypair lives in a throwaway
+    # GNUPGHOME; only the exported public key is handed to the role, exactly
+    # as in production. A fast ECC key avoids the entropy wait of RSA-4096.
+    - name: Install gnupg for offline key generation (test-only)
       ansible.builtin.apt:
-        name: haveged
+        name: gnupg
         state: present
         update_cache: true
 
-    - name: Enable haveged
-      ansible.builtin.systemd:
-        name: haveged
-        state: started
-        enabled: true
+    - name: Generate the backup keypair in an isolated offline keyring (test-only)
+      ansible.builtin.shell: |
+        set -euo pipefail
+        export GNUPGHOME=/tmp/offline-gnupg
+        install -d -m 700 "$GNUPGHOME"
+        if ! gpg --batch --list-keys backup-test@koprogo.local >/dev/null 2>&1; then
+          gpg --batch --passphrase '' --quick-generate-key backup-test@koprogo.local default default never
+        fi
+        gpg --batch --armor --export backup-test@koprogo.local
+      args:
+        executable: /bin/bash
+      register: offline_pubkey
+      # Throwaway scaffolding outside the role: keep molecule's idempotence
+      # check focused on the role itself.
+      changed_when: false
 
+    - name: Hand only the public key to the role
+      ansible.builtin.set_fact:
+        gpg_backup_public_key: "{{ offline_pubkey.stdout }}"
+
+    # Normally provisioned by the `common` role, which this scenario
+    # deliberately doesn't include (keeps the backup role testable in
+    # isolation, same rationale as the `security` scenario).
     - name: Create koprogo user (normally provisioned by the common role)
       ansible.builtin.user:
         name: koprogo

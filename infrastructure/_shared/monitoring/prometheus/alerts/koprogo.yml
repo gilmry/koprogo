@@ -164,6 +164,26 @@ groups:
           summary: "Backup metrics not found"
           description: "Backup monitoring metric is missing - check backup script"
 
+      - alert: BackupJobFailed
+        expr: koprogo_backup_last_run_success == 0
+        for: 5m
+        labels:
+          severity: critical
+          component: backup
+        annotations:
+          summary: "Last backup job failed"
+          description: "backup-encrypted.sh exited with an error - see /var/log/koprogo-backup.log"
+
+      - alert: OffsiteBackupNotRunRecently
+        expr: (time() - koprogo_last_offsite_backup_timestamp_seconds) > 86400
+        for: 1h
+        labels:
+          severity: critical
+          component: backup
+        annotations:
+          summary: "No off-site backup copy in 24 hours"
+          description: "Last off-site copy was {{ $value | humanizeDuration }} ago - backups may exist only on the server"
+
       # ========================================
       # Application Alerts
       # ========================================

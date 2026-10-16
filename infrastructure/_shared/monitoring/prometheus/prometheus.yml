@@ -66,5 +66,5 @@ scrape_configs:
     honor_labels: true
     metric_relabel_configs:
       - source_labels: [__name__]
-        regex: 'koprogo_last_backup_.*'
+        regex: 'koprogo_(last_backup|last_offsite_backup|backup_last_run)_.*'
         action: keep
