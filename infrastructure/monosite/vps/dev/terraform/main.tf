@@ -11,6 +11,7 @@ module "vps" {
   environment         = var.environment
   region              = var.region
   ssh_public_key_path = var.ssh_public_key_path
+  admin_ssh_cidrs     = var.admin_ssh_cidrs
   ovh_endpoint        = var.ovh_endpoint
 }
 
@@ -32,6 +33,10 @@ variable "environment" { type = string }
 variable "region" {
   type    = string
   default = "GRA11"
+}
+variable "admin_ssh_cidrs" {
+  description = "CIDRs allowed to reach SSH. Set via TF_VAR_admin_ssh_cidrs (not committed)."
+  type        = list(string)
 }
 variable "ssh_public_key_path" {
   type    = string

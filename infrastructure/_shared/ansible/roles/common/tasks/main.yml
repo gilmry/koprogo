@@ -42,11 +42,36 @@
     - { direction: 'incoming', policy: 'deny' }
     - { direction: 'outgoing', policy: 'allow' }
 
-- name: Allow SSH
+# SSH is restricted to admin source ranges (CyFun PR.AC-3 / PR.AC-5).
+# Set ssh_admin_cidrs per environment (inventory, group_vars or vault).
+- name: Assert SSH admin source ranges are set and not world-open
+  assert:
+    that:
+      - ssh_admin_cidrs is defined
+      - ssh_admin_cidrs | length > 0
+      - "'0.0.0.0/0' not in ssh_admin_cidrs"
+      - "'::/0' not in ssh_admin_cidrs"
+    fail_msg: >-
+      ssh_admin_cidrs must list the admin/bastion/VPN CIDRs allowed to reach
+      SSH, and must not contain 0.0.0.0/0 or ::/0.
+
+- name: Allow SSH from admin source ranges only
   ufw:
     rule: allow
     port: '22'
     proto: tcp
+    from_ip: "{{ item }}"
+    comment: "SSH admin"
+  loop: "{{ ssh_admin_cidrs }}"
+
+# Remove the legacy world-open rule only after the scoped rules exist,
+# so a re-run on an existing host cannot lock admins out.
+- name: Remove legacy SSH rule open to any source
+  ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+    delete: true
 
 - name: Allow HTTP
   ufw:

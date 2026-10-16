@@ -13,6 +13,7 @@ module "k8s" {
   k3s_agent_count      = var.k3s_agent_count
   region               = var.region
   ssh_public_key_path  = var.ssh_public_key_path
+  admin_ssh_cidrs      = var.admin_ssh_cidrs
   ssh_private_key_path = var.ssh_private_key_path
   ovh_endpoint         = var.ovh_endpoint
 }
@@ -39,6 +40,10 @@ variable "k3s_agent_count" {
 variable "region" {
   type    = string
   default = "GRA"
+}
+variable "admin_ssh_cidrs" {
+  description = "CIDRs allowed to reach SSH. Set via TF_VAR_admin_ssh_cidrs (not committed)."
+  type        = list(string)
 }
 variable "ssh_public_key_path" {
   type    = string

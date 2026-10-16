@@ -67,6 +67,8 @@ podcasts
 # Terraform state — managed by remote backend, never committed
 *.tfstate
 *.tfstate.*
+tfplan
+*.tfplan
 .terraform/
 .terraform.lock.hcl
 crash.log

@@ -53,11 +53,15 @@ resource "openstack_compute_secgroup_v2" "k3s_cluster_sg" {
   name        = "${var.instance_name}-k3s-sg"
   description = "K3s Kubernetes cluster security group"
 
-  rule {
-    from_port   = 22
-    to_port     = 22
-    ip_protocol = "tcp"
-    cidr        = "0.0.0.0/0"
+  # SSH restricted to admin source ranges (CyFun PR.AC-3 / PR.AC-5)
+  dynamic "rule" {
+    for_each = toset(var.admin_ssh_cidrs)
+    content {
+      from_port   = 22
+      to_port     = 22
+      ip_protocol = "tcp"
+      cidr        = rule.value
+    }
   }
   rule {
     from_port   = 6443

@@ -70,3 +70,23 @@ variable "ovh_endpoint" {
   type        = string
   default     = "ovh-eu"
 }
+
+variable "admin_ssh_cidrs" {
+  description = "CIDRs allowed to reach SSH (admin IPs, bastion, VPN). Pass via TF_VAR_admin_ssh_cidrs; keep real values out of git."
+  type        = list(string)
+
+  validation {
+    condition     = length(var.admin_ssh_cidrs) > 0
+    error_message = "admin_ssh_cidrs must contain at least one CIDR."
+  }
+
+  validation {
+    condition     = alltrue([for c in var.admin_ssh_cidrs : can(cidrhost(c, 0))])
+    error_message = "Every entry of admin_ssh_cidrs must be a valid CIDR."
+  }
+
+  validation {
+    condition     = !anytrue([for c in var.admin_ssh_cidrs : contains(["0.0.0.0/0", "::/0"], c)])
+    error_message = "admin_ssh_cidrs must not open SSH to the whole Internet (0.0.0.0/0 or ::/0)."
+  }
+}
