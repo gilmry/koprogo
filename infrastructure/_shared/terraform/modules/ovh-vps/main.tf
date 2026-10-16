@@ -48,6 +48,9 @@ resource "openstack_networking_secgroup_rule_v2" "ssh_admin" {
   remote_ip_prefix  = each.value
 }
 
+# Public web entrypoint: HTTP (ACME + redirect) and HTTPS must be reachable
+# from any address. Only 80/443 are opened this way; SSH stays admin-only.
+#trivy:ignore:OPNSTK-0003
 resource "openstack_networking_secgroup_rule_v2" "web" {
   provider = openstack.ovh
   for_each = {
