@@ -606,7 +606,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**106 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**107 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -620,7 +620,7 @@ cinq jours.
 | critical | 4 |
 | high | 38 |
 | medium | 26 |
-| low | 7 |
+| low | 8 |
 | — | 31 |
 
 ### Track R — Défauts de recette navigateur (11)
@@ -862,7 +862,7 @@ runbook n'existent pas sur la machine.
 | #453 | medium | Pipeline TLS dispatch dev/integration/staging via OVH DNS-01 |
 | #967 | — | IaC lint : les rôles backup, hardening et security sont introuvables depuis molecule |
 
-### Track G — Gate humain et gouvernance documentaire (5)
+### Track G — Gate humain et gouvernance documentaire (6)
 
 Les deux actes non délégables — la revue humaine et la pose du tag — et ce
 qui les prépare : la taxonomie des tests comme gate de release, et le
@@ -873,6 +873,7 @@ désencombrement de la documentation.
 | #427 | critical | Validation — taxonomie tests 4 catégories + revue humaine+Cowork comme gate release |
 | #913 | high | Relire une promotion à l'envers de la pyramide : la vitrine d'abord, les tests unitaires en dernier |
 | #854 | low | Ranger la documentation avant la release : 29 markdown à la racine de docs/, aucun publié par le si… |
+| #1030 | low | Le tableau d'ordonnancement du backlog structuré est écrit en dur et ignore le reclassement du 2026… |
 | #999 | — | Rétrofit de KoproGo avec l'autopilote Foyer (porte rétrofit du jalon zéro) |
 | #1000 | — | Taguer v0.1.0 et la déployer via Sluis, RELEASE.md à jour |
 
@@ -1256,3 +1257,7 @@ script, comme `backlog-structure.py` depuis le 2026-09-13.
 `scripts/backlog-structure.py --verifier` refuse (43 issues non classées en
 capacités, 27 issues classées mais fermées). Son classement en capacités et
 son chiffrage relèvent de la signature du PO et ne sont pas touchés ici.
+
+**Complément du même jour** : le reclassement a été proposé puis signé par le
+PO (#1028, #1029). #1030 (tableau d'ordonnancement du backlog écrit en dur)
+entre au Track G : **107 issues**.

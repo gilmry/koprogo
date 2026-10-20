@@ -150,7 +150,7 @@ runbook n'existent pas sur la machine.""",
  ("G", "Gate humain et gouvernance documentaire", """Les deux actes non délégables — la revue humaine et la pose du tag — et ce
 qui les prépare : la taxonomie des tests comme gate de release, et le
 désencombrement de la documentation.""",
-  [427,854,913,999,1000]),
+  [427,854,913,999,1000,1030]),
 
  ("C", "Recette métier du cycle de vie complet (2026-10-20)", """Une copropriété jouée de bout en bout par l'interface, avec tous les rôles :
 organisation, ACP, immeuble, quatre lots et quatre copropriétaires, AG avec
