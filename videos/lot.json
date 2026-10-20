@@ -1,0 +1,49 @@
+{
+  "slug": "lot",
+  "title": "L'acte de base, et le compteur qui devient vert",
+  "propos": "La question de support la plus fréquente du produit, filmée. Un immeuble dont les quotités ne somment pas à l'acte de base bloque toute dépense en 422, et rien ne dit au syndic pourquoi. Ici le compteur affiche 800/1000 en rouge ; le syndic encode le lot manquant, il passe à 1000/1000 en vert, et le lot reçoit son propriétaire — sans qui il ne vote ni ne paie.",
+  "acteurs": [
+    "syndic"
+  ],
+  "interrompu": null,
+  "console": [
+    "[401] POST /api/v1/auth/refresh",
+    "[403] GET /api/v1/organizations?per_page=1000"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "La question de support la plus fréquente du produit, filmée. Un immeuble dont les quotités ne somment pas à l'acte de base bloque toute dépense en 422, et rien ne dit au syndic pourquoi. Ici le compteur affiche 800/1000 en rouge ; le syndic encode le lot manquant, il passe à 1000/1000 en vert, et le lot reçoit son propriétaire — sans qui il ne vote ni ne paie."
+    },
+    {
+      "t": 6,
+      "texte": "Sophie reprend un immeuble dont l'encodage n'a jamais été fini. Le compteur de quotités le dit en un coup d'œil : 800 sur 1000. Tant qu'il est rouge, toute dépense sera refusée.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 33,
+      "texte": "Elle ouvre le formulaire et encode le troisième lot : le numéro, le type, l'étage, la surface, et surtout la quotité — 200èmes, telle que l'acte de base la fixe.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 55,
+      "texte": "Elle enregistre. Le compteur passe à 1000 sur 1000 et devient vert : l'immeuble est conforme à son acte de base, et le verrou qui bloquait les dépenses vient de s'ouvrir.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 66,
+      "texte": "Un lot conforme mais sans propriétaire ne vote pas et ne reçoit aucun appel de fonds. Sophie déplie le lot et cherche l'acquéreur que le notaire a enregistré.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 78,
+      "texte": "Elle rattache Anne Delcourt, en pleine propriété. Le lot cesse d'être une ligne comptable : il devient la part de quelqu'un.",
+      "acteur": "syndic"
+    }
+  ]
+}

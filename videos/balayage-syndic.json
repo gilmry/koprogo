@@ -1,0 +1,340 @@
+{
+  "slug": "balayage-syndic",
+  "title": "Balayage complet — syndic",
+  "propos": "Tous les écrans du produit, ouverts un par un par un syndic. Ce parcours ne démontre pas une valeur : il établit un état des lieux, et rend visibles les écrans que personne n'avait jamais ouverts.",
+  "acteurs": [
+    "syndic"
+  ],
+  "interrompu": null,
+  "console": [
+    "[warning] [RouteGuard] Access denied to /accountant for role syndic",
+    "[403] GET /api/v1/stats/dashboard",
+    "[warning] [RouteGuard] Access denied to /admin for role syndic",
+    "[warning] [RouteGuard] Access denied to /journal-entries for role syndic",
+    "[error] Failed to load models: Error: Failed to fetch models\n    at se (http://localhost:3000/_astro/McpChatbot.DmhA_x1O.js:1:783)\n    at async http://localhost:3000/_astro/McpChatbot.DmhA_x1O.js:1:4323",
+    "[requestfailed] GET http://localhost:8080/mcp/v1/models — net::ERR_ABORTED",
+    "[warning] [RouteGuard] Access denied to /owner for role syndic",
+    "[warning] [RouteGuard] Access denied to /reports for role syndic",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] GET /api/v1/buildings?per_page=100",
+    "[401] GET /api/v1/acps?per_page=200",
+    "[401] GET /api/v1/portfolios",
+    "[401] GET /api/v1/acps",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] GET /api/v1/portfolios",
+    "[401] GET /api/v1/acps",
+    "[401] GET /api/v1/buildings?per_page=100",
+    "[401] GET /api/v1/acps?per_page=200",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] POST /api/v1/auth/refresh",
+    "[403] GET /api/v1/organizations?per_page=50&page=1",
+    "[error] Error loading organizations: ApiError: Only SuperAdmin can access all organizations\n    at g (http://localhost:3000/_astro/api.DAbgY1FE.js:2:4085)\n    at async t (http://localhost:3000/_astro/organisations-recherche.Cj5b5EgA.js:1:157)\n    at async de (http://localhost:3000/_astro/AcpList.Ci6tqNjP.js",
+    "[warning] [RouteGuard] Access denied to /admin/acps for role syndic",
+    "[warning] [RouteGuard] Access denied to /admin/acps/onboarding for role syndic",
+    "[warning] [RouteGuard] Access denied to /admin/board-members for role syndic",
+    "[warning] [RouteGuard] Access denied to /admin/gamification for role syndic",
+    "[403] GET /api/v1/users?per_page=50&page=1",
+    "[warning] [RouteGuard] Access denied to /admin/gdpr for role syndic"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Tous les écrans du produit, ouverts un par un par un syndic. Ce parcours ne démontre pas une valeur : il établit un état des lieux, et rend visibles les écrans que personne n'avait jamais ouverts."
+    },
+    {
+      "t": 6,
+      "texte": "Balayage systématique du produit vu par le syndic : 93 écrans ouverts un par un. Ce parcours ne raconte rien — il constate.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 27,
+      "texte": "Section « racine /accountant → /building-detail » — 10 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 34,
+      "texte": "/accountant ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 40,
+      "texte": "/admin ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 49,
+      "texte": "/booking-detail ne s'ouvre pas pour ce rôle : on atterrit sur /bookings.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 58,
+      "texte": "Section « racine /buildings → /exchange-detail » — 10 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 74,
+      "texte": "Section « racine /exchanges → /mcp-chat » — 10 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 84,
+      "texte": "/journal-entries ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 92,
+      "texte": "/mcp-chat s'ouvre, mais la console proteste : Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "acteur": "syndic"
+    },
+    {
+      "t": 98,
+      "texte": "Section « racine /meeting-detail → /payment-reminder-detail » — 10 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 107,
+      "texte": "/notice-detail ne s'ouvre pas pour ce rôle : on atterrit sur /notices.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 116,
+      "texte": "/owner ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 123,
+      "texte": "Section « racine /payment-reminders → /skills » — 10 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 132,
+      "texte": "/reports ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 140,
+      "texte": "Session perdue en ouvrant /sharing-detail : reconnexion pour pouvoir continuer à mesurer.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 146,
+      "texte": "Le syndic se déconnecte. C'est au tour du syndic."
+    },
+    {
+      "t": 150,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 167,
+      "texte": "/sharing-detail ne s'ouvre pas pour ce rôle : on atterrit sur /sharing.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 174,
+      "texte": "Session perdue en ouvrant /skill-detail : reconnexion pour pouvoir continuer à mesurer.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 180,
+      "texte": "Le syndic se déconnecte. C'est au tour du syndic."
+    },
+    {
+      "t": 184,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 200,
+      "texte": "/skill-detail ne s'ouvre pas pour ce rôle : on atterrit sur /skills.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 207,
+      "texte": "Section « racine /syndic → /work-reports » — 5 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 215,
+      "texte": "Section « admin /admin/acps → /admin/seed » — 10 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 222,
+      "texte": "/admin/acps ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 228,
+      "texte": "/admin/acps/onboarding ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 235,
+      "texte": "/admin/board-members ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 242,
+      "texte": "/admin/gamification ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 249,
+      "texte": "/admin/gdpr ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 256,
+      "texte": "/admin/monitoring ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 263,
+      "texte": "/admin/organization-detail ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 270,
+      "texte": "/admin/organizations ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 277,
+      "texte": "/admin/role-assignments ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 284,
+      "texte": "/admin/seed ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 290,
+      "texte": "Section « admin /admin/subscriptions → /admin/users » — 3 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 296,
+      "texte": "/admin/subscriptions ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 303,
+      "texte": "/admin/user-owner-links ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 310,
+      "texte": "/admin/users ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 316,
+      "texte": "Section « age-requests » — 1 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 321,
+      "texte": "Section « energy-campaigns » — 2 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 326,
+      "texte": "Section « exchanges » — 1 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 330,
+      "texte": "Section « owner » — 8 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 334,
+      "texte": "/owner/contact ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 341,
+      "texte": "/owner/documents ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 348,
+      "texte": "/owner/expenses ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 355,
+      "texte": "/owner/payment-methods ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 362,
+      "texte": "/owner/payments ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 368,
+      "texte": "/owner/profile s'ouvre mais ne montre presque rien (44 caractères).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 375,
+      "texte": "/owner/tickets ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 382,
+      "texte": "/owner/units ne s'ouvre pas pour ce rôle : on atterrit sur /syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 388,
+      "texte": "Section « polls » — 2 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 392,
+      "texte": "Section « quotes » — 1 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 396,
+      "texte": "Section « settings » — 2 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 401,
+      "texte": "Section « syndic » — 7 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 408,
+      "texte": "/syndic/role-delegations s'ouvre, mais la console proteste : Failed to load resource: the server responded with a status of 403 (Forbidden)",
+      "acteur": "syndic"
+    },
+    {
+      "t": 415,
+      "texte": "Section « tickets » — 1 écran(s).",
+      "acteur": "syndic"
+    },
+    {
+      "t": 419,
+      "texte": "Bilan du balayage.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 422,
+      "texte": "93 écrans ouverts : 29 rebondissent, 1 ne montrent presque rien, 12 jettent des erreurs, et 2 ont déconnecté l'utilisateur. Le détail est dans le journal.",
+      "acteur": "syndic"
+    }
+  ]
+}
