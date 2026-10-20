@@ -241,7 +241,10 @@ CAPACITES = [
     ("C8.3", "T4", "Les cent specs e2e racontent le produit par persona", "Could",
      {813: "L"}),
     ("C8.4", "T4", "La documentation est rangée et publiée", "Could",
-     {854: "M", 595: "S", 963: "S"}),
+     {854: "M", 595: "S", 963: "S",
+      # #1030 ajoutée le 2026-10-20 : le tableau d'ordonnancement de ce
+      # livrable est écrit en dur et a ignoré le reclassement du même jour.
+      1030: "S"}),
 
     ("C9.1", "T5", "Le déploiement tient la charge et le partage du réseau", "Should",
      {731: "M", 515: "L", 453: "M", 973: "M"}),

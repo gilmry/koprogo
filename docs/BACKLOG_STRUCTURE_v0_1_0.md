@@ -9,15 +9,16 @@ signature_humaine:
   role: Product Owner / superviseur
   canal: accord donné en session (« je signe »), consigné par Claude
   etat: >-
-    SIGNÉ — reclassement du 2026-10-20 : 106 issues, 33 capacités,
+    SIGNÉ — reclassement du 2026-10-20 : 107 issues, 33 capacités,
     `--verifier` à 0. Remplace la signature du 2026-09-12 (87 issues).
     Retire 27 issues fermées, rattache 43 issues ouvertes (dont la recette
     du cycle de vie, #1001 à #1027), ajoute C1.6, C2.4, C2.5 et C9.5, note
-    tenues C2.1, C2.2, C4.3 et C6.2.
+    tenues C2.1, C2.2, C4.3 et C6.2. #1030 rattachée à C8.4 le même
+    jour, sur accord du PO en session (« oui vas y »).
   portee: >-
     Atteste le classement (exhaustif et exclusif). Les tailles des issues
     ajoutées le 2026-10-20 restent des bornes hautes de première passe.
-    N'atteste PAS la qualité de chaque story : 63/106 portent les huit
+    N'atteste PAS la qualité de chaque story : 63/107 portent les huit
     éléments.
 ---
 
@@ -26,7 +27,7 @@ signature_humaine:
 *Épopées et capacités. Généré par `scripts/backlog-structure.py` : ne pas
 éditer à la main, la prochaine génération écraserait la correction.*
 
-**106 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
+**107 issues ouvertes**, 10 épopées, 33 capacités. Classement exhaustif et exclusif : chaque issue appartient à exactement
 une capacité, et une issue non classée fait échouer la génération.
 
 ## Comment lire ce document
@@ -68,7 +69,7 @@ fabrication ; le Scrum Master de conception l'écrit sans détour :
 | Couche(s) | où le code atterrit, donc quelles gardes s'appliquent |
 | Taille + tours | le coût, sur les deux axes |
 
-**63 issues sur 106** portent les huit. Le relevé
+**63 issues sur 107** portent les huit. Le relevé
 d'origine, avant ce travail, donnait **zéro**.
 
 Le chiffre n'est pas écrit à la main : `scripts/backlog-pret.py` le relève
@@ -393,7 +394,7 @@ Sprint 0 continué. Ce qui permet de BOUCLER : sans lui, aucune autre capacité 
 
 ## T4 — Documentation vivante multi-persona
 
-`epic:doc-vivante` · 13 issues · 10.00 j · 40 tours
+`epic:doc-vivante` · 14 issues · 10.50 j · 42 tours
 
 Vient après que les parcours fonctionnent : filmer un écran qui casse produit une documentation périmée le jour de sa livraison.
 
@@ -430,13 +431,14 @@ Vient après que les parcours fonctionnent : filmer un écran qui casse produit 
 
 ### C8.4 — La documentation est rangée et publiée
 
-**Could** · `cap:C8.4` · 3 issues · 1.75 j · 7 tours · **2/3 prêtes**
+**Could** · `cap:C8.4` · 4 issues · 2.25 j · 9 tours · **2/4 prêtes**
 
 | Issue | Titre | Taille | Prête |
 |---|---|---|---|
 | [#595](https://github.com/gilmry/koprogo/issues/595) | [Story Tx.3] Documentation docs/agent-activity/ (Tier 2 log) | S | oui |
 | [#854](https://github.com/gilmry/koprogo/issues/854) | Ranger la documentation avant la release : 29 markdown à la racine de docs/, … | M | oui |
 | [#963](https://github.com/gilmry/koprogo/issues/963) | La vitrine expire au bout de 7 jours alors que la doc est permanente | S | manque 8/8 |
+| [#1030](https://github.com/gilmry/koprogo/issues/1030) | Le tableau d'ordonnancement du backlog structuré est écrit en dur et ignore l… | S | manque 7/8 |
 
 ## T5 — Ops et infrastructure
 
@@ -515,10 +517,10 @@ Des questions ouvertes, pas des défauts. La Méthode Foyer les veut en RFC, dis
 | T1 — Refonte UX | 22 | 17.50 | 70 |
 | T2 — Accessibilité et mobile | 1 | 0.75 | 3 |
 | T3 — Harnais de recette | 6 | 4.50 | 18 |
-| T4 — Documentation vivante multi-persona | 13 | 10.00 | 40 |
+| T4 — Documentation vivante multi-persona | 14 | 10.50 | 42 |
 | T5 — Ops et infrastructure | 11 | 9.25 | 37 |
 | T6 — Arbitrages produit en attente | 1 | 0.50 | 2 |
-| **Total** | **106** | **85.25** | **341** |
+| **Total** | **107** | **85.75** | **343** |
 
 `S` = 0,5 j · `M` = 0,75 j · `L` = 1 j — wall-clock du superviseur, pas
 temps machine. Les tours mesurent l'autre axe, le coût en tokens.
