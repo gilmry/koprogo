@@ -4,18 +4,21 @@ projet: KoproGo
 jalon: v0.1.0
 genere_par: scripts/backlog-structure.py
 signature_humaine:
-  date: null
-  nom: null
-  role: null
+  date: "2026-10-20"
+  nom: Gilles Maury
+  role: Product Owner / superviseur
+  canal: accord donné en session (« je signe »), consigné par Claude
   etat: >-
-    NON SIGNÉ — reclassement proposé le 2026-10-20, en attente du PO.
-    La signature précédente (Gilles Maury, 2026-09-12, 87 issues) portait
-    sur un classement qui ne passait plus `--verifier` : 43 issues ouvertes
-    sans capacité, 27 issues classées mais fermées. La proposition retire
-    les 27, rattache les 43 (dont #1001 à #1027, recette du cycle de vie du
-    2026-10-20), ajoute quatre capacités (C1.6, C2.4, C2.5, C9.5) et note
-    tenues C2.1, C2.2, C4.3 et C6.2. Tailles des nouvelles issues : bornes
-    hautes de première passe, non relues. Seul le PO signe.
+    SIGNÉ — reclassement du 2026-10-20 : 106 issues, 33 capacités,
+    `--verifier` à 0. Remplace la signature du 2026-09-12 (87 issues).
+    Retire 27 issues fermées, rattache 43 issues ouvertes (dont la recette
+    du cycle de vie, #1001 à #1027), ajoute C1.6, C2.4, C2.5 et C9.5, note
+    tenues C2.1, C2.2, C4.3 et C6.2.
+  portee: >-
+    Atteste le classement (exhaustif et exclusif). Les tailles des issues
+    ajoutées le 2026-10-20 restent des bornes hautes de première passe.
+    N'atteste PAS la qualité de chaque story : 63/106 portent les huit
+    éléments.
 ---
 
 # Backlog structuré — v0.1.0
