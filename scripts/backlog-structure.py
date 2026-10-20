@@ -112,7 +112,10 @@ CAPACITES = [
      # #840 retirée le 2026-09-12 : fermée (Art. 3.87 §2, résolution sans point
      # d'ordre du jour). La garde du script l'exigeait — un backlog qui cite des
      # tickets fermés cesse d'être lu.
-     {780: "L", 848: "L", 850: "L", 576: "L", 577: "L", 581: "M"}),
+     {576: "L", 577: "L", 581: "M",
+      # Recette du 2026-10-20 : le vote, la convocation, l'ordre du jour, la
+      # checklist de clôture. #780, #848 et #850 retirées, fermées.
+      1004: "L", 1005: "M", 1006: "M", 1015: "S"}),
     ("C1.2", "E1", "Le procès-verbal fait foi", "Should",
      {578: "L", 579: "L"}),
     # #881 ajoutée le 2026-09-13, relevée en instruisant #864 : cinq
@@ -122,21 +125,30 @@ CAPACITES = [
     # qu'il DÉCLARE » — et c'est le même défaut que #780 a corrigé pour les
     # assemblées, dont le commentaire dans `audit.rs` le disait déjà.
     ("C1.3", "E1", "Le registre légal atteste ce qu'il déclare", "Must",
-     {847: "L", 846: "M", 881: "S"}),
+     {846: "M"}),
     ("C1.4", "E1", "Les organes de contrôle existent", "Could",
-     {582: "M", 583: "L"}),
+     {582: "M", 583: "L", 980: "M", 1019: "S"}),
     ("C1.5", "E1", "L'état daté a un destinataire identifié", "Should",
      {855: "L"}),
+    # Ajoutée le 2026-10-20 (recette du cycle de vie) : le parcours de
+    # l'incident s'arrête avant sa clôture lisible.
+    ("C1.6", "E1", "Un incident se signale, se confie et se clôt avec son rapport", "Should",
+     {977: "M", 1017: "S"}),
 
-    ("C2.1", "E2", "Une quote-part se saisit sans ambiguïté", "Should",
-     {852: "S"}),
-    ("C2.2", "E2", "Un copropriétaire multi-ACP voit ses montants séparés", "Should",
-     {867: "L"}),
+    # C2.1 et C2.2 tenues : #852 et #867 fermées.
     ("C2.3", "E2", "Les fonds affectés sont une entité, pas une convention", "Could",
      {635: "L"}),
+    # C2.4 et C2.5 ajoutées le 2026-10-20 (recette du cycle de vie). La
+    # répartition au centime tient ; ce qui manque est en amont (le budget
+    # voté) et en aval (ce que la comptabilité en écrit).
+    ("C2.4", "E2", "Le budget appliqué est celui qu'une AG a adopté, fonds de réserve compris", "Must",
+     {1007: "M", 1011: "M"}),
+    ("C2.5", "E2", "La comptabilité d'une ACP est juste et lisible", "Must",
+     {1008: "L", 1009: "L", 1010: "L", 1016: "M", 1003: "M", 1012: "M",
+      1018: "M", 1013: "S"}),
 
     ("C3.1", "E3", "Les modules communautaires sont atteignables", "Should",
-     {779: "L", 781: "M"}),
+     {779: "L"}),
     ("C3.2", "E3", "Le syndic a un rôle dans la communauté", "Could",
      {587: "M", 588: "M", 589: "S"}),
     ("C3.3", "E3", "Une ACP active les modules qu'elle veut", "Could",
@@ -150,31 +162,35 @@ CAPACITES = [
     # argument — ce qui en fait une fuite de donnée personnelle financière et
     # non un simple défaut de cloisonnement.
     ("C4.1", "E4", "Toute route décide de l'identité qu'elle reçoit", "Must",
-     {864: "L", 845: "L", 882: "L"}),
+     {864: "L", 976: "M", 972: "S"}),
     ("C4.2", "E4", "Le périmètre est l'ACP, et il survit à la navigation", "Must",
-     {694: "L", 798: "L", 841: "M", 868: "S"}),
-    ("C4.3", "E4", "Les droits RGPD sont exerçables depuis l'interface", "Must",
-     {842: "M"}),
+     {694: "L", 798: "L", 841: "M", 868: "S",
+      # Recette du 2026-10-20 : la fiche reliée au compte est la racine.
+      1001: "L", 1027: "L", 1021: "M", 1024: "S", 969: "M"}),
+    # C4.3 tenue : #842 fermée.
     ("C4.4", "E4", "Un prestataire reçoit un seul lien", "Should",
-     {835: "L"}),
+     {835: "L", 1002: "L"}),
     ("C4.5", "E4", "Les erreurs sont typées, pas classées par sous-chaînes", "Should",
      {762: "L", 555: "L"}),
 
     ("C5.1", "T1", "Le socle visuel : jetons, icônes, libellés traduits", "Should",
-     {797: "L", 834: "L"}),
+     {797: "L", 834: "L",
+      # Balayage, vitrine et recette : des écrans qui cassent, des menus qui
+      # mentent, des UUID à la place des noms.
+      968: "M", 975: "M", 971: "S", 1014: "S", 1020: "S", 1022: "M",
+      1023: "S", 1025: "S", 1026: "S"}),
     ("C5.2", "T1", "Le contrat de tests tient la refonte", "Must",
-     {802: "L", 803: "L"}),
+     {802: "L"}),
     ("C5.3", "T1", "Les huit maquettes sont implémentées", "Could",
      {556: "L", 818: "L", 820: "L", 821: "M", 822: "M", 823: "L", 824: "L",
       825: "L", 826: "L", 827: "M"}),
 
     ("C6.1", "T2", "L'audit d'accessibilité voit les écrans authentifiés", "Should",
-     {865: "M", 592: "M"}),
+     {592: "M"}),
     # #871 retirée le 2026-09-13 : fermée COMPLETED le 2026-09-13 à 05:03.
     # Sa propre garde l'exigeait — « un backlog qui cite des tickets fermés
     # cesse d'être lu ». Même geste que pour #840 le 2026-09-12.
-    ("C6.2", "T2", "Le produit est utilisable à une largeur de téléphone", "Should",
-     {866: "M", 869: "M"}),
+    # C6.2 tenue : #866 et #869 fermées.
 
     # #877 ajoutée le 2026-09-12, relevée en exécutant le Gantt : le gate
     # `integration` est rouge sur UN test, `s3_storage_roundtrip`, parce que
@@ -199,7 +215,7 @@ CAPACITES = [
     # n'étant pas poussés. Un critère écrit ne se déclare pas rempli parce
     # qu'on en a rempli un voisin.
     ("C7.1", "T3", "La recette peut se connecter et s'exécuter", "Must",
-     {872: "L", 870: "S", 696: "M", 877: "S", 880: "M"}),
+     {880: "M", 966: "M", 983: "S"}),
     # #913 ajoutée le 2026-09-15, sur décision du PO : relire une promotion
     # à l'ENVERS de la pyramide — la vitrine d'abord, les unitaires en
     # dernier. Elle est de C7.2 parce qu'elle dit comment la taxonomie se
@@ -216,25 +232,30 @@ CAPACITES = [
      # #876 ajoutée le 2026-09-12 : #873 rend les vidéos téléchargeables, elle
      # ne les rend pas LISIBLES. Sans narration ni chapitres, arbitrer une
      # branche coûte un visionnage complet — et l'arbitre unique s'effondre.
-     {873: "S", 876: "L", 874: "M"}),
+     {999: "L"}),
 
     ("C8.1", "T4", "Les six parcours par persona sont filmés", "Could",
-     {805: "M", 806: "L", 807: "L", 808: "M", 809: "M", 815: "M", 816: "M"}),
+     {805: "M", 806: "L", 808: "M", 809: "M", 974: "M"}),
     ("C8.2", "T4", "Les quatre workflows transverses sont filmés", "Could",
      {810: "L", 811: "M", 812: "M", 817: "M"}),
     ("C8.3", "T4", "Les cent specs e2e racontent le produit par persona", "Could",
      {813: "L"}),
     ("C8.4", "T4", "La documentation est rangée et publiée", "Could",
-     {854: "M", 595: "S"}),
+     {854: "M", 595: "S", 963: "S"}),
 
     ("C9.1", "T5", "Le déploiement tient la charge et le partage du réseau", "Should",
-     {731: "M", 718: "L", 515: "L", 453: "M"}),
+     {731: "M", 515: "L", 453: "M", 973: "M"}),
     ("C9.2", "T5", "L'IaC est testée et relue", "Could",
-     {355: "L", 354: "L", 466: "M"}),
+     {355: "L", 354: "L", 967: "S"}),
     ("C9.3", "T5", "Les vulnérabilités connues sont fermées", "Should",
      {432: "M"}),
     ("C9.4", "T5", "Les garde-fous des agents sont audités", "Could",
      {425: "L", 429: "L"}),
+
+    # Ajoutée le 2026-10-20 : le critère de sortie n°2 du jalon zéro, repoussé
+    # après Taginy mais toujours au périmètre de la 0.1.0.
+    ("C9.5", "T5", "La 0.1.0 est taguée et déployée par Sluis", "Must",
+     {1000: "M"}),
 
     ("C10.1", "T6", "Le groupe « Communauté » du comptable est tranché", "Must",
      {856: "S"}),
