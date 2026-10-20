@@ -1,6 +1,6 @@
 # WBS v0.1.0 — seule vérité courante
 
-`WBS-v0.1.0-r4` · établi le 2026-09-02, révisé le **2026-09-20** · base `feature/dev` à `ea8402c3`
+`WBS-v0.1.0-r5` · établi le 2026-09-02, révisé le **2026-10-20** · base `feature/dev` à `600e4169`
 
 > **Ce document remplace** `WBS_GO_LIVE_v0.1.0.md` et les trois WBS de 2026-04-01,
 > déplacés dans [`docs/archive/`](archive/README.md) avec leur journal de vérification.
@@ -606,7 +606,7 @@ Ces deux actes ne sont pas délégables : cf. `docs/governance/RESPONSABILITE.md
 
 ## Inventaire complet du périmètre 0.1.0
 
-**70 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
+**106 issues ouvertes** portent l'étiquette `release:0.1.0`. Elles sont
 toutes ci-dessous, sans exception : une issue du périmètre absente du WBS est
 une issue que personne ne planifie.
 
@@ -617,13 +617,13 @@ cinq jours.
 
 | Priorité | Nombre |
 |---|---|
-| critical | 6 |
-| high | 25 |
-| medium | 15 |
-| low | 1 |
-| — | 23 |
+| critical | 4 |
+| high | 38 |
+| medium | 26 |
+| low | 7 |
+| — | 31 |
 
-### Track R — Défauts de recette navigateur (5)
+### Track R — Défauts de recette navigateur (11)
 
 Six recettes menées au navigateur entre le 2026-09-04 et le 2026-09-06. Le
 motif dominant, confirmé six fois : **une capacité écrite, testée, et
@@ -639,11 +639,17 @@ vitrine trouve entre au périmètre.
 
 | Issue | Prio | Intitulé |
 |---|---|---|
-| #780 | critical | Le cycle de vie d'une AG ne peut pas aboutir : trois verrous indépendants, aucun contournable depui… |
-| #842 | critical | Le droit à l'effacement RGPD est inatteignable : le serveur exige un mot de passe que l'interface n… |
 | #779 | high | Rebrancher les six modules communautaires : 111 points d'entrée servis que le frontend n'appelle pa… |
 | #969 | high | Tout 401 déconnecte globalement : ouvrir /booking-detail suffit à perdre sa session |
+| #977 | high | Trois des cinq transitions d'un incident sont mortes : resolve, cancel et reopen envoient un corps … |
+| #980 | medium | Élection du conseil : la règle d'un an n'est annoncée nulle part, son refus s'efface, et l'élu s'af… |
 | #968 | — | Balayage du syndic : /legal-rules jette each_key_duplicate, /contractor et /contractor-report s'ouv… |
+| #971 | — | Le lien « Voir la règle → » ne s'affiche jamais : aucun appelant de CadreLegal ne passe ruleRef |
+| #972 | — | /legal-rules exige une session alors que sa source est publique : un article cité que nul ne peut l… |
+| #973 | — | /mcp-chat appelle quatre points d'entrée qui n'existent pas, et Traefik ne route pas /mcp |
+| #974 | — | Cinq parcours filmés sur sept ne cliquent jamais : ils regardent des écrans |
+| #975 | — | 24 contradictions entre menus et routes, pas seulement pour le modérateur |
+| #976 | — | Deux routes lisent les devis et évaluations de n'importe quel prestataire, toutes organisations con… |
 
 ### Track U — Refonte UX/UI (15)
 
@@ -748,7 +754,7 @@ décision prise sans son vote est attaquable.
 | #583 | — | [Story 4.8] [cluster-coord] CommissaireAuxComptes + VerificationCertificate |
 | #635 | — | Fonds affectés / thésaurisation : entité Fund dédiée aux travaux d'ampleur (v0.2.0) |
 
-### Track T — Dette d'infrastructure de test (3)
+### Track T — Dette d'infrastructure de test (4)
 
 Ce qui empêche la CI de dire la vérité. Les quatre jobs rouges en continu du
 2026-09-04 — `prettier`, le contrat OpenAPI, `oasdiff` et la suite BDD — sont
@@ -782,6 +788,7 @@ présent qui atteste d'autre chose que ce qu'il prétend.
 |---|---|---|
 | #880 | high | Le gate e2e mesure contre un backend en hot reload : une recompilation en cours de campagne produit… |
 | #868 | medium | Deux sélecteurs d'immeuble coexistent, et partagent un ancrage de recette |
+| #983 | medium | check-no-local-helpers.sh est rouge depuis quatre mois et rien ne l'exécute |
 | #966 | — | Characterization E2E Gate rouge depuis le 2026-09-14 |
 
 ### Track K — Dette de code et de contrat (5)
@@ -855,7 +862,7 @@ runbook n'existent pas sur la machine.
 | #453 | medium | Pipeline TLS dispatch dev/integration/staging via OVH DNS-01 |
 | #967 | — | IaC lint : les rôles backup, hardening et security sont introuvables depuis molecule |
 
-### Track G — Gate humain et gouvernance documentaire (3)
+### Track G — Gate humain et gouvernance documentaire (5)
 
 Les deux actes non délégables — la revue humaine et la pose du tag — et ce
 qui les prépare : la taxonomie des tests comme gate de release, et le
@@ -866,6 +873,61 @@ désencombrement de la documentation.
 | #427 | critical | Validation — taxonomie tests 4 catégories + revue humaine+Cowork comme gate release |
 | #913 | high | Relire une promotion à l'envers de la pyramide : la vitrine d'abord, les tests unitaires en dernier |
 | #854 | low | Ranger la documentation avant la release : 29 markdown à la racine de docs/, aucun publié par le si… |
+| #999 | — | Rétrofit de KoproGo avec l'autopilote Foyer (porte rétrofit du jalon zéro) |
+| #1000 | — | Taguer v0.1.0 et la déployer via Sluis, RELEASE.md à jour |
+
+### Track C — Recette métier du cycle de vie complet (2026-10-20) (27)
+
+Une copropriété jouée de bout en bout par l'interface, avec tous les rôles :
+organisation, ACP, immeuble, quatre lots et quatre copropriétaires, AG avec
+votes de tous les types et PV, budget voté, appels de fonds, factures et leur
+workflow d'approbation, comptabilité, incident de plomberie pris sur devis,
+SEL, prêt d'objets et annonces. Jouée par Cowork sur `feature/dev` au commit
+`600e4169`, celui de la démo.
+
+**Trois défauts bloquent le cycle** : la fiche copropriétaire n'est reliée à
+aucun compte (#1001), ce qui vide tout l'espace copropriétaire ; aucun vote
+n'est possible en AG (#1004), donc aucun PV ; il n'existe ni rôle ni annuaire
+de prestataires (#1002). **La comptabilité est fausse sur cinq points** :
+TVA comptée récupérable (#1008), appels de fonds non comptabilisés (#1009),
+bilan de société (#1010), fonds de réserve absent (#1011), encaissement
+affiché à 100 % (#1016). Ce qui tient : la répartition des appels au
+centime, la séparation des rôles du workflow des factures, des écritures
+équilibrées.
+
+Même motif que les recettes de septembre, à une échelle plus grande : des
+capacités présentes des deux côtés dont le raccordement manque. Entrées au
+périmètre selon l'arbitrage du PO du 2026-09-20.
+
+| Issue | Prio | Intitulé |
+|---|---|---|
+| #1001 | high | La fiche copropriétaire n'est reliée à aucun compte utilisateur : tout l'espace copropriétaire est … |
+| #1002 | high | Pas de rôle ni d'annuaire de prestataires : devis et assignation d'un ticket impossibles |
+| #1003 | high | Les montants décimaux renvoyés en chaîne s'affichent comme un tiret |
+| #1004 | high | Aucun vote n'est possible en AG, ni par le copropriétaire ni encodé par le syndic |
+| #1006 | high | Impossible de saisir l'ordre du jour avant la validation du quorum : la convocation part sans ordre… |
+| #1007 | high | Un budget peut être « approuvé » en citant une AG future dont la résolution n'est pas votée |
+| #1008 | high | La TVA des factures d'une ACP est comptée « récupérable » (411) au lieu d'être une charge |
+| #1009 | high | L'émission d'un appel de fonds ne génère aucune écriture comptable |
+| #1011 | high | Le budget n'a pas de fonds de réserve |
+| #1016 | high | Le tableau de bord du syndic affiche un taux d'encaissement de 100 % au lieu de 16,67 % |
+| #1021 | high | Le bandeau de contexte boucle à environ 95 requêtes par seconde dès qu'un immeuble est sélectionné |
+| #1027 | high | Un copropriétaire voit les lots et les fiches (emails compris) de tous les copropriétaires |
+| #1005 | medium | Une convocation envoyée disparaît au rechargement (404) |
+| #1010 | medium | Le bilan suit un modèle de société, pas le PCMN des copropriétés ; pas de balance ni de comptes ind… |
+| #1012 | medium | Un paiement de copropriétaire ne peut pas être partiel |
+| #1017 | medium | Le rapport saisi à la résolution d'un ticket n'apparaît pas sur sa fiche |
+| #1018 | medium | Le taux de TVA d'une réparation reste à 21 % par défaut, sans tenir compte de l'âge de l'immeuble |
+| #1019 | medium | L'élection d'un conseil de copropriété est refusée sous 20 lots, alors que l'AG peut en instituer un |
+| #1022 | medium | Menus superadmin et syndic incohérents selon le contexte (404 et redirections) |
+| #1023 | medium | Le formulaire copropriétaire affiche adresse, code postal et ville comme optionnels, mais le serveu… |
+| #1024 | medium | L'espace copropriétaire /owner charge indéfiniment |
+| #1013 | low | « Marquer payée » est proposé sur une facture non approuvée, et le refus est en anglais |
+| #1014 | low | La bannière de conformité d'un immeuble n'est pas rafraîchie après l'ajout d'un lot |
+| #1015 | low | La checklist de clôture d'AG affiche des clés brutes et n'est pas rafraîchie |
+| #1020 | low | Des UUID s'affichent à la place des noms (organisation, immeuble) |
+| #1025 | low | L'invite d'installation PWA revient à chaque page et masque les boutons des dialogues |
+| #1026 | low | Le panneau des notifications du copropriétaire est coupé à gauche de l'écran |
 
 <!-- INVENTAIRE:FIN -->
 
@@ -1165,3 +1227,32 @@ alors deux bases sans le dire.
 
 Viser la production reste proscrit pour une seconde raison : cela rejoue le
 bannissement CrowdSec malgré l'exception.
+
+### Révision r5 — 2026-10-20
+
+**106 issues ouvertes au périmètre**, contre 70 à la révision précédente.
+
+**Vingt-sept viennent d'une seule recette** : le cycle de vie complet d'une
+copropriété, joué par l'interface avec tous les rôles, sur `feature/dev` au
+commit `600e4169` (#1001 à #1027, nouveau Track C). Trois bloquent le cycle
+(#1001, #1002, #1004), cinq faussent la comptabilité (#1008, #1009, #1010,
+#1011, #1016). Elles entrent au périmètre selon l'arbitrage du PO du
+2026-09-20.
+
+**Onze issues ouvertes depuis la r4 n'étaient pas inventoriées**, et
+`scripts/inventaire-wbs.py` refusait donc de régénérer le WBS. Elles sont
+rattachées : #971 à #977 et #980 (passes de la vitrine du 2026-09-20) au
+Track R, #983 au Track T, #999 et #1000 (rétrofit Foyer et tag via Sluis) au
+Track G.
+
+**Deux issues fermées sont retirées** du Track R : #780 et #842, closes le
+2026-09-20.
+
+**Correctif de l'outil** : `inventaire-wbs.py` écrivait dans un chemin codé
+en dur (`/home/ubuntu/koprogo`). Le dépôt est désormais dérivé du chemin du
+script, comme `backlog-structure.py` depuis le 2026-09-13.
+
+**Reste désynchronisé** : `docs/BACKLOG_STRUCTURE_v0_1_0.md`, que
+`scripts/backlog-structure.py --verifier` refuse (43 issues non classées en
+capacités, 27 issues classées mais fermées). Son classement en capacités et
+son chiffrage relèvent de la signature du PO et ne sont pas touchés ici.

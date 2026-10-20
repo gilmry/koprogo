@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
-import subprocess, json, collections
+import subprocess, json, collections, os
+
+# Le dépôt, dérivé du chemin de ce script : écrit en dur, il faisait écrire
+# un worktree dans l'arbre principal (même défaut que backlog-structure.py
+# a corrigé le 2026-09-13).
+_DEPOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 brut = subprocess.run(
     ["gh","issue","list","--state","open","--limit","300","--label","release:0.1.0",
-     "--json","number,title,labels"], capture_output=True, text=True, cwd="/home/ubuntu/koprogo").stdout
+     "--json","number,title,labels"], capture_output=True, text=True, cwd=_DEPOT).stdout
 issues = {i["number"]: i for i in json.loads(brut)}
 
 # Affectation explicite. Toute issue non citée ici tombe dans « non classé »,
@@ -20,7 +25,7 @@ montrent rien) et #969 (tout 401 déconnecte globalement — ouvrir
 `/booking-detail` suffit à perdre sa session). Même motif, source nouvelle.
 Conformément à l'arbitrage du PO du 2026-09-20, ce que le balayage ou la
 vitrine trouve entre au périmètre.""",
-  [779,780,842,968,969]),
+  [779,968,969,971,972,973,974,975,976,977,980]),
 
  ("U", "Refonte UX/UI", """Revue de design du 2026-09-06. Entrée en 0.1.0 le même jour : un financeur ne
 lit pas du code, et l'ASBL se fonde sur ce que le produit montre. **U2 ne
@@ -91,7 +96,7 @@ et un module `tests`, pas une vérification de la durée de mandat. La garde
 constatait que la preuve EXISTE, jamais qu'elle est PERTINENTE. C'est la
 forme la plus coûteuse du motif : non pas un test absent, mais un test
 présent qui atteste d'autre chose que ce qu'il prétend.""",
-  [868,880,966]),
+  [868,880,966,983]),
 
  ("K", "Dette de code et de contrat", """Les erreurs typées plutôt que classées par sous-chaîne, le contrat OpenAPI
 complet, et la suppression du repli qui fabrique une ACP inexistante.
@@ -145,7 +150,30 @@ runbook n'existent pas sur la machine.""",
  ("G", "Gate humain et gouvernance documentaire", """Les deux actes non délégables — la revue humaine et la pose du tag — et ce
 qui les prépare : la taxonomie des tests comme gate de release, et le
 désencombrement de la documentation.""",
-  [427,854,913]),
+  [427,854,913,999,1000]),
+
+ ("C", "Recette métier du cycle de vie complet (2026-10-20)", """Une copropriété jouée de bout en bout par l'interface, avec tous les rôles :
+organisation, ACP, immeuble, quatre lots et quatre copropriétaires, AG avec
+votes de tous les types et PV, budget voté, appels de fonds, factures et leur
+workflow d'approbation, comptabilité, incident de plomberie pris sur devis,
+SEL, prêt d'objets et annonces. Jouée par Cowork sur `feature/dev` au commit
+`600e4169`, celui de la démo.
+
+**Trois défauts bloquent le cycle** : la fiche copropriétaire n'est reliée à
+aucun compte (#1001), ce qui vide tout l'espace copropriétaire ; aucun vote
+n'est possible en AG (#1004), donc aucun PV ; il n'existe ni rôle ni annuaire
+de prestataires (#1002). **La comptabilité est fausse sur cinq points** :
+TVA comptée récupérable (#1008), appels de fonds non comptabilisés (#1009),
+bilan de société (#1010), fonds de réserve absent (#1011), encaissement
+affiché à 100 % (#1016). Ce qui tient : la répartition des appels au
+centime, la séparation des rôles du workflow des factures, des écritures
+équilibrées.
+
+Même motif que les recettes de septembre, à une échelle plus grande : des
+capacités présentes des deux côtés dont le raccordement manque. Entrées au
+périmètre selon l'arbitrage du PO du 2026-09-20.""",
+  [1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013,1014,
+   1015,1016,1017,1018,1019,1020,1021,1022,1023,1024,1025,1026,1027]),
 
 ]
 
@@ -217,7 +245,7 @@ FIN = "<!-- INVENTAIRE:FIN -->"
 
 import pathlib as _pathlib
 
-wbs = _pathlib.Path("/home/ubuntu/koprogo/docs/WBS_v0_1_0.md")
+wbs = _pathlib.Path(_DEPOT) / "docs" / "WBS_v0_1_0.md"
 texte = wbs.read_text()
 assert DEBUT in texte and FIN in texte, (
     "balises absentes du WBS : la section ne peut pas être remplacée sans risque"
