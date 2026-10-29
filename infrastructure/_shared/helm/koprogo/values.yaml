@@ -95,7 +95,8 @@ minio:
   # `docker manifest inspect minio/minio:RELEASE.2025-04-22T17-06-50Z`.
   # Registre : quay.io, PAS docker.io (#877). Le dépôt `docker.io/minio/minio`
   # a disparu entièrement, `:latest` compris. Même release, autre registre.
-  image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+  # #1036 : fork communautaire pgsty (quay.io refuse minio en 401).
+  image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z@sha256:b6bfe7239bfc83fb90d31612d9704d86039dd714f7904b3f1ad68f211e602372
   storage: 20Gi
   storageClass: ""
   bucket: koprogo-documents

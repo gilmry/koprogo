@@ -212,7 +212,11 @@ services:
   #
   # `:latest` est retiré volontairement. Il a masqué le défaut : une image
   # non tirable et un cache tiède se ressemblent tant qu'on ne tire pas.
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+  # #1036 (choix du PO, 2026-10-29) : fork communautaire pgsty. quay.io refuse
+  # désormais minio/mc en 401 et MinIO ne publie plus d'images communautaires.
+  # Épinglé par tag daté ET digest ; monter de version = nouveau commit, après
+  # sauvegarde du volume de données.
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z@sha256:b6bfe7239bfc83fb90d31612d9704d86039dd714f7904b3f1ad68f211e602372
     container_name: koprogo-minio
     restart: unless-stopped
     command: server /data --console-address :9001
@@ -235,7 +239,8 @@ services:
   minio-bootstrap:
   # Même raison que pour `minio` ci-dessus (#877). Release identique à celle
   # que le cache servait — `mc --version` dans le conteneur.
-    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
+  # #1036 : fork communautaire pgsty, épinglé par tag daté et digest.
+    image: pgsty/mc:RELEASE.2026-10-18T00-00-00Z@sha256:6ecdaec70bc5e8cf9d0e9a70c190f3beb1c83f11617ff4333f1fcd71ab1daf18
     container_name: koprogo-minio-bootstrap
     depends_on:
       minio:
