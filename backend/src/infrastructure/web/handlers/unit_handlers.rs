@@ -3,7 +3,7 @@ use crate::application::dto::{
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::middleware::scope_guard::{
-    verify_acp_org_access, verify_building_org_access,
+    own_unit_ids, verify_acp_org_access, verify_building_org_access,
 };
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
@@ -154,6 +154,24 @@ pub async fn create_unit(
     }
 }
 
+/// Lots que l'appelant détient, s'il a le rôle copropriétaire ; `None` pour
+/// les autres rôles, que la garde d'organisation suffit à borner (#1027).
+async fn lots_du_coproprietaire(
+    state: &AppState,
+    user: &AuthenticatedUser,
+) -> Result<Option<Vec<String>>, crate::application::error::AppError> {
+    if user.role != "owner" {
+        return Ok(None);
+    }
+    Ok(Some(
+        own_unit_ids(user, &state.owner_use_cases, &state.unit_owner_use_cases)
+            .await?
+            .iter()
+            .map(Uuid::to_string)
+            .collect(),
+    ))
+}
+
 #[utoipa::path(
     get,
     path = "/units/{id}",
@@ -193,6 +211,16 @@ pub async fn get_unit(
                     }
                 }
             }
+            // Un copropriétaire ne lit que ses propres lots (#1027).
+            match lots_du_coproprietaire(&state, &user).await {
+                Ok(Some(miens)) if !miens.contains(&unit.id) => {
+                    return HttpResponse::NotFound().json(serde_json::json!({
+                        "error": "Unit not found"
+                    }))
+                }
+                Ok(_) => {}
+                Err(err) => return err.error_response(),
+            }
             HttpResponse::Ok().json(unit)
         }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
@@ -221,6 +249,32 @@ pub async fn list_units(
     user: AuthenticatedUser,
     page_request: web::Query<PageRequest>,
 ) -> impl Responder {
+    // Un copropriétaire ne reçoit que ses lots (#1027).
+    match lots_du_coproprietaire(&state, &user).await {
+        Ok(Some(miens)) => {
+            let mut lots = Vec::new();
+            for id in miens.iter().filter_map(|id| Uuid::parse_str(id).ok()) {
+                match state.unit_use_cases.get_unit(id).await {
+                    Ok(Some(lot)) => lots.push(lot),
+                    Ok(None) => {}
+                    Err(err) => {
+                        return HttpResponse::InternalServerError()
+                            .json(serde_json::json!({ "error": err }))
+                    }
+                }
+            }
+            let total = lots.len() as i64;
+            return HttpResponse::Ok().json(PageResponse::new(
+                lots,
+                page_request.page,
+                page_request.per_page,
+                total,
+            ));
+        }
+        Ok(None) => {}
+        Err(err) => return err.error_response(),
+    }
+
     let organization_id = user.organization_id;
 
     match state
@@ -289,7 +343,17 @@ pub async fn list_units_by_building(
         .list_units_by_building(*building_id)
         .await
     {
-        Ok(units) => HttpResponse::Ok().json(units),
+        Ok(units) => match lots_du_coproprietaire(&state, &user).await {
+            // Un copropriétaire ne voit, dans l'immeuble, que ses lots (#1027).
+            Ok(Some(miens)) => HttpResponse::Ok().json(
+                units
+                    .into_iter()
+                    .filter(|u| miens.contains(&u.id))
+                    .collect::<Vec<_>>(),
+            ),
+            Ok(None) => HttpResponse::Ok().json(units),
+            Err(err) => err.error_response(),
+        },
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),

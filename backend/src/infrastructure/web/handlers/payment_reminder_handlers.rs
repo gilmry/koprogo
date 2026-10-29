@@ -1,10 +1,14 @@
-﻿use crate::application::dto::{
+use crate::application::dto::PaymentReminderResponseDto;
+use crate::application::dto::{
     AddTrackingNumberDto, BulkCreateRemindersDto, CancelReminderDto, CreatePaymentReminderDto,
     EscalateReminderDto, MarkReminderSentDto,
 };
+use crate::application::error::AppError;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::own_owner_ids;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
+use std::collections::HashMap;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -83,6 +87,61 @@ pub async fn create_reminder(
     }
 }
 
+/// Ne garde que les rappels que l'appelant a le droit de lire (#1027).
+///
+/// Un rappel dit qui est en retard de paiement, et de combien. Les lectures
+/// de ce fichier ne vérifiaient que l'existence d'une organisation dans le
+/// jeton, pas celle du rappel : un identifiant de rappel, d'une dépense ou
+/// d'un copropriétaire suffisait à lire les retards d'une autre copropriété,
+/// et un copropriétaire lisait ceux de tous ses voisins.
+///
+/// - superadmin : tout ;
+/// - copropriétaire : ses propres rappels seulement ;
+/// - autres rôles : les rappels des copropriétaires de leur organisation.
+async fn rappels_visibles(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    rappels: Vec<PaymentReminderResponseDto>,
+) -> Result<Vec<PaymentReminderResponseDto>, AppError> {
+    if user.is_superadmin() {
+        return Ok(rappels);
+    }
+    if user.role == "owner" {
+        let miens: Vec<String> = own_owner_ids(user, &state.owner_use_cases)
+            .await?
+            .iter()
+            .map(Uuid::to_string)
+            .collect();
+        return Ok(rappels
+            .into_iter()
+            .filter(|r| miens.contains(&r.owner_id))
+            .collect());
+    }
+    let Some(org_id) = user.organization_id else {
+        return Ok(Vec::new());
+    };
+    let org = org_id.to_string();
+    let mut organisation_de: HashMap<String, Option<String>> = HashMap::new();
+    let mut visibles = Vec::new();
+    for rappel in rappels {
+        if !organisation_de.contains_key(&rappel.owner_id) {
+            let fiche = match Uuid::parse_str(&rappel.owner_id) {
+                Ok(id) => state
+                    .owner_use_cases
+                    .get_owner(id)
+                    .await
+                    .map_err(AppError::from)?,
+                Err(_) => None,
+            };
+            organisation_de.insert(rappel.owner_id.clone(), fiche.map(|f| f.organization_id));
+        }
+        if organisation_de[&rappel.owner_id].as_deref() == Some(org.as_str()) {
+            visibles.push(rappel);
+        }
+    }
+    Ok(visibles)
+}
+
 /// Get a payment reminder by ID
 #[get("/payment-reminders/{id}")]
 pub async fn get_reminder(
@@ -100,7 +159,15 @@ pub async fn get_reminder(
     };
 
     match state.payment_reminder_use_cases.get_reminder(*id).await {
-        Ok(Some(reminder)) => HttpResponse::Ok().json(reminder),
+        Ok(Some(reminder)) => match rappels_visibles(&state, &user, vec![reminder]).await {
+            Ok(mut visibles) => match visibles.pop() {
+                Some(reminder) => HttpResponse::Ok().json(reminder),
+                None => HttpResponse::NotFound().json(serde_json::json!({
+                    "error": "Payment reminder not found"
+                })),
+            },
+            Err(err) => err.error_response(),
+        },
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Payment reminder not found"
         })),
@@ -131,7 +198,10 @@ pub async fn list_by_expense(
         .list_by_expense(*expense_id)
         .await
     {
-        Ok(reminders) => HttpResponse::Ok().json(reminders),
+        Ok(reminders) => match rappels_visibles(&state, &user, reminders).await {
+            Ok(visibles) => HttpResponse::Ok().json(visibles),
+            Err(err) => err.error_response(),
+        },
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err.to_string()
         })),
@@ -159,7 +229,10 @@ pub async fn list_by_owner(
         .list_by_owner(*owner_id)
         .await
     {
-        Ok(reminders) => HttpResponse::Ok().json(reminders),
+        Ok(reminders) => match rappels_visibles(&state, &user, reminders).await {
+            Ok(visibles) => HttpResponse::Ok().json(visibles),
+            Err(err) => err.error_response(),
+        },
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err.to_string()
         })),
@@ -187,7 +260,10 @@ pub async fn list_active_by_owner(
         .list_active_by_owner(*owner_id)
         .await
     {
-        Ok(reminders) => HttpResponse::Ok().json(reminders),
+        Ok(reminders) => match rappels_visibles(&state, &user, reminders).await {
+            Ok(visibles) => HttpResponse::Ok().json(visibles),
+            Err(err) => err.error_response(),
+        },
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err.to_string()
         })),
@@ -214,7 +290,10 @@ pub async fn list_by_organization(
         .list_by_organization(organization_id)
         .await
     {
-        Ok(reminders) => HttpResponse::Ok().json(reminders),
+        Ok(reminders) => match rappels_visibles(&state, &user, reminders).await {
+            Ok(visibles) => HttpResponse::Ok().json(visibles),
+            Err(err) => err.error_response(),
+        },
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err.to_string()
         })),

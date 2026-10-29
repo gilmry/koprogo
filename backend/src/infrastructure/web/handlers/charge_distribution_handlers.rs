@@ -86,12 +86,13 @@ pub async fn get_distributions_by_owner(
     // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
     // servait la situation financiere NOMINATIVE d'une personne a quiconque
     // connaissait son identifiant.
-    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
-        &user,
-        *owner_id,
-        &state.owner_use_cases,
-    )
-    .await
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_owner_personal_access(
+            &user,
+            *owner_id,
+            &state.owner_use_cases,
+        )
+        .await
     {
         return err.error_response();
     }
@@ -118,12 +119,13 @@ pub async fn get_total_due_by_owner(
     // Route imbriquee non gardee au releve du 2026-09-06 (issue #772) : elle
     // servait la situation financiere NOMINATIVE d'une personne a quiconque
     // connaissait son identifiant.
-    if let Err(err) = crate::infrastructure::web::middleware::scope_guard::verify_owner_org_access(
-        &user,
-        *owner_id,
-        &state.owner_use_cases,
-    )
-    .await
+    if let Err(err) =
+        crate::infrastructure::web::middleware::scope_guard::verify_owner_personal_access(
+            &user,
+            *owner_id,
+            &state.owner_use_cases,
+        )
+        .await
     {
         return err.error_response();
     }
