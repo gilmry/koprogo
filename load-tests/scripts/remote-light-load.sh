@@ -47,15 +47,9 @@ if [[ "$BASE_URL" == *"localhost"* ]] || [[ "$BASE_URL" == *"127.0.0.1"* ]]; the
     fi
 fi
 
-# Check if wrk is installed
-if ! command -v wrk &> /dev/null; then
-    echo "❌ Error: wrk is not installed"
-    echo ""
-    echo "Install wrk:"
-    echo "  Ubuntu/Debian: sudo apt-get install wrk"
-    echo "  macOS: brew install wrk"
-    exit 1
-fi
+# k6 local, ou Docker pour l'image épinglée
+source "${SCRIPT_DIR}/k6.sh"
+k6_verifier
 
 # Check if API is accessible
 echo "Checking API connectivity..."
@@ -98,10 +92,7 @@ echo "💡 TIP: Monitor server with: ssh user@vps 'cd /opt/koprogo/load-tests &&
 echo ""
 sleep 2
 
-wrk -t2 -c10 -d2m \
-    --latency \
-    -s "${SCRIPT_DIR}/../lua/mixed.lua" \
-    "$BASE_URL" \
+k6_run mixed 10 2m \
     | tee "$RESULT_FILE"
 
 echo ""

@@ -35,11 +35,9 @@ echo "" | tee -a "$REPORT_FILE"
 # Check prerequisites
 echo "Checking prerequisites..." | tee -a "$REPORT_FILE"
 
-if ! command -v wrk &> /dev/null; then
-    echo "❌ Error: wrk is not installed" | tee -a "$REPORT_FILE"
-    echo "Install with: sudo apt-get install wrk" | tee -a "$REPORT_FILE"
-    exit 1
-fi
+# k6 local, ou Docker pour l'image épinglée
+source "${SCRIPT_DIR}/scripts/k6.sh"
+k6_verifier
 
 if ! curl -f -s "$BASE_URL/api/v1/health" > /dev/null; then
     echo "❌ Error: API is not responding at $BASE_URL" | tee -a "$REPORT_FILE"

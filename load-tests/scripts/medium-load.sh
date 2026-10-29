@@ -28,10 +28,9 @@ echo "Target: 500 req/s"
 echo ""
 
 # Check dependencies
-if ! command -v wrk &> /dev/null; then
-    echo "❌ Error: wrk is not installed"
-    exit 1
-fi
+# k6 local, ou Docker pour l'image épinglée
+source "${SCRIPT_DIR}/k6.sh"
+k6_verifier
 
 if ! curl -f -s "$BASE_URL/api/v1/health" > /dev/null; then
     echo "❌ Error: API is not responding"
@@ -49,7 +48,7 @@ RESULT_FILE="$RESULTS_DIR/medium-load_${TIMESTAMP}.txt"
 
 # Run warmup first
 echo "Running warmup..."
-wrk -t2 -c5 -d10s --latency "$BASE_URL/api/v1/health" > /dev/null 2>&1
+k6_run health 5 10s > /dev/null 2>&1
 echo "✅ Warmup complete"
 echo ""
 
@@ -57,10 +56,7 @@ echo "Starting medium load test..."
 echo "⚠️  Monitor resources: watch -n 1 'docker stats --no-stream'"
 echo ""
 
-wrk -t4 -c50 -d5m \
-    --latency \
-    -s "${SCRIPT_DIR}/../lua/authenticated-mixed.lua" \
-    "$BASE_URL" \
+k6_run authenticated-mixed 50 5m \
     | tee "$RESULT_FILE"
 
 echo ""

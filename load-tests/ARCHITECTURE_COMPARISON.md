@@ -1,5 +1,7 @@
 # Rapport de Comparaison Architecture VPS
 
+> **Note (2026-10)** : document d'analyse historique. Les commandes `wrk` et `lua/*.lua` citées ici ont été remplacées par les scénarios k6 de `k6/` (voir README.md) ; par exemple `wrk -c25 -d30m -s lua/authenticated-realistic.lua` devient `k6_run authenticated-realistic 25 30m`.
+
 **Date**: 2025-10-30
 **Auteur**: Tests de charge réalistes avec workload 80/20 GET/POST
 

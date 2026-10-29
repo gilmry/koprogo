@@ -48,10 +48,9 @@ if [[ "$BASE_URL" == *"localhost"* ]] || [[ "$BASE_URL" == *"127.0.0.1"* ]]; the
 fi
 
 # Check dependencies
-if ! command -v wrk &> /dev/null; then
-    echo "❌ Error: wrk is not installed"
-    exit 1
-fi
+# k6 local, ou Docker pour l'image épinglée
+source "${SCRIPT_DIR}/k6.sh"
+k6_verifier
 
 # Check API connectivity
 echo "Checking API connectivity..."
@@ -80,7 +79,7 @@ RESULT_FILE="$RESULTS_DIR/remote-medium-load_${TIMESTAMP}.txt"
 
 # Run warmup first
 echo "Running warmup (10s)..."
-wrk -t2 -c5 -d10s --latency "$BASE_URL/api/v1/health" > /dev/null 2>&1
+k6_run health 5 10s > /dev/null 2>&1
 echo "✅ Warmup complete"
 echo ""
 
@@ -95,10 +94,7 @@ echo ""
 echo "Test starting in 5 seconds..."
 sleep 5
 
-wrk -t4 -c50 -d5m \
-    --latency \
-    -s "${SCRIPT_DIR}/../lua/mixed.lua" \
-    "$BASE_URL" \
+k6_run mixed 50 5m \
     | tee "$RESULT_FILE"
 
 echo ""

@@ -7,7 +7,7 @@ Guide pour lancer les tests de charge depuis une **machine cliente externe** ver
 ⚠️ **NE PAS tester depuis le VPS lui-même !**
 
 Raisons :
-1. **Ressources partagées** : wrk consomme CPU/RAM du serveur → fausse les résultats
+1. **Ressources partagées** : le générateur de charge consomme CPU/RAM du serveur → fausse les résultats
 2. **Pas de latence réseau** : localhost ≠ conditions réelles
 3. **Isolation** : Le client de test ne doit pas impacter le serveur
 
@@ -19,7 +19,7 @@ Raisons :
 ┌─────────────────┐      Internet      ┌──────────────────┐
 │  Machine cliente│  ──────────────>   │  VPS (serveur)   │
 │                 │                     │                  │
-│  - wrk/k6/hey   │  <──────────────   │  - KoproGo API   │
+│  - k6           │  <──────────────   │  - KoproGo API   │
 │  - Monitoring   │      HTTPS         │  - PostgreSQL    │
 └─────────────────┘                     └──────────────────┘
 ```
@@ -34,15 +34,8 @@ cd ~
 git clone https://github.com/votre-org/koprogo.git
 cd koprogo/load-tests
 
-# Installer wrk
-# Ubuntu/Debian
-sudo apt-get install wrk
-
-# macOS
-brew install wrk
-
-# Vérifier
-wrk --version
+# Docker suffit (k6 2.3.0 en conteneur, voir scripts/k6.sh)
+docker --version
 ```
 
 ### Lancer les tests
@@ -94,7 +87,7 @@ ssh user@client-vps-ip
 
 # Installation
 sudo apt-get update
-sudo apt-get install -y wrk git curl htop
+sudo apt-get install -y docker.io git curl htop
 
 # Cloner le repo
 cd /opt
@@ -265,14 +258,13 @@ echo "Monitoring complete. Results in: $OUTPUT_FILE"
 
 | Outil | Avantages | Inconvénients | Recommandé pour |
 |-------|-----------|---------------|-----------------|
-| **wrk** | Simple, léger, rapide | Scripts Lua complexes | Tests HTTP simples |
 | **hey** | Simple, multi-plateforme | Moins de features | Tests rapides |
-| **k6** | Scripting JS, seuils, cloud | Plus lourd | Tests avancés, CI/CD |
+| **k6** (nos scripts) | Scripting JS, seuils, moteur de Sluis | Plus lourd que wrk | Tous nos scénarios |
 | **Artillery** | YAML config, scénarios | Node.js requis | Tests de scénarios |
 
 ## Exemples avec différents outils
 
-### wrk (nos scripts)
+### k6 (nos scripts)
 
 ```bash
 export BASE_URL=https://api.votredomaine.com
@@ -403,14 +395,14 @@ speedtest-cli
 ### Setup minimal (tests occasionnels)
 
 - **Client** : Votre machine locale
-- **Outils** : wrk + nos scripts
+- **Outils** : k6 + nos scripts
 - **Coût** : Gratuit
 - **Temps de setup** : 5 minutes
 
 ### Setup production (tests réguliers)
 
 - **Client** : VPS secondaire (même datacenter)
-- **Outils** : wrk + k6
+- **Outils** : k6
 - **Coût** : ~3-5€/mois
 - **Temps de setup** : 15 minutes
 
@@ -440,8 +432,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install wrk
-        run: sudo apt-get install -y wrk
 
       - name: Run light load test
         env:
@@ -461,6 +451,6 @@ jobs:
 ## Support
 
 Pour des questions spécifiques sur les tests distants :
-- Documentation wrk : https://github.com/wg/wrk
+- Documentation k6 : https://grafana.com/docs/k6/latest/
 - Documentation k6 : https://k6.io/docs/
 - Issues GitHub : https://github.com/votre-org/koprogo/issues

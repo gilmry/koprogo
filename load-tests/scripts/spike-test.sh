@@ -27,10 +27,9 @@ echo "Duration: ~5 minutes total"
 echo ""
 
 # Check dependencies
-if ! command -v wrk &> /dev/null; then
-    echo "❌ Error: wrk is not installed"
-    exit 1
-fi
+# k6 local, ou Docker pour l'image épinglée
+source "${SCRIPT_DIR}/k6.sh"
+k6_verifier
 
 if ! curl -f -s "$BASE_URL/api/v1/health" > /dev/null; then
     echo "❌ Error: API is not responding"
@@ -49,14 +48,14 @@ RESULT_FILE="$RESULTS_DIR/spike-test_${TIMESTAMP}.txt"
     # Phase 1: Baseline (30s)
     echo "Phase 1/5: Baseline load (30s)"
     echo "- Connections: 10"
-    wrk -t2 -c10 -d30s --latency -s "${SCRIPT_DIR}/../lua/mixed.lua" "$BASE_URL"
+    k6_run mixed 10 30s
     echo ""
     sleep 5
 
     # Phase 2: Ramp up (30s)
     echo "Phase 2/5: Ramp up (30s)"
     echo "- Connections: 50"
-    wrk -t4 -c50 -d30s --latency -s "${SCRIPT_DIR}/../lua/mixed.lua" "$BASE_URL"
+    k6_run mixed 50 30s
     echo ""
     sleep 5
 
@@ -64,21 +63,21 @@ RESULT_FILE="$RESULTS_DIR/spike-test_${TIMESTAMP}.txt"
     echo "Phase 3/5: SPIKE! (1 minute)"
     echo "- Connections: 200"
     echo "⚡ Simulating sudden traffic surge..."
-    wrk -t4 -c200 -d1m --latency -s "${SCRIPT_DIR}/../lua/mixed.lua" "$BASE_URL"
+    k6_run mixed 200 1m
     echo ""
     sleep 5
 
     # Phase 4: Recovery (30s)
     echo "Phase 4/5: Recovery (30s)"
     echo "- Connections: 50"
-    wrk -t4 -c50 -d30s --latency -s "${SCRIPT_DIR}/../lua/mixed.lua" "$BASE_URL"
+    k6_run mixed 50 30s
     echo ""
     sleep 5
 
     # Phase 5: Back to baseline (30s)
     echo "Phase 5/5: Back to baseline (30s)"
     echo "- Connections: 10"
-    wrk -t2 -c10 -d30s --latency -s "${SCRIPT_DIR}/../lua/mixed.lua" "$BASE_URL"
+    k6_run mixed 10 30s
     echo ""
 
     echo "========================================="
