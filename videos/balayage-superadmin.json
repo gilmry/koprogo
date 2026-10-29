@@ -1,0 +1,370 @@
+{
+  "slug": "balayage-superadmin",
+  "title": "Balayage complet — administrateur",
+  "propos": "Tous les écrans du produit, ouverts un par un par un administrateur. Ce parcours ne démontre pas une valeur : il établit un état des lieux, et rend visibles les écrans que personne n'avait jamais ouverts.",
+  "acteurs": [
+    "administrateur"
+  ],
+  "interrompu": null,
+  "console": [
+    "[401] POST /api/v1/auth/refresh",
+    "[warning] [RouteGuard] Access denied to /accountant for role superadmin",
+    "[400] GET /api/v1/dashboard/accountant/stats",
+    "[400] GET /api/v1/dashboard/accountant/transactions?limit=5",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] GET /api/v1/portfolios",
+    "[401] GET /api/v1/acps",
+    "[401] GET /api/v1/buildings?per_page=100",
+    "[401] GET /api/v1/acps?per_page=200",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] POST /api/v1/auth/refresh",
+    "[404] GET /api/v1/buildings/3b237deb-23a9-4ce9-a9e7-3eb76278d597/bookable-resources/available",
+    "[404] GET /api/v1/buildings/3b237deb-23a9-4ce9-a9e7-3eb76278d597/bookable-resources/available",
+    "[401] GET /api/v1/budgets/stats",
+    "[error] Error loading stats: ApiError: User does not belong to an organization\n    at v (http://localhost:3000/_astro/api.DU12slzA.js:2:4408)\n    at async G (http://localhost:3000/_astro/BudgetList.DqgKCaM5.js:1:10978)\n    at async Promise.all (index 1)\n    at async http://localhost:3000/_astro/BudgetList.D",
+    "[400] GET /api/v1/call-for-funds",
+    "[warning] [RouteGuard] Access denied to /call-for-funds for role superadmin",
+    "[warning] [RouteGuard] Access denied to /documents for role superadmin",
+    "[400] GET /api/v1/energy-campaigns",
+    "[401] GET /api/v1/etats-dates/stats",
+    "[warning] [RouteGuard] Access denied to /expenses for role superadmin",
+    "[warning] [RouteGuard] Access denied to /invoice-workflow for role superadmin",
+    "[warning] [RouteGuard] Access denied to /journal-entries for role superadmin",
+    "[error] Failed to load models: Error: Failed to fetch models\n    at se (http://localhost:3000/_astro/McpChatbot.fqm_Eb5R.js:1:783)\n    at async http://localhost:3000/_astro/McpChatbot.fqm_Eb5R.js:1:4323",
+    "[requestfailed] GET http://localhost:8080/mcp/v1/models — net::ERR_ABORTED",
+    "[warning] [RouteGuard] Access denied to /meetings for role superadmin",
+    "[401] GET /api/v1/board-members/my-mandates",
+    "[error] Error fetching owner dashboard data: ApiError: User does not belong to an organization\n    at v (http://localhost:3000/_astro/api.DU12slzA.js:2:4408)\n    at async Promise.all (index 2)\n    at async Ce (http://localhost:3000/_astro/OwnerDashboard.BhLuA0A6.js:1:13677)",
+    "[warning] [RouteGuard] Access denied to /owner for role superadmin",
+    "[warning] [RouteGuard] Access denied to /owner-contributions for role superadmin"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Tous les écrans du produit, ouverts un par un par un administrateur. Ce parcours ne démontre pas une valeur : il établit un état des lieux, et rend visibles les écrans que personne n'avait jamais ouverts."
+    },
+    {
+      "t": 6,
+      "texte": "Balayage systématique du produit vu par le administrateur : 93 écrans ouverts un par un. Ce parcours ne raconte rien — il constate.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que administrateur.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 28,
+      "texte": "Section « racine /accountant → /building-detail » — 10 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 34,
+      "texte": "/accountant ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 43,
+      "texte": "Session perdue en ouvrant /booking-detail : reconnexion pour pouvoir continuer à mesurer.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 49,
+      "texte": "Le administrateur se déconnecte. C'est au tour du administrateur."
+    },
+    {
+      "t": 55,
+      "texte": "Connexion en tant que administrateur.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 72,
+      "texte": "/booking-detail ne s'ouvre pas pour ce rôle : on atterrit sur /bookings.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 79,
+      "texte": "/bookings s'ouvre, mais la console proteste : Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 86,
+      "texte": "/budgets s'ouvre, mais la console proteste : Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 93,
+      "texte": "Section « racine /buildings → /exchange-detail » — 10 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 100,
+      "texte": "/call-for-funds ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 109,
+      "texte": "/documents ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 115,
+      "texte": "/energy-campaigns s'ouvre, mais la console proteste : Failed to load resource: the server responded with a status of 400 (Bad Request)",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 122,
+      "texte": "/etats-dates s'ouvre, mais la console proteste : Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 129,
+      "texte": "Section « racine /exchanges → /mcp-chat » — 10 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 136,
+      "texte": "/expenses ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 144,
+      "texte": "/invoice-workflow ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 151,
+      "texte": "/journal-entries ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 159,
+      "texte": "/mcp-chat s'ouvre, mais la console proteste : Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 165,
+      "texte": "Section « racine /meeting-detail → /payment-reminder-detail » — 10 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 173,
+      "texte": "/meetings ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 180,
+      "texte": "/notice-detail ne s'ouvre pas pour ce rôle : on atterrit sur /notices.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 188,
+      "texte": "/owner ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 194,
+      "texte": "/owner-contributions ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 201,
+      "texte": "Section « racine /payment-reminders → /skills » — 10 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 207,
+      "texte": "/payment-reminders ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 217,
+      "texte": "/reports ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 224,
+      "texte": "Session perdue en ouvrant /sharing-detail : reconnexion pour pouvoir continuer à mesurer.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 230,
+      "texte": "Le administrateur se déconnecte. C'est au tour du administrateur."
+    },
+    {
+      "t": 236,
+      "texte": "Connexion en tant que administrateur.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 253,
+      "texte": "/sharing-detail ne s'ouvre pas pour ce rôle : on atterrit sur /sharing.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 259,
+      "texte": "/skill-detail ne s'ouvre pas pour ce rôle : on atterrit sur /skills.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 266,
+      "texte": "Section « racine /syndic → /work-reports » — 5 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 272,
+      "texte": "/syndic ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 279,
+      "texte": "/tickets ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 285,
+      "texte": "Section « admin /admin/acps → /admin/seed » — 10 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 298,
+      "texte": "Section « admin /admin/subscriptions → /admin/users » — 3 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 305,
+      "texte": "Section « age-requests » — 1 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 310,
+      "texte": "Section « energy-campaigns » — 2 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 315,
+      "texte": "Section « exchanges » — 1 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 319,
+      "texte": "Section « owner » — 8 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 324,
+      "texte": "/owner/contact ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 330,
+      "texte": "/owner/documents ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 338,
+      "texte": "/owner/expenses ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 344,
+      "texte": "/owner/payment-methods ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 351,
+      "texte": "/owner/payments ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 357,
+      "texte": "/owner/profile s'ouvre mais ne montre presque rien (44 caractères).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 364,
+      "texte": "/owner/tickets ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 371,
+      "texte": "/owner/units ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 376,
+      "texte": "Section « polls » — 2 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 381,
+      "texte": "Section « quotes » — 1 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 385,
+      "texte": "/quotes/compare ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 391,
+      "texte": "Section « settings » — 2 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 396,
+      "texte": "Section « syndic » — 7 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 400,
+      "texte": "/syndic/board-members ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 407,
+      "texte": "/syndic/contractor-evaluations ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 414,
+      "texte": "/syndic/magic-links ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 421,
+      "texte": "/syndic/mandates ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 427,
+      "texte": "/syndic/role-delegations ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 434,
+      "texte": "/syndic/technical-spec ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 441,
+      "texte": "/syndic/technical-specs ne s'ouvre pas pour ce rôle : on atterrit sur /admin.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 447,
+      "texte": "Section « tickets » — 1 écran(s).",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 451,
+      "texte": "Bilan du balayage.",
+      "acteur": "administrateur"
+    },
+    {
+      "t": 454,
+      "texte": "93 écrans ouverts : 32 rebondissent, 1 ne montrent presque rien, 12 jettent des erreurs, et 2 ont déconnecté l'utilisateur. Le détail est dans le journal.",
+      "acteur": "administrateur"
+    }
+  ]
+}
