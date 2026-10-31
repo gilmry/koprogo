@@ -5,7 +5,7 @@ Multi-Channel Notification System (Issue #86)
 :Date: Mars 2026
 :Version: 1.0.0
 :Issue GitHub: #86
-:Statut: Production-ready (Backend complet)
+:Statut: Backend implémenté, jamais exploité en production (v0.1.0 pre-release) ; l'envoi d'emails est simulé
 
 Vue d'ensemble
 ==============

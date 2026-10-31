@@ -338,7 +338,7 @@ Si vous voulez comprendre comment les décisions sont prises dans le projet :
 
 * :doc:`contribuer/comprendre-rfc-adr` - Qu'est-ce qu'une RFC ? Un ADR ?
 * :doc:`gouvernance/index` - Gouvernance du projet
-* :doc:`gouvernance/modele-asbl` - Modèle ASBL belge
+* :doc:`gouvernance/modele-asbl` - Modèle de la future ASBL
 
 Documentation Technique Approfondie
 ------------------------------------

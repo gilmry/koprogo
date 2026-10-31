@@ -4,7 +4,7 @@ Modèle Économique KoproGo ASBL - Guide Complet
 
 :Version: 5.0
 :Date: 2 novembre 2025
-:Statut: ASBL Belge (Association Sans But Lucratif)
+:Statut: ASBL en préparation (constitution prévue au Jalon 3, voir :doc:`GOVERNANCE`) ; projections non contractuelles
 :License: Code AGPL-3.0 / Document CC BY-SA 4.0
 :Voir aussi: :doc:`VISION` | :doc:`MISSION` | :doc:`ROADMAP_PAR_CAPACITES` | :doc:`GOVERNANCE`
 
@@ -357,7 +357,7 @@ Valeurs ASBL
 #. **🐢 Durabilité**\ : Lent mais solide, vision 10+ ans
 #. **⚡ Excellence**\ : Qualité technique sans compromis
 #. **🤝 Communauté**\ : Gouvernance partagée, décisions collectives
-#. **🌱 Écologie**\ : Infrastructure bas carbone (0.12g CO₂/req)
+#. **🌱 Écologie**\ : Infrastructure bas carbone (CO₂/req à mesurer)
 #. **💚 Bénévolat**\ : Contribution par passion
 
 Principes Fondamentaux du Modèle
@@ -399,7 +399,7 @@ KoproGo adopte une **approche progressive** alignée sur la maturité du projet 
 
 #. **Phase ASBL (Juil 2027 - Déc 2029)** : Association Sans But Lucratif
 
-   * Statut : ASBL belge constituée
+   * Statut : ASBL de droit belge constituée (cible de la phase)
    * Gouvernance : AG annuelle + CA élu (3-7 membres)
    * Financement : Revenus cloud + services B2B
    * Objectif : 500 → 5,000 copropriétés, viabilité long terme
@@ -527,7 +527,7 @@ Fonctionnalités Core (100% Open Source)
 
    ✅ Gestion immeubles (CRUD complet)
    ✅ Gestion lots/unités
-   ✅ Gestion copropriétaires (GDPR compliant)
+   ✅ Gestion copropriétaires (conçue pour le RGPD)
    ✅ Gestion charges et répartition
    ✅ Suivi paiements
    ✅ Assemblées générales (convocations, PV, votes)
@@ -706,9 +706,9 @@ Cette tarification échelonnée permet de :
    ✅ Mises à jour gratuites (rolling updates sans downtime)
    ✅ Support email (délai 48-72h)
    ✅ SSL/TLS inclus (Let's Encrypt)
-   ✅ Monitoring uptime (99.7%+ garanti)
+   ✅ Monitoring uptime (objectif 99.7%+, non garanti)
    ✅ Exports données (CSV, JSON, SQL)
-   ✅ GDPR compliance (données EU)
+   ✅ Conçu pour le RGPD (données EU)
 
 **Pour qui?**
 
@@ -832,7 +832,7 @@ Transparence Comptable
 Facture Publique Mensuelle
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Chaque mois, l'ASBL publie un **rapport financier public** détaillant:
+Une fois constituée, l'ASBL publiera chaque mois un **rapport financier public** détaillant:
 
 
 #. **Coûts infrastructure réels** (factures OVH)
@@ -843,7 +843,7 @@ Chaque mois, l'ASBL publie un **rapport financier public** détaillant:
 
 **Accès**\ : Tableau de bord public sur `koprogo.com/transparence <https://koprogo.com/transparence>`_
 
-**Exemple Format**\ :
+**Exemple Format** (valeurs fictives, à titre d'illustration)\ :
 
 .. code-block:: markdown
 
@@ -867,9 +867,9 @@ Chaque mois, l'ASBL publie un **rapport financier public** détaillant:
    - Fonds urgence (10%): 7.62€
 
    ### Statistiques
-   - Uptime: 99.94%
-   - Latency P99: 3.2ms
-   - CO2: 0.12g/req
+   - Uptime: XX.XX%
+   - Latency P99: X.Xms
+   - CO2: X.XXg/req (mesuré)
    - Support tickets: 3 (résolus en 48h)
 
 Engagement Transparence
@@ -1192,7 +1192,7 @@ Politique Green IT
 **Mesures concrètes**\ :
 
 
-* 0.12g CO₂/req (OVH GRA11 Gravelines, mix 60g CO₂/kWh)
+* CO₂/req : estimation réseau, non mesurée (OVH GRA11 Gravelines, mix 60g CO₂/kWh)
 * 5.8x moins d'émissions que datacenters Allemagne (350g CO₂/kWh)
 * 7-25x moins que AWS/Azure US (475-700g CO₂/kWh)
 * **100% souveraineté française** (données hébergées à Gravelines)
@@ -1620,7 +1620,7 @@ Risques et Mitigations
 * ✅ License AGPL-3.0: Forks doivent rester open-source
 * ✅ Impossible à copier: Authenticité ASBL vs greenwashing
 * ✅ First-mover: Première solution OpenCore copropriété
-* ✅ Performance tech: Rust, 0.12g CO₂/req
+* ✅ Performance tech: Rust, sobriété visée
 * ✅ Communauté loyale: Open-source = confiance
 
 Opportunités
@@ -1650,7 +1650,7 @@ Opportunités
 * ✅ GDPR natif: Données EU, conformité totale
 * ✅ Souveraineté: OVH France, protection des données
 * ✅ Données portables: Export CSV/JSON/SQL inclus
-* ✅ Écologie: 0.12g CO₂/req, mix français bas carbone
+* ✅ Écologie: mix français bas carbone, CO₂/req à mesurer
 * ✅ Éthique: ASBL non-profit, réinvestissement communauté
 
 3. Subventions & Dons (Si Utilité Publique)

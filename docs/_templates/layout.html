@@ -9,3 +9,14 @@
     plausible.init()
   </script>
 {% endblock %}
+
+{#- Bandeau de statut : le texte vit dans conf.py (`statut_projet`). #}
+{%- block document %}
+  {%- if statut_projet %}
+  <div class="admonition warning statut-projet" role="note">
+    <p class="admonition-title">Statut du projet</p>
+    <p>{{ statut_projet }}</p>
+  </div>
+  {%- endif %}
+  {{ super() }}
+{%- endblock %}

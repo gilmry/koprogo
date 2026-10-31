@@ -36,7 +36,7 @@ Le Problème Sociétal
 La Solution Technique
 =====================
 
-**KoproGo** : Plateforme open-source de gestion de copropriété développée par une ASBL belge.
+**KoproGo** : Plateforme open-source de gestion de copropriété, v0.1.0 pre-release. Une ASBL est en préparation (constitution prévue au Jalon 3, voir :doc:`GOVERNANCE`).
 
 Architecture Ultra-Optimisée
 -----------------------------
@@ -50,8 +50,8 @@ Architecture Ultra-Optimisée
 
 * **287 req/s** soutenus
 * **752ms** latence P99 (1 vCPU)
-* **0,12g CO₂/requête** (96% réduction vs solutions SaaS classiques)
-* **99,74% uptime**
+* Empreinte carbone par requête : estimation réseau, non mesurée
+* Ces chiffres viennent d'un test de charge de 3 minutes (30/10/2025), pas d'une exploitation : aucun système en production
 
 Fonctionnalités Opérationnelles
 --------------------------------
@@ -125,7 +125,7 @@ Gouvernance ASBL
 Structure Juridique
 -------------------
 
-* **ASBL belge** sans actionnaires
+* **ASBL en préparation** sans actionnaires (constitution prévue au Jalon 3)
 * **1 membre = 1 voix** (Assemblée Générale)
 * **Prix voté démocratiquement** par l'AG
 * **Transparence comptable** : bilans trimestriels publics

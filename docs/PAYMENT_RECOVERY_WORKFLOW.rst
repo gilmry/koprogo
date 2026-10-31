@@ -5,7 +5,7 @@ Workflow de Recouvrement Automatisé des Paiements Impayés
 :Date de mise à jour: 7 novembre 2025
 :Version: 1.0.0 - **IMPLÉMENTÉ** ✅
 :Issue GitHub: #83 (Fermée le 7 novembre 2025)
-:Statut: Production-ready (Backend complet)
+:Statut: Backend implémenté, jamais exploité en production (v0.1.0 pre-release) ; les relances par email sont simulées
 :Impact Business: Réduction impayés 30-50% via automatisation
 
 📋 Vue d'ensemble
@@ -626,4 +626,4 @@ Requêtes SQL Utiles
 | **Version** : 1.0.0 (Novembre 2024)
 | **Dernière mise à jour** : 7 novembre 2025
 | **Maintenu par** : Équipe KoproGo
-| **Statut** : ✅ Backend Production-ready - Frontend & Automation À Implémenter
+| **Statut** : Backend implémenté, non déployé en production - Frontend & Automation À Implémenter

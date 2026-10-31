@@ -604,8 +604,11 @@ Helper ``injectAuth`` (chokepoint unique)
 qui rote le cookie, puis un 2e refresh au goto dashboard avec le cookie
 révoqué → 401). Une seule navigation = un seul refresh.
 
-Pré-requis env (E2E sur ``http://localhost:8090``)
----------------------------------------------------
+Pré-requis env (E2E sur la pile de recette, port 8090)
+-------------------------------------------------------
+
+La pile de recette répond sur ``http://localhost:8090``.
+
 
 * ``COOKIE_SECURE=false`` côté backend (sinon le navigateur rejette le
   cookie hors HTTPS). Cf. ``docker-compose.yml`` et ``.env.example``
