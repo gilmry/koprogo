@@ -40,7 +40,7 @@ Différenciation Clé
 - **PropTech 2.0**: IA, Blockchain, IoT (38% des revenus, résilience accrue)
 
 📊 Performance Technique - Test de charge (30/10/2025)
-=====================================================
+======================================================
 
 Infrastructure Testée (Oct 2025)
 ---------------------------------
