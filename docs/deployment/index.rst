@@ -131,7 +131,7 @@ Copropriétés ou syndics qui veulent héberger leur propre instance KoproGo.
 
       Datacenter France (Gravelines GRA9)
       60g CO₂/kWh (nucléaire 70% + renouvelables 25%)
-      0.12g CO₂/requête
+      CO₂/requête : estimation réseau, non mesurée
 
 Composants
 ^^^^^^^^^^
@@ -182,7 +182,7 @@ Composants
 
 
 * Datacenter France (mix énergétique **60g CO₂/kWh**\ )
-* **0.12g CO₂/requête** (7-25x mieux que AWS/Azure)
+* CO₂/requête : estimation réseau, non mesurée
 * Nucléaire (70%) + Renouvelables (25%)
 * **Champion mondial** de l'écologie cloud
 
@@ -199,7 +199,7 @@ Composants
 ^^^^^^^^^^^^^^^^^^^^^^
 
 
-* **287 req/s** soutenus, 99.74% uptime
+* **287 req/s** sur un test de charge de 3 minutes (30/10/2025), pas une disponibilité mesurée
 * P50: 69ms, P90: 130ms, P99: 752ms
 * Anti-DDoS inclus
 * 1 Gbps network

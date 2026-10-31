@@ -8,9 +8,11 @@ GDPR Compliance Documentation
 Overview
 ========
 
-KoproGo implements complete GDPR (General Data Protection Regulation)
-compliance for Belgian ASBL (copropriete) management. The system covers
-all key GDPR articles relevant to property management.
+KoproGo is designed for GDPR (General Data Protection Regulation)
+compliance in Belgian ACP (copropriete) management: it implements the
+endpoints for the data-subject rights listed below. Designed for is not
+certified: no system is in production yet (v0.1.0 pre-release) and no
+compliance audit has been carried out.
 
 Implemented Articles
 ====================

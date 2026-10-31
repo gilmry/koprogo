@@ -454,7 +454,7 @@ Implementation Roadmap
   ✅ Issue #262: Embedded legal index
   ✅ Audit logging (Art. 30)
 
-  **Status**: Production-ready, live with syndics
+  **Status**: Implemented, not in production (v0.1.0 pre-release); no syndic uses it yet
 
 **Phase 2 - RAG (Q2 2026)** (Current):
 

@@ -5,7 +5,7 @@ Belgian Accounting - PCMN (Plan Comptable Minimum Normalisé)
 :Date de mise à jour: 2026-05-20 (amendement #526 contre-écritures)
 :Version: 1.0.0 - **IMPLÉMENTÉ** ✅
 :Issue GitHub: #79 (Fermée le 7 novembre 2025) — #526 politique amendée 2026-05
-:Statut: Production-ready
+:Statut: Implémenté, jamais exploité en production (v0.1.0 pre-release)
 
 📋 Vue d'ensemble
 =================

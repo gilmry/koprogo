@@ -28,7 +28,7 @@ Vue d'Ensemble
 
 **La Solution KoproGo**
 
-Une plateforme open-source, développée par une ASBL belge, offrant :
+Une plateforme open-source, portée par une ASBL en préparation (constitution prévue au Jalon 3), qui vise à offrir :
 
 * **5€/mois** en cloud managé (99% d'économie)
 * **Gratuit** en self-hosted

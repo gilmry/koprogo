@@ -80,7 +80,7 @@ Réalisations
 ✅ **Performance** :
 
 - Latence P99 < 1s (tests locaux)
-- Consommation 0,12g CO₂/req (calculé théorique)
+- Consommation CO₂/req : estimation réseau théorique, non mesurée
 
 Leçons Apprises
 ---------------
@@ -214,7 +214,7 @@ Contexte
 
 **Objectif** : Scaling Scrum, atteindre Jalon 2 (500 copropriétés)
 
-**Statut juridique** : ASBL belge (AG constitutive Avril 2026)
+**Statut juridique** : ASBL en préparation (constitution prévue au Jalon 3)
 
 Adoption Nexus
 --------------
@@ -257,7 +257,7 @@ Avec 4 équipes et 500 copropriétés cibles, besoin d'**architecture d'entrepri
 
 **Phases ADM appliquées** :
 
-1. **Phase A (Vision)** : Vision ASBL démocratique, 0,12g CO₂/req
+1. **Phase A (Vision)** : Vision ASBL démocratique, sobriété carbone
 2. **Phase B (Business)** : Processus métier copropriétés (AG, factures, etc.)
 3. **Phase C (Systèmes)** : Architecture hexagonale, intégrations (SendGrid, MinIO)
 4. **Phase D (Techno)** : Stack Rust, infrastructure VPS → K3s
@@ -540,7 +540,7 @@ Principes Pérennes
 Quels que soient les jalons, KoproGo maintient :
 
 1. **Démocratie** : 1 copropriété = 1 voix (jamais pondération capital)
-2. **Écologie** : < 0,12g CO₂/req (objectif absolu)
+2. **Écologie** : empreinte CO₂/req mesurée et publiée (objectif)
 3. **Open Source** : AGPL-3.0 (code public, forkable)
 4. **Solidarité** : 20% revenus IA → fonds solidarité (membres en difficulté)
 5. **Transparence** : Budgets, comptes, RFCs, ADRs publics (GitHub)

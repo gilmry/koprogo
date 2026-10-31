@@ -1,11 +1,18 @@
 ===================================================================
-KoproGo ASBL - Executive Summary Investisseurs/Subsides 2025
+KoproGo - Executive Summary Investisseurs/Subsides 2025
 ===================================================================
 
-:Auteur: Gilles Maury - Fondateur KoproGo ASBL
+:Auteur: Gilles Maury - Fondateur KoproGo (ASBL en préparation)
 :Date: Novembre 2025
 :Version: 1.0
 :Audience: Investisseurs, Subsides publics, Financeurs participatifs
+
+.. warning::
+
+   v0.1.0 pre-release : aucun système en production, ASBL en préparation
+   (constitution prévue au Jalon 3, voir :doc:`GOVERNANCE`). Les chiffres
+   techniques viennent d'un test de charge de 3 minutes (30/10/2025) ; les
+   chiffres économiques sont des projections non contractuelles.
 
 .. contents:: Table des Matières
    :depth: 2
@@ -14,7 +21,7 @@ KoproGo ASBL - Executive Summary Investisseurs/Subsides 2025
 🎯 Résumé Exécutif
 ==================
 
-**KoproGo** est une plateforme opensource de gestion de copropriété développée par une ASBL belge, combinant **performance technique exceptionnelle**, **viabilité économique démontrée** et **impact écologique mesurable**.
+**KoproGo** est une plateforme opensource de gestion de copropriété portée par un projet d'ASBL (constitution prévue au Jalon 3), qui vise une **performance technique sobre**, un **modèle économique à valider** et un **impact écologique à mesurer**.
 
 Objectif 2030
 -------------
@@ -32,8 +39,8 @@ Différenciation Clé
 - **Opensource radical**: AGPL-3.0, code public, souveraineté des données
 - **PropTech 2.0**: IA, Blockchain, IoT (38% des revenus, résilience accrue)
 
-📊 Performance Technique - Données Réelles
-===========================================
+📊 Performance Technique - Test de charge (30/10/2025)
+=====================================================
 
 Infrastructure Testée (Oct 2025)
 ---------------------------------
@@ -51,7 +58,7 @@ Infrastructure Testée (Oct 2025)
    * - **Throughput**
      - 287 req/s (charge 3 min)
    * - **Taux de succès**
-     - 99.74%
+     - voir :doc:`PERFORMANCE_REPORT` (test de 3 minutes, pas une disponibilité)
    * - **Latence P50**
      - 69ms
    * - **Latence P90**
@@ -59,7 +66,7 @@ Infrastructure Testée (Oct 2025)
    * - **Latence P99**
      - 752ms (objectif réaliste: < 1s) ✅
    * - **CO₂/requête**
-     - 0.12g (datacenter OVH GRA11 @ 60g CO₂/kWh)
+     - estimation réseau, non mesurée
    * - **Capacité multi-tenant**
      - 2,000-3,000 copropriétés par VPS
 
@@ -74,25 +81,21 @@ Performance vs Concurrence
      - KoproGo
      - Concurrence SaaS
      - Avantage
-   * - **CO₂/requête**
-     - 0.12g
-     - ~11.5g
-     - **96× moins**
    * - **Coût/copro/mois**
      - 0.085€
      - 10-50€
      - **100-600× moins**
    * - **Uptime**
-     - 99.74%
+     - non mesuré (aucun système en production)
      - ~99.9%
-     - Comparable
+     - À mesurer
    * - **Latence P99**
      - 752ms
      - ~200-500ms
      - Acceptable (API)
 
-💰 Modèle Économique - Viabilité Démontrée
-===========================================
+💰 Modèle Économique - Projections
+==================================
 
 Prix Fixe Démocratique
 -----------------------
@@ -283,7 +286,7 @@ Méthodologie Calcul
 **Émissions KoproGo**:
 
 - Datacenter OVH GRA11: 60g CO₂/kWh (mix énergétique français)
-- Consommation VPS: 0.12g CO₂/requête (mesuré)
+- Consommation par requête : estimation réseau, non mesurée
 - Estimation: 100 requêtes/copro/jour
 
 **Émissions évitées** (baseline solutions propriétaires):
@@ -295,10 +298,10 @@ Méthodologie Calcul
 Certification & Transparence
 -----------------------------
 
-✅ **Mesures validées**:
+**Ce qui a été mesuré, et ce qui ne l'a pas été** :
 
-- Tests de charge Oct 2025 (PERFORMANCE_REPORT.rst)
-- Consommation énergétique VPS mesurée
+- Test de charge de 3 minutes, 30/10/2025 (PERFORMANCE_REPORT.rst) : mesuré
+- Consommation énergétique et CO₂ par requête : estimés, pas mesurés
 - Datacenter OVH certifié ISO 14001
 
 🎯 **Engagement transparence**:
@@ -337,10 +340,6 @@ vs Solutions Propriétaires (Urbis, Syndic Online, etc.)
      - Aucun
      - Total
      - Portabilité garantie
-   * - **CO₂/requête**
-     - 0.12g
-     - ~11.5g
-     - 96× plus écologique
    * - **Gouvernance**
      - ASBL (non-profit)
      - Actionnaires privés
@@ -378,9 +377,9 @@ vs Plateformes Opensource (Odoo, ERPNext, etc.)
      - ~50-100 req/s
      - 3-6× plus rapide
    * - **Empreinte carbone**
-     - 0.12g CO₂/req
+     - estimation réseau, non mesurée
      - ~0.5-1g CO₂/req
-     - 4-8× plus sobre
+     - À mesurer
    * - **Support métier**
      - Copropriété spécialisé
      - Généraliste
@@ -493,11 +492,11 @@ Arguments Investisseurs
 
 ✅ **Innovation technologique**: Rust, IA, Blockchain opensource
 
-✅ **Transition écologique**: -840 tonnes CO₂/an démontré
+✅ **Transition écologique**: -840 tonnes CO₂/an visé (projection)
 
 ✅ **Souveraineté numérique**: Opensource AGPL-3.0, données EU
 
-✅ **Modèle pérenne**: 98% marge, viabilité démontrée
+✅ **Modèle pérenne**: 98% de marge projetée, viabilité à démontrer
 
 **Pour crowdfunding**:
 
@@ -671,7 +670,7 @@ Pour Contributeurs Opensource
 📞 Contact
 ==========
 
-**KoproGo ASBL**
+**KoproGo** (ASBL en préparation)
 
 - 📧 Email: contact@koprogo.com
 - 🌐 Website: https://koprogo.com

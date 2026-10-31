@@ -81,7 +81,7 @@ Impact Environnemental Ignoré
      - KoproGo
    * - **CO₂/requête**
      - 11,5g
-     - **0,12g** (96% réduction)
+     - Estimation réseau, non mesurée
    * - **Datacenter**
      - USA/GAFAM (>500g CO₂/kWh)
      - OVH France (60g CO₂/kWh)
@@ -230,7 +230,7 @@ Principe Fondamental
 * 10x moins de CPU utilisé
 * 4x moins de RAM utilisée
 * 96% moins d'électricité consommée
-* **0,12g CO₂/requête** vs 11,5g (concurrence)
+* Empreinte carbone par requête : estimation réseau, non mesurée
 
 **2. Datacenter Bas Carbone (OVH France)**
 
@@ -291,7 +291,7 @@ Open-Source & Souveraineté des Données
 Gouvernance Démocratique : ASBL Sans Actionnaires
 --------------------------------------------------
 
-**KoproGo est géré par une ASBL belge, pas une startup :**
+**KoproGo sera géré par une ASBL (en préparation, constitution prévue au Jalon 3), pas une startup :**
 
 .. list-table::
    :header-rows: 1
@@ -541,8 +541,8 @@ KoproGo Est Techniquement Viable
 * Architecture hexagonale implémentée
 * 73 endpoints REST API opérationnels
 * Tests E2E automatisés (Playwright)
-* Load tests validés : 287 req/s, 99,74% uptime
-* 0,12g CO₂/requête mesuré en production
+* Test de charge de 3 minutes (30/10/2025) : 287 req/s
+* Empreinte carbone par requête : estimation réseau, non mesurée ; aucun système en production
 
 **Équipe fondateur** :
 

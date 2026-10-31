@@ -5,7 +5,7 @@ Tickets & Maintenance Requests (Issue #85)
 :Date: 2026-03 (initial) — màj 2026-05 (snapshot)
 :Version: 1.0.0
 :Issue GitHub: #85
-:Statut: Production-ready (Backend + Frontend complets — #85 fermée)
+:Statut: Implémenté (Backend + Frontend — #85 fermée), jamais exploité en production (v0.1.0 pre-release)
 
 Vue d'ensemble
 ==============

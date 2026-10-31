@@ -88,24 +88,22 @@ Tests & Qualité
 
 * **287 req/s** soutenus (charge réelle)
 * **752ms** latence P99 (1 vCPU)
-* **99,74% success rate** (26 échecs sur 17 200 requêtes)
+* Taux de succès du test de charge de 3 minutes (30/10/2025) : voir :doc:`../PERFORMANCE_REPORT`
 * **128MB RAM** utilisée (sur 2GB disponibles)
 
 Performance & Écologie
 ----------------------
 
-✅ **Performance Validée en Production**
+✅ **Performance mesurée en test de charge** (3 minutes, 30/10/2025, aucun système en production)
 
 * Throughput : 287 req/s soutenu
 * Latency P99 : 752ms (1 vCPU VPS)
 * Memory : 128MB utilisée
 * CPU : < 20% utilisation moyenne
-* Uptime : 99,74%
 
-✅ **Empreinte Carbone Mesurée**
+**Empreinte carbone : estimée, pas mesurée**
 
-* **0,12g CO₂/requête** (mesuré en production)
-* vs 11,5g concurrence (96% réduction)
+* CO₂/requête : estimation réseau, non mesurée
 * Datacenter OVH Gravelines (60g CO₂/kWh)
 * Architecture Rust optimisée
 
@@ -297,14 +295,14 @@ Statistiques Globales (État Actuel)
 
 * **45+ scénarios E2E** (Playwright) ✅
 * **100% couverture domain** ✅
-* **Load tests** (287 req/s, 99,74% uptime) ✅
+* **Test de charge** de 3 minutes (287 req/s, 30/10/2025) ✅
 * **Benchmarks** (Criterion) ✅
 
 **Performance**
 
 * **287 req/s** soutenus ✅
 * **752ms** latence P99 ✅
-* **0,12g CO₂/requête** ✅
+* CO₂/requête : estimation réseau, non mesurée
 * **128MB RAM** utilisée ✅
 
 **Infrastructure**

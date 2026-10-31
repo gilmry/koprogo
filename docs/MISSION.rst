@@ -407,7 +407,7 @@ Souveraineté Numérique
 
 * **96% de réduction carbone** vs solutions actuelles
 * ~50 tonnes CO₂/an économisées (5000 copros cloud, 2030)
-* 0.12g CO2/requête (objectif < 0.5g largement dépassé grâce à Rust + datacenter bas carbone)
+* CO₂/requête : objectif < 0.5g, aujourd'hui une estimation réseau non mesurée
 * **+ Features communautaires** : -790 tonnes CO₂/an supplémentaires (partage objets, réduction consommation)
 * **Impact total 2030** : -840 tonnes CO₂/an (dépassement +57% vs objectif initial)
 
@@ -429,7 +429,7 @@ Sécurité et Conformité
 * ✅ Chiffrement TLS 1.3 (SSL Let's Encrypt)
 * ✅ JWT authentication avec rotation tokens
 * ✅ Hashing passwords (Argon2id)
-* ✅ Row-Level Security PostgreSQL (futur)
+* ☐ Row-Level Security PostgreSQL (non implémenté, prévu)
 * ✅ Firewall UFW (ports 22, 80, 443 uniquement)
 * ✅ Fail2ban (protection bruteforce SSH)
 * ✅ GitOps : Patches sécurité en < 3 minutes
@@ -605,7 +605,7 @@ Pas de distinction "client" vs "membre", seulement **membre actif** (cotisant = 
    * ✅ Assemblée générale annuelle (décisions collectives)
    * ✅ Conseil d'administration élu (3-7 membres)
    * ✅ Comptes publics (bilans annuels)
-   * ✅ Statuts ASBL belge (non-profit)
+   * ✅ Statuts d'ASBL de droit belge (non-profit), à constituer
    * ✅ **Client cloud = Membre automatiquement** (droit de vote)
    * Croissance 500 → 5,000 copropriétés
    * Développement financé (1-2 ETP)
@@ -797,8 +797,8 @@ RGPD et ePrivacy
 **Impact** :
 
 
-* Conformité 100% RGPD
-* Audit CNIL/APD réussi
+* Conçu pour la conformité RGPD
+* Audit APD à mener (aucun audit réalisé)
 * Confiance utilisateurs restaurée
 
 Accessibilité (WCAG 2.1)

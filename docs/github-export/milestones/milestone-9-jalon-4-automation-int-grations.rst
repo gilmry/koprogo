@@ -20,7 +20,7 @@ Description
 **Livrables**:
 📧 Workflow AG 100% automatisé (convocations + délais légaux)
 📖 Carnet d'entretien digital avec alertes préventives
-📜 GDPR compliance totale (Articles 16, 18, 21)
+📜 Conçu pour le RGPD (Articles 16, 18, 21)
 💼 Comparaison devis multi-entrepreneurs
 🌐 Page publique syndic (SEO + discovery organique)
 ♿ Accessibilité WCAG 2.1 AA complète

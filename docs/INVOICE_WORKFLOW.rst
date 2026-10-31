@@ -5,7 +5,7 @@ Workflow Complet d'Encodage de Factures avec Approbation
 :Date de mise à jour: 7 novembre 2025
 :Version: 1.0.0 - **IMPLÉMENTÉ** ✅
 :Issue GitHub: #73 (Fermée le 7 novembre 2025)
-:Statut: Production-ready
+:Statut: Implémenté, jamais exploité en production (v0.1.0 pre-release)
 
 📋 Vue d'ensemble
 =================
