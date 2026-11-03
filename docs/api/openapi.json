@@ -8851,11 +8851,11 @@
           "auth_method": {
             "oneOf": [
               {
-                "type": "null"
-              },
-              {
                 "$ref": "#/components/schemas/VoteAuthMethod",
                 "description": "Story 4.2 (#48) — comment le votant a été authentifié. Obligatoire\n(absent → 422 `VOTE_AUTH_METHOD_REQUIRED`) : `Option` ici seulement\npour distinguer « absent » (422 typé) d'un JSON malformé (400 générique\nde désérialisation). Le cas d'usage `cast_vote` le valide contre la\nmodalité de l'AG (`assert_vote_auth_sufficient`)."
+              },
+              {
+                "type": "null"
               }
             ]
           },
@@ -9935,11 +9935,11 @@
           "kind": {
             "oneOf": [
               {
-                "type": "null"
-              },
-              {
                 "$ref": "#/components/schemas/TicketKind",
                 "description": "Story 3.6 (FR31) — Request (default) vs Complaint. Optional for\nbackward compatibility with pre-3.6 clients (defaults to Request)."
+              },
+              {
+                "type": "null"
               }
             ]
           },
@@ -9949,11 +9949,11 @@
           "severity": {
             "oneOf": [
               {
-                "type": "null"
-              },
-              {
                 "$ref": "#/components/schemas/TicketSeverity",
                 "description": "Story 3.6 (FR31) — REQUIRED when `kind = Complaint`."
+              },
+              {
+                "type": "null"
               }
             ]
           },
@@ -11099,10 +11099,10 @@
           "payment_method": {
             "oneOf": [
               {
-                "type": "null"
+                "$ref": "#/components/schemas/ContributionPaymentMethod"
               },
               {
-                "$ref": "#/components/schemas/ContributionPaymentMethod"
+                "type": "null"
               }
             ]
           },
@@ -12185,10 +12185,10 @@
           "category": {
             "oneOf": [
               {
-                "type": "null"
+                "$ref": "#/components/schemas/ExpenseCategory"
               },
               {
-                "$ref": "#/components/schemas/ExpenseCategory"
+                "type": "null"
               }
             ]
           },
@@ -12355,10 +12355,10 @@
           "category": {
             "oneOf": [
               {
-                "type": "null"
+                "$ref": "#/components/schemas/TicketCategory"
               },
               {
-                "$ref": "#/components/schemas/TicketCategory"
+                "type": "null"
               }
             ]
           },
@@ -12387,20 +12387,20 @@
           "priority": {
             "oneOf": [
               {
-                "type": "null"
+                "$ref": "#/components/schemas/TicketPriority"
               },
               {
-                "$ref": "#/components/schemas/TicketPriority"
+                "type": "null"
               }
             ]
           },
           "severity": {
             "oneOf": [
               {
-                "type": "null"
+                "$ref": "#/components/schemas/TicketSeverity"
               },
               {
-                "$ref": "#/components/schemas/TicketSeverity"
+                "type": "null"
               }
             ]
           },

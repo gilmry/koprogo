@@ -3460,7 +3460,7 @@ export interface components {
     };
     /** @description Request DTO for casting a vote */
     CastVoteRequest: {
-      auth_method?: null | components["schemas"]["VoteAuthMethod"];
+      auth_method?: components["schemas"]["VoteAuthMethod"] | null;
       /** Format: uuid */
       owner_id: string;
       /** Format: uuid */
@@ -3898,9 +3898,9 @@ export interface components {
        * @description Story 3.6 (FR31) — Optional incident timestamp.
        */
       incident_date?: string | null;
-      kind?: null | components["schemas"]["TicketKind"];
+      kind?: components["schemas"]["TicketKind"] | null;
       priority: components["schemas"]["TicketPriority"];
-      severity?: null | components["schemas"]["TicketSeverity"];
+      severity?: components["schemas"]["TicketSeverity"] | null;
       title: string;
       /** Format: uuid */
       unit_id?: string | null;
@@ -4389,7 +4389,7 @@ export interface components {
       /** Format: date-time */
       payment_date?: string | null;
       payment_method?:
-        null | components["schemas"]["ContributionPaymentMethod"];
+        components["schemas"]["ContributionPaymentMethod"] | null;
       payment_reference?: string | null;
       payment_status: components["schemas"]["ContributionPaymentStatus"];
       /** Format: uuid */
@@ -4840,7 +4840,7 @@ export interface components {
     /** @description Modifier une facture brouillon ou rejetée. */
     UpdateInvoiceDraftDto: {
       amount_excl_vat?: string | null;
-      category?: null | components["schemas"]["ExpenseCategory"];
+      category?: components["schemas"]["ExpenseCategory"] | null;
       description?: string | null;
       due_date?: string | null;
       invoice_date?: string | null;
@@ -4881,13 +4881,13 @@ export interface components {
      *     `AppError::TicketImmutable` (403).
      */
     UpdateTicketRequest: {
-      category?: null | components["schemas"]["TicketCategory"];
+      category?: components["schemas"]["TicketCategory"] | null;
       description?: string | null;
       evidence_attachments?: string[] | null;
       /** Format: date-time */
       incident_date?: string | null;
-      priority?: null | components["schemas"]["TicketPriority"];
-      severity?: null | components["schemas"]["TicketSeverity"];
+      priority?: components["schemas"]["TicketPriority"] | null;
+      severity?: components["schemas"]["TicketSeverity"] | null;
       title?: string | null;
       witnesses?: string[] | null;
     };
