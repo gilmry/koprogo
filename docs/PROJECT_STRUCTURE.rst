@@ -152,7 +152,7 @@ Domain Entity Highlights
 - **local_exchange**, **owner_credit_balance** - SEL time-based exchange system, ``ExchangeType``, ``ParticipationLevel``
 - **meeting** - General assemblies, ``MeetingType``, ``MeetingStatus``
 - **notice** - Community notice board, ``NoticeCategory``, ``NoticeStatus``
-- **notification**, **notification_preference** - Multi-channel notifications (Email/SMS/Push/InApp), ``NotificationType``
+- **notification**, **notification_preference** - Notifications (InApp ; Email : suivi d'envoi, transport SMTP à brancher ; Push prévu), ``NotificationType``
 - **organization** - Multi-tenancy root, ``SubscriptionPlan``
 - **owner**, **unit_owner** - Co-owners and unit ownership relationships
 - **owner_contribution** - Owner financial contributions, ``ContributionType``
@@ -308,7 +308,7 @@ The following major capabilities have been added beyond the original MVP:
 - **Belgian Accounting (PCMN)** - Full Plan Comptable Minimum Normalise belge with ~90 pre-seeded accounts and financial reports (Issue #79)
 - **Meeting Voting System** - Resolutions with Simple/Absolute/Qualified majority types, tantiemes/milliemes, proxy votes (Issue #46)
 - **Maintenance Ticket System** - Maintenance request workflow with priorities, contractor assignment, and statistics (Issue #85)
-- **Multi-Channel Notifications** - Email, SMS, Push, and In-App notifications with user preferences (Issue #86)
+- **Notifications** - In-App, plus Email tracking (SMTP transport not wired yet); Push planned; user preferences (Issue #86)
 - **Payment Integration** - Stripe Payment Intents and SEPA Direct Debit with idempotency and refund support (Issue #84)
 - **Convocation System** - Automatic AG invitation system with Belgian legal deadline validation and email tracking (Issue #88)
 - **Contractor Quotes Module** - Belgian 3-quote mandatory requirement with automatic scoring algorithm (Issue #91)

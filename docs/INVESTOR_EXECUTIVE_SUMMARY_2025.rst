@@ -684,7 +684,7 @@ Pour Contributeurs Opensource
 
 **🔍 Recrutement actif**:
 
-Nous recherchons un(e) **Co-fondateur(trice) Product** avec expertise en gestion de copropriété (syndic, conseil syndical, ou comptabilité copropriété belge). Profil idéal: connaissance terrain du secteur + vision produit.
+Nous recherchons un(e) **Co-fondateur(trice) Product** avec expertise en gestion de copropriété (syndic, conseil de copropriété, ou comptabilité copropriété belge). Profil idéal: connaissance terrain du secteur + vision produit.
 
 **Disponibilité pitch**:
 

@@ -5,7 +5,7 @@ Workflow 05 : Sondage de consultation entre AG
 :Issue: #346
 :Personas: Voir 00-personas-et-seed.rst
 :Acteurs: Francois Leroy (syndic), Alice Dubois (presidente CdC), Charlie Martin, Nadia Benali, Marguerite Lemaire, Marcel Dupont, Philippe Vandermeulen, Emmanuel Claes
-:Articles CC: Art. 577-8/4 par.4 Code Civil belge (consultation entre assemblees)
+:Articles CC: Aucun. Le sondage n'a pas de base legale de decision ; seule l'AG decide (art. 3.87 et suivants)
 :Priorite: Haute
 
 Resume
@@ -59,8 +59,8 @@ reelle et portee par ceux qui vivent dans l'immeuble.
 Pre-conditions legales
 -----------------------
 
-1. **Pas de force de loi** : Art. 577-8/4 par.4 CC autorise les consultations
-   entre AG, mais les resultats sont consultatifs. Seule l'AG peut prendre
+1. **Pas de force de loi** : aucun article ne fonde une decision par
+   sondage ; les resultats sont consultatifs. Seule l'AG peut prendre
    des decisions engageant la copropriete.
 
 2. **Role syndic ou board member** : Seul le syndic ou un membre du conseil

@@ -156,7 +156,7 @@ Jalon 2: Conformité Légale Belge 📋 (COMPLET)
 - ``POST /buildings/:id/call-for-funds`` - Créer appel de fonds
 - ``GET /call-for-funds/:id`` - Détails appel
 - ``GET /buildings/:id/call-for-funds`` - Liste appels bâtiment
-- ``PUT /call-for-funds/:id/send`` - Envoyer aux propriétaires (email + PDF)
+- ``PUT /call-for-funds/:id/send`` - Marquer comme envoyé aux propriétaires (suivi d'envoi ; ni email réel ni PDF d'appel de fonds au 03/11/2026)
 - ``PUT /call-for-funds/:id/mark-paid`` - Marquer payé
 - ``DELETE /call-for-funds/:id`` - Supprimer (Draft only)
 
@@ -235,7 +235,6 @@ Jalon 2: Conformité Légale Belge 📋 (COMPLET)
 - ✅ Types: CallForFunds, PaymentReceived, ExpensePayment, TransferBetweenAccounts, YearEndClosing
 - ✅ Numérotation séquentielle par bâtiment
 - ✅ Trigger PostgreSQL (validation balance automatique)
-- ✅ Intégration FEC (Fichier Écritures Comptables export)
 
 **Endpoints API**
 - ``POST /buildings/:id/journal-entries`` - Créer écriture
@@ -350,7 +349,7 @@ Jalon 3: Features Différenciantes 🎯 (COMPLET)
 3.1 Système de Sondages (Poll System - Issue #51)
 --------------------------------------------------
 
-**Contexte Légal Belge**: Article 577-8/4 §4 Code Civil - Consultations rapides entre AG
+**Contexte Légal Belge**: aucune base légale de décision. Un sondage entre deux AG est purement consultatif ; seule l'AG décide (art. 3.87 et suivants)
 
 **4 Types de Sondages**
 - **YesNo**: Décisions simples (oui/non) - Ex: "Repeindre le hall en bleu?"
@@ -667,7 +666,7 @@ Jalon 4: Automation & Intégrations 📅
 **Proposition de Valeur**
 - ✅ 0€ coût (API gratuite, pas d'achat capteurs)
 - ✅ 0 installation physique (API call uniquement)
-- ✅ 80%+ couverture (Linky obligatoire Belgique/France)
+- Couverture visée : compteurs Linky en France (API Enedis) ; les compteurs numériques belges (ORES, Fluvius, Sibelga) ne sont pas encore intégrés
 - ✅ 95% bénéfices IoT pour 0% du coût
 - ✅ Time-to-market: 1 semaine vs 3-6 mois hardware
 

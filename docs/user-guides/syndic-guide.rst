@@ -173,7 +173,7 @@ KoproGo utilise un workflow structuré pour les dépenses :
 États disponibles :
 
 - **Draft** : Brouillon, éditable
-- **PendingApproval** : Soumise pour approbation (conseil syndical)
+- **PendingApproval** : Soumise pour approbation (conseil de copropriété)
 - **Approved** : Approuvée et payable
 - **Rejected** : Refusée avec motif
 
@@ -224,7 +224,7 @@ Soumettre pour approbation
 
 La dépense passe de ``Draft`` à ``PendingApproval`` et devient **non modifiable**.
 
-Approuver/rejeter (rôle conseil syndical)
+Approuver/rejeter (rôle conseil de copropriété)
 ------------------------------------------
 
 **Approuver** :

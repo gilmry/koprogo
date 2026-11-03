@@ -655,7 +655,7 @@ Jalon 4: Automation & Intégrations ⏳ (~54%)
 * ✅ #89 : Carnet d'Entretien Digital
 * ✅ #90 : GDPR complet Articles 16, 18, 21
 * ✅ #85 : Ticketing maintenance (6 états, 5 priorités, SLA auto)
-* ✅ #86 : Notifications multi-canal (Email, SMS, Push, In-App, 22 types)
+* ✅ #86 : Notifications (In-App, 22 types ; Email : suivi d'envoi, transport à brancher ; Push prévu)
 * ✅ #91 : Devis travaux + comparaison multi-entrepreneurs (scoring belge)
 * ✅ #92 : Page publique syndic SEO-friendly
 * ✅ #110 : Groupements d'achat énergie

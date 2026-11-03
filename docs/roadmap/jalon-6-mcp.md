@@ -1,5 +1,10 @@
 # Jalon 6 : SYMBIOSE - Intégration Model Context Protocol (MCP)
 
+> **Vision, pas un état du produit.** Ce document décrit une cible. Au
+> 03/11/2026, le serveur MCP de KoproGo expose des outils de lecture sur
+> l'API ; le grid computing, l'exécution locale et la multiplicité de LLM
+> décrits ici ne sont pas implémentés.
+
 **Période** : Novembre 2025
 **Objectif** : Écosystème IA décentralisé, éco-responsable et open-source
 

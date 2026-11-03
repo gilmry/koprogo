@@ -255,7 +255,7 @@ Rôles métier
    * - **Copropriétaire**
      - Consultation, vote, paiement
      - Read factures, Vote AG, Update profil
-   * - **Conseil Syndical**
+   * - **Conseil de Copropriété**
      - Validation factures > seuil, audit
      - Approve/Reject factures, Read comptabilité
    * - **Comptable**

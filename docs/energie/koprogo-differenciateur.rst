@@ -224,7 +224,7 @@ plus les économies sont importantes pour chaque membre.
      - Conformité aux 4 principes (clarté, intuitivité, honnêteté, RGPD)
      - Jalon 3 (implémentation)
 
-   * - **Label CREG (accréditation)**
+   * - **Charte CREG (accréditation visée)**
      - Demande formelle à CREG après implémentation
      - Jalon 3+ (3-6 mois après)
 

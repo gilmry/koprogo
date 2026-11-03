@@ -97,7 +97,7 @@ A. Aide aux Litiges Démocratiques ⚖️
 
 **Exemple** :
 
-   *Marie, retraitée (pension 1,200€/mois), conteste des travaux de façade votés (15,000€ sa quote-part) car 3 devis obligatoires non présentés (violation loi belge). Avocat = 1,500€. KoproGo finance 100%. Marie gagne, nouveaux devis économisent 60,000€ pour toute la copropriété. Elle rembourse 750€ au fonds.*
+   *Marie, retraitée (pension 1,200€/mois), conteste des travaux de façade votés (15,000€ sa quote-part) car les 3 devis exigés par le seuil de mise en concurrence voté en AG n'ont pas été présentés. Avocat = 1,500€. KoproGo finance 100%. Marie gagne, nouveaux devis économisent 60,000€ pour toute la copropriété. Elle rembourse 750€ au fonds.*
 
 B. Prêts à Taux 0% Frais Administratifs 💳
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -658,7 +658,7 @@ Cas 1 : Marie - Litige Travaux Façade
 
 * **Copropriété** : 30 lots, Bruxelles
 * **AG du 15/03/2026** : Vote travaux façade 300,000€ (quote-part Marie : 12,000€)
-* **Problème** : Seuls 2 devis présentés (loi belge exige 3 devis)
+* **Problème** : Seuls 2 devis présentés, alors que l'AG avait fixé à 3 devis la mise en concurrence au-delà de 50,000€ (art. 3.88 § 1er, 1°, c : le seuil est fixé par l'AG, pas par la loi)
 * **Marie** : Retraitée, pension 1,200€/mois, économies 3,000€
 
 **Demande** :

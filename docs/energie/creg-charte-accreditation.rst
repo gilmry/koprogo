@@ -94,7 +94,7 @@ La CREG a accordé l'accréditation à **Wikipower SPRL** (rue Natalis 2,
 - Statut actuel incertain : soit Wikipower a renouvelé discrètement, soit
   l'accréditation a expiré
 
-**Opportunité KoproGo** : Le marché est peu accrédité. Obtenir le label CREG
+**Opportunité KoproGo** : Le marché est peu accrédité. Obtenir l'accréditation à la charte CREG
 permettrait de se différencier immédiatement.
 
 3. Étude CREG F1827 — Analyse critique du marché (2018)

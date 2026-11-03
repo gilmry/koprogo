@@ -467,9 +467,9 @@ EN11 — Fournisseurs agréés uniquement
    Seuls les fournisseurs disposant d'une licence de fourniture délivrée par le
    régulateur régional compétent peuvent participer à l'appel d'offres.
 
-EN12 — Label CREG (objectif)
+EN12 — Charte CREG (accréditation visée)
    **Source** : Charte CREG pour les intermédiaires en achats groupés.
-   KoproGo vise l'obtention du label de qualité CREG pour garantir au consommateur
+   KoproGo vise l'accréditation à la charte de la CREG pour garantir au consommateur
    l'objectivité et la qualité des informations transmises.
 
 

@@ -56,7 +56,7 @@ Sub-Processor Register
   - **Retention**: 90 days (server logs), 30 days (transactional history)
   - **Action Required**: Execute DPA with email provider (Sendgrid, AWS SES, or equivalent)
 
-**Twilio/SMS** (Optional SMS Alerts)
+**Twilio/SMS** (Optional SMS Alerts) — *non intégré au 03/11/2026, aucun traitement*
   - **Service**: SMS delivery for urgent notifications
   - **DPA Status**: Signed ✓ (Optional/Beta Feature)
   - **DPA URL**: https://www.twilio.com/legal/data-protection-addendum

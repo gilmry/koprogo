@@ -271,7 +271,7 @@ Nexus Sprint Planning
 
 **Exemple Nexus Sprint Goal (Sprint 12)** :
 
-   *"Implémenter workflow factures avec approbation conseil syndical + frontend mobile-ready + monitoring Prometheus production"*
+   *"Implémenter workflow factures avec approbation conseil de copropriété + frontend mobile-ready + monitoring Prometheus production"*
 
    - **Backend** : Expense workflow (Draft → PendingApproval → Approved)
    - **Frontend** : UI approbation + responsive mobile
@@ -330,7 +330,7 @@ Nexus Sprint Review
 
 **Exemple démo Sprint 12** :
 
-   *"Workflow factures end-to-end : création facture (backend) → UI liste factures (frontend) → soumission approbation → email notification conseil syndical → approbation/rejet → monitoring Prometheus (alerte si > 10 factures pending)"*
+   *"Workflow factures end-to-end : création facture (backend) → UI liste factures (frontend) → soumission approbation → email notification conseil de copropriété → approbation/rejet → monitoring Prometheus (alerte si > 10 factures pending)"*
 
    - Démo sur environnement **staging** (pas local !)
    - Données réalistes (seed script)
@@ -423,13 +423,13 @@ Refinement Backlog
 
    **User Story**:
    As a syndic, I want to submit an expense for approval,
-   so that the conseil syndical can review it before payment.
+   so that the conseil de copropriété can review it before payment.
 
    **Critères acceptation**:
    - Given: expense in Draft state
    - When: syndic clicks "Submit for approval"
    - Then: expense state = PendingApproval
-   - And: email sent to conseil syndical members
+   - And: email sent to conseil de copropriété members
    - And: audit log recorded
 
    **Estimation**: 5 points
