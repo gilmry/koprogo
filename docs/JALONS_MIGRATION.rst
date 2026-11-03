@@ -107,7 +107,7 @@ Jalon 0: Fondations Techniques ✅ (5 issues - TOUS CLOS)
 **Livrables complétés**:
 
 * ✅ Architecture hexagonale implémentée
-* ✅ 73 endpoints API REST
+* ✅ 73 endpoints API REST au Jalon 0 (oct. 2025)
 * ✅ Tests E2E Playwright
 * ✅ Test de charge de 3 minutes (287 req/s, 30/10/2025)
 * ✅ Documentation Sphinx publiée

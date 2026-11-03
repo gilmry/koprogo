@@ -27,3 +27,20 @@ sur le code, jamais l'inverse. Aucun code, aucun test modifié.
 - **`legal_compliance.feature`, `expenses.feature`, matrice de conformité,
   script de chiffres** : ce sont des tests ou du code, hors du périmètre doc
   du lot 7 ; ils demandent une story signée.
+
+## Deuxième passe : un seul jeu de chiffres (03/11, soir)
+
+Mesuré dans le code au 03/11 : 620 handlers déclarés (`#[get|post|put|delete|patch]`),
+209 opérations dans `docs/api/openapi.json`, 726 scénarios BDD dans 69 fichiers
+`.feature` ; CI de #1052 : 337 tests Playwright (projet chromium).
+
+- Pages d'état courant : 73, 511 ou 559 endpoints remplacés par 620 (daté),
+  « 45+ scénarios E2E » par 726 BDD et 337 Playwright.
+- Listes de jalon : « 73 endpoints » daté « au Jalon 0, oct. 2025 », pas
+  remplacé (c'est ce que le jalon a livré).
+- Journal historique de `WBS_PROJET_COMPLET.rst` et « 73 routes imbriquées »
+  (autre notion) : inchangés.
+- Liens vers `WBS_GO_LIVE_v0.1.0.md` (déplacé dans `archive/`) réparés.
+
+Le script qui produit ces chiffres et la gate qui les vérifie restent à faire :
+c'est du code, il faut une story signée.

@@ -3,7 +3,7 @@
 > bugs WF1-1/2/3 à reproduire, etc.) ne reflètent plus le code courant
 > (FE1 cookie HttpOnly livré, bugs ALREADY-FIXED — cf. WP-B1 PR #536,
 > WP-FE2 PR #547). Pour une future revue go-live, utiliser les critères
-> GO de [`../WBS_GO_LIVE_v0.1.0.md`](../WBS_GO_LIVE_v0.1.0.md) (§"Critères
+> GO de [`../WBS_GO_LIVE_v0.1.0.md`](../archive/WBS_GO_LIVE_v0.1.0.md) (§"Critères
 > GO" et §"Vérification — commandes exactes & gate humain"). Conservé
 > comme trace ; **plus une vérité courante**.
 

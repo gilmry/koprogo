@@ -112,7 +112,7 @@ Phase 1 : VPS MVP (2025-2026)
 ✅ **Gestion de Base** (Jalon 0-1 atteint)
 
 * CRUD complet (Building, Unit, Owner, Expense, Meeting, Document)
-* 73 endpoints REST API
+* 620 endpoints REST déclarés dans le code (03/11/2026)
 * Multi-owner support (pourcentages de propriété)
 * Multi-role support (syndic, copropriétaire, comptable)
 * Tests E2E automatisés (Playwright)
@@ -344,7 +344,7 @@ Jalon 0 : Fondations Techniques ✅
 **État** : Achevé (Automne 2025)
 
 * ✅ Architecture hexagonale implémentée
-* ✅ 73 endpoints API REST
+* ✅ 73 endpoints API REST au Jalon 0 (oct. 2025 ; 620 au 03/11/2026)
 * ✅ Tests E2E Playwright
 * ✅ Test de charge de 3 minutes (287 req/s, 30/10/2025)
 * ✅ Documentation Sphinx complète

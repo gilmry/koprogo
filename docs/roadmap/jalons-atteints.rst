@@ -17,7 +17,7 @@ Cette page présente les **jalons déjà atteints** par KoproGo. Elle démontre 
 .. tip::
    **Le projet est déjà opérationnel !**
 
-   KoproGo n'est pas un concept : c'est une plateforme fonctionnelle avec 73 endpoints API, des tests automatisés, et une infrastructure en production.
+   KoproGo n'est pas un concept : c'est une plateforme fonctionnelle avec 620 endpoints déclarés dans le code (03/11/2026), des tests automatisés, et une infrastructure en production.
 
 Jalon 0 : Fondations Techniques ✅
 ===================================
@@ -72,7 +72,7 @@ Tests & Qualité
 
 ✅ **Tests E2E Automatisés (Playwright)**
 
-* 45+ scénarios E2E
+* 726 scénarios BDD et 337 tests Playwright (projet chromium, CI du 03/11/2026)
 * Backend + Frontend intégration
 * Visual regression testing
 * Tests cross-browser
@@ -286,14 +286,14 @@ Statistiques Globales (État Actuel)
 
 **Architecture & Code**
 
-* **73 endpoints REST API** ✅
+* **73 endpoints REST API** au Jalon 0 (oct. 2025 ; 620 au 03/11/2026) ✅
 * **11 entités du domaine** ✅
 * **Architecture hexagonale** ✅
 * **100% open-source** (AGPL-3.0) ✅
 
 **Tests & Qualité**
 
-* **45+ scénarios E2E** (Playwright) ✅
+* **337 tests Playwright** (projet chromium, CI du 03/11/2026) ✅
 * **100% couverture domain** ✅
 * **Test de charge** de 3 minutes (287 req/s, 30/10/2025) ✅
 * **Benchmarks** (Criterion) ✅

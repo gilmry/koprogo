@@ -530,7 +530,7 @@ Jalons Produit
      - Conformité Légale
    * - **Jalon 0** ✅
      - 10-20 early adopters
-     - Architecture hexagonale, 73 endpoints API
+     - Architecture hexagonale, 73 endpoints API au Jalon 0 (620 au 03/11/2026)
      - 30% (CRUD de base)
    * - **Jalon 1**
      - 50-100 copros (beta publique)

@@ -978,7 +978,7 @@ Phase 5 (Validation Product Owner) débloquée par sign-off Phase 4. Le PO valid
 - PRD Phase 2 : [`prd.md`](prd.md)
 - Architecture Phase 3 : [`architecture.md`](architecture.md)
 - README pipeline : [`README.md`](README.md)
-- WBS go-live v0.1.0 : [`../../WBS_GO_LIVE_v0.1.0.md`](../../WBS_GO_LIVE_v0.1.0.md)
+- WBS go-live v0.1.0 : [`../../WBS_GO_LIVE_v0.1.0.md`](../../archive/WBS_GO_LIVE_v0.1.0.md)
 - ADRs existants : [`docs/adr/`](../../adr/)
 - Mémoires d'agent applicables (cf. [`README.md`](README.md))
 

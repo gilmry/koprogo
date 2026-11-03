@@ -539,7 +539,7 @@ KoproGo Est Techniquement Viable
 **Fondations techniques validées** (Jalon 0 ✅) :
 
 * Architecture hexagonale implémentée
-* 73 endpoints REST API opérationnels
+* 620 endpoints REST déclarés dans le code (03/11/2026), dont 209 documentés dans OpenAPI
 * Tests E2E automatisés (Playwright)
 * Test de charge de 3 minutes (30/10/2025) : 287 req/s
 * Empreinte carbone par requête : estimation réseau, non mesurée ; aucun système en production

@@ -5,7 +5,7 @@ Nouvelles Fonctionnalités 2025 - KoproGo
 :Date: 2025-11-18 (snapshot original) — v0.1.0 jamais livrée en prod
 :Version: 1.0 (snapshot historique)
 :Statut: Implémenté
-:Note: Pour l'état courant, voir ``WBS_GO_LIVE_v0.1.0`` (go-live bêta) et ``roadmap/jalons-atteints`` (Jalon 1 complété mai 2026). Ce fichier devrait être auto-régénéré à chaque release (cf. #428 §8bis).
+:Note: Pour l'état courant, voir ``WBS_v0_1_0`` (périmètre 0.1.0 ; l'ancien ``WBS_GO_LIVE`` est archivé) et ``roadmap/jalons-atteints`` (Jalon 1 complété mai 2026). Ce fichier devrait être auto-régénéré à chaque release (cf. #428 §8bis).
 
 Ce document centralise toutes les nouvelles fonctionnalités implémentées en 2025, organisées par jalon et par domaine fonctionnel.
 
@@ -18,7 +18,7 @@ Vue d'Ensemble des Implémentations 2025
 ============================================
 
 **Statistiques Globales**
-- **73 endpoints API REST** implémentés
+- **73 endpoints API REST** implémentés à l'époque (620 au 03/11/2026)
 - **~50,000 lignes de code** Rust (backend)
 - **45+ entités de domaine** avec validation métier
 - **100+ migrations PostgreSQL** appliquées
@@ -784,7 +784,7 @@ A. Statistiques Globales du Projet
 -----------------------------------
 
 **Backend (Rust)**
-- **73 endpoints API REST** implémentés
+- **73 endpoints API REST** implémentés à l'époque (620 au 03/11/2026)
 - **45+ entités de domaine** avec validation
 - **~50,000 lignes de code** Rust
 - **100+ migrations PostgreSQL**
@@ -951,7 +951,7 @@ Changelog & Versions
 
 **Version 1.0** (2025-11-18)
 - Documentation initiale complète
-- 73 endpoints API documentés
+- 209 opérations documentées dans OpenAPI (03/11/2026)
 - Toutes fonctionnalités Jalon 1-3 couvertes
 
 **À venir**
