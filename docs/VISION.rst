@@ -38,10 +38,10 @@ Voici comment on propose de faciliter ça :
 ✅ **Infrastructure mutualisée ultra-économique chez OVH**
   7-163€/mois selon échelle (500 à 5,000 copros), hébergé France (Gravelines), données souveraines
 
-✅ **Empreinte carbone faible** (0.12g par requête)
-  96% de réduction vs outils actuels
+✅ **Empreinte carbone visée faible**
+  Estimation réseau par requête, non mesurée
 
-✅ **Une assoc' qui redistribue tout** (ASBL belge)
+✅ **Une assoc' qui redistribue tout** (ASBL en préparation, constitution prévue au Jalon 3)
   Pas d'actionnaires, les économies reviennent aux usagers
 
 Une structure associative avec décisions collectives, rôle coordinateur élu, pour avancer dans le cadre légal actuel.
@@ -90,12 +90,12 @@ Notre objectif : atteindre 5,000 copropriétés. Quand? Quand les conditions ser
   * 50 tonnes infrastructure (Rust + datacenter bas carbone)
   * 790 tonnes features communautaires (partage, achats groupés)
 
-⚡ **Performance mesurée (tests de charge validés)**
+⚡ **Performance mesurée en test de charge** (3 minutes, 30/10/2025)
   * Latence P99 : 752ms (charge soutenue, 1 vCPU)
   * Throughput : 287 req/s
-  * CO₂/requête : 0.12g (vs 11.5g concurrents)
+  * CO₂/requête : estimation réseau, non mesurée
 
-Données issues de tests réels en production, pas de projections marketing.
+Ces chiffres viennent d'un test de charge, pas d'une exploitation : aucun système n'est en production.
 
 Le Pouvoir du Collectif : Regrouper Pour Peser
 ==============================================

@@ -38,9 +38,9 @@ Vue d'Ensemble
 
 **Performance**
 
-* **287 req/s** soutenus (charge réelle)
+* **287 req/s** sur un test de charge de 3 minutes (30/10/2025)
 * **752ms** latence P99 (1 vCPU)
-* **0,12g CO₂/requête** (96% réduction vs concurrence)
+* Empreinte carbone par requête : estimation réseau, non mesurée
 * **128MB RAM** par instance
 
 Documents

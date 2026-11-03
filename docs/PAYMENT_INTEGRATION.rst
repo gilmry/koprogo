@@ -5,10 +5,11 @@ Payment Integration System (Issue #84)
 Overview
 ========
 
-KoproGo integrates with Stripe Payment Intents and SEPA Direct Debit
-for secure payment processing. The system handles the full transaction
-lifecycle from creation through refund, with PCI-DSS compliance via
-Stripe tokenization.
+KoproGo models Stripe Payment Intents and SEPA Direct Debit for payment
+processing: the system handles the transaction lifecycle from creation
+through refund, and is designed for PCI-DSS compliance via Stripe
+tokenization. No call to Stripe is made yet: payments are simulated
+(v0.1.0 pre-release, no system in production).
 
 Belgian Context
 ===============

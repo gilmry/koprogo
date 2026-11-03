@@ -5,7 +5,7 @@ Convocations AG Automatiques (Issue #88)
 :Date: 2026-03 (initial) — màj 2026-06 (correction délais légaux Story H14)
 :Version: 1.1.0
 :Issue GitHub: #88 ; correction #618 (Track H, Story H14)
-:Statut: Production-ready (Backend + Frontend complets — #88 fermée)
+:Statut: Implémenté (Backend + Frontend — #88 fermée), jamais exploité en production (v0.1.0 pre-release) ; l'envoi des emails est simulé : le destinataire est marqué « envoyé » sans qu'aucun email parte
 
 Vue d'ensemble
 ==============

@@ -1273,7 +1273,7 @@ Conclusion
 - ✅ **95% bénéfices IoT**: Monitoring, alertes, analytics
 - ✅ **Scalable**: 100+ buildings supportés
 - ✅ **GDPR compliant**: OAuth2 consent, chiffrement tokens
-- ✅ **Production-ready**: TimescaleDB, compression, retention
+- ✅ **Prévu pour la production** : TimescaleDB, compression, retention (R&D, non implémenté en production)
 
 **KPIs Attendus**
 - **Adoption**: 80%+ copros avec Linky (obligatoire Belgique/France)

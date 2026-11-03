@@ -9,6 +9,14 @@ ADR-0001: Intégration MCP pour Edge Computing
 :Décideurs: PO (ASBL), Tech Lead Backend, Tech Lead IA
 :Impacté: Équipes Backend, IA/Grid, Infra
 
+.. note:: **Note de correction (2026-10-31)**
+
+   La décision ci-dessous est conservée telle qu'elle a été prise. Un point de
+   son contexte est inexact : les « 0,12 g CO₂/requête » du backend ne sont pas
+   une mesure, mais une estimation du transfert réseau faite lors d'un test de
+   charge de 3 minutes (30/10/2025, voir :doc:`/PERFORMANCE_REPORT`). Aucun
+   système KoproGo n'est en production. Refs #1049.
+
 .. contents:: Table des matières
    :depth: 2
    :local:

@@ -66,6 +66,17 @@ html_theme_options = {
     'display_version': False,
 }
 
+# Bandeau de statut, affiché en tête de chaque page (rst comme md) par
+# `_templates/layout.html`. Il dit ce que le projet n'est pas encore : tant
+# qu'il est là, aucun chiffre de la doc ne décrit une exploitation réelle.
+statut_projet = (
+    "v0.1.0 pre-release — aucun système en production — "
+    "ASBL en préparation — projections non contractuelles"
+)
+html_context = {
+    'statut_projet': statut_projet,
+}
+
 # Disable local TOC in sidebar
 html_sidebars = {
     '**': ['globaltoc.html', 'searchbox.html']

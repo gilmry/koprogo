@@ -31,11 +31,11 @@ Hypothèses de Base
 
 - **VPS testé**: 1 vCPU / 2GB RAM @ 8€/mois (mentionné comme "d2-2" dans docs)
 - **VPS équivalent 2025**: **s1-2** (1 vCore, 2GB RAM) @ ~6€/mois HT
-- **Throughput mesuré**: 287 req/s
+- **Throughput mesuré**: 287 req/s (test de charge de 3 minutes, 30/10/2025)
 - **P99 latency**: 752ms (objectif réaliste: < 1s)
 - **Capacité multi-tenant**: 2,000-3,000 copropriétés par VPS
-- **CO₂/requête**: 0.12g
-- **Taux de succès**: 99.74%
+- **CO₂/requête**: estimation réseau, non mesurée
+- **Taux de succès**: voir PERFORMANCE_REPORT (taux du test de charge, pas une disponibilité)
 
 **Prix OVH 2025** (✅ VALIDÉ - Recherche web Nov 2025):
 
@@ -194,7 +194,7 @@ Bilan Financier
 Impact Écologique
 ~~~~~~~~~~~~~~~~~
 
-Basé sur 0.12g CO₂/req (PERFORMANCE_REPORT):
+Projection basée sur l'estimation réseau de 0.12g CO₂/req (PERFORMANCE_REPORT, non mesurée) :
 
 - **Requêtes/jour** (estimation 100 req/copro/jour): 4,000 req/jour
 - **CO₂ cloud annuel**: 4,000 × 365 × 0.12g = **175kg CO₂/an**
@@ -770,14 +770,14 @@ Attractivité Investisseurs/Subsides
 **Arguments écologiques**:
 
 - **-840 tonnes CO₂/an** à 5,000 copros (dépassement KPI +57%)
-- 0.12g CO₂/req (96× moins que solutions actuelles)
+- CO₂/req : estimation réseau, non mesurée
 - Infrastructure mutualisée optimisée (VPS 1 vCPU / 2GB RAM)
 
 **Arguments sociétaux**:
 
 - Tarification dégressive (1€ → 0.10€) = **-90% réduction**
 - Opensource (AGPL-3.0)
-- Souveraineté des données (RGPD compliant)
+- Souveraineté des données (conçue pour le RGPD)
 - **100,000 personnes impactées** à 5,000 copros
 
 📋 Recommandations

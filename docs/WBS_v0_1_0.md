@@ -1207,7 +1207,7 @@ que sur un seul.
 dossier complet, clore le mandat, ouvrir celui du cabinet B. B voit tout, A ne voit
 plus rien. C'est la traduction technique de l'Art. 3.89 § 5, 7°.
 
-### ⚠️ E2E : ne jamais viser `http://localhost` nu
+### ⚠️ E2E : ne jamais viser le port 80 de l'hôte (la démo)
 
 L'instruction précédente de ce document disait
 `PLAYWRIGHT_BASE_URL=http://localhost`. **Elle est fausse depuis l'ADR 0050**,

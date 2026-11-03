@@ -449,7 +449,7 @@ LIMIT 10;
 
 ## Summary
 
-The JWT refresh token implementation is **production-ready** with:
+The JWT refresh token implementation is **complete and tested**, but not yet run in production (v0.1.0 pre-release), with:
 
 - ✅ Secure token rotation (one-time use)
 - ✅ Database-backed revocation (instant)

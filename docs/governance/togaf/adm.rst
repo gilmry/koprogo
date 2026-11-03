@@ -14,7 +14,7 @@ TOGAF ADM pour KoproGo ASBL
 Introduction
 ============
 
-Ce document adapte le **TOGAF Architecture Development Method (ADM)** au contexte spécifique de KoproGo, une ASBL belge développant une plateforme open-source de gestion de copropriété.
+Ce document adapte le **TOGAF Architecture Development Method (ADM)** au contexte spécifique de KoproGo, un projet d'ASBL (constitution prévue au Jalon 3) développant une plateforme open-source de gestion de copropriété.
 
 L'ADM fournit un cadre itératif pour développer et gouverner l'architecture d'entreprise, adapté ici pour une organisation à but non lucratif avec des contraintes écologiques, financières et communautaires strictes.
 
@@ -26,7 +26,7 @@ Avant d'appliquer l'ADM, nous définissons nos principes architecturaux non nég
 Principes techniques
 --------------------
 
-1. **Performance écologique** : < 0,12g CO₂/requête (96% réduction vs marché)
+1. **Performance écologique** : CO₂/requête mesuré et publié (aujourd'hui une estimation réseau)
 2. **Latence P99** : < 5ms (objectif de performance)
 3. **Open Source** : Licence AGPL-3.0 pour tout le code
 4. **Souveraineté des données** : Hébergement Europe (OVH Cloud)
@@ -59,7 +59,7 @@ Définir le cadre organisationnel et les principes de gouvernance avant d'entame
 Contexte organisationnel
 -------------------------
 
-**Statut juridique** : ASBL belge (Association Sans But Lucratif)
+**Statut juridique** : ASBL en préparation (constitution prévue au Jalon 3)
 
 **Évolution gouvernance** :
 
@@ -135,7 +135,7 @@ Les copropriétés belges et européennes utilisent des solutions obsolètes (Ex
 
 **Solution KoproGo** :
 
-Une plateforme SaaS open-source, écologique (0,12g CO₂/req), abordable (5€/mois), et démocratique (1 copropriété = 1 voix).
+Une plateforme SaaS open-source, écologique (sobriété visée), abordable (5€/mois), et démocratique (1 copropriété = 1 voix).
 
 Objectifs métier (Business Goals)
 ----------------------------------
@@ -184,7 +184,7 @@ Contraintes architecturales
 
 **Écologiques** :
 
-- < 0,12g CO₂/requête (objectif validé : 0,12g @ 287 req/s)
+- CO₂/requête à mesurer (l'estimation réseau d'octobre 2025 n'est pas une mesure)
 - Infrastructure minimale (VPS → K3s → K8s progressif)
 
 **Réglementaires** :
@@ -456,7 +456,7 @@ Performance validée (rapport 2025-01-14)
 - **Latency P99** : 752ms (< 1s, objectif atteint)
 - **Throughput** : 287 req/s soutenu (> 100 copropriétés simultanées)
 - **Memory** : 128MB utilisés / 2GB disponibles (5%)
-- **CO₂** : 0,12g/requête (96% réduction vs marché)
+- **CO₂** : estimation réseau par requête, non mesurée
 
 **Optimisations futures** :
 
@@ -522,7 +522,7 @@ Opportunités identifiées
      - 200MB
      - 300MB
    * - Écologie
-     - 0,12g CO₂/req
+     - estimation réseau, non mesurée
      - 0,18g
      - 0,25g
    * - Courbe apprentissage
@@ -679,7 +679,7 @@ Critères de validation architecture
 3. ✅ Tests unitaires + intégration (> 90% coverage)
 4. ✅ Documentation Sphinx mise à jour
 5. ✅ Performance P99 < 5ms validée (benchmarks)
-6. ✅ Impact CO₂ mesuré (< 0,12g/req)
+6. ✅ Impact CO₂ mesuré et publié
 7. ✅ Code review approuvé (2+ reviewers)
 8. ✅ Déployé en staging (smoke tests OK)
 

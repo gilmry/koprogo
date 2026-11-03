@@ -471,7 +471,7 @@ Un increment est **Done** si et seulement si :
 **Performance** :
 
 14. ✅ Benchmarks passent (P99 < 5ms)
-15. ✅ Impact CO₂ mesuré (< 0,12g/req)
+15. ✅ Impact CO₂ mesuré et publié
 16. ✅ Load tests OK (> 287 req/s)
 
 **Déploiement** :
