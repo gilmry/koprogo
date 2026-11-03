@@ -441,15 +441,25 @@ Sécurité
 Multi-Tenancy
 -------------
 
-Isolation données via ``organization_id`` :
+L'**ACP** (association des copropriétaires) est l'entité titulaire des
+données ; le syndic y reçoit un mandat révocable. État du code au 03/11/2026 :
 
-.. code-block:: sql
+* ``buildings.acp_id`` est obligatoire ; ``buildings.organization_id`` a été
+  supprimée (migration ``20260601040000``).
+* ``acps.organization_id`` désigne le cabinet syndic qui gère l'ACP. Elle est
+  nullable et passe à ``NULL`` si l'organisation est supprimée.
+* L'isolation est faite **dans l'application** : les handlers appellent les
+  gardes ``verify_*_org_access`` (``middleware/scope_guard.rs``), qui
+  comparent l'organisation de l'appelant à celle de l'ACP de la ressource.
+* Une vingtaine de tables métier sont encore rattachées à l'organisation
+  plutôt qu'à l'ACP (lot 4 de la v0.1.0).
+* L'accès par mandat actif et le refus par défaut (ADR 0053) ne sont pas
+  encore implémentés (lot 3).
 
-   -- Toutes les requêtes filtrent par organization_id
-   SELECT * FROM buildings
-   WHERE organization_id = $1;  -- Extrait du JWT
-
-**Row-Level Security (RLS)** PostgreSQL - à implémenter.
+**Row-Level Security (RLS)** : **désactivé**. Des politiques avaient été
+créées puis retirées par la migration ``20250103000002`` ; aucune table métier
+n'est protégée par RLS aujourd'hui. Un RLS par ACP est prévu (lot 5, à
+planifier).
 
 Migrations Base de Données
 ---------------------------
@@ -481,12 +491,12 @@ Migrations Base de Données
        country VARCHAR(100) NOT NULL,
        total_units INTEGER NOT NULL CHECK (total_units > 0),
        construction_year INTEGER,
-       organization_id UUID REFERENCES organizations(id),
+       acp_id UUID NOT NULL REFERENCES acps(id),
        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
    );
 
-   CREATE INDEX idx_buildings_org ON buildings(organization_id);
+   CREATE INDEX idx_buildings_acp ON buildings(acp_id);
    CREATE INDEX idx_buildings_city ON buildings(city);
 
 Déploiement

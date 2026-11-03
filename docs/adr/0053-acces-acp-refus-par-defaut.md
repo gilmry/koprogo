@@ -1,6 +1,6 @@
 # ADR 0053 : l'accès d'un collaborateur à une ACP est refusé par défaut
 
-- **Status**: Accepted (tranché par @gilmry le 2026-09-12)
+- **Status**: Accepted (tranché par @gilmry le 2026-09-12) — non implémentée au 29/10/2026 (lot 3 de la v0.1.0)
 - **Date**: 2026-09-12
 - **Track**: Security / Software
 - **Authors**: @gilmry (décision) + Claude Opus 5 (rédaction)
