@@ -79,6 +79,7 @@
     },
     "@babel/plugin-transform-modules-systemjs": "^7.29.7",
     "js-yaml": "^4.3.1",
-    "zod": "^4.6.6"
+    "zod": "^4.6.6",
+    "postcss-selector-parser": "^6.1.5"
   }
 }
