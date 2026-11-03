@@ -225,7 +225,7 @@ Soumettre pour approbation
 La dépense passe de ``Draft`` à ``PendingApproval`` et devient **non modifiable**.
 
 Approuver/rejeter (rôle conseil de copropriété)
-------------------------------------------
+-----------------------------------------------
 
 **Approuver** :
 
