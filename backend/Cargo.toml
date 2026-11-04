@@ -42,7 +42,7 @@ bcrypt = "0.19"
 jsonwebtoken = { version = "11.0", default-features = false, features = ["aws_lc_rs"] }
 hex = "0.4"
 sha2 = "0.10"
-hmac = "0.12"
+hmac = "0.13"
 md5 = "0.8"
 
 # Two-Factor Authentication (2FA)
