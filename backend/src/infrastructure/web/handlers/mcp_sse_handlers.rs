@@ -16,6 +16,7 @@
 ///   4. Client calls `tools/call` → tool executes and returns result
 ///
 /// Reference: https://modelcontextprotocol.io/specification/2024-11-05/basic/transports/
+use crate::domain::copropriete::{MajorityType, NatureDeDecision};
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use actix_web::{
@@ -330,8 +331,8 @@ fn get_mcp_tools() -> Vec<McpTool> {
                 "properties": {
                     "decision_type": {
                         "type": "string",
-                        "enum": ["ordinary", "works_simple", "works_heavy", "statute_change", "unanimity"],
-                        "description": "Type de décision (AGO, travaux simples, travaux lourds, modification statuts, unanimité)"
+                        "enum": NATURES_MCP.iter().map(|(code, ..)| *code).collect::<Vec<_>>(),
+                        "description": "Nature de la décision selon l'Art. 3.88 CC. Une nature inconnue relève du droit commun (majorité absolue)."
                     },
                     "building_id": {
                         "type": "string",
@@ -402,7 +403,7 @@ fn get_mcp_tools() -> Vec<McpTool> {
         },
         McpTool {
             name: "travaux_qualifier".to_string(),
-            description: "Qualifie des travaux comme urgents/non-urgents et détermine la majorité requise selon montant et contexte (Art. 3.88-3.89 CC).".to_string(),
+            description: "Qualifie des travaux (conservatoires si urgents, sinon travaux aux parties communes) et donne la majorité requise selon l'Art. 3.88 CC. Le montant n'entre pas dans la majorité.".to_string(),
             input_schema: json!({
                 "type": "object",
                 "properties": {
@@ -423,6 +424,234 @@ fn get_mcp_tools() -> Vec<McpTool> {
             }),
         },
     ]
+}
+
+// ─────────────────────────────────────────────────────────
+// Outils de droit (sans état, testables sans AppState)
+// ─────────────────────────────────────────────────────────
+
+/// Les natures de décision de l'Art. 3.88, telles que le MCP les accepte :
+/// (code d'entrée, nature du domaine, intitulé, base légale).
+///
+/// La majorité n'est jamais écrite ici : elle est dérivée de
+/// `NatureDeDecision::majorite_requise()` (lot 0, S4).
+const NATURES_MCP: [(&str, NatureDeDecision, &str, &str); 18] = {
+    use NatureDeDecision::*;
+    [
+        ("modification_statuts_usage_des_communs", ModificationStatutsUsageDesCommuns,
+         "Modification des statuts portant sur la jouissance, l'usage ou l'administration des parties communes", "Art. 3.88 § 1er, 1°, a"),
+        ("travaux_aux_parties_communes", TravauxAuxPartiesCommunes,
+         "Travaux affectant les parties communes", "Art. 3.88 § 1er, 1°, b"),
+        ("seuil_de_mise_en_concurrence", SeuilDeMiseEnConcurrence,
+         "Montant des marchés à partir duquel la mise en concurrence est obligatoire", "Art. 3.88 § 1er, 1°, c"),
+        ("travaux_privatifs_executes_par_lacp", TravauxPrivatifsExecutesParLacp,
+         "Travaux à des parties privatives exécutés par l'ACP, sur motivation spéciale", "Art. 3.88 § 1er, 1°, d"),
+        ("travaux_imposes_par_la_loi", TravauxImposesParLaLoi,
+         "Travaux imposés par la loi", "Art. 3.88 § 1er, 1°, b, exception"),
+        ("travaux_conservatoires", TravauxConservatoires,
+         "Travaux conservatoires", "Art. 3.88 § 1er, 1°, b, exception"),
+        ("administration_provisoire", AdministrationProvisoire,
+         "Actes d'administration provisoire", "Art. 3.88 § 1er, 1°, b, exception"),
+        ("autre_modification_des_statuts", AutreModificationDesStatuts,
+         "Toute autre modification des statuts, y compris la répartition des charges", "Art. 3.88 § 1er, 2°, a"),
+        ("modification_de_la_destination", ModificationDeLaDestination,
+         "Modification de la destination de l'immeuble ou d'une partie de celui-ci", "Art. 3.88 § 1er, 2°, b"),
+        ("reconstruction_apres_destruction_partielle", ReconstructionApresDestructionPartielle,
+         "Reconstruction ou remise en état après destruction partielle", "Art. 3.88 § 1er, 2°, c"),
+        ("acquisition_de_biens_communs", AcquisitionDeBiensCommuns,
+         "Acquisition de biens immobiliers destinés à devenir communs", "Art. 3.88 § 1er, 2°, d"),
+        ("acte_de_disposition_de_biens_communs", ActeDeDispositionDeBiensCommuns,
+         "Actes de disposition de biens immobiliers communs", "Art. 3.88 § 1er, 2°, e"),
+        ("creation_dassociations_partielles", CreationDassociationsPartielles,
+         "Modification des statuts pour créer des associations partielles", "Art. 3.88 § 1er, 2°, f"),
+        ("division_ou_reunion_de_lots", DivisionOuReunionDeLots,
+         "Division d'un lot ou réunion de plusieurs lots", "Art. 3.88 § 1er, 2°, g"),
+        ("demolition_reconstruction_pour_salubrite_ou_cout", DemolitionReconstructionPourSalubriteOuCout,
+         "Démolition et reconstruction totales pour raisons de salubrité, de sécurité ou de coût excessif de mise en conformité", "Art. 3.88 § 1er, 2°, h"),
+        ("modification_des_quotes_parts", ModificationDesQuotesParts,
+         "Modification de la répartition des quotes-parts de copropriété", "Art. 3.88 § 3"),
+        ("demolition_reconstruction_autre_motif", DemolitionReconstructionAutreMotif,
+         "Démolition et reconstruction totales pour un autre motif", "Art. 3.88 § 3"),
+        ("droit_commun", DroitCommun,
+         "Toute décision que la loi ne soumet pas à une majorité qualifiée", "Art. 3.87 § 8"),
+    ]
+};
+
+/// L'entrée de `NATURES_MCP` pour un code, ou le droit commun s'il est inconnu
+/// (« sauf si la loi exige une majorité qualifiée », Art. 3.87 § 8).
+fn nature_mcp(code: &str) -> (&'static str, NatureDeDecision, &'static str, &'static str) {
+    NATURES_MCP
+        .iter()
+        .copied()
+        .find(|(c, ..)| *c == code)
+        .unwrap_or(NATURES_MCP[NATURES_MCP.len() - 1])
+}
+
+/// L'entrée de `NATURES_MCP` pour une nature du domaine.
+fn entree_de_nature(
+    nature: NatureDeDecision,
+) -> (&'static str, NatureDeDecision, &'static str, &'static str) {
+    NATURES_MCP
+        .iter()
+        .copied()
+        .find(|(_, n, ..)| *n == nature)
+        .unwrap_or(NATURES_MCP[NATURES_MCP.len() - 1])
+}
+
+/// Le seuil en clair, tel que `resolution.rs` le documente.
+fn libelle_majorite(majorite: &MajorityType) -> &'static str {
+    match majorite {
+        MajorityType::Absolute => {
+            "Majorité absolue des voix des copropriétaires présents ou représentés, abstentions exclues"
+        }
+        MajorityType::TwoThirds => {
+            "Deux tiers des voix des copropriétaires présents ou représentés, abstentions exclues"
+        }
+        MajorityType::FourFifths => {
+            "Quatre cinquièmes des voix des copropriétaires présents ou représentés, abstentions exclues"
+        }
+        MajorityType::Unanimity => "Unanimité des voix de tous les copropriétaires",
+    }
+}
+
+/// `legal_search` : recherche par mot-clé dans la base légale statique.
+fn rechercher_droit(arguments: &Value) -> Value {
+    let query = arguments
+        .get("query")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_lowercase();
+
+    // Base légale statique. Les entrées de majorité sont dérivées de
+    // `majorites.rs`, jamais écrites à la main (lot 0, S4).
+    let mut legal_base = vec![
+        json!({"code": "AG01", "article": "Art. 3.87 §1 CC", "title": "Convocation AG ordinaire", "content": "Le syndic convoque l'AG au moins 15 jours avant la date fixée", "category": "Convocation"}),
+        json!({"code": "AG02", "article": "Art. 3.87 §3 CC", "title": "Deuxième convocation", "content": "À défaut de quorum, une seconde AG peut être convoquée 15 jours plus tard", "category": "Convocation"}),
+        json!({"code": "AG03", "article": "Art. 3.87 §5 CC", "title": "Quorum légal", "content": "L'AG ne délibère valablement que si plus de la moitié des quotes-parts sont présentes ou représentées", "category": "Quorum"}),
+        json!({"code": "TRV01", "article": "Art. 3.89 §5 CC", "title": "Travaux conservatoires", "content": "Syndic peut autoriser travaux d'urgence/conservatoires sans AG préalable", "category": "Travaux"}),
+        json!({"code": "FIN01", "article": "Art. 3.90 CC", "title": "Appel de fonds", "content": "Appel de fonds = demande de contribution supplémentaire pour charges extraordinaires", "category": "Finances"}),
+    ];
+    legal_base.extend(NATURES_MCP.iter().map(|(code, nature, intitule, base)| {
+        let majorite = nature.majorite_requise();
+        json!({
+            "code": format!("MAJ-{code}"),
+            "article": base,
+            "title": intitule,
+            "content": format!("{intitule} : {}.", libelle_majorite(&majorite).to_lowercase()),
+            "category": "Majorité",
+            "nature": code,
+            "majorite_requise": majorite,
+        })
+    }));
+
+    // Filter by query
+    let results: Vec<_> = legal_base
+        .iter()
+        .filter(|item| {
+            let title = item
+                .get("title")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_lowercase();
+            let content = item
+                .get("content")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_lowercase();
+            let code = item
+                .get("code")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_lowercase();
+            title.contains(&query) || content.contains(&query) || code.contains(&query)
+        })
+        .cloned()
+        .collect();
+
+    json!({"count": results.len(), "results": results})
+}
+
+/// `majority_calculator` : la majorité requise pour une décision d'AG.
+fn calculer_majorite(arguments: &Value) -> Value {
+    let demande = arguments
+        .get("decision_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let (code, nature, intitule, base) = nature_mcp(demande);
+    let majorite = nature.majorite_requise();
+    let mut result = json!({
+        "nature": code,
+        "intitule": intitule,
+        "majorite_requise": majorite,
+        "seuil": libelle_majorite(&majorite),
+        "base_legale": base,
+    });
+    if code != demande {
+        result["remarque"] = json!(format!(
+            "Nature « {demande} » non reconnue : droit commun appliqué (Art. 3.87 § 8)."
+        ));
+    }
+    result
+}
+
+/// `travaux_qualifier` : qualification de travaux et majorité requise.
+fn qualifier_travaux(arguments: &Value) -> Result<Value, RpcError> {
+    let description = arguments
+        .get("description")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| RpcError {
+            code: ErrorCode::INVALID_PARAMS,
+            message: "description is required".to_string(),
+            data: None,
+        })?;
+
+    let estimated_amount_eur = arguments
+        .get("estimated_amount_eur")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0);
+
+    let is_emergency = arguments
+        .get("is_emergency")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    let nature = if is_emergency {
+        NatureDeDecision::TravauxConservatoires
+    } else {
+        NatureDeDecision::TravauxAuxPartiesCommunes
+    };
+    let (code, _, intitule, base) = entree_de_nature(nature);
+    let majorite = nature.majorite_requise();
+    let mut result = json!({
+        "description": description,
+        "amount_eur": format!("{:.2}", estimated_amount_eur),
+        "nature": code,
+        "qualification": intitule,
+        "majorite_requise": majorite,
+        "seuil": libelle_majorite(&majorite),
+        "base_legale": base,
+        "mise_en_concurrence": "Obligatoire au-delà du montant des marchés que l'AG a fixé aux deux tiers (Art. 3.88 § 1er, 1°, c). La loi ne fixe pas ce montant.",
+        "exceptions": "Travaux imposés par la loi et actes d'administration provisoire : majorité absolue (Art. 3.88 § 1er, 1°, b). Interroger majority_calculator avec la nature exacte.",
+    });
+    if is_emergency {
+        result["syndic_can_act_alone"] = json!(true);
+        result["legal_basis"] = json!("Art. 3.89 §5 2° CC");
+    } else {
+        result["requires_ag_approval"] = json!(true);
+    }
+    Ok(result)
+}
+
+/// Enveloppe une valeur JSON dans le bloc texte d'un `ToolResult`.
+fn resultat_texte(result: &Value) -> ToolResult {
+    let text = serde_json::to_string_pretty(result).unwrap_or_else(|_| "{}".to_string());
+    ToolResult {
+        content: vec![ContentBlock {
+            content_type: "text".to_string(),
+            text,
+        }],
+        is_error: None,
+    }
 }
 
 // ─────────────────────────────────────────────────────────
@@ -939,129 +1168,9 @@ async fn dispatch_tool(
             }
         }
 
-        "legal_search" => {
-            let query = arguments
-                .get("query")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_lowercase();
+        "legal_search" => Ok(resultat_texte(&rechercher_droit(arguments))),
 
-            // Static legal knowledge base — hardcoded Belgian copropriété references
-            let legal_base = vec![
-                json!({"code": "AG01", "article": "Art. 3.87 §1 CC", "title": "Convocation AG ordinaire", "content": "Le syndic convoque l'AG au moins 15 jours avant la date fixée", "category": "Convocation"}),
-                json!({"code": "AG02", "article": "Art. 3.87 §3 CC", "title": "Deuxième convocation", "content": "À défaut de quorum, une seconde AG peut être convoquée 15 jours plus tard", "category": "Convocation"}),
-                json!({"code": "AG03", "article": "Art. 3.87 §5 CC", "title": "Quorum légal", "content": "L'AG ne délibère valablement que si plus de la moitié des quotes-parts sont présentes ou représentées", "category": "Quorum"}),
-                json!({"code": "MAJ01", "article": "Art. 3.88 §1 CC", "title": "Majorité simple", "content": "Majorité simple = 50%+1 des votes exprimés", "category": "Majorité"}),
-                json!({"code": "MAJ02", "article": "Art. 3.88 §2 1° CC", "title": "Majorité absolue pour travaux", "content": "Travaux non-urgents > 5000€ requièrent majorité absolue (>50% de tous les copropriétaires)", "category": "Majorité"}),
-                json!({"code": "MAJ03", "article": "Art. 3.88 §2 4° CC", "title": "Majorité 2/3 pour travaux lourds", "content": "Travaux très importants (structure, sécurité) requièrent 2/3 des tantièmes", "category": "Majorité"}),
-                json!({"code": "MAJ04", "article": "Art. 3.88 §3 CC", "title": "Modification statuts", "content": "Modification de statuts requiert 4/5 des tantièmes", "category": "Majorité"}),
-                json!({"code": "TRV01", "article": "Art. 3.89 §5 CC", "title": "Travaux conservatoires", "content": "Syndic peut autoriser travaux d'urgence/conservatoires sans AG préalable", "category": "Travaux"}),
-                json!({"code": "TRV02", "article": "Art. 3.88 §2 1° CC", "title": "Trois devis obligatoires", "content": "Pour travaux > 5000€, le syndic doit obtenir au minimum 3 devis avant AG", "category": "Travaux"}),
-                json!({"code": "FIN01", "article": "Art. 3.90 CC", "title": "Appel de fonds", "content": "Appel de fonds = demande de contribution supplémentaire pour charges extraordinaires", "category": "Finances"}),
-            ];
-
-            // Filter by query
-            let results: Vec<_> = legal_base
-                .iter()
-                .filter(|item| {
-                    let title = item
-                        .get("title")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_lowercase();
-                    let content = item
-                        .get("content")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_lowercase();
-                    let code = item
-                        .get("code")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_lowercase();
-                    title.contains(&query) || content.contains(&query) || code.contains(&query)
-                })
-                .cloned()
-                .collect();
-
-            let text =
-                serde_json::to_string_pretty(&json!({"count": results.len(), "results": results}))
-                    .unwrap_or_else(|_| "{}".to_string());
-            Ok(ToolResult {
-                content: vec![ContentBlock {
-                    content_type: "text".to_string(),
-                    text,
-                }],
-                is_error: None,
-            })
-        }
-
-        "majority_calculator" => {
-            let decision_type = arguments
-                .get("decision_type")
-                .and_then(|v| v.as_str())
-                .unwrap_or("ordinary");
-
-            let result = match decision_type {
-                "ordinary" => json!({
-                    "decision_type": "Ordinary",
-                    "majority": "Simple",
-                    "threshold": "50%+1 des votes exprimés",
-                    "percentage": 50.5,
-                    "article": "Art. 3.88 §1 CC",
-                    "examples": ["Approbation budget", "Approbation charges", "Élection syndic"]
-                }),
-                "works_simple" => json!({
-                    "decision_type": "Works (simple)",
-                    "majority": "Absolute",
-                    "threshold": "Majorité absolue (>50% de tous les copropriétaires)",
-                    "percentage": 50.1,
-                    "article": "Art. 3.88 §2 1° CC",
-                    "examples": ["Travaux ordinaires > 5000€", "Amélioration commune"],
-                    "requirements": ["Minimum 3 devis", "Approbation en AG"]
-                }),
-                "works_heavy" => json!({
-                    "decision_type": "Works (heavy)",
-                    "majority": "Two-thirds",
-                    "threshold": "2/3 des tantièmes",
-                    "percentage": 66.7,
-                    "article": "Art. 3.88 §2 4° CC",
-                    "examples": ["Travaux de structure", "Remplacement toit/façade", "Travaux de sécurité"],
-                    "requirements": ["Étude technique", "Plusieurs devis", "Enquête copropriétaires"]
-                }),
-                "statute_change" => json!({
-                    "decision_type": "Statute change",
-                    "majority": "Four-fifths",
-                    "threshold": "4/5 des tantièmes",
-                    "percentage": 80.0,
-                    "article": "Art. 3.88 §3 CC",
-                    "examples": ["Modification règlement", "Changement gestion syndicale"]
-                }),
-                "unanimity" => json!({
-                    "decision_type": "Special",
-                    "majority": "Unanimity",
-                    "threshold": "Unanimité de tous les copropriétaires",
-                    "percentage": 100.0,
-                    "article": "Art. 3.88 §4 CC",
-                    "examples": ["Division/fusion lots"]
-                }),
-                _ => json!({
-                    "decision_type": "Unknown",
-                    "majority": "Simple",
-                    "threshold": "50%+1",
-                    "article": "Art. 3.88 §1 CC"
-                }),
-            };
-
-            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
-            Ok(ToolResult {
-                content: vec![ContentBlock {
-                    content_type: "text".to_string(),
-                    text,
-                }],
-                is_error: None,
-            })
-        }
+        "majority_calculator" => Ok(resultat_texte(&calculer_majorite(arguments))),
 
         "list_owners_of_building" => {
             let building_id_str = arguments
@@ -1242,80 +1351,7 @@ async fn dispatch_tool(
             }
         }
 
-        "travaux_qualifier" => {
-            let description = arguments
-                .get("description")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| RpcError {
-                    code: ErrorCode::INVALID_PARAMS,
-                    message: "description is required".to_string(),
-                    data: None,
-                })?;
-
-            let estimated_amount_eur = arguments
-                .get("estimated_amount_eur")
-                .and_then(|v| v.as_f64())
-                .unwrap_or(0.0);
-
-            let is_emergency = arguments
-                .get("is_emergency")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false);
-
-            let result = if is_emergency {
-                json!({
-                    "description": description,
-                    "amount_eur": format!("{:.2}", estimated_amount_eur),
-                    "qualification": "Travaux d'urgence / Conservatoires",
-                    "syndic_can_act_alone": true,
-                    "requires_ag_approval": false,
-                    "legal_basis": "Art. 3.89 §5 2° CC",
-                    "requirements": [
-                        "Documentation du caractère urgent",
-                        "Justification conservatoire",
-                        "Rapport aux copropriétaires postérieurement"
-                    ]
-                })
-            } else if estimated_amount_eur > 5000.0 {
-                json!({
-                    "description": description,
-                    "amount_eur": format!("{:.2}", estimated_amount_eur),
-                    "qualification": "Travaux non-urgents > 5000€",
-                    "syndic_can_act_alone": false,
-                    "requires_ag_approval": true,
-                    "majority_required": "Majorité absolue (Art. 3.88 §2 1° CC)",
-                    "legal_requirements": [
-                        "Minimum 3 devis concurrentiels",
-                        "Rapport comparatif syndic",
-                        "Vote en assemblée générale",
-                        "Delai: approbation dans 3 mois après vote"
-                    ],
-                    "three_quotes_mandatory": true
-                })
-            } else {
-                json!({
-                    "description": description,
-                    "amount_eur": format!("{:.2}", estimated_amount_eur),
-                    "qualification": "Travaux ordinaires / Entretien",
-                    "syndic_can_act_alone": true,
-                    "requires_ag_approval": false,
-                    "legal_basis": "Art. 3.89 §5 CC",
-                    "requirements": [
-                        "Entrée budgétaire 'Entretien/Réparations'",
-                        "Documentation des trois devis souhaitable"
-                    ]
-                })
-            };
-
-            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
-            Ok(ToolResult {
-                content: vec![ContentBlock {
-                    content_type: "text".to_string(),
-                    text,
-                }],
-                is_error: None,
-            })
-        }
+        "travaux_qualifier" => qualifier_travaux(arguments).map(|r| resultat_texte(&r)),
 
         _ => Err(RpcError {
             code: ErrorCode::METHOD_NOT_FOUND,
@@ -1706,6 +1742,216 @@ pub async fn mcp_legal_index_endpoint(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ─── Lot 0, story S4 : le droit du MCP vient de `majorites.rs` ────────
+
+    use crate::domain::copropriete::NatureDeDecision;
+
+    /// Le contrat d'entrée de `majority_calculator` : un code par nature de
+    /// l'Art. 3.88. Le `match` est exhaustif : une nature ajoutée au domaine
+    /// ne compile pas tant qu'elle n'a pas de code ici.
+    fn code_de_nature(nature: NatureDeDecision) -> &'static str {
+        use NatureDeDecision::*;
+        match nature {
+            ModificationStatutsUsageDesCommuns => "modification_statuts_usage_des_communs",
+            TravauxAuxPartiesCommunes => "travaux_aux_parties_communes",
+            SeuilDeMiseEnConcurrence => "seuil_de_mise_en_concurrence",
+            TravauxPrivatifsExecutesParLacp => "travaux_privatifs_executes_par_lacp",
+            TravauxImposesParLaLoi => "travaux_imposes_par_la_loi",
+            TravauxConservatoires => "travaux_conservatoires",
+            AdministrationProvisoire => "administration_provisoire",
+            AutreModificationDesStatuts => "autre_modification_des_statuts",
+            ModificationDeLaDestination => "modification_de_la_destination",
+            ReconstructionApresDestructionPartielle => "reconstruction_apres_destruction_partielle",
+            AcquisitionDeBiensCommuns => "acquisition_de_biens_communs",
+            ActeDeDispositionDeBiensCommuns => "acte_de_disposition_de_biens_communs",
+            CreationDassociationsPartielles => "creation_dassociations_partielles",
+            DivisionOuReunionDeLots => "division_ou_reunion_de_lots",
+            DemolitionReconstructionPourSalubriteOuCout => {
+                "demolition_reconstruction_pour_salubrite_ou_cout"
+            }
+            ModificationDesQuotesParts => "modification_des_quotes_parts",
+            DemolitionReconstructionAutreMotif => "demolition_reconstruction_autre_motif",
+            DroitCommun => "droit_commun",
+        }
+    }
+
+    fn toutes_les_natures() -> [NatureDeDecision; 18] {
+        use NatureDeDecision::*;
+        [
+            ModificationStatutsUsageDesCommuns,
+            TravauxAuxPartiesCommunes,
+            SeuilDeMiseEnConcurrence,
+            TravauxPrivatifsExecutesParLacp,
+            TravauxImposesParLaLoi,
+            TravauxConservatoires,
+            AdministrationProvisoire,
+            AutreModificationDesStatuts,
+            ModificationDeLaDestination,
+            ReconstructionApresDestructionPartielle,
+            AcquisitionDeBiensCommuns,
+            ActeDeDispositionDeBiensCommuns,
+            CreationDassociationsPartielles,
+            DivisionOuReunionDeLots,
+            DemolitionReconstructionPourSalubriteOuCout,
+            ModificationDesQuotesParts,
+            DemolitionReconstructionAutreMotif,
+            DroitCommun,
+        ]
+    }
+
+    fn majorite_du_domaine(nature: NatureDeDecision) -> Value {
+        serde_json::to_value(nature.majorite_requise()).unwrap()
+    }
+
+    /// Seuils inventés que le MCP affirmait comme légaux (relevé du 03/11).
+    const SEUILS_INVENTES: [&str; 7] = [
+        "trois devis",
+        "3 devis",
+        "5000",
+        "5 000",
+        "5,000",
+        "50 000",
+        "50,000",
+    ];
+
+    fn sans_seuil_invente(contexte: &str, texte: &str) {
+        let bas = texte.to_lowercase();
+        for seuil in SEUILS_INVENTES {
+            assert!(!bas.contains(seuil), "{contexte} affirme « {seuil} »");
+        }
+    }
+
+    #[test]
+    fn happy_majority_calculator_suit_majorites_rs() {
+        for nature in toutes_les_natures() {
+            let code = code_de_nature(nature);
+            let r = calculer_majorite(&json!({ "decision_type": code }));
+            assert_eq!(r["nature"], json!(code), "{code}");
+            assert_eq!(r["majorite_requise"], majorite_du_domaine(nature), "{code}");
+        }
+    }
+
+    #[test]
+    fn happy_le_schema_du_calculateur_annonce_toutes_les_natures() {
+        let outils = get_mcp_tools();
+        let calc = outils
+            .iter()
+            .find(|t| t.name == "majority_calculator")
+            .unwrap();
+        let annonce = &calc.input_schema["properties"]["decision_type"]["enum"];
+        for nature in toutes_les_natures() {
+            let code = code_de_nature(nature);
+            assert!(
+                annonce.as_array().unwrap().contains(&json!(code)),
+                "{code} absent du schéma"
+            );
+        }
+    }
+
+    #[test]
+    fn security_mcp_ne_contredit_pas_majorites_rs() {
+        // 1. Le calculateur, nature par nature.
+        for nature in toutes_les_natures() {
+            let r = calculer_majorite(&json!({ "decision_type": code_de_nature(nature) }));
+            assert_eq!(r["majorite_requise"], majorite_du_domaine(nature));
+        }
+        // 2. Toute entrée de `legal_search` qui parle de majorité porte sa
+        //    nature, et la majorité qu'elle cite est celle du domaine.
+        let base = rechercher_droit(&json!({ "query": "" }));
+        let entrees = base["results"].as_array().unwrap();
+        assert!(!entrees.is_empty());
+        for e in entrees {
+            let parle_de_majorite = e["category"] == json!("Majorité")
+                || e.get("majorite_requise").is_some()
+                || e["content"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_lowercase()
+                    .contains("majorité");
+            if !parle_de_majorite {
+                continue;
+            }
+            let code = e["nature"]
+                .as_str()
+                .unwrap_or_else(|| panic!("{} cite une majorité sans nature", e["code"]));
+            let nature = toutes_les_natures()
+                .into_iter()
+                .find(|n| code_de_nature(*n) == code)
+                .unwrap_or_else(|| panic!("nature inconnue {code}"));
+            assert_eq!(e["majorite_requise"], majorite_du_domaine(nature), "{code}");
+        }
+        // 3. `travaux_qualifier` : conservatoires en urgence, parties communes
+        //    sinon, quel que soit le montant.
+        let urgent = qualifier_travaux(&json!({
+            "description": "fuite de toiture",
+            "estimated_amount_eur": 12000.0,
+            "is_emergency": true
+        }))
+        .unwrap();
+        assert_eq!(
+            urgent["majorite_requise"],
+            majorite_du_domaine(NatureDeDecision::TravauxConservatoires)
+        );
+        for montant in [800.0, 7500.0, 120000.0] {
+            let r = qualifier_travaux(&json!({
+                "description": "ravalement",
+                "estimated_amount_eur": montant,
+                "is_emergency": false
+            }))
+            .unwrap();
+            assert_eq!(
+                r["majorite_requise"],
+                majorite_du_domaine(NatureDeDecision::TravauxAuxPartiesCommunes),
+                "{montant} €"
+            );
+        }
+    }
+
+    #[test]
+    fn edge_nature_inconnue_donne_le_droit_commun() {
+        let droit_commun = majorite_du_domaine(NatureDeDecision::DroitCommun);
+        for entree in [
+            json!({ "decision_type": "nature_qui_nexiste_pas" }),
+            json!({ "decision_type": "" }),
+            json!({}),
+        ] {
+            let r = calculer_majorite(&entree);
+            assert_eq!(r["nature"], json!("droit_commun"), "{entree}");
+            assert_eq!(r["majorite_requise"], droit_commun, "{entree}");
+        }
+    }
+
+    #[test]
+    fn negative_aucune_reponse_ne_pose_de_seuil_invente() {
+        for nature in toutes_les_natures() {
+            let r = calculer_majorite(&json!({ "decision_type": code_de_nature(nature) }));
+            sans_seuil_invente("majority_calculator", &r.to_string());
+        }
+        sans_seuil_invente(
+            "legal_search",
+            &rechercher_droit(&json!({ "query": "" })).to_string(),
+        );
+        for (montant, urgence) in [(800.0, false), (7500.0, false), (120000.0, true)] {
+            let r = qualifier_travaux(&json!({
+                "description": "travaux",
+                "estimated_amount_eur": montant,
+                "is_emergency": urgence
+            }))
+            .unwrap();
+            // Le montant saisi est renvoyé tel quel : on l'écarte avant de chercher.
+            let mut r = r;
+            r.as_object_mut().unwrap().remove("amount_eur");
+            sans_seuil_invente("travaux_qualifier", &r.to_string());
+        }
+        for outil in get_mcp_tools() {
+            sans_seuil_invente(&outil.name, &outil.description);
+        }
+        sans_seuil_invente(
+            "mcp_system_prompt.md",
+            include_str!("../../mcp_system_prompt.md"),
+        );
+    }
 
     #[test]
     fn test_mcp_tools_have_unique_names() {
