@@ -1,6 +1,6 @@
 # ADR 0056 : un plan comptable par ACP
 
-- **Status**: Proposed (à trancher par @gilmry)
+- **Status**: Accepted (option 1 ; tranché par @gilmry le 2026-11-04)
 - **Date**: 2026-10-31
 - **Track**: Software / Finance
 - **Authors**: @gilmry (décision) + Claude (rédaction)

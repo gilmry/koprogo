@@ -17,6 +17,9 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
+- **Dernière mise à jour** : 2026-11-04 (par : Claude — **les six 🔴 de l'ACP au
+  centre tranchés par le PO** : ADR 0055 à 0060 en Accepted, option recommandée
+  partout ; reste ouverte la base légale RGPD de l'identité partagée (ADR 0057))
 - **Dernière mise à jour** : 2026-10-31 (par : Claude — **six 🔴 posés, tous du
   ressort du PO** : la lettre de mission « l'ACP au centre » (#1046) fixe la
   v0.1.0 sur trois critères prouvés en CI, et six décisions de modèle la
@@ -62,11 +65,16 @@ vingtaine de tables dont le plan comptable, ADR 0053 non appliquée,
 Chaque 🔴 est préparé, pas tranché. Le PO signe l'ADR ; le lot qui en dépend
 n'ouvre pas avant.
 
+**Tranché le 2026-11-04 par @gilmry** : les six ADR passent en Accepted avec
+l'option recommandée. Seul reste ouvert, et réservé au PO, le choix de la base
+légale RGPD de l'identité partagée (ADR 0057 : contrat avec l'ACP ou intérêt
+légitime). Les lots 2 à 5 peuvent ouvrir dès que leur story est signée.
+
 | 🔴 | Question | ADR | Recommandation de la rédaction | Bloque |
 |---|---|---|---|---|
 | 1 | Sort de `acps.organization_id` | [0055](docs/adr/0055-acps-organization-id-cache-du-mandat.md) | cache dérivé du mandat actif, jamais écrit directement, puis suppression | lot 2 |
 | 2 | Plan comptable | [0056](docs/adr/0056-plan-comptable-par-acp.md) | un plan par ACP, clé `(acp_id, code)`, gabarit PCMN en table de référence | lot 4 |
-| 3 | Copropriétaires | [0057](docs/adr/0057-coproprietaire-personne-globale.md) | personne globale reliée par `unit_owners` ; le responsable de traitement de l'identité reste à trancher | lots 3 et 4 |
+| 3 | Copropriétaires | [0057](docs/adr/0057-coproprietaire-personne-globale.md) | personne globale reliée par `unit_owners` ; ACP responsable de ce qui la concerne, exploitant de l'identité partagée ; **base légale à choisir** | lots 3 et 4 |
 | 4 | Suppression d'une organisation | [0058](docs/adr/0058-suppression-organisation-restrict.md) | `RESTRICT` sur les données d'ACP, archivage logique de l'organisation | lot 2 |
 | 5 | Outils MCP non branchés | [0059](docs/adr/0059-outils-mcp-non-branches-retires.md) | retirés de `tools/list` jusqu'au branchement | lot 0 |
 | 6 | Migrations hors poste de dev | [0060](docs/adr/0060-migrations-hors-poste-de-dev-tier-1.md) | lancées par le PO, le samedi matin, avec `down` prouvé et sauvegarde | lots 2 à 5 |

@@ -1,6 +1,6 @@
 # ADR 0057 : le copropriétaire est une personne globale, reliée aux ACP par ses lots
 
-- **Status**: Proposed (à trancher par @gilmry)
+- **Status**: Accepted (option 1 ; responsable de traitement : l'ACP pour ce qui la concerne, l'exploitant pour l'identité partagée ; tranché par @gilmry le 2026-11-04). La base légale RGPD de l'identité partagée reste à choisir par le PO
 - **Date**: 2026-10-31
 - **Track**: Software / GDPR
 - **Authors**: @gilmry (décision) + Claude (rédaction)

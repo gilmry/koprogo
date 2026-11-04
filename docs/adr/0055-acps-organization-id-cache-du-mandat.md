@@ -1,6 +1,6 @@
 # ADR 0055 : `acps.organization_id` devient un cache dérivé du mandat actif, puis disparaît
 
-- **Status**: Proposed (à trancher par @gilmry)
+- **Status**: Accepted (option 2 pour la v0.1.0, puis option 1 ; tranché par @gilmry le 2026-11-04)
 - **Date**: 2026-10-31
 - **Track**: Software
 - **Authors**: @gilmry (décision) + Claude (rédaction)

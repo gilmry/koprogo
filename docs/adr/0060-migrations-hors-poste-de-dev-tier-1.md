@@ -1,6 +1,6 @@
 # ADR 0060 : toute migration hors du poste de dev est lancée par le PO
 
-- **Status**: Proposed (à trancher par @gilmry)
+- **Status**: Accepted (option 1 ; tranché par @gilmry le 2026-11-04)
 - **Date**: 2026-10-31
 - **Track**: Software / Governance
 - **Authors**: @gilmry (décision) + Claude (rédaction)
