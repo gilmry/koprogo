@@ -1,7 +1,7 @@
 ---
 feature: mcp-portee-et-droit
 phase: Brief court (lot 0 de la v0.1.0, sécurité immédiate)
-status: DRAFT, à signer par @gilmry
+status: SIGNED v1.0 par @gilmry 2026-11-04
 date: "2026-11-03"
 authors: [Claude (drafting)]
 related_issues: [1046]
@@ -55,6 +55,9 @@ respecter exactement les règles :
   dur (`energie_campagne_list`, `alertes_list`), **ou** leur faire renvoyer
   une erreur `not_implemented` explicite. La story S3 couvre les deux
   branches ; une seule sera codée.
+
+**Tranché le 2026-11-04 par @gilmry** : brief et stories signés ; ADR 0059
+acceptée avec l'option 1, donc la branche A (retrait de `tools/list`).
 
 ## 5. Critère de fin du lot
 

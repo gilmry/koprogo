@@ -1,10 +1,10 @@
 ---
 feature: mcp-portee-et-droit
 phase: D (Stories)
-status: DRAFT, à signer par @gilmry
+status: SIGNED v1.0 par @gilmry 2026-11-04
 date: "2026-11-03"
 authors: [Claude (drafting)]
-depends_on: brief.md (DRAFT), ADR 0059 (Proposed)
+depends_on: brief.md (SIGNED v1.0), ADR 0059 (Accepted, option 1)
 ---
 
 # Stories — Lot 0 : portée, rôle, honnêteté et droit du MCP
@@ -18,7 +18,8 @@ depends_on: brief.md (DRAFT), ADR 0059 (Proposed)
 | **S3** — Outils sans écriture ou à données codées en dur | honnêteté | ADR 0059 | S |
 | **S4** — Les outils juridiques s'appuient sur `majorites.rs` | droit | aucune | M |
 
-S1, S2 et S4 sont indépendantes. S3 attend la signature de l'ADR 0059.
+S1, S2 et S4 sont indépendantes. S3 suit la branche A (ADR 0059 acceptée
+le 2026-11-04).
 Chaque story : tests rouges d'abord, une PR, aucune fusion par un agent.
 
 ## Légende AC
@@ -130,10 +131,10 @@ comportement : un admin plateforme légitime doit porter le rôle
 
 Selon la décision signée dans l'ADR 0059 :
 
-- **Branche A** : `ag_vote`, `appel_de_fonds`, `energie_campagne_list` et
+- **Branche A** (retenue le 2026-11-04) : `ag_vote`, `appel_de_fonds`, `energie_campagne_list` et
   `alertes_list` disparaissent de `tools/list` et leur appel renvoie
   `METHOD_NOT_FOUND`.
-- **Branche B** : ils restent listés, et renvoient une erreur explicite
+- Branche B (écartée) : ils restent listés, et renvoient une erreur explicite
   `not_implemented` au lieu d'une confirmation ou de données fictives.
 
 ### AC
