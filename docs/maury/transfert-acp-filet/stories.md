@@ -1,10 +1,10 @@
 ---
 feature: transfert-acp-filet
 phase: D (Stories)
-status: DRAFT, à signer par @gilmry
+status: SIGNED v1.0 par @gilmry 2026-11-04
 date: "2026-11-03"
 authors: [Claude (drafting)]
-depends_on: brief.md (DRAFT) ; décision « rouge attendu » (brief § 4)
+depends_on: brief.md (SIGNED v1.0) ; option A « rouge attendu strict » (brief § 4)
 ---
 
 # Stories — Lot 1 : filet de caractérisation du transfert d'ACP
@@ -91,7 +91,7 @@ Fichiers : `backend/tests/e2e_transfert_acp.rs`, helpers existants de
 
 ## Story S0 — Harnais « rouge attendu »
 
-Selon l'option retenue au brief § 4. Pour l'option A :
+Option A retenue au brief § 4 (tranché le 2026-11-04) :
 
 - runner BDD : un scénario taggé `@rouge-lot-N` est inversé (échec attendu)
   et la CI échoue s'il passe ;

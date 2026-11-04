@@ -1,7 +1,7 @@
 ---
 feature: transfert-acp-filet
 phase: Brief court (lot 1 de la v0.1.0, filet de caractérisation)
-status: DRAFT, à signer par @gilmry
+status: SIGNED v1.0 par @gilmry 2026-11-04
 date: "2026-11-03"
 authors: [Claude (drafting)]
 related_issues: [1046]
@@ -46,6 +46,8 @@ qui les fera passer ». Trois options :
 | **A. Rouge attendu strict** (recommandée) | le scénario tourne ; la CI échoue s'il passe **ou** s'il échoue autrement que prévu | un scénario qui verdit sans qu'on le sache est détecté ; le contrat reste visible | un petit harnais à écrire (tag `@rouge-lot-N` lu par le runner BDD, attribut équivalent côté e2e) |
 | B. `#[ignore = "lot N"]` | le test ne tourne pas | aucun outillage | ne répond pas à « lancés en CI » |
 | C. Job séparé non bloquant | le job tourne, rouge toléré | simple | c'est exactement le défaut de #1048 : un rouge que personne ne lit |
+
+**Tranché le 2026-11-04 par @gilmry** : option A, rouge attendu strict.
 
 ## 5. Hors périmètre
 
