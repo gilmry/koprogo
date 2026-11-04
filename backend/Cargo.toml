@@ -66,7 +66,9 @@ prometheus = "0.14"
 
 # Cloud storage
 aws-config = { version = "1", features = ["behavior-version-latest"] }
-aws-sdk-s3 = { version = "1", features = ["behavior-version-latest"] }
+# Sans le défaut « rustls » : il tire la pile hyper 0.14 / rustls 0.21, sans
+# correctif pour RUSTSEC-2026-0346/0349/0382. « default-https-client » suffit.
+aws-sdk-s3 = { version = "1", default-features = false, features = ["behavior-version-latest", "sigv4a", "http-1x", "default-https-client", "rt-tokio"] }
 aws-types = "1"
 aws-credential-types = "1"
 
@@ -74,7 +76,7 @@ aws-credential-types = "1"
 printpdf = "0.12"
 
 # Excel generation
-rust_xlsxwriter = "0.99.0"
+rust_xlsxwriter = "0.102.0"
 
 # Random data generation (for seed scripts)
 rand = "0.10"
@@ -90,8 +92,8 @@ reqwest = { version = "0.13", features = ["json", "form", "query"] }
 rumqttc = { version = "0.25", default-features = false }
 
 # OpenAPI documentation
-utoipa = { version = "5.5", features = ["actix_extras", "chrono", "uuid", "decimal"] }
-utoipa-swagger-ui = { version = "9.0", features = ["actix-web"] }
+utoipa = { version = "6.0", features = ["actix_extras", "chrono", "uuid", "decimal"] }
+utoipa-swagger-ui = { version = "10.0", features = ["actix-web"] }
 
 [dev-dependencies]
 # Unit & Integration tests
