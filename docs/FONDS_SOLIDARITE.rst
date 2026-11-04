@@ -915,7 +915,7 @@ Statut Juridique du Fonds
 
 * Activité sociale de l'ASBL (objet social : intérêt général)
 * **Non soumis à réglementation bancaire** (prêts < 75,000€, pas d'intérêts commerciaux)
-* **Exonération fiscale** : Activité non-lucrative (ASBL belge)
+* **Exonération fiscale** : Activité non-lucrative (future ASBL, constitution prévue au Jalon 3)
 * **Conformité RGPD** : Données financières sensibles (chiffrement, anonymisation)
 
 **Pourquoi pas une banque ?**

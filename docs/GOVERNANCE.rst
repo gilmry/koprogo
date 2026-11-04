@@ -66,7 +66,7 @@ KoproGo adopte une **approche progressive** de gouvernance, évoluant d'un proje
      - Autofinancement (revenus 5€/mois)
    * - **ASBL**
      - Jalons 4-5 (1,000-5,000 copros)
-     - ASBL belge
+     - ASBL de droit belge (à constituer)
      - AG + CA élu
      - Cloud + PropTech 2.0
    * - **Coopérative**
@@ -238,7 +238,7 @@ Phase 3: ASBL (Jalons 4-5)
 Statut Juridique
 ----------------
 
-**ASBL belge** (Association Sans But Lucratif, loi 27 juin 1921 réformée 2019)
+**ASBL de droit belge, à constituer** (Association Sans But Lucratif, loi 27 juin 1921 réformée 2019)
 
 **Constitution prévue** : Quand Jalon 3 atteint (500-1,000 copros, revenus stabilisés)
 

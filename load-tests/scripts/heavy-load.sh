@@ -31,10 +31,9 @@ echo "⚠️  Expect high CPU usage and potential errors."
 echo ""
 
 # Check dependencies
-if ! command -v wrk &> /dev/null; then
-    echo "❌ Error: wrk is not installed"
-    exit 1
-fi
+# k6 local, ou Docker pour l'image épinglée
+source "${SCRIPT_DIR}/k6.sh"
+k6_verifier
 
 if ! curl -f -s "$BASE_URL/api/v1/health" > /dev/null; then
     echo "❌ Error: API is not responding"
@@ -60,7 +59,7 @@ RESULT_FILE="$RESULTS_DIR/heavy-load_${TIMESTAMP}.txt"
 
 # Run warmup
 echo "Running warmup..."
-wrk -t2 -c5 -d10s --latency "$BASE_URL/api/v1/health" > /dev/null 2>&1
+k6_run health 5 10s > /dev/null 2>&1
 echo "✅ Warmup complete"
 echo ""
 
@@ -71,10 +70,7 @@ echo "    Terminal 3: docker compose -f docker-compose.vps.yml logs -f backend"
 echo ""
 sleep 3
 
-wrk -t4 -c100 -d3m \
-    --latency \
-    -s "${SCRIPT_DIR}/../lua/authenticated-mixed.lua" \
-    "$BASE_URL" \
+k6_run authenticated-mixed 100 3m \
     | tee "$RESULT_FILE"
 
 echo ""

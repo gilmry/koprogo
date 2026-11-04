@@ -14,7 +14,7 @@ Schéma d'organisation pour les tests de performance du VPS.
 │  │   ou VPS client)      │          │                        │ │
 │  │                       │          │                        │ │
 │  │  ┌─────────────────┐  │  HTTPS   │  ┌──────────────────┐ │ │
-│  │  │ wrk/k6/hey      │──┼─────────>│  │ Traefik          │ │ │
+│  │  │ k6              │──┼─────────>│  │ Traefik          │ │ │
 │  │  │ (génère charge) │  │          │  │ (reverse proxy)  │ │ │
 │  │  └─────────────────┘  │          │  └────────┬─────────┘ │ │
 │  │                       │          │           │           │ │
@@ -43,9 +43,7 @@ Schéma d'organisation pour les tests de performance du VPS.
 **Rôle** : Génère des requêtes HTTP pour simuler des utilisateurs
 
 **Outils** :
-- `wrk` : Outil de benchmark HTTP (léger, rapide)
-- `k6` : Tests avancés avec scripting JavaScript
-- `hey` : Alternative simple à wrk
+- `k6` 2.3.0 : scénarios JavaScript de `k6/`, même moteur que Sluis
 
 **Scripts fournis** :
 ```
@@ -54,10 +52,14 @@ load-tests/
 │   ├── remote-light-load.sh      # 10 connexions, 2 min
 │   ├── remote-medium-load.sh     # 50 connexions, 5 min
 │   └── ...
-├── lua/
-│   ├── mixed.lua                 # Scénario réaliste multi-endpoints
-│   ├── buildings.lua             # Focus sur /buildings
-│   └── auth.lua                  # Scénario d'authentification
+├── k6/
+│   ├── commun.js                 # Session par VU, tirage pondéré, résumé (SLUIS_RESUME)
+│   ├── health.js                 # Chauffe : GET /health
+│   ├── auth.js                   # Connexions répétées
+│   ├── buildings.js              # Focus sur /buildings (sans session)
+│   ├── mixed.js                  # Lectures pondérées (sans session)
+│   ├── authenticated-mixed.js    # Lectures pondérées (avec session)
+│   └── authenticated-realistic.js # 80 % lectures / 20 % écritures
 └── results/                      # Résultats des tests
 ```
 
@@ -256,12 +258,12 @@ Exemple avec 20ms de latence réseau :
 VPS (2GB RAM)
 ├── Backend (consomme 384MB)
 ├── PostgreSQL (consomme 256MB)
-├── wrk (consomme 100-200MB)  ← Fausse les résultats !
+├── k6 (consomme 100-200MB)  ← Fausse les résultats !
 └── Système (reste ~1.2GB)
 
 Problèmes :
-- wrk utilise CPU → réduit CPU disponible pour l'app
-- wrk utilise RAM → peut déclencher swap
+- k6 utilise CPU → réduit CPU disponible pour l'app
+- k6 utilise RAM → peut déclencher swap
 - Latence = 0ms → pas réaliste
 - Résultats faussés
 ```
@@ -272,7 +274,7 @@ Problèmes :
 
 ```
 Machine Cliente        VPS (2GB RAM)
-├── wrk (charge)  →    ├── Backend (384MB)
+├── k6 (charge)   →    ├── Backend (384MB)
 └── Monitoring         ├── PostgreSQL (256MB)
                        └── Système (1.3GB libre)
 
@@ -325,7 +327,7 @@ Avantages :
 
 ## Questions fréquentes
 
-### Pourquoi pas Docker Compose pour wrk ?
+### Pourquoi pas Docker Compose pour k6 ?
 
 Réponse : Possible, mais :
 - Ajoute une couche réseau Docker

@@ -14,13 +14,11 @@ Guide rapide pour lancer les tests de charge sur votre VPS 1 vCPU / 2GB RAM.
 
 ## Prérequis
 
-```bash
-# Installer wrk (load testing tool)
-sudo apt-get update
-sudo apt-get install -y wrk
+Docker **ou** k6 2.3.0. Les scripts utilisent `k6` s'il est installé, sinon l'image `grafana/k6:2.3.0` (voir `scripts/k6.sh`) :
 
-# Vérifier l'installation
-wrk --version
+```bash
+docker --version   # suffit
+k6 version         # facultatif
 ```
 
 ## 🚨 IMPORTANT : Rate Limiting
@@ -138,37 +136,38 @@ CPU: 95-100%
 
 ## Interpréter les résultats
 
-### Exemple de sortie wrk
+### Exemple de sortie
 
 ```
-Running 2m test @ http://localhost:8080
-  2 threads and 10 connections
-  Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     8.32ms    4.12ms  89.43ms   87.23%
-    Req/Sec   620.45    112.34     1.02k    76.56%
-  Latency Distribution
-     50%    7.21ms
-     75%   10.12ms
-     90%   13.45ms
-     99%   22.18ms
-  148562 requests in 2.00m, 42.31MB read
-Requests/sec:   1238.02
-Transfer/sec:    361.14KB
+Lectures mixtes, avec session
+------------------------------
+  Requêtes : 3945
+  En échec : 0 (0.00 %)
+  Débit : 394.18 req/s
+
+Latences :
+  p(50) : 6.49ms
+  p(75) : 8.87ms
+  p(90) : 12.25ms
+  p(95) : 15.46ms
+  p(99) : 26.55ms
+  p(99.9) : 325.61ms
+------------------------------
+SLUIS_RESUME {"requetes":3945,"debit":394.18,"p50":6.49,"p99":26.55,"echecs":0}
 ```
 
 **Analyse :**
-- ✅ P99 = 22ms → Excellent (< 50ms cible)
-- ✅ 1238 req/s → Au-dessus de la cible (100 req/s)
-- ✅ 0 erreurs → Parfait
-- ✅ Résultats stables (faible Stdev)
+- ✅ P99 = 27ms → sous la cible de 50ms
+- ✅ 394 req/s → au-dessus de la cible (100 req/s)
+- ✅ 0 % d'échec → parfait (au-delà de 1 %, Sluis conclut que la cible ne tient pas)
+
+La dernière ligne est celle que Sluis lit ; `echecs` est une part entre 0 et 1.
 
 ## Problèmes courants
 
-### ❌ "wrk: command not found"
+### ❌ "ni k6 ni Docker ne sont disponibles"
 
-```bash
-sudo apt-get install wrk
-```
+Installer Docker, ou k6 : https://grafana.com/docs/k6/latest/set-up/install-k6/
 
 ### ❌ "Connection refused"
 
@@ -235,10 +234,10 @@ export BASE_URL=http://api.example.com
 # Exemple : Réduire la charge du medium-load
 nano scripts/medium-load.sh
 
-# Changer :
-wrk -t4 -c50 -d5m ...
+# Changer (scénario, utilisateurs virtuels, durée) :
+k6_run authenticated-mixed 50 5m
 # En :
-wrk -t2 -c25 -d5m ...
+k6_run authenticated-mixed 25 5m
 ```
 
 ## Automatisation CI/CD

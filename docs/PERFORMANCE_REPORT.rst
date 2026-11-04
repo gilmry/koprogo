@@ -1,19 +1,31 @@
 
-Rapport de Performance et Capacité - KoproGo ASBL
-=================================================
+Rapport de Performance et Capacité - KoproGo
+============================================
 
 **Date**\ : Octobre 2025
 **Version**\ : MVP (v0.1.0)
 **Infrastructure**\ : VPS d2-2 (2 vCPU / 4GB RAM) + Domaine + Backups - 8€/mois - OVH Cloud France
+
+.. warning::
+
+   Ce rapport décrit **un test de charge de 3 minutes, le 30/10/2025**, pas une
+   exploitation : aucun système KoproGo n'est en production (v0.1.0 pre-release).
+
+   * **99,74 %** est le taux de succès des requêtes pendant ce test, pas une
+     disponibilité (uptime).
+   * **0,12 g CO₂/requête** est une estimation du transfert réseau (section 4),
+     pas une mesure.
+   * Les capacités, marges et verdicts économiques sont des projections non
+     contractuelles.
 
 ----
 
 Résumé Exécutif
 ---------------
 
-KoproGo a été testé en conditions réelles de charge pendant plus de 3 minutes avec un taux de succès de **99.74%** et un débit soutenu de **287 requêtes/seconde**. Le système démontre une excellente stabilité sur une infrastructure à **8€/mois**\ , permettant de servir confortablement **2,000-3,000 copropriétés** multi-tenant.
+KoproGo a été soumis à un test de charge de 3 minutes (30/10/2025) avec un taux de succès de **99.74%** et un débit soutenu de **287 requêtes/seconde**. Le système démontre une excellente stabilité sur une infrastructure à **8€/mois**\ , permettant de servir confortablement **2,000-3,000 copropriétés** multi-tenant.
 
-**Modèle ASBL validé** : À 1€/copropriété/mois (option cloud), le système couvre largement les coûts d'infrastructure (8€/mois pour 2,000 copros = 0.004€/copro) avec un excédent réinvesti dans le développement. Le modèle self-hosted (80% des utilisateurs estimés) reste 100% gratuit.
+**Modèle ASBL (projection)** : À 1€/copropriété/mois (option cloud), le système couvre largement les coûts d'infrastructure (8€/mois pour 2,000 copros = 0.004€/copro) avec un excédent réinvesti dans le développement. Le modèle self-hosted (80% des utilisateurs estimés) reste 100% gratuit.
 
 Indicateurs Clés de Performance (KPI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -51,8 +63,8 @@ Indicateurs Clés de Performance (KPI)
      - ✅
    * - **CO₂/requête**
      - < 1g
-     - **0.12g**
-     - ✅ **-88%** (France: 60g/kWh)
+     - **0.12g** (estimation réseau)
+     - non mesuré
    * - **Coût/mois**
      - < 10€
      - **8€**
@@ -551,8 +563,8 @@ Infrastructure Actuelle (VPS d2-2)
 
 * **2,000-3,000 copropriétés cloud**
 * 60,000-90,000 utilisateurs finaux
-* 287 req/s soutenus
-* 99.74% disponibilité
+* 287 req/s pendant le test de charge
+* 99.74% de succès pendant ce test (ce n'est pas une disponibilité)
 
 **Modèle économique ASBL (Option Cloud)** :
 
@@ -994,7 +1006,7 @@ Tier 3 : Scale (Projection 10x)
 * **Consommation CPU** : 10x inférieure (Rust vs JVM)
 * **Consommation RAM** : 20-50x inférieure (5 MB vs 100-300 MB)
 * **Serveurs nécessaires** : 1 serveur vs 3-5 serveurs (HA + load balancing)
-* **Émissions évitées** : ~92-96% (0.12g vs 2-3g par requête)
+* **Émissions évitées** : ~92-96% estimés (0.12g estimés vs 2-3g par requête)
 
 **Avantage France vs Allemagne** :
 
@@ -1037,14 +1049,14 @@ Tier 3 : Scale (Projection 10x)
 
 
    * Réactivité : 69ms de latence médiane (2-5x plus rapide que concurrents)
-   * Disponibilité : 99.74% testée en conditions réelles
+   * Taux de succès : 99.74% sur un test de charge de 3 minutes
    * Pas de ralentissements : architecture scalable
 
 #. 
    🌱 **Impact écologique minimal** :
 
 
-   * 0.12g CO₂/requête (7-25x moins que concurrents)
+   * 0.12g CO₂/requête estimés (transfert réseau, non mesuré)
    * Hébergement France (mix énergétique 60g CO₂/kWh - nucléaire + renouvelables)
    * Souveraineté numérique et GDPR natif
    * Engagement neutralité carbone 2026
@@ -1260,12 +1272,12 @@ Tier 3 : Scale (Projection 10x)
 Points Forts Validés
 ^^^^^^^^^^^^^^^^^^^^
 
-✅ **Performance exceptionnelle** : 99.74% de succès, 287 req/s, latences < 70ms (P50)
+✅ **Performance en test de charge** : 99.74% de succès sur 3 minutes, 287 req/s, latences < 70ms (P50)
 ✅ **Coûts ultra-compétitifs** : 5€/mois pour 1,000-1,500 copropriétés (0.003€-0.01€/copro)
 ✅ **Scalabilité linéaire** : Architecture prouvée pour croissance 10x-100x
-✅ **Stabilité production** : Aucun crash, aucune erreur système, 0 swap utilisé
+✅ **Stabilité pendant le test** : Aucun crash, aucune erreur système, 0 swap utilisé
 ✅ **Marges exceptionnelles** : 99%+ de marge brute sur infrastructure à 1€/copro/mois
-✅ **Impact écologique minimal** : 0.12g CO₂/requête (7-25x moins que concurrents)
+✅ **Impact écologique estimé** : 0.12g CO₂/requête (estimation réseau, non mesurée)
 ✅ **Stack moderne** : Rust + PostgreSQL = performance + fiabilité + efficacité énergétique
 
 Validation Modèle Économique (1€/copro/mois)
@@ -1293,8 +1305,8 @@ Validation Modèle Économique (1€/copro/mois)
      - ✅ 99%+
      - **Dépassé**
    * - CO₂ < 0.5g/requête
-     - ✅ 0.12g
-     - **Dépassé (-76%)**
+     - 0.12g estimés
+     - **Non mesuré**
 
 
 Projection Financière Réaliste
@@ -1326,10 +1338,10 @@ Recommandation Finale
 **Justification** :
 
 
-#. **Techniquement prouvé** : 99.74% de succès sur tests réels intensifs
+#. **Techniquement testé** : 99.74% de succès sur un test de charge de 3 minutes
 #. **Économiquement viable** : Marges > 99% dès 200 copropriétés
 #. **Compétitivement disruptif** : 50-200x moins cher que legacy
-#. **Écologiquement responsable** : 0.12g CO₂/req, 7-25x moins que concurrents
+#. **Écologiquement sobre (estimé)** : 0.12g CO₂/req en estimation réseau, non mesuré
 #. **Scalable** : Architecture validée pour 10x-100x croissance
 
 **Risques identifiés** : AUCUN sur l'infrastructure ou la performance. Le seul risque est l'\ **adoption marché**\ , mitigé par :

@@ -95,7 +95,7 @@ En Belgique, 200 000 copropriétés font face à des coûts de gestion élevés 
 
 **La Solution KoproGo**
 
-Une plateforme open-source développée par une ASBL belge :
+Une plateforme open-source, portée par une ASBL en préparation (constitution prévue au Jalon 3) :
 
 .. grid:: 2
    :gutter: 2
@@ -108,13 +108,12 @@ Une plateforme open-source développée par une ASBL belge :
 
    .. grid-item-card:: 🌱 Impact Écologique
 
-      * **0,12g CO₂/requête** (architecture Rust)
-      * **96% de réduction** vs solutions SaaS classiques
+      * Empreinte carbone par requête : estimation réseau, non mesurée (voir :doc:`PERFORMANCE_REPORT`)
       * **840 tonnes CO₂/an évitées** à 5 000 copropriétés
 
    .. grid-item-card:: 🤝 Gouvernance Démocratique
 
-      * ASBL belge sans actionnaires
+      * ASBL en préparation, sans actionnaires
       * 1 membre = 1 voix (AG)
       * Prix voté démocratiquement
 
@@ -226,10 +225,10 @@ Chiffres Clés (État Actuel)
 
 **Performance Technique**
 
-* **287 req/s** soutenus (charge réelle)
+* **287 req/s** sur un test de charge de 3 minutes (30/10/2025)
 * **752ms** latence P99 (1 vCPU)
-* **0,12g CO₂/requête** (96% réduction vs solutions SaaS classiques)
-* **99,74% uptime** (infrastructure OVH)
+* Empreinte carbone par requête : estimation réseau, non mesurée
+* Disponibilité en production : non mesurée, aucun système en production
 * **128MB RAM** par instance (ultra-léger)
 
 **Stack Technique**

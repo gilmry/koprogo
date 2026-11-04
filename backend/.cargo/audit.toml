@@ -12,34 +12,6 @@ ignore = [
     # See: SECURITY.md for full assessment
     "RUSTSEC-2023-0071",
 
-    # RUSTSEC-2025-0111: tokio-tar 0.3.1 - PAX Headers Parsing
-    # Status: Accepted Risk (Test Only)
-    # Reason: Used only by testcontainers in test environment
-    # Impact: Test environment only, never in production
-    # Mitigation: Monitor for testcontainers updates
-    # See: SECURITY.md for full assessment
-    "RUSTSEC-2025-0111",
-
-    # RUSTSEC-2025-0134: rustls-pemfile 2.2.0 - unmaintained
-    # Status: Accepted Risk (Test Only)
-    # Reason: Pulled by testcontainers/bollard for test infrastructure. No production code path.
-    # Mitigation: Monitor testcontainers for migration to a maintained alternative.
-    "RUSTSEC-2025-0134",
-
-    # rustls-webpki 0.101.7 family — all from the AWS SDK transitive chain
-    # (aws-config → aws-smithy-http-client 1.1.12 → hyper-rustls 0.24.2 → rustls 0.21
-    #  → rustls-webpki 0.101.7). aws-smithy-http-client 1.1.12 is the LATEST release;
-    # there is no upgrade path until upstream drops legacy rustls 0.21. No 0.101.x patch
-    # exists (fixes require >=0.103.x, semver-incompatible).
-    # Impact: Low — AWS SDK TLS does not exercise these code paths in practice
-    # (OCSP stapling instead of CRL; no wildcard/URI constraint cases in AWS PKI).
-    # Mitigation: Track aws-smithy-http-client releases; bump as soon as legacy
-    # rustls is dropped.
-    "RUSTSEC-2026-0049",  # CRL Distribution Point matching
-    "RUSTSEC-2026-0098",  # cert URI names constraint
-    "RUSTSEC-2026-0099",  # cert wildcard name constraint
-    "RUSTSEC-2026-0104",  # reachable panic in CRL parsing
-
     # RUSTSEC-2026-0258: h2 0.3.27 - unbounded empty DATA frames (DoS)
     # Status: Accepted Risk (Same AWS SDK legacy chain as above)
     # Reason: Same hyper-rustls 0.24.2 -> hyper 0.14.32 chain pulled by
@@ -48,14 +20,6 @@ ignore = [
     # Mitigation: Track aws-smithy-http-client releases, same as above.
     "RUSTSEC-2026-0258",
 
-    # RUSTSEC-2026-0002: lru 0.12.5 - IterMut violates Stacked Borrows (unsound)
-    # Status: Accepted Risk (Transitive / No Direct Usage)
-    # Reason: Transitive of aws-sdk-s3 (latest); no newer 0.12.x. koprogo never calls
-    #         lru directly; used internally by aws-sdk-s3 for connection pooling.
-    # Impact: Theoretical soundness; no known exploit through aws-sdk-s3 usage.
-    # Mitigation: Monitor aws-sdk-s3 for update to lru 0.13+.
-    "RUSTSEC-2026-0002",
-
     # astral-tokio-tar 0.6.0 — advisories from testcontainers dev-dependency only
     # Status: Accepted Risk (Test Only)
     # Reason: testcontainers 0.27.x pulls 0.6.0; fix would require testcontainers > 0.27.2.
@@ -63,27 +27,6 @@ ignore = [
     "RUSTSEC-2026-0112",  # PAX header desynchronization
     "RUSTSEC-2026-0113",  # `unpack_in` chmod via symlinks
     "RUSTSEC-2026-0145",  # astral-tokio-tar — même crate/chemin (testcontainers dev-only, no prod path)
-
-    # RUSTSEC-2026-0187: lopdf 0.31.0 - stack overflow via deeply nested PDF objects
-    # Status: Accepted Risk (Attack surface does not apply)
-    # Reason: Transitive of printpdf 0.7 (direct dep, pinned major - fix requires
-    # printpdf >=0.12 which pulls lopdf >=0.42, a breaking API migration across
-    # 5 major printpdf versions touching every exporter in domain/services/).
-    # koprogo only *generates* PDFs via printpdf (annual_report_exporter,
-    # meeting_minutes_exporter, pcn_exporter, owner_statement_exporter,
-    # ownership_contract_exporter, convocation_exporter, work_quote_exporter) -
-    # no code path parses untrusted PDF input (no lopdf::Document::load call
-    # anywhere in backend/src), so the deeply-nested-input parser attack this
-    # advisory describes is not reachable.
-    # Mitigation: Revisit if a PDF upload/parsing feature is ever added.
-    "RUSTSEC-2026-0187",
-
-    # RUSTSEC-2026-0235: rkyv 0.7.46 - insufficient archive validation (OOB reads)
-    # Status: Accepted Risk (Transitive / No Direct Usage)
-    # Reason: Pulled by rust_decimal's optional rkyv feature; koprogo never
-    # calls rkyv directly or deserializes untrusted rkyv-format bytes.
-    # Mitigation: Monitor rust_decimal for a rkyv 0.8+ upgrade.
-    "RUSTSEC-2026-0235",
 ]
 
 # Optionally set a threshold for advisory severity

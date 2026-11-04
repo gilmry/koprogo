@@ -28,11 +28,9 @@ echo "Target: 100 req/s"
 echo "Workload: 80% GET / 20% POST"
 echo ""
 
-# Check if wrk is installed
-if ! command -v wrk &> /dev/null; then
-    echo "❌ Error: wrk is not installed"
-    exit 1
-fi
+# k6 local, ou Docker pour l'image épinglée
+source "${SCRIPT_DIR}/k6.sh"
+k6_verifier
 
 # Check if API is up
 if ! curl -f -s "$BASE_URL/api/v1/health" > /dev/null; then
@@ -53,10 +51,7 @@ RESULT_FILE="$RESULTS_DIR/realistic-load_${TIMESTAMP}.txt"
 echo "Starting realistic test..."
 echo ""
 
-wrk -t2 -c10 -d2m \
-    --latency \
-    -s "${SCRIPT_DIR}/../lua/authenticated-realistic.lua" \
-    "$BASE_URL" \
+k6_run authenticated-realistic 10 2m \
     | tee "$RESULT_FILE"
 
 echo ""

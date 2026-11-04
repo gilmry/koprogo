@@ -9,7 +9,7 @@ Version: 1.0.0 | Target (Mai 2026, ajustée) : **P99 ≤ 500 ms** sur endpoints 
 - **Latency P99**: 752ms (1 vCPU, sustained load)
 - **Throughput**: 287 req/s
 - **Memory**: ~80MB
-- **CO2/request**: 0.12g
+- **CO2/request**: network estimate only, not measured
 
 ## Backend Optimization
 

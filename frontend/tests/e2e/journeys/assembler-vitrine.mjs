@@ -37,6 +37,16 @@ const echapper = (s) =>
       })[c],
   );
 
+// ── L'origine du serveur d'enregistrement n'a rien à faire en ligne ─────
+//
+// La narration des balayages et le journal console citent l'URL du serveur
+// de la CI (`http://localhost:3000/_astro/...`). Publiée telle quelle sur
+// doc.koprogo.com, elle laissait croire à une vitrine branchée sur un poste
+// de dev. On retire l'origine, on garde le chemin : le détail utile au
+// débogage reste, l'URL `localhost` disparaît.
+const sansOrigineLocale = (s) =>
+  String(s).replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/g, "");
+
 const metas = readdirSync(DOSSIER_VIDEOS)
   .filter((f) => f.endsWith(".json"))
   .map((f) => JSON.parse(readFileSync(resolve(DOSSIER_VIDEOS, f), "utf8")))
@@ -50,14 +60,14 @@ const cartes = metas
           `<li><button type="button" data-t="${n.t}">` +
           `<span class="t">${String(n.t).padStart(3, "0")}s</span>` +
           `${n.acteur ? `<span class="acteur">${echapper(n.acteur)}</span>` : ""}` +
-          `<span class="txt">${echapper(n.texte)}</span></button></li>`,
+          `<span class="txt">${echapper(sansOrigineLocale(n.texte))}</span></button></li>`,
       )
       .join("");
     const acteurs = (m.acteurs ?? [])
       .map((a) => `<span class="badge">${echapper(a)}</span>`)
       .join("");
     const alerte = m.interrompu
-      ? `<p class="alerte">Parcours interrompu : ${echapper(m.interrompu)}. ` +
+      ? `<p class="alerte">Parcours interrompu : ${echapper(sansOrigineLocale(m.interrompu))}. ` +
         `Cette vitrine est partielle — elle montre où ça s'arrête.</p>`
       : "";
 
@@ -97,7 +107,7 @@ const cartes = metas
           `${journal.length > 1 ? "s" : ""} de la console — ` +
           `tous ne sont pas des défauts</summary>
              <ol>${journal
-               .map((l) => `<li>${echapper(String(l))}</li>`)
+               .map((l) => `<li>${echapper(sansOrigineLocale(l))}</li>`)
                .join("")}</ol>
            </details>`;
 

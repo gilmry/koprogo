@@ -109,7 +109,7 @@ Jalon 0: Fondations Techniques ✅ (5 issues - TOUS CLOS)
 * ✅ Architecture hexagonale implémentée
 * ✅ 73 endpoints API REST
 * ✅ Tests E2E Playwright
-* ✅ Load tests validés (99.74% success, 287 req/s)
+* ✅ Test de charge de 3 minutes (287 req/s, 30/10/2025)
 * ✅ Documentation Sphinx publiée
 
 **Conformité légale**: 30% (features CRUD de base)
@@ -274,7 +274,7 @@ Jalon 4: Automation & Intégrations 📅 (11 issues - tous open)
 
 * 📧 Workflow AG 100% automatisé
 * 📖 Carnet d'entretien digital
-* 📜 GDPR compliance totale (Articles 16, 18, 21)
+* 📜 Conçu pour le RGPD (Articles 16, 18, 21)
 * 💼 Comparaison devis multi-entrepreneurs
 * 🌐 Page publique syndic (SEO)
 * ♿ Accessibilité WCAG 2.1 AA

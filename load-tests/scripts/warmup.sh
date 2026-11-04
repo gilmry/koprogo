@@ -23,12 +23,9 @@ echo "Base URL: $BASE_URL"
 echo "Duration: 30 seconds"
 echo ""
 
-# Check if wrk is installed
-if ! command -v wrk &> /dev/null; then
-    echo "❌ Error: wrk is not installed"
-    echo "Install with: sudo apt-get install wrk"
-    exit 1
-fi
+# k6 local, ou Docker pour l'image épinglée
+source "${SCRIPT_DIR}/k6.sh"
+k6_verifier
 
 # Check if API is up
 echo "Checking API health..."
@@ -47,9 +44,7 @@ echo "- 5 connections"
 echo "- Target: ~50 req/s"
 echo ""
 
-wrk -t2 -c5 -d30s \
-    --latency \
-    "$BASE_URL/api/v1/health"
+k6_run health 5 30s
 
 echo ""
 echo "✅ Warmup complete! System is ready for load testing."

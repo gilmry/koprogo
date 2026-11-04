@@ -1,5 +1,5 @@
 # Docker Compose for load testing
-# Includes wrk container to run load tests against the API
+# Includes k6 container to run load tests against the API
 # IMPORTANT: This configuration disables rate limiting for accurate performance testing
 
 version: '3.8'
@@ -65,15 +65,19 @@ services:
 
   # Load testing tool container
   loadtest:
-    image: williamyeh/wrk
+    # Même version que le moteur de charge de Sluis.
+    image: grafana/k6:2.3.0@sha256:2dd4756ec6e14e62778916e1eb850108e4b499304c02df56760fa0bdb0fba0b8
     container_name: koprogo-loadtest
+    entrypoint: ["sh"]
+    environment:
+      BASE_URL: http://backend:8080
     volumes:
-      - ./lua:/scripts:ro
+      - ./k6:/scripts:ro
       - ./results:/results
     networks:
       - koprogo-network
     command: >
-      sh -c "
+      -c "
       echo '========================================='
       && echo 'KoproGo Load Test Container Ready'
       && echo '========================================='
@@ -81,7 +85,7 @@ services:
       && echo 'Rate limiting is DISABLED for accurate testing'
       && echo ''
       && echo 'Quick test example:'
-      && echo '  docker compose -f docker-compose.loadtest.yml exec loadtest wrk -t2 -c10 -d30s --latency http://backend:8080/api/v1/health'
+      && echo '  docker compose -f docker-compose.loadtest.yml exec loadtest k6 run --vus 10 --duration 30s /scripts/health.js'
       && echo ''
       && echo 'Or run scripts from host (recommended):'
       && echo '  export BASE_URL=http://localhost:8080'

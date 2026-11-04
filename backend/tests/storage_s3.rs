@@ -6,12 +6,15 @@ use testcontainers_modules::{
 };
 use uuid::Uuid;
 
-/// Le registre qui sert encore l'image. Épinglé par tag, pas par `latest` :
-/// un `latest` rendrait ce test dépendant de la prochaine publication.
-const REGISTRE_MINIO: &str = "quay.io/minio/minio";
-const TAG_MINIO: &str = "RELEASE.2025-02-28T09-55-16Z";
+/// Le fork communautaire pgsty (#1036, choix du PO le 2026-10-29), la même
+/// image que les compose. Épinglé par tag daté ET digest : le test ne dépend
+/// d'aucune publication à venir.
+const REGISTRE_MINIO: &str = "pgsty/minio";
+const TAG_MINIO: &str = "RELEASE.2026-08-04T00-00-00Z@sha256:b6bfe7239bfc83fb90d31612d9704d86039dd714f7904b3f1ad68f211e602372";
 
-/// Le registre est nommé ICI, et pas laissé au module (#877).
+/// Le registre est nommé ICI, et pas laissé au module (#877, puis #1036 :
+/// quay.io a fini par refuser à son tour, et MinIO ne publie plus d'images
+/// communautaires).
 ///
 /// ── Ce qui s'est passé ────────────────────────────────────────────────────
 ///

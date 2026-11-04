@@ -190,7 +190,7 @@ Phase 2 : K3s + Automation (2026)
 * **1 000-1 500 copros** : VPS b2-15 (4 vCPU, 15GB RAM) - 87€/mois
 * Orchestration : K3s (3 nodes)
 * HA : PostgreSQL streaming replication
-* CO₂ : 0,12g CO₂/requête maintenu
+* CO₂ : empreinte par requête à mesurer (aujourd'hui une estimation réseau)
 
 **Équipe**
 
@@ -200,7 +200,7 @@ Phase 2 : K3s + Automation (2026)
 
 **Statut Juridique**
 
-* **2026 : Création ASBL belge**
+* **Création de l'ASBL** : prévue au Jalon 3 (voir :doc:`../GOVERNANCE`)
 * Assemblée Générale annuelle
 * Conseil d'Administration (3-7 membres)
 * Comptabilité publique trimestrielle
@@ -255,7 +255,7 @@ Phase 3 : K8s Production + PropTech 2.0 (2026-2030)
 * Auto-scaling : Horizontal Pod Autoscaler
 * Load balancing : Traefik / Nginx Ingress
 * Observability : OpenTelemetry + Grafana Stack
-* CO₂ : 0,12g CO₂/requête maintenu (infrastructure) + -790t/an (modules communautaires)
+* CO₂ : empreinte par requête à mesurer (aujourd'hui une estimation réseau) + -790t/an (modules communautaires, projection)
 
 **Équipe**
 
@@ -346,7 +346,7 @@ Jalon 0 : Fondations Techniques ✅
 * ✅ Architecture hexagonale implémentée
 * ✅ 73 endpoints API REST
 * ✅ Tests E2E Playwright
-* ✅ Load tests validés (287 req/s, 99,74% uptime)
+* ✅ Test de charge de 3 minutes (287 req/s, 30/10/2025)
 * ✅ Documentation Sphinx complète
 
 **Capacité débloquée** : 10-20 early adopters (beta fermée)

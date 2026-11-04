@@ -99,32 +99,53 @@ docker compose -f docker-compose.loadtest.yml logs backend | grep "Rate limiting
 | Utilisation CPU | < 80% | < 95% |
 | Utilisation RAM | < 80% | < 90% |
 
-## Outils de test
+## Outil de test : k6
 
-### 1. wrk (Recommandé)
+Les scénarios sont écrits pour [k6](https://grafana.com/docs/k6/latest/), le moteur de charge de Sluis (même version, 2.3.0). Ils remplacent les scripts Lua pour wrk.
 
-```bash
-# Installation
-sudo apt-get install wrk
-```
-
-### 2. hey (Alternative)
+Rien à installer si Docker est présent : `scripts/k6.sh` utilise `k6` s'il est dans le `PATH`, sinon l'image `grafana/k6:2.3.0` épinglée par empreinte, en réseau hôte (`BASE_URL=http://localhost:8080` vise donc la machine).
 
 ```bash
-# Installation
-go install github.com/rakyll/hey@latest
-```
-
-### 3. k6 (Tests avancés)
-
-```bash
-# Installation
-sudo gpg -k
+# Facultatif : k6 en local (Debian/Ubuntu)
 sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
 echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-sudo apt-get update
-sudo apt-get install k6
+sudo apt-get update && sudo apt-get install k6
 ```
+
+### Scénarios (`k6/`)
+
+| Scénario | Ce qu'il fait | Statuts attendus |
+|---|---|---|
+| `health` | `GET /health` en boucle (chauffe, plancher) | 2xx |
+| `auth` | connexion répétée, sans réutiliser le jeton | 2xx |
+| `buildings` | sans session : 7 `GET /buildings` pour 2 `GET /health` | 2xx, **401** |
+| `mixed` | sans session : lectures pondérées (immeubles 40, lots 25, copropriétaires 15, dépenses 10, santé 5, assemblées 5) | 2xx, **401** |
+| `authenticated-mixed` | mêmes lectures, avec session | 2xx |
+| `authenticated-realistic` | avec session : 80 % de lectures, 20 % d'écritures (dépenses, copropriétaires, assemblées, lots) | 2xx |
+
+- **Une session par utilisateur virtuel** : chaque VU se connecte une fois puis réutilise son jeton ; tant que la connexion échoue, il la retente.
+- **Compte utilisé** : `syndic@grandplace.be` / `syndic123` (données de démo, `POST /api/v1/seed/demo`), modifiable par `KOPROGO_EMAIL` et `KOPROGO_PASSWORD`.
+- `authenticated-realistic` lit l'immeuble visé sur la cible au démarrage et s'arrête si le compte n'en voit aucun.
+- `buildings` et `mixed` sans session mesurent le **chemin de refus** : 401 y est attendu et ne compte pas comme échec.
+
+### Lancer un scénario à la main
+
+```bash
+source scripts/k6.sh && k6_verifier
+BASE_URL=http://localhost:8080 k6_run authenticated-mixed 10 2m
+```
+
+### Lire le résumé
+
+Chaque run se termine par un résumé (requêtes, part en échec, débit, latences p50 à p99.9) et une ligne lisible par Sluis :
+
+```
+SLUIS_RESUME {"requetes":3945,"debit":394.18,"p50":6.49,"p99":26.55,"echecs":0}
+```
+
+`echecs` est la **part** des requêtes en échec (statut inattendu ou erreur réseau), entre 0 et 1. Sluis l'intègre à son verdict : une cible qui répond vite mais en erreur ne « tient » pas.
+
+**À savoir** : sur les données de démo, la copropriété Grand Place n'est pas conforme à son acte de base (somme des quotes-parts), et `POST /expenses` y répond 422 `acp_not_conformant`. Les lots créés par `authenticated-realistic` aggravent l'écart. Ces 422 sont comptés comme échecs : c'est un vrai refus de l'API.
 
 ## Configuration URL
 
@@ -362,7 +383,5 @@ free -h
 
 ## Ressources
 
-- [wrk documentation](https://github.com/wg/wrk)
-- [hey documentation](https://github.com/rakyll/hey)
-- [k6 documentation](https://k6.io/docs/)
+- [Documentation k6](https://grafana.com/docs/k6/latest/)
 - [PostgreSQL performance tuning](https://wiki.postgresql.org/wiki/Performance_Optimization)

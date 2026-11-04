@@ -102,3 +102,51 @@ describe("les en-têtes de sécurité survivent aux blocs nginx", () => {
     }
   });
 });
+
+/**
+ * La CSP doit autoriser ce que la page charge elle-même.
+ *
+ * `Layout.astro` charge le script Plausible depuis plausible.io, qui envoie
+ * ensuite ses événements à `https://plausible.io/api/event`. La CSP n'en
+ * savait rien : en Report-Only, le navigateur le signale à chaque page ; le
+ * jour où l'on retire `-Report-Only`, l'analytics s'éteint en silence.
+ */
+describe("la CSP couvre les origines externes de la mise en page", () => {
+  const snippet = readFileSync(
+    join(process.cwd(), "nginx-securite.conf"),
+    "utf-8",
+  );
+  const layout = readFileSync(
+    join(process.cwd(), "src/layouts/Layout.astro"),
+    "utf-8",
+  );
+
+  function directive(nom: string): string[] {
+    const csp = /Content-Security-Policy-Report-Only\s+"([^"]+)"/.exec(snippet);
+    expect(csp, "CSP introuvable dans le fichier inclus").not.toBeNull();
+    const valeur = csp![1]
+      .split(";")
+      .map((d) => d.trim())
+      .find((d) => d.startsWith(`${nom} `));
+    return valeur ? valeur.split(/\s+/).slice(1) : [];
+  }
+
+  const originesScripts = [
+    ...layout.matchAll(/<script[^>]*\ssrc="(https?:\/\/[^"]+)"/g),
+  ].map((m) => new URL(m[1]).origin);
+
+  it("trouve au moins un script externe (contrôle d'aveuglement)", () => {
+    expect(originesScripts.length).toBeGreaterThan(0);
+  });
+
+  it("autorise dans script-src chaque script externe de la mise en page", () => {
+    const manquantes = originesScripts.filter(
+      (o) => !directive("script-src").includes(o),
+    );
+    expect(manquantes, "origines de script absentes de script-src").toEqual([]);
+  });
+
+  it("autorise dans connect-src le point de collecte Plausible", () => {
+    expect(directive("connect-src")).toContain("https://plausible.io");
+  });
+});

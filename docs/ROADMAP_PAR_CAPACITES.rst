@@ -473,7 +473,7 @@ Jalon 0: Fondations Techniques ✅
 * ✅ Architecture hexagonale implémentée
 * ✅ 73 endpoints API REST
 * ✅ Tests E2E Playwright
-* ✅ Load tests validés (99.74% success, 287 req/s)
+* ✅ Test de charge de 3 minutes (287 req/s, 30/10/2025)
 * ✅ Documentation Sphinx publiée
 
 **Capacité débloquée**: 10-20 early adopters (beta fermée)

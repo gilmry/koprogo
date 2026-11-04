@@ -4,6 +4,13 @@
 - **Date**: 2025-01-15
 - **Track**: Software
 
+> **Note de correction (2026-10-31)** : la décision est conservée telle
+> qu'elle a été prise. Les « measured results » ci-dessous viennent d'un test
+> de charge de 3 minutes (30/10/2025), pas d'une exploitation : aucun système
+> KoproGo n'est en production. Le chiffre CO2/request de 0.12g n'est pas une
+> mesure, c'est une estimation du transfert réseau (voir `PERFORMANCE_REPORT.rst`).
+> Refs #1049.
+
 ## Context
 
 KoproGo targets ambitious performance and sustainability metrics:

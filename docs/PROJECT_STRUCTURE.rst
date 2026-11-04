@@ -304,7 +304,7 @@ The following major capabilities have been added beyond the original MVP:
 - **Skills Directory** - Community skills exchange directory (Issue #49 Phase 3)
 - **Object Sharing Library** - Shared object management with loan workflow (Issue #49 Phase 4)
 - **Resource Booking Calendar** - Shared resource reservation system (Issue #49 Phase 5)
-- **GDPR Compliance (Articles 15-21)** - Full GDPR: right to access, erasure, rectification, restriction, and objection to marketing (Issue #90)
+- **GDPR (Articles 15-21)** - Designed for GDPR: right to access, erasure, rectification, restriction, and objection to marketing (Issue #90)
 - **Belgian Accounting (PCMN)** - Full Plan Comptable Minimum Normalise belge with ~90 pre-seeded accounts and financial reports (Issue #79)
 - **Meeting Voting System** - Resolutions with Simple/Absolute/Qualified majority types, tantiemes/milliemes, proxy votes (Issue #46)
 - **Maintenance Ticket System** - Maintenance request workflow with priorities, contractor assignment, and statistics (Issue #85)

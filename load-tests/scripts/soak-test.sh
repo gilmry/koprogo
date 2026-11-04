@@ -32,10 +32,9 @@ echo "⚠️  Use this to detect memory leaks and degradation."
 echo ""
 
 # Check dependencies
-if ! command -v wrk &> /dev/null; then
-    echo "❌ Error: wrk is not installed"
-    exit 1
-fi
+# k6 local, ou Docker pour l'image épinglée
+source "${SCRIPT_DIR}/k6.sh"
+k6_verifier
 
 if ! curl -f -s "$BASE_URL/api/v1/health" > /dev/null; then
     echo "❌ Error: API is not responding"
@@ -83,7 +82,7 @@ trap cleanup EXIT
 
 # Run warmup
 echo "Running warmup..."
-wrk -t2 -c5 -d10s --latency "$BASE_URL/api/v1/health" > /dev/null 2>&1
+k6_run health 5 10s > /dev/null 2>&1
 echo "✅ Warmup complete"
 echo ""
 
@@ -98,10 +97,7 @@ sleep 3
 
 START_TIME=$(date +%s)
 
-wrk -t2 -c25 -d30m \
-    --latency \
-    -s "${SCRIPT_DIR}/../lua/mixed.lua" \
-    "$BASE_URL" \
+k6_run mixed 25 30m \
     | tee "$RESULT_FILE"
 
 END_TIME=$(date +%s)

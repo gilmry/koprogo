@@ -145,11 +145,8 @@ Avez-vous un VPS en production ?
 ### Sur machine cliente (tests distants)
 
 ```bash
-# Ubuntu/Debian
-sudo apt-get install wrk git
-
-# macOS
-brew install wrk
+# Docker suffit : les scripts lancent k6 2.3.0 en conteneur
+# (ou installer k6 : https://grafana.com/docs/k6/latest/set-up/install-k6/)
 
 # Cloner le repo
 git clone https://github.com/votre-org/koprogo.git
@@ -192,7 +189,7 @@ chmod +x monitor-server.sh
 ## Next steps
 
 1. **Lire la doc appropriée** (voir ci-dessus)
-2. **Installer les outils** (wrk)
+2. **Installer les outils** (Docker, ou k6)
 3. **Lancer un premier test** (light-load)
 4. **Analyser les résultats**
 5. **Optimiser si nécessaire**
