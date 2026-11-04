@@ -17,6 +17,10 @@
 - **Archétype** : full-stack *(Rust hexagonal + Astro/Svelte 5 en îlots, PostgreSQL)*
 - **Substrat d'exécution** : conteneur — `~/bin/kcargo` pour Rust, jamais `cargo` sur l'hôte
 - **Démarré le** : 2026-09-12
+- **Dernière mise à jour** : 2026-10-31 (par : Claude — **six 🔴 posés, tous du
+  ressort du PO** : la lettre de mission « l'ACP au centre » (#1046) fixe la
+  v0.1.0 sur trois critères prouvés en CI, et six décisions de modèle la
+  précèdent, chacune préparée en ADR 0055 à 0060)
 - **Dernière mise à jour** : 2026-09-18 (par : Claude — **la barrière du Gantt
   est levée** : #873, #876 et #874 fermées sur preuve mesurée, donc les vagues
   V4 à V7 sont formellement ouvertes. Et trois portails rouges retrouvés, dont
@@ -43,6 +47,35 @@ Se l'épargner reviendrait à valider ce qu'on vient de produire, ce que la mét
 appelle une signature et non une validation.
 
 ## Position courante
+
+### 🔴 L'ACP au centre : six décisions avant les lots 2 à 5 (#1046, 2026-10-31)
+
+Décision du PO du 2026-10-31 : l'ACP possède tout, le syndic n'est qu'un
+délégataire par mandat daté et révocable. La v0.1.0 n'est mûre que si trois
+critères sont **verts en CI** : transfert d'une ACP sans perte, ancien syndic
+aveugle sur tous les chemins (MCP compris), communautaire qui suit l'ACP.
+Constaté sur `dadf78d4` (mesuré le 2026-10-31) : `SyndicMandate` sans table,
+transfert par écrasement de `acps.organization_id`, `acp_id` absent d'une
+vingtaine de tables dont le plan comptable, ADR 0053 non appliquée,
+`e2e_cloisonnement_inter_organisations.rs` muet sur le transfert.
+
+Chaque 🔴 est préparé, pas tranché. Le PO signe l'ADR ; le lot qui en dépend
+n'ouvre pas avant.
+
+| 🔴 | Question | ADR | Recommandation de la rédaction | Bloque |
+|---|---|---|---|---|
+| 1 | Sort de `acps.organization_id` | [0055](docs/adr/0055-acps-organization-id-cache-du-mandat.md) | cache dérivé du mandat actif, jamais écrit directement, puis suppression | lot 2 |
+| 2 | Plan comptable | [0056](docs/adr/0056-plan-comptable-par-acp.md) | un plan par ACP, clé `(acp_id, code)`, gabarit PCMN en table de référence | lot 4 |
+| 3 | Copropriétaires | [0057](docs/adr/0057-coproprietaire-personne-globale.md) | personne globale reliée par `unit_owners` ; le responsable de traitement de l'identité reste à trancher | lots 3 et 4 |
+| 4 | Suppression d'une organisation | [0058](docs/adr/0058-suppression-organisation-restrict.md) | `RESTRICT` sur les données d'ACP, archivage logique de l'organisation | lot 2 |
+| 5 | Outils MCP non branchés | [0059](docs/adr/0059-outils-mcp-non-branches-retires.md) | retirés de `tools/list` jusqu'au branchement | lot 0 |
+| 6 | Migrations hors poste de dev | [0060](docs/adr/0060-migrations-hors-poste-de-dev-tier-1.md) | lancées par le PO, le samedi matin, avec `down` prouvé et sauvegarde | lots 2 à 5 |
+
+Ordre fixé par la lettre : lots 0 et 1 (sécurité immédiate, filet de
+caractérisation rouge) au sprint S-B du 2 au 8 novembre ; lots 2 à 4 au fil
+des décisions jusqu'à la gate review du 3 décembre ; lot 5 (RLS par ACP) à
+confirmer à cette gate review ; lots 6 et 7 (documentation) en parallèle.
+Aucune fusion par un agent : le PO relit et fusionne sur le « Fini quand ».
 
 - **Phase / étape** : **Phase A close.** Livrable BMAD **SIGNÉ** le 2026-09-12
   par Gilles Maury. Passage à la **phase B — vérifier le socle avant d'ajouter**.
