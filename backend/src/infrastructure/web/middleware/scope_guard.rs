@@ -144,8 +144,8 @@ impl From<AppError> for ScopeGuardError {
 // ============================================================================
 
 /// Map a `UserRoleString + organization_id + user_id` triple to an
-/// `AcpCaller`. Same convention as `acp_handlers::caller_from_user` —
-/// duplicated here to keep the middleware free of handler imports.
+/// `AcpCaller`. Source unique du mapping : `acp_handlers::caller_from_user`
+/// délègue ici.
 pub fn caller_from_role(role: &str, organization_id: Option<Uuid>, user_id: Uuid) -> AcpCaller {
     match role.to_lowercase().as_str() {
         "superadmin" => AcpCaller::SuperAdmin,
@@ -153,7 +153,9 @@ pub fn caller_from_role(role: &str, organization_id: Option<Uuid>, user_id: Uuid
             Some(org) => AcpCaller::Admin {
                 organization_id: org,
             },
-            None => AcpCaller::SuperAdmin,
+            // Un admin sans organisation n'hérite d'aucun droit global :
+            // seul le rôle `superadmin` mène à `SuperAdmin` (lot 0, S2).
+            None => AcpCaller::Owner { user_id },
         },
         "syndic" | "accountant" => match organization_id {
             Some(org) => AcpCaller::Syndic {
@@ -1167,6 +1169,37 @@ mod tests {
         let uid = Uuid::new_v4();
         let c = caller_from_role("contractor", Some(Uuid::new_v4()), uid);
         assert!(matches!(c, AcpCaller::Owner { user_id } if user_id == uid));
+    }
+
+    // Lot 0, story S2 : un admin sans organisation n'est pas SuperAdmin.
+
+    #[test]
+    fn edge_caller_from_role_admin_mixed_case() {
+        let org = Uuid::new_v4();
+        let c = caller_from_role("Admin", Some(org), Uuid::new_v4());
+        assert!(matches!(c, AcpCaller::Admin { organization_id } if organization_id == org));
+    }
+
+    #[test]
+    fn security_caller_from_role_admin_without_org_is_not_superadmin() {
+        let uid = Uuid::new_v4();
+        let c = caller_from_role("admin", None, uid);
+        assert!(matches!(c, AcpCaller::Owner { user_id } if user_id == uid));
+    }
+
+    #[test]
+    fn security_caller_from_role_mixed_case_admin_without_org_is_not_superadmin() {
+        let uid = Uuid::new_v4();
+        let c = caller_from_role("ADMIN", None, uid);
+        assert!(matches!(c, AcpCaller::Owner { user_id } if user_id == uid));
+    }
+
+    #[test]
+    fn security_admin_without_org_requested_acp_must_be_checked_via_repo() {
+        let target = Uuid::new_v4();
+        let caller = caller_from_role("admin", None, Uuid::new_v4());
+        let r = requires_repository_check(&caller, Some(target)).unwrap();
+        assert_eq!(r, Some(target));
     }
 
     // ----- @negative -----------------------------------------------------------
