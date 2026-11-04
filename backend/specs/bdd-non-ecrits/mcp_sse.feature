@@ -76,7 +76,7 @@ Feature: MCP SSE Server - Model Context Protocol
     And the tools array should include "list_tickets"
     And the tools array should include "legal_search"
     And the tools array should include "majority_calculator"
-    And the tools array should include "alertes_list"
+    And the tools array should not include "alertes_list"
     And each tool should have "name", "description" and "inputSchema" fields
 
   # === TOOLS/CALL ===
@@ -152,13 +152,14 @@ Feature: MCP SSE Server - Model Context Protocol
     And the result should indicate "Two-thirds" majority
     And the percentage should be 66.7
 
-  Scenario: Call alertes_list tool for compliance alerts
+  # ADR 0059 : un outil non branché est retiré, il ne simule pas de réponse.
+  Scenario: Call a retired tool returns METHOD_NOT_FOUND
     Given I have an active SSE connection with a session_id
     When I send a JSON-RPC tools/call request:
       | tool_name | alertes_list |
-    Then the response should be a JSON-RPC success response
-    And the result should contain "alert_count" and "alerts" array
-    And alerts should include a "LEGAL_REMINDER" type alert
+    Then the response should be a JSON-RPC error response
+    And the error code should be -32601
+    And the error message should contain "Unknown tool: alertes_list"
 
   Scenario: Call non-existent tool returns METHOD_NOT_FOUND
     Given I have an active SSE connection with a session_id

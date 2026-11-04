@@ -382,31 +382,6 @@ fn get_mcp_tools() -> Vec<McpTool> {
             }),
         },
         McpTool {
-            name: "ag_vote".to_string(),
-            description: "Enregistre le vote d'un copropriétaire sur une résolution d'assemblée générale. Support vote direct et procuration.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "resolution_id": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "UUID de la résolution"
-                    },
-                    "choice": {
-                        "type": "string",
-                        "enum": ["Pour", "Contre", "Abstention"],
-                        "description": "Choix de vote"
-                    },
-                    "proxy_owner_id": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "UUID du mandataire si vote par procuration (optionnel)"
-                    }
-                },
-                "required": ["resolution_id", "choice"]
-            }),
-        },
-        McpTool {
             name: "comptabilite_situation".to_string(),
             description: "Situation comptable d'un immeuble: soldes comptes, arriérés de charges, revenus, dépenses. Retourne bilan financier détaillé.".to_string(),
             input_schema: json!({
@@ -423,34 +398,6 @@ fn get_mcp_tools() -> Vec<McpTool> {
                     }
                 },
                 "required": ["building_id"]
-            }),
-        },
-        McpTool {
-            name: "appel_de_fonds".to_string(),
-            description: "Génère un appel de fonds auprès de tous les copropriétaires. Calcule automatiquement les quotes-parts individuelles et envoie convocations.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "building_id": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "UUID de l'immeuble"
-                    },
-                    "amount_cents": {
-                        "type": "integer",
-                        "description": "Montant total en centimes d'euros"
-                    },
-                    "due_date": {
-                        "type": "string",
-                        "format": "date",
-                        "description": "Date d'échéance (YYYY-MM-DD)"
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Description du motif de l'appel (ex: 'Rénovation toiture')"
-                    }
-                },
-                "required": ["building_id", "amount_cents", "due_date", "description"]
             }),
         },
         McpTool {
@@ -475,42 +422,27 @@ fn get_mcp_tools() -> Vec<McpTool> {
                 "required": ["description", "estimated_amount_eur", "is_emergency"]
             }),
         },
-        McpTool {
-            name: "alertes_list".to_string(),
-            description: "Liste les alertes de conformité actives: mandats de syndic expirés, AG sans PV, paiements en retard, contrats expirés.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "building_id": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "UUID de l'immeuble (optionnel, liste tous si absent)"
-                    }
-                },
-                "required": []
-            }),
-        },
-        McpTool {
-            name: "energie_campagne_list".to_string(),
-            description: "Liste les campagnes d'achat groupé d'énergie de l'organisation: statut participation, offres reçues, économies estimées.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "status": {
-                        "type": "string",
-                        "enum": ["Draft", "Active", "Completed", "Cancelled"],
-                        "description": "Filtrer par statut (optionnel)"
-                    }
-                },
-                "required": []
-            }),
-        },
     ]
 }
 
 // ─────────────────────────────────────────────────────────
 // Tool dispatcher
 // ─────────────────────────────────────────────────────────
+
+/// Un outil absent de `tools/list` n'est pas appelable (ADR 0059).
+fn outil_annonce(tool_name: &str) -> Result<(), RpcError> {
+    let outils = get_mcp_tools();
+    if outils.iter().any(|t| t.name == tool_name) {
+        return Ok(());
+    }
+    Err(RpcError {
+        code: ErrorCode::METHOD_NOT_FOUND,
+        message: format!("Unknown tool: {}", tool_name),
+        data: Some(json!({
+            "available_tools": outils.iter().map(|t| &t.name).collect::<Vec<_>>()
+        })),
+    })
+}
 
 /// Dispatches a `tools/call` request to the appropriate tool implementation.
 /// Returns a ToolResult or a JSON-RPC error.
@@ -1247,51 +1179,6 @@ async fn dispatch_tool(
             }
         }
 
-        "ag_vote" => {
-            let resolution_id_str = arguments
-                .get("resolution_id")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| RpcError {
-                    code: ErrorCode::INVALID_PARAMS,
-                    message: "resolution_id is required".to_string(),
-                    data: None,
-                })?;
-
-            let choice_str = arguments
-                .get("choice")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| RpcError {
-                    code: ErrorCode::INVALID_PARAMS,
-                    message: "choice is required (Pour/Contre/Abstention)".to_string(),
-                    data: None,
-                })?;
-
-            let resolution_id = Uuid::parse_str(resolution_id_str).map_err(|_| RpcError {
-                code: ErrorCode::INVALID_PARAMS,
-                message: "resolution_id must be a valid UUID".to_string(),
-                data: None,
-            })?;
-
-            // Note: Full vote casting would require access to resolution_use_cases
-            // For now, return structured response indicating successful registration
-            let result = json!({
-                "resolution_id": resolution_id,
-                "choice": choice_str,
-                "status": "vote_recorded",
-                "message": format!("Vote pour '{}' enregistré avec succès", choice_str),
-                "note": "Vote final enregistré au fermeture de scrutin par le syndic"
-            });
-
-            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
-            Ok(ToolResult {
-                content: vec![ContentBlock {
-                    content_type: "text".to_string(),
-                    text,
-                }],
-                is_error: None,
-            })
-        }
-
         "comptabilite_situation" => {
             let building_id_str = arguments
                 .get("building_id")
@@ -1353,66 +1240,6 @@ async fn dispatch_tool(
                     data: None,
                 }),
             }
-        }
-
-        "appel_de_fonds" => {
-            let building_id_str = arguments
-                .get("building_id")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| RpcError {
-                    code: ErrorCode::INVALID_PARAMS,
-                    message: "building_id is required".to_string(),
-                    data: None,
-                })?;
-
-            let amount_cents = arguments
-                .get("amount_cents")
-                .and_then(|v| v.as_i64())
-                .ok_or_else(|| RpcError {
-                    code: ErrorCode::INVALID_PARAMS,
-                    message: "amount_cents is required".to_string(),
-                    data: None,
-                })?;
-
-            let due_date = arguments
-                .get("due_date")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| RpcError {
-                    code: ErrorCode::INVALID_PARAMS,
-                    message: "due_date is required (YYYY-MM-DD)".to_string(),
-                    data: None,
-                })?;
-
-            let description = arguments
-                .get("description")
-                .and_then(|v| v.as_str())
-                .unwrap_or("Appel de fonds extraordinaires");
-
-            let _building_id = Uuid::parse_str(building_id_str).map_err(|_| RpcError {
-                code: ErrorCode::INVALID_PARAMS,
-                message: "building_id must be a valid UUID".to_string(),
-                data: None,
-            })?;
-
-            let result = json!({
-                "status": "pending_creation",
-                "building_id": building_id_str,
-                "amount_cents": amount_cents,
-                "amount_eur": format!("{:.2}", amount_cents as f64 / 100.0),
-                "due_date": due_date,
-                "description": description,
-                "message": "Appel de fonds enregistré. Les propriétaires recevront notification via leurs contacts enregistrés.",
-                "next_step": "Vérifier les coordonnées email de tous les copropriétaires avant envoi"
-            });
-
-            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
-            Ok(ToolResult {
-                content: vec![ContentBlock {
-                    content_type: "text".to_string(),
-                    text,
-                }],
-                is_error: None,
-            })
         }
 
         "travaux_qualifier" => {
@@ -1479,94 +1306,6 @@ async fn dispatch_tool(
                     ]
                 })
             };
-
-            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
-            Ok(ToolResult {
-                content: vec![ContentBlock {
-                    content_type: "text".to_string(),
-                    text,
-                }],
-                is_error: None,
-            })
-        }
-
-        "alertes_list" => {
-            let building_id = arguments
-                .get("building_id")
-                .and_then(|v| v.as_str())
-                .and_then(|s| Uuid::parse_str(s).ok());
-
-            // Construct alerts list — in production this would query real data
-            let mut alerts = Vec::new();
-
-            if let Some(bid) = building_id {
-                // Check meetings without PV (simplified)
-                use crate::domain::entities::meeting::MeetingStatus;
-                if let Ok(meetings) = state.meeting_use_cases.list_meetings_by_building(bid).await {
-                    for meeting in meetings {
-                        if meeting.status == MeetingStatus::Completed {
-                            alerts.push(json!({
-                                "type": "MINUTES_MISSING",
-                                "severity": "high",
-                                "title": "PV d'AG non envoyé",
-                                "message": format!("AG du {} sans minutes publiées", meeting.title),
-                                "action": "Envoyer le PV aux copropriétaires"
-                            }));
-                        }
-                    }
-                }
-            }
-
-            // Add generic alerts
-            alerts.push(json!({
-                "type": "LEGAL_REMINDER",
-                "severity": "info",
-                "title": "Rappel conformité légale",
-                "message": "Vérifier les délais légaux pour convocations AG (15 jours minimum Art. 3.87 §1 CC)",
-                "legal_basis": "Code Civil Belge"
-            }));
-
-            let result = json!({
-                "building_id": building_id,
-                "alert_count": alerts.len(),
-                "alerts": alerts
-            });
-
-            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
-            Ok(ToolResult {
-                content: vec![ContentBlock {
-                    content_type: "text".to_string(),
-                    text,
-                }],
-                is_error: None,
-            })
-        }
-
-        "energie_campagne_list" => {
-            let status_filter = arguments
-                .get("status")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-
-            // Return simplified energy campaign data (in production, would use energy_campaign_use_cases)
-            let campaigns = json!([
-                {
-                    "id": "camp-2024-001",
-                    "name": "Achat groupé électricité 2024",
-                    "status": "Active",
-                    "start_date": "2024-01-01",
-                    "end_date": "2024-12-31",
-                    "participants": 15,
-                    "anonymized_avg_consumption": "~3500 kWh/an",
-                    "estimated_savings_pct": 12
-                }
-            ]);
-
-            let result = json!({
-                "status_filter": status_filter,
-                "campaign_count": campaigns.as_array().map(|a| a.len()).unwrap_or(0),
-                "campaigns": campaigns
-            });
 
             let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
             Ok(ToolResult {
@@ -1697,6 +1436,15 @@ async fn handle_jsonrpc(req: JsonRpcRequest, state: &AppState, user: &Authentica
                     .unwrap_or(json!({"error": "serialization error"}));
                 }
             };
+
+            if let Err(error) = outil_annonce(&tool_name) {
+                return serde_json::to_value(JsonRpcError {
+                    jsonrpc: "2.0".to_string(),
+                    id,
+                    error,
+                })
+                .unwrap_or(json!({"error": "serialization error"}));
+            }
 
             let arguments = params.get("arguments").cloned().unwrap_or(json!({}));
 
@@ -2019,8 +1767,73 @@ mod tests {
 
     #[test]
     fn test_tool_count() {
-        // We advertise 20 tools (10 initial + 10 new Belgian legal/compliance tools)
+        // 20 outils annoncés moins les quatre retirés par l'ADR 0059 (lot 0, S3).
         let tools = get_mcp_tools();
-        assert_eq!(tools.len(), 20, "Expected 20 MCP tools");
+        assert_eq!(tools.len(), 16, "Expected 16 MCP tools");
+    }
+
+    // Lot 0, story S3 : pas d'outil qui fait semblant (ADR 0059, option 1).
+
+    const OUTILS_RETIRES: [&str; 4] = [
+        "ag_vote",
+        "appel_de_fonds",
+        "energie_campagne_list",
+        "alertes_list",
+    ];
+
+    fn outils_du_prompt_systeme() -> Vec<String> {
+        include_str!("../../mcp_system_prompt.md")
+            .lines()
+            .filter_map(|l| l.trim().strip_prefix("- `"))
+            .filter_map(|l| l.split('`').next())
+            .map(str::to_string)
+            .collect()
+    }
+
+    #[test]
+    fn happy_outils_branches_restent_annonces() {
+        let names: Vec<String> = get_mcp_tools().into_iter().map(|t| t.name).collect();
+        for name in ["list_buildings", "check_quorum", "majority_calculator"] {
+            assert!(names.iter().any(|n| n == name), "{name} doit rester listé");
+            assert!(outil_annonce(name).is_ok(), "{name} doit rester appelable");
+        }
+    }
+
+    #[test]
+    fn security_outils_non_branches_absents_de_tools_list() {
+        let names: Vec<String> = get_mcp_tools().into_iter().map(|t| t.name).collect();
+        for retire in OUTILS_RETIRES {
+            assert!(
+                !names.iter().any(|n| n == retire),
+                "{retire} ne doit plus être listé"
+            );
+        }
+    }
+
+    #[test]
+    fn negative_appel_outil_retire_renvoie_method_not_found() {
+        for retire in OUTILS_RETIRES {
+            let err = outil_annonce(retire).expect_err("un outil retiré n'est pas appelable");
+            assert_eq!(err.code, ErrorCode::METHOD_NOT_FOUND, "{retire}");
+        }
+    }
+
+    #[test]
+    fn edge_prompt_systeme_ne_cite_que_des_outils_annonces() {
+        let annonces: Vec<String> = get_mcp_tools().into_iter().map(|t| t.name).collect();
+        let cites = outils_du_prompt_systeme();
+        assert!(!cites.is_empty(), "le prompt système liste ses outils");
+        for cite in &cites {
+            assert!(
+                annonces.contains(cite),
+                "le prompt cite {cite}, absent de tools/list"
+            );
+        }
+        for retire in OUTILS_RETIRES {
+            assert!(
+                !cites.iter().any(|c| c == retire),
+                "le prompt cite encore {retire}"
+            );
+        }
     }
 }
