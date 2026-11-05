@@ -851,7 +851,7 @@
         data-testid="nav-mobile-avatar-link"
         href="/profile"
         class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-semibold text-xs"
-        aria-label="Profil"
+        aria-label={`${user?.first_name?.[0] ?? ""}${user?.last_name?.[0] ?? ""}, profil`}
       >
         {user?.first_name?.[0]}{user?.last_name?.[0]}
       </a>

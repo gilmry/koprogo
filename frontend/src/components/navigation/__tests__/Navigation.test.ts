@@ -20,6 +20,11 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { writable, type Writable } from "svelte/store";
+import {
+  libelleDansLeNom,
+  nomAccessible,
+  texteVisible,
+} from "../../../lib/a11y/libelle-dans-le-nom";
 import { render, screen } from "../../../test-helpers";
 import { resetScope, setBuilding, setAcp } from "../../../stores/scope.svelte";
 import { UserRole, type User, type Building } from "../../../lib/types";
@@ -595,5 +600,28 @@ describe("Navigation icônes (#797) @security", () => {
     // Le nom accessible réel vit sur le lien englobant.
     const lienBudgets = sidebar.querySelector('a[href="/budgets"]');
     expect(lienBudgets?.textContent?.trim().length).toBeGreaterThan(0);
+  });
+});
+
+// ===========================================================================
+// @security — WCAG 2.5.3 « Label in Name » (axe 4.14, #1090)
+// ===========================================================================
+
+describe("Navigation @security accessibilité", () => {
+  // L'avatar mobile affiche les initiales (« FL ») mais s'annonçait
+  // « Profil » : axe 4.14 le range désormais parmi les violations AA, et le
+  // barrage du VPS a rougi le 2026-11-05.
+  it("le nom accessible de l'avatar mobile contient les initiales affichées", async () => {
+    setAuth(makeUser(UserRole.SYNDIC));
+    setBuilding(makeBuilding());
+    render(Navigation);
+
+    const avatar = await screen.findByTestId("nav-mobile-avatar-link");
+    expect(texteVisible(avatar)).toBe("fl");
+    expect(
+      libelleDansLeNom(avatar),
+      `« ${nomAccessible(avatar)} » ne contient pas « ${texteVisible(avatar)} »`,
+    ).toBe(true);
+    expect(avatar.getAttribute("aria-label")).toMatch(/profil/i);
   });
 });
