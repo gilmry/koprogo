@@ -52,6 +52,16 @@ jobs:
   auto-merge:
     if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
+    # Plafond posé le 2026-11-05. `gh pr checks --watch` attend aussi le
+    # contrôle de CE job, qui reste « pending » tant qu'il tourne : le job
+    # s'attendait lui-même jusqu'au délai par défaut de six heures, puis
+    # était annulé. Sur une PR vers `feature/dev`, aucune autre vérification
+    # ne tourne (CodeQL est « skipping »). Mesuré du 2026-10-29 au
+    # 2026-11-05 : 2071 minutes de runner sur 17 runs, et aucune fusion
+    # Dependabot depuis le 2026-09-10. Le plafond arrête la dépense sans rien
+    # changer au résultat ; réparer l'attente est une décision de politique,
+    # puisqu'il n'existe aucune CI à attendre sur cette branche.
+    timeout-minutes: 10
     steps:
       - name: Fetch Dependabot metadata
         id: meta
