@@ -851,6 +851,28 @@ mod tests_garde_de_perimetre {
     }
 }
 
+/// Les copropriétaires d'UN immeuble, et non de toute l'organisation.
+///
+/// `list_owners` et `list_owners_of_building` acceptaient un `building_id` et
+/// l'ignoraient : ils rendaient l'organisation entière. L'immeuble est déjà
+/// borné au périmètre de l'appelant par `verifier_perimetre`.
+async fn coproprietaires_de_limmeuble(
+    state: &AppState,
+    building_id: Uuid,
+) -> Result<Vec<crate::application::dto::OwnerResponseDto>, String> {
+    let ids = state
+        .unit_owner_use_cases
+        .active_owner_ids_of_building(building_id)
+        .await?;
+    let mut coproprietaires = Vec::with_capacity(ids.len());
+    for id in ids {
+        if let Some(coproprietaire) = state.owner_use_cases.get_owner(id).await? {
+            coproprietaires.push(coproprietaire);
+        }
+    }
+    Ok(coproprietaires)
+}
+
 /// Dispatches a `tools/call` request to the appropriate tool implementation.
 /// Returns a ToolResult or a JSON-RPC error.
 async fn dispatch_tool(
@@ -952,23 +974,29 @@ async fn dispatch_tool(
         }
 
         "list_owners" => {
-            let _building_id = arguments
+            let building_id = arguments
                 .get("building_id")
                 .and_then(|v| v.as_str())
                 .and_then(|s| Uuid::parse_str(s).ok());
 
-            let page_request = crate::application::dto::PageRequest {
-                page: 1,
-                per_page: 100,
-                sort_by: None,
-                order: crate::application::dto::SortOrder::default(),
+            let owners = match building_id {
+                Some(bid) => coproprietaires_de_limmeuble(state, bid).await,
+                None => {
+                    let page_request = crate::application::dto::PageRequest {
+                        page: 1,
+                        per_page: 100,
+                        sort_by: None,
+                        order: crate::application::dto::SortOrder::default(),
+                    };
+                    state
+                        .owner_use_cases
+                        .list_owners_paginated(&page_request, Some(org_id))
+                        .await
+                        .map(|(owners, _total)| owners)
+                }
             };
-            match state
-                .owner_use_cases
-                .list_owners_paginated(&page_request, Some(org_id))
-                .await
-            {
-                Ok((owners, _total)) => {
+            match owners {
+                Ok(owners) => {
                     let text =
                         serde_json::to_string_pretty(&owners).unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
@@ -1362,24 +1390,14 @@ async fn dispatch_tool(
                     data: None,
                 })?;
 
-            let _building_id = Uuid::parse_str(building_id_str).map_err(|_| RpcError {
+            let building_id = Uuid::parse_str(building_id_str).map_err(|_| RpcError {
                 code: ErrorCode::INVALID_PARAMS,
                 message: "building_id must be a valid UUID".to_string(),
                 data: None,
             })?;
 
-            let page_request = crate::application::dto::PageRequest {
-                page: 1,
-                per_page: 100,
-                sort_by: None,
-                order: crate::application::dto::SortOrder::default(),
-            };
-            match state
-                .owner_use_cases
-                .list_owners_paginated(&page_request, Some(org_id))
-                .await
-            {
-                Ok((owners, _total)) => {
+            match coproprietaires_de_limmeuble(state, building_id).await {
+                Ok(owners) => {
                     let text =
                         serde_json::to_string_pretty(&owners).unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {

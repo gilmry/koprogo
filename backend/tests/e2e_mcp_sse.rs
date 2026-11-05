@@ -422,3 +422,105 @@ async fn happy_mcp_repond_dans_son_perimetre() {
         );
     }
 }
+
+// ==================== Copropriétaires d'un immeuble (lot 0, suite de S1) ====================
+//
+// `list_owners_of_building` et `list_owners` acceptaient un `building_id`...
+// et l'ignoraient : ils rendaient tous les copropriétaires de l'organisation.
+// Pas une fuite (S1 borne l'immeuble au périmètre de l'appelant), mais une
+// réponse fausse, que l'assistant présentait comme celle de l'immeuble demandé.
+
+/// Crée un copropriétaire de `org_id` titulaire d'un lot de `building_id`.
+async fn coproprietaire_de(
+    app_state: &actix_web::web::Data<koprogo_api::infrastructure::web::AppState>,
+    org_id: uuid::Uuid,
+    building_id: uuid::Uuid,
+) -> uuid::Uuid {
+    use koprogo_api::application::dto::CreateOwnerDto;
+    let lot = common::create_test_unit(app_state, building_id).await;
+    let coproprietaire = app_state
+        .owner_use_cases
+        .create_owner(CreateOwnerDto {
+            organization_id: org_id.to_string(),
+            first_name: "Titulaire".to_string(),
+            last_name: "Lot".to_string(),
+            email: format!("mcp-lot-{}@test.com", uuid::Uuid::new_v4()),
+            phone: None,
+            address: "Rue A 1".to_string(),
+            city: "Liège".to_string(),
+            postal_code: "4000".to_string(),
+            country: "Belgium".to_string(),
+            user_id: None,
+        })
+        .await
+        .expect("copropriétaire");
+    let id = uuid::Uuid::parse_str(&coproprietaire.id).unwrap();
+    app_state
+        .unit_owner_use_cases
+        .add_owner_to_unit(lot, id, rust_decimal::Decimal::ONE, true)
+        .await
+        .expect("titulaire du lot");
+    id
+}
+
+/// @happy — l'immeuble demandé, et lui seul.
+#[actix_web::test]
+#[serial]
+async fn happy_les_coproprietaires_listes_sont_ceux_de_limmeuble() {
+    let (app_state, _container, org) = common::setup_test_db().await;
+    let jeton = common::register_and_login_with_role(&app_state, org, "syndic").await;
+    let immeuble_1 = common::create_test_building(&app_state, org).await;
+    let immeuble_2 = common::create_test_building(&app_state, org).await;
+    let du_1 = coproprietaire_de(&app_state, org, immeuble_1).await;
+    let du_2 = coproprietaire_de(&app_state, org, immeuble_2).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    for outil in ["list_owners_of_building", "list_owners"] {
+        let corps = appeler_outil!(
+            &app,
+            &jeton,
+            outil,
+            json!({ "building_id": immeuble_1.to_string() })
+        );
+        let texte = corps["result"]["content"][0]["text"]
+            .as_str()
+            .unwrap_or_else(|| panic!("{outil} devait répondre : {corps}"));
+        assert!(
+            texte.contains(&du_1.to_string()),
+            "{outil} doit citer le copropriétaire de l'immeuble 1"
+        );
+        assert!(
+            !texte.contains(&du_2.to_string()),
+            "{outil} cite un copropriétaire de l'immeuble 2 pour l'immeuble 1"
+        );
+    }
+}
+
+/// @edge — sans immeuble, `list_owners` rend toute l'organisation, comme avant.
+#[actix_web::test]
+#[serial]
+async fn edge_list_owners_sans_immeuble_rend_lorganisation() {
+    let (app_state, _container, org) = common::setup_test_db().await;
+    let jeton = common::register_and_login_with_role(&app_state, org, "syndic").await;
+    let immeuble_1 = common::create_test_building(&app_state, org).await;
+    let immeuble_2 = common::create_test_building(&app_state, org).await;
+    let du_1 = coproprietaire_de(&app_state, org, immeuble_1).await;
+    let du_2 = coproprietaire_de(&app_state, org, immeuble_2).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let corps = appeler_outil!(&app, &jeton, "list_owners", json!({}));
+    let texte = corps["result"]["content"][0]["text"].as_str().unwrap();
+    assert!(texte.contains(&du_1.to_string()) && texte.contains(&du_2.to_string()));
+}
