@@ -1,0 +1,72 @@
+{
+  "slug": "sel",
+  "title": "Le SEL : un service rendu, des crédits qui changent de main",
+  "propos": "La partie du produit qui ne ressemble à aucun logiciel de syndic. Une copropriétaire offre trois heures de bricolage, un voisin les demande, elle accepte, elle rend le service, il la note — et les crédits se déplacent. Ce déplacement est invisible sur une capture : c'est pourtant tout ce qui distingue un SEL d'un panneau de petites annonces.",
+  "acteurs": [
+    "copropriétaire",
+    "conseil"
+  ],
+  "interrompu": null,
+  "console": [
+    "[401] POST /api/v1/auth/refresh"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "La partie du produit qui ne ressemble à aucun logiciel de syndic. Une copropriétaire offre trois heures de bricolage, un voisin les demande, elle accepte, elle rend le service, il la note — et les crédits se déplacent. Ce déplacement est invisible sur une capture : c'est pourtant tout ce qui distingue un SEL d'un panneau de petites annonces."
+    },
+    {
+      "t": 6,
+      "texte": "Fatima sait monter des meubles. Elle n'en fait pas commerce : elle offre trois heures à ses voisins, contre trois crédits — trois heures qu'un voisin lui rendra un jour, en autre chose.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 34,
+      "texte": "Elle décrit ce qu'elle propose et ce que ça vaut. Le prix est en TEMPS, pas en euros : c'est la règle du SEL, et c'est elle qui met le retraité et le cadre sur le même pied.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 46,
+      "texte": "Elle publie. L'offre rejoint le SEL de l'immeuble, et son fil de vie commence : offerte, demandée, rendue.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 57,
+      "texte": "Luc a une bibliothèque en pièces détachées depuis trois mois. Il trouve l'offre dans le SEL de l'immeuble, la demande, et confirme — demander un service, c'est s'engager à recevoir quelqu'un chez soi.",
+      "acteur": "conseil"
+    },
+    {
+      "t": 63,
+      "texte": "Le copropriétaire se déconnecte. C'est au tour du conseil."
+    },
+    {
+      "t": 68,
+      "texte": "Connexion en tant que conseil.",
+      "acteur": "conseil"
+    },
+    {
+      "t": 108,
+      "texte": "Fatima accepte, monte la bibliothèque, et marque le service rendu. C'est à cet instant que les crédits se déplacent — pas à la demande, pas à l'acceptation.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 114,
+      "texte": "Le conseil se déconnecte. C'est au tour du copropriétaire."
+    },
+    {
+      "t": 119,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 167,
+      "texte": "Et voilà ce qui distingue un SEL d'un panneau de petites annonces : Fatima a désormais trois crédits de plus. Elle pourra demander trois heures à quelqu'un d'autre, sans jamais avoir parlé d'argent.",
+      "acteur": "copropriétaire"
+    }
+  ]
+}

@@ -1,0 +1,422 @@
+{
+  "slug": "balayage-owner",
+  "title": "Balayage complet — copropriétaire",
+  "propos": "Tous les écrans du produit, ouverts un par un par un copropriétaire. Ce parcours ne démontre pas une valeur : il établit un état des lieux, et rend visibles les écrans que personne n'avait jamais ouverts.",
+  "acteurs": [
+    "copropriétaire"
+  ],
+  "interrompu": null,
+  "console": [
+    "[403] GET /api/v1/dashboard/accountant/stats",
+    "[warning] [RouteGuard] Access denied to /accountant for role owner",
+    "[403] GET /api/v1/stats/dashboard",
+    "[warning] [RouteGuard] Access denied to /admin for role owner",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] GET /api/v1/acps",
+    "[401] GET /api/v1/buildings?per_page=100",
+    "[401] GET /api/v1/acps?per_page=200",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] GET /api/v1/buildings?per_page=100",
+    "[401] GET /api/v1/acps?per_page=200",
+    "[401] GET /api/v1/acps",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] GET /api/v1/acps",
+    "[401] GET /api/v1/buildings?per_page=100",
+    "[401] GET /api/v1/acps?per_page=200",
+    "[401] POST /api/v1/auth/refresh",
+    "[401] POST /api/v1/auth/refresh",
+    "[warning] [RouteGuard] Access denied to /call-for-funds for role owner",
+    "[warning] [RouteGuard] Access denied to /expenses for role owner",
+    "[warning] [RouteGuard] Access denied to /invoice-workflow for role owner",
+    "[warning] [RouteGuard] Access denied to /journal-entries for role owner",
+    "[error] Failed to load models: Error: Failed to fetch models\n    at se (http://localhost:3000/_astro/McpChatbot.fqm_Eb5R.js:1:783)\n    at async http://localhost:3000/_astro/McpChatbot.fqm_Eb5R.js:1:4323",
+    "[requestfailed] GET http://localhost:8080/mcp/v1/models — net::ERR_ABORTED",
+    "[warning] [RouteGuard] Access denied to /owner-contributions for role owner",
+    "[warning] [RouteGuard] Access denied to /payment-reminders for role owner",
+    "[warning] [RouteGuard] Access denied to /reports for role owner"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Tous les écrans du produit, ouverts un par un par un copropriétaire. Ce parcours ne démontre pas une valeur : il établit un état des lieux, et rend visibles les écrans que personne n'avait jamais ouverts."
+    },
+    {
+      "t": 6,
+      "texte": "Balayage systématique du produit vu par le copropriétaire : 93 écrans ouverts un par un. Ce parcours ne raconte rien — il constate.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 28,
+      "texte": "Section « racine /accountant → /building-detail » — 10 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 34,
+      "texte": "/accountant ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 41,
+      "texte": "/admin ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 49,
+      "texte": "Session perdue en ouvrant /booking-detail : reconnexion pour pouvoir continuer à mesurer.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 55,
+      "texte": "Le copropriétaire se déconnecte. C'est au tour du copropriétaire."
+    },
+    {
+      "t": 60,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 77,
+      "texte": "/booking-detail ne s'ouvre pas pour ce rôle : on atterrit sur /login.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 84,
+      "texte": "Session perdue en ouvrant /bookings : reconnexion pour pouvoir continuer à mesurer.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 90,
+      "texte": "Le copropriétaire se déconnecte. C'est au tour du copropriétaire."
+    },
+    {
+      "t": 95,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 112,
+      "texte": "/bookings s'ouvre, mais la console proteste : 6 erreur(s)",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 119,
+      "texte": "Section « racine /buildings → /exchange-detail » — 10 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 126,
+      "texte": "/call-for-funds ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 141,
+      "texte": "Section « racine /exchanges → /mcp-chat » — 10 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 148,
+      "texte": "/expenses ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 156,
+      "texte": "/invoice-workflow ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 163,
+      "texte": "/journal-entries ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 171,
+      "texte": "/mcp-chat s'ouvre, mais la console proteste : Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 177,
+      "texte": "Section « racine /meeting-detail → /payment-reminder-detail » — 10 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 186,
+      "texte": "/notice-detail ne s'ouvre pas pour ce rôle : on atterrit sur /notices.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 195,
+      "texte": "/owner-contributions ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 202,
+      "texte": "Section « racine /payment-reminders → /skills » — 10 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 208,
+      "texte": "/payment-reminders ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 217,
+      "texte": "/reports ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 225,
+      "texte": "Session perdue en ouvrant /sharing-detail : reconnexion pour pouvoir continuer à mesurer.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 231,
+      "texte": "Le copropriétaire se déconnecte. C'est au tour du copropriétaire."
+    },
+    {
+      "t": 237,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 253,
+      "texte": "/sharing-detail ne s'ouvre pas pour ce rôle : on atterrit sur /login.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 260,
+      "texte": "Session perdue en ouvrant /skill-detail : reconnexion pour pouvoir continuer à mesurer.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 266,
+      "texte": "Le copropriétaire se déconnecte. C'est au tour du copropriétaire."
+    },
+    {
+      "t": 272,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 289,
+      "texte": "/skill-detail ne s'ouvre pas pour ce rôle : on atterrit sur /login.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 295,
+      "texte": "Session perdue en ouvrant /skills : reconnexion pour pouvoir continuer à mesurer.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 301,
+      "texte": "Le copropriétaire se déconnecte. C'est au tour du copropriétaire."
+    },
+    {
+      "t": 307,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 323,
+      "texte": "/skills s'ouvre, mais la console proteste : 6 erreur(s)",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 328,
+      "texte": "Section « racine /syndic → /work-reports » — 5 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 334,
+      "texte": "/syndic ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 342,
+      "texte": "Section « admin /admin/acps → /admin/seed » — 10 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 348,
+      "texte": "/admin/acps ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 355,
+      "texte": "/admin/acps/onboarding ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 362,
+      "texte": "/admin/board-members ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 369,
+      "texte": "/admin/gamification ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 375,
+      "texte": "/admin/gdpr ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 382,
+      "texte": "/admin/monitoring ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 389,
+      "texte": "/admin/organization-detail ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 396,
+      "texte": "/admin/organizations ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 403,
+      "texte": "/admin/role-assignments ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 409,
+      "texte": "/admin/seed ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 415,
+      "texte": "Section « admin /admin/subscriptions → /admin/users » — 3 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 422,
+      "texte": "/admin/subscriptions ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 428,
+      "texte": "/admin/user-owner-links ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 435,
+      "texte": "/admin/users ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 441,
+      "texte": "Section « age-requests » — 1 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 445,
+      "texte": "Section « energy-campaigns » — 2 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 451,
+      "texte": "Section « exchanges » — 1 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 455,
+      "texte": "Section « owner » — 8 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 461,
+      "texte": "/owner/payment-methods s'ouvre, mais la console proteste : Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 468,
+      "texte": "/owner/profile s'ouvre mais ne montre presque rien (44 caractères).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 475,
+      "texte": "Section « polls » — 2 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 480,
+      "texte": "Section « quotes » — 1 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 484,
+      "texte": "/quotes/compare ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 490,
+      "texte": "Section « settings » — 2 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 495,
+      "texte": "Section « syndic » — 7 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 499,
+      "texte": "/syndic/board-members ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 506,
+      "texte": "/syndic/contractor-evaluations ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 512,
+      "texte": "/syndic/magic-links ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 519,
+      "texte": "/syndic/mandates ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 526,
+      "texte": "/syndic/role-delegations ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 533,
+      "texte": "/syndic/technical-spec ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 540,
+      "texte": "/syndic/technical-specs ne s'ouvre pas pour ce rôle : on atterrit sur /owner.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 546,
+      "texte": "Section « tickets » — 1 écran(s).",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 550,
+      "texte": "Bilan du balayage.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 552,
+      "texte": "93 écrans ouverts : 35 rebondissent, 1 ne montrent presque rien, 12 jettent des erreurs, et 5 ont déconnecté l'utilisateur. Le détail est dans le journal.",
+      "acteur": "copropriétaire"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "slug": "sondage",
+  "title": "Consulter la copropriété, et compter les voix",
+  "propos": "Un syndic prépare son assemblée sans convoquer personne : il ouvre un sondage, le publie, une copropriétaire vote, il clôture et lit le dépouillement. Huit étapes, presque toutes des gestes — on choisit un immeuble, on rédige la question, on ajoute une option, on coche, on dépose sa voix.",
+  "acteurs": [
+    "syndic",
+    "copropriétaire"
+  ],
+  "interrompu": null,
+  "console": [
+    "[401] POST /api/v1/auth/refresh"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Un syndic prépare son assemblée sans convoquer personne : il ouvre un sondage, le publie, une copropriétaire vote, il clôture et lit le dépouillement. Huit étapes, presque toutes des gestes — on choisit un immeuble, on rédige la question, on ajoute une option, on coche, on dépose sa voix."
+    },
+    {
+      "t": 6,
+      "texte": "L'ascenseur tombe en panne tous les deux mois. Avant de rédiger une résolution pour l'assemblée, Sophie veut savoir ce que pensent les copropriétaires.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 12,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 33,
+      "texte": "Elle gère deux immeubles : elle désigne celui dont l'ascenseur tombe en panne, pose la question, et bascule sur un choix multiple. Entre « oui » et « non », il y a « réparer encore une fois » — une consultation qui n'offre que deux cases oriente la réponse.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 47,
+      "texte": "Trois options, écrites une par une. C'est le geste que la vitrine ne montrait jamais : remplir un champ, presser « ajouter », recommencer.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 67,
+      "texte": "Elle fixe la date de clôture et envoie. Le sondage naît en brouillon : rien n'est visible des copropriétaires tant qu'elle n'a pas publié.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 80,
+      "texte": "Elle relit, publie, et confirme. À partir de cet instant, la consultation est ouverte et chaque copropriétaire peut y déposer une voix — la question, elle, ne se réécrit plus.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 95,
+      "texte": "Carine se connecte et trouve la consultation dans sa liste. Elle n'a pas eu besoin d'un courriel avec un lien : le produit la lui présente.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 101,
+      "texte": "Le syndic se déconnecte. C'est au tour du copropriétaire."
+    },
+    {
+      "t": 106,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 133,
+      "texte": "Elle choisit la solution intermédiaire — réparer maintenant, provisionner le remplacement — et dépose sa voix.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 144,
+      "texte": "Sophie clôture et lit le dépouillement. La voix de Carine y est, avec son libellé — c'est ce résultat qui décidera si une résolution part à l'ordre du jour.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 150,
+      "texte": "Le copropriétaire se déconnecte. C'est au tour du syndic."
+    },
+    {
+      "t": 155,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    }
+  ]
+}

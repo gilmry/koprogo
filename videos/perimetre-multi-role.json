@@ -1,0 +1,112 @@
+{
+  "slug": "perimetre-multi-role",
+  "title": "Chacun voit son périmètre — le syndic, puis le copropriétaire",
+  "propos": "Démontre que deux rôles se relaient sur la même copropriété et que l'écran d'accueil de chacun reflète ce qu'il a le droit de voir.",
+  "acteurs": [
+    "syndic",
+    "copropriétaire"
+  ],
+  "interrompu": null,
+  "console": [
+    "[warning] Unrecognized feature: 'web-share'.",
+    "[401] POST /api/v1/auth/refresh",
+    "[warning] No available adapters.",
+    "[401] POST /api/v1/auth/refresh",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000",
+    "[403] GET /api/v1/organizations?per_page=1000"
+  ],
+  "narration": [
+    {
+      "t": 0,
+      "texte": "Démontre que deux rôles se relaient sur la même copropriété et que l'écran d'accueil de chacun reflète ce qu'il a le droit de voir."
+    },
+    {
+      "t": 6,
+      "texte": "KoproGo — gestion de copropriété. Deux rôles vont se relayer : le syndic qui administre, puis un copropriétaire qui consulte.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 15,
+      "texte": "Le syndic se connecte. C'est le mandataire de l'ACP au sens de l'Art. 3.89 : il convoque, préside et exécute.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 21,
+      "texte": "Connexion en tant que syndic.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 36,
+      "texte": "Son tableau de bord s'ouvre sur les immeubles qu'il gère. Il voit l'administration ; il ne voit pas les lots d'un copropriétaire.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 45,
+      "texte": "Le syndic ouvre le sélecteur et choisit l'ACP sur laquelle il travaille. Tout ce qu'il verra ensuite — charges, assemblées, écritures — sera cadré par ce choix.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 57,
+      "texte": "Il déplie « Comptabilité » et clique « Dépenses » — le geste exact que le produit rendait pénible. Son ACP doit le suivre : re-choisir à chaque menu rendrait le multi-copropriété inutilisable.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 70,
+      "texte": "Et il survit à un bouton, pas seulement à un menu. Le syndic ouvre la saisie d'une facture, la referme, et son périmètre est toujours là.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 87,
+      "texte": "Il choisit maintenant un IMMEUBLE dans la même barre, puis change d'écran par le menu. Les deux le suivent : la copropriété ET l'immeuble. C'est le geste entier que le PO avait signalé.",
+      "acteur": "syndic"
+    },
+    {
+      "t": 104,
+      "texte": "Le syndic se retire. Un copropriétaire se connecte — titulaire d'un droit réel, il vote, paie et consulte ses quotes-parts.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 110,
+      "texte": "Le syndic se déconnecte. C'est au tour du copropriétaire."
+    },
+    {
+      "t": 115,
+      "texte": "Connexion en tant que copropriétaire.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 131,
+      "texte": "Son écran est différent : « Mes lots » et « Communauté », pas l'administration. Le cloisonnement se voit, il ne se déduit pas.",
+      "acteur": "copropriétaire"
+    },
+    {
+      "t": 140,
+      "texte": "Parcours terminé. Le même parcours sert de gate E2E (correctness) et de preuve de valeur (cette vidéo) — écrit une seule fois.",
+      "acteur": "copropriétaire"
+    }
+  ]
+}
