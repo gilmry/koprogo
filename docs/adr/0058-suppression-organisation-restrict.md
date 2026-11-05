@@ -1,6 +1,6 @@
 # ADR 0058 : supprimer une organisation ne détruit jamais une donnée d'ACP
 
-- **Status**: Proposed (à trancher par @gilmry)
+- **Status**: Accepted (option 1 sur les clés étrangères portant une donnée d'ACP, option 3 pour l'organisation ; tranché par @gilmry le 2026-11-04)
 - **Date**: 2026-10-31
 - **Track**: Software / Security
 - **Authors**: @gilmry (décision) + Claude (rédaction)
