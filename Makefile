@@ -89,6 +89,11 @@ test-unit: ## 🎯 Tests unitaires (backend)
 	@echo "$(GREEN)🧪 Tests unitaires...$(NC)"
 	cd backend && SQLX_OFFLINE=true cargo test --lib
 
+# Les cliquets statiques : `architecture` et tout `backend/tests/garde_*.rs`.
+# Le barrage du VPS (`vps-feature-dev.yml`) et `ci.yml` en tiennent chacun
+# une liste écrite à la main ; ici, une nouvelle garde est prise d'office.
+GARDES := architecture $(sort $(basename $(notdir $(wildcard backend/tests/garde_*.rs))))
+
 test-e2e-backend: ## 🔗 Tests E2E backend (e2e_http.rs only - e2e.rs and e2e_auth.rs temporarily disabled)
 	@echo "$(GREEN)🔗 Tests E2E backend...$(NC)"
 	cd backend && SQLX_OFFLINE=true cargo test --test e2e_http
@@ -344,6 +349,21 @@ openapi-export-conteneur: ## 📤 Exporter openapi.json SANS la pile de démo
 		echo "$(YELLOW)❌ L'export n'a pas produit de JSON valide.$(NC)"; exit 1; }
 	@echo "$(GREEN)✅ docs/api/openapi.json écrit ($$(wc -c < docs/api/openapi.json) octets)$(NC)"
 
+gardes-conteneur: ## 🛡️ Gardes du dépôt (cliquets statiques), dans le conteneur de build
+	@# PAS dans le conteneur de dev : il ne monte que `backend/`, et les gardes
+	@# lisent aussi `.github/workflows` et `docs/personas`. Premier essai du
+	@# 2026-11-05 : trois gardes rouges pour « No such file or directory ».
+	@# Ici, tout le dépôt est monté, et c'est l'arbre courant qui est vérifié,
+	@# pas celui du dépôt principal (#1039). Liste trouvée par motif, pas
+	@# recopiée : les listes écrites à la main divergent (#956).
+	@echo "$(GREEN)🛡️  Gardes du dépôt ($(words $(GARDES)) harnais, aucune dette ne grossit)...$(NC)"
+	@sudo docker run --rm --user $$(id -u):$$(id -g) --memory 6g --memory-swap 6g \
+		-v $(PWD):$(PWD) -v rustbuild-target-koprogo:/target -v rustbuild-cargo-home:/cargo \
+		-e CARGO_TARGET_DIR=/target -e CARGO_HOME=/cargo -e HOME=/tmp \
+		-e CARGO_BUILD_JOBS=1 -e SQLX_OFFLINE=true \
+		-w $(PWD)/backend rust-buildenv:1.98 \
+		cargo test --no-fail-fast $(addprefix --test ,$(GARDES))
+
 openapi-check-conteneur: openapi-export-conteneur ## 🔍 Synchro openapi.json, sans la démo
 	@if ! git diff --quiet docs/api/openapi.json; then \
 		echo "$(YELLOW)❌ docs/api/openapi.json a dérivé de la source Rust.$(NC)"; \
@@ -529,6 +549,10 @@ ci: ## ✅ Vérifications CI locales via containers Docker (tout dans Docker, pa
 	docker compose exec -T frontend sh -c "npm audit --audit-level=high"
 	@echo "$(GREEN)🧪 Tests unitaires backend (cargo test --lib)...$(NC)"
 	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo test --lib"
+	@# Les gardes ne tournaient que dans le barrage du VPS : le 2026-11-05, un
+	@# test de S4 a fait grossir `garde_classement_par_souschaines` après la
+	@# fusion de #1096, et rien n'a été déployé.
+	@$(MAKE) --no-print-directory gardes-conteneur
 	@echo "$(GREEN)🔧 Compilation tests E2E backend...$(NC)"
 	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo test --test e2e --no-run"
 	@echo "$(GREEN)🔧 Compilation tests BDD backend...$(NC)"
