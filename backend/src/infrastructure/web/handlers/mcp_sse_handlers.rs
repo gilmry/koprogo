@@ -1,3 +1,4 @@
+use crate::application::error::AppError;
 /// MCP SSE Server Handler — Issue #252
 ///
 /// Implements Model Context Protocol (MCP) version 2024-11-05 using JSON-RPC 2.0 over
@@ -18,6 +19,9 @@
 /// Reference: https://modelcontextprotocol.io/specification/2024-11-05/basic/transports/
 use crate::domain::copropriete::{MajorityType, NatureDeDecision};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_meeting_org_access, verify_owner_org_access,
+};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use actix_web::{
     get, post,
@@ -673,6 +677,180 @@ fn outil_annonce(tool_name: &str) -> Result<(), RpcError> {
     })
 }
 
+// ─── Garde de périmètre (lot 0, S1, #1063) ─────────────────────────────────
+//
+// Le MCP n'appelait aucune garde du `scope_guard` : chaque outil passait
+// l'identifiant reçu tel quel aux use cases. Un syndic authentifié lisait
+// ainsi, par un simple UUID, les données d'une ACP gérée par un autre cabinet.
+//
+// La garde est générique plutôt que posée outil par outil : TOUT identifiant
+// de périmètre présent dans les arguments est vérifié avant le dispatch. Un
+// outil ajouté demain ne peut pas l'oublier, et un outil qui déclarerait un
+// autre `*_id` dans son schéma fait rougir
+// `security_tout_identifiant_annonce_passe_par_la_garde`.
+
+/// Les identifiants que la garde sait vérifier, avec la cible qu'ils désignent.
+type VersCible = fn(Uuid) -> CibleDuPerimetre;
+
+const IDENTIFIANTS_DE_PERIMETRE: [(&str, VersCible); 3] = [
+    ("building_id", CibleDuPerimetre::Immeuble),
+    ("owner_id", CibleDuPerimetre::Coproprietaire),
+    ("meeting_id", CibleDuPerimetre::Assemblee),
+];
+
+#[derive(Debug, PartialEq)]
+enum CibleDuPerimetre {
+    Immeuble(Uuid),
+    Coproprietaire(Uuid),
+    Assemblee(Uuid),
+}
+
+/// Lit les identifiants de périmètre présents dans les arguments.
+///
+/// Un identifiant absent n'est pas une erreur ici : l'outil dira lui-même
+/// qu'il est requis. Un identifiant présent mais illisible est refusé avant
+/// tout appel.
+fn cibles_du_perimetre(arguments: &Value) -> Result<Vec<CibleDuPerimetre>, RpcError> {
+    let mut cibles = Vec::new();
+    for (cle, cible) in IDENTIFIANTS_DE_PERIMETRE {
+        let Some(valeur) = arguments.get(cle).and_then(|v| v.as_str()) else {
+            continue;
+        };
+        let id = Uuid::parse_str(valeur).map_err(|_| RpcError {
+            code: ErrorCode::INVALID_PARAMS,
+            message: format!("{} must be a valid UUID", cle),
+            data: None,
+        })?;
+        cibles.push(cible(id));
+    }
+    Ok(cibles)
+}
+
+/// Un refus de périmètre ne dit pas si la ressource existe : « introuvable »
+/// et « appartient à un autre cabinet » rendent le même message, sinon
+/// l'outil servirait d'oracle pour sonder les UUID d'autrui.
+fn refus_de_perimetre(erreur: AppError) -> RpcError {
+    match erreur {
+        AppError::Forbidden(_) | AppError::NotFound(_) => RpcError {
+            code: ErrorCode::INVALID_PARAMS,
+            message: "Resource not found or outside your organization".to_string(),
+            data: None,
+        },
+        autre => RpcError {
+            code: ErrorCode::INTERNAL_ERROR,
+            message: format!("Scope check failed: {}", autre),
+            data: None,
+        },
+    }
+}
+
+async fn verifier_perimetre(
+    arguments: &Value,
+    state: &AppState,
+    user: &AuthenticatedUser,
+) -> Result<(), RpcError> {
+    for cible in cibles_du_perimetre(arguments)? {
+        let verdict = match cible {
+            CibleDuPerimetre::Immeuble(id) => {
+                verify_building_org_access(
+                    user,
+                    id,
+                    &state.building_use_cases,
+                    &state.acp_use_cases,
+                )
+                .await
+            }
+            CibleDuPerimetre::Coproprietaire(id) => {
+                verify_owner_org_access(user, id, &state.owner_use_cases).await
+            }
+            CibleDuPerimetre::Assemblee(id) => {
+                verify_meeting_org_access(
+                    user,
+                    id,
+                    &state.meeting_use_cases,
+                    &state.building_use_cases,
+                    &state.acp_use_cases,
+                )
+                .await
+            }
+        };
+        verdict.map_err(refus_de_perimetre)?;
+    }
+    Ok(())
+}
+
+// Les tests de la garde vivent ICI, au-dessus du premier `pub async fn`, et
+// non dans le module `tests` de fin de fichier. `garde_identite_sans_decision`
+// découpe ce fichier sur `pub async fn` : tout ce qui suit le dernier endpoint
+// compte comme son corps, et un `Forbidden` écrit dans un test y passait pour
+// une décision de `mcp_legal_index_endpoint` (constaté le 2026-11-05).
+#[cfg(test)]
+mod tests_garde_de_perimetre {
+    use super::*;
+
+    // ─── Lot 0, story S1 : la garde de périmètre (#1063) ──────────────────
+
+    /// @security — tout identifiant qu'un outil annonce est vérifié.
+    ///
+    /// La garde ne connaît que `building_id`, `owner_id` et `meeting_id`. Un
+    /// outil qui déclarerait `ticket_id` ou `document_id` passerait sous elle
+    /// sans contrôle : ce test l'interdit.
+    #[test]
+    fn security_tout_identifiant_annonce_passe_par_la_garde() {
+        let gardes: Vec<&str> = IDENTIFIANTS_DE_PERIMETRE.iter().map(|(c, _)| *c).collect();
+        for outil in get_mcp_tools() {
+            let proprietes = outil.input_schema["properties"]
+                .as_object()
+                .cloned()
+                .unwrap_or_default();
+            for cle in proprietes.keys().filter(|c| c.ends_with("_id")) {
+                assert!(
+                    gardes.contains(&cle.as_str()),
+                    "{} déclare `{}`, que la garde de périmètre ne vérifie pas",
+                    outil.name,
+                    cle
+                );
+            }
+        }
+    }
+
+    /// @happy — les identifiants présents deviennent des cibles à vérifier.
+    #[test]
+    fn happy_les_cibles_sont_lues_dans_les_arguments() {
+        let immeuble = Uuid::new_v4();
+        let assemblee = Uuid::new_v4();
+        let cibles = cibles_du_perimetre(&json!({
+            "building_id": immeuble.to_string(),
+            "meeting_id": assemblee.to_string(),
+            "decision_type": "travaux_aux_parties_communes"
+        }))
+        .unwrap();
+        assert_eq!(
+            cibles,
+            vec![
+                CibleDuPerimetre::Immeuble(immeuble),
+                CibleDuPerimetre::Assemblee(assemblee)
+            ]
+        );
+    }
+
+    /// @edge — un identifiant illisible est refusé avant tout appel.
+    #[test]
+    fn edge_un_identifiant_illisible_est_refuse() {
+        let erreur = cibles_du_perimetre(&json!({ "owner_id": "pas-un-uuid" })).unwrap_err();
+        assert_eq!(erreur.code, ErrorCode::INVALID_PARAMS);
+    }
+
+    /// @negative — « introuvable » et « hors périmètre » ne se distinguent pas.
+    #[test]
+    fn negative_le_refus_ne_sert_pas_doracle() {
+        let introuvable = refus_de_perimetre(AppError::NotFound("Building not found".into()));
+        let ailleurs = refus_de_perimetre(AppError::Forbidden("other org".into()));
+        assert_eq!(introuvable.code, ailleurs.code);
+        assert_eq!(introuvable.message, ailleurs.message);
+    }
+}
+
 /// Dispatches a `tools/call` request to the appropriate tool implementation.
 /// Returns a ToolResult or a JSON-RPC error.
 async fn dispatch_tool(
@@ -691,6 +869,8 @@ async fn dispatch_tool(
             })
         }
     };
+
+    verifier_perimetre(arguments, state, user).await?;
 
     match tool_name {
         "list_buildings" => {
