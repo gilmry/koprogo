@@ -16,6 +16,7 @@
 use crate::application::dto::{CreateAcpDto, UpdateAcpDto};
 use crate::application::use_cases::acp_use_cases::AcpCaller;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::caller_from_role;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
@@ -24,26 +25,7 @@ use validator::Validate;
 /// Map `AuthenticatedUser` → `AcpCaller` (story 1.1 — sera enrichi en 3.1
 /// quand les sous-rôles accountant.* apparaîtront).
 pub(crate) fn caller_from_user(user: &AuthenticatedUser) -> AcpCaller {
-    match user.role.to_lowercase().as_str() {
-        "superadmin" => AcpCaller::SuperAdmin,
-        "admin" => match user.organization_id {
-            Some(org) => AcpCaller::Admin {
-                organization_id: org,
-            },
-            None => AcpCaller::SuperAdmin, // admin sans org = traité comme superadmin lecture
-        },
-        "syndic" | "accountant" => match user.organization_id {
-            Some(org) => AcpCaller::Syndic {
-                organization_id: org,
-            },
-            None => AcpCaller::Owner {
-                user_id: user.user_id,
-            },
-        },
-        _ => AcpCaller::Owner {
-            user_id: user.user_id,
-        },
-    }
+    caller_from_role(&user.role, user.organization_id, user.user_id)
 }
 
 #[utoipa::path(
@@ -287,6 +269,53 @@ pub async fn archive_acp(
             .with_error(err.to_string())
             .log();
             err.error_response()
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::infrastructure::web::middleware::scope_guard::caller_from_role;
+
+    fn user(role: &str, organization_id: Option<Uuid>) -> AuthenticatedUser {
+        AuthenticatedUser {
+            user_id: Uuid::new_v4(),
+            email: "lot0@example.invalid".to_string(),
+            role: role.to_string(),
+            role_id: None,
+            organization_id,
+        }
+    }
+
+    // Lot 0, story S2 : un admin sans organisation n'est pas SuperAdmin.
+    #[test]
+    fn security_caller_from_user_admin_without_org_is_not_superadmin() {
+        let u = user("admin", None);
+        let c = caller_from_user(&u);
+        assert!(matches!(c, AcpCaller::Owner { user_id } if user_id == u.user_id));
+    }
+
+    #[test]
+    fn edge_caller_from_user_matches_caller_from_role_for_every_role() {
+        let org = Some(Uuid::new_v4());
+        for role in [
+            "superadmin",
+            "admin",
+            "Admin",
+            "syndic",
+            "accountant",
+            "owner",
+            "x",
+        ] {
+            for organization_id in [org, None] {
+                let u = user(role, organization_id);
+                assert_eq!(
+                    caller_from_user(&u),
+                    caller_from_role(&u.role, u.organization_id, u.user_id),
+                    "role={role} org={organization_id:?}"
+                );
+            }
         }
     }
 }
