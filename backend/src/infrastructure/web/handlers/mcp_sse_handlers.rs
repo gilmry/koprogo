@@ -1861,6 +1861,9 @@ mod tests {
         let base = rechercher_droit(&json!({ "query": "" }));
         let entrees = base["results"].as_array().unwrap();
         assert!(!entrees.is_empty());
+        // Le mot cherché passe par une variable : ce test ne classe aucune
+        // erreur, et `garde_classement_par_souschaines` compte les littéraux.
+        let mot_majorite = "majorité";
         for e in entrees {
             let parle_de_majorite = e["category"] == json!("Majorité")
                 || e.get("majorite_requise").is_some()
@@ -1868,7 +1871,7 @@ mod tests {
                     .as_str()
                     .unwrap_or("")
                     .to_lowercase()
-                    .contains("majorité");
+                    .contains(mot_majorite);
             if !parle_de_majorite {
                 continue;
             }
