@@ -89,6 +89,11 @@ test-unit: ## 🎯 Tests unitaires (backend)
 	@echo "$(GREEN)🧪 Tests unitaires...$(NC)"
 	cd backend && SQLX_OFFLINE=true cargo test --lib
 
+# Les cliquets statiques : `architecture` et tout `backend/tests/garde_*.rs`.
+# Le barrage du VPS (`vps-feature-dev.yml`) et `ci.yml` en tiennent chacun
+# une liste écrite à la main ; ici, une nouvelle garde est prise d'office.
+GARDES := architecture $(sort $(basename $(notdir $(wildcard backend/tests/garde_*.rs))))
+
 test-e2e-backend: ## 🔗 Tests E2E backend (e2e_http.rs only - e2e.rs and e2e_auth.rs temporarily disabled)
 	@echo "$(GREEN)🔗 Tests E2E backend...$(NC)"
 	cd backend && SQLX_OFFLINE=true cargo test --test e2e_http
@@ -529,6 +534,12 @@ ci: ## ✅ Vérifications CI locales via containers Docker (tout dans Docker, pa
 	docker compose exec -T frontend sh -c "npm audit --audit-level=high"
 	@echo "$(GREEN)🧪 Tests unitaires backend (cargo test --lib)...$(NC)"
 	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo test --lib"
+	@# Les gardes ne tournaient que dans le barrage du VPS : le 2026-11-05, un
+	@# test de S4 a fait grossir `garde_classement_par_souschaines` après la
+	@# fusion de #1096, et rien n'a été déployé. Liste trouvée par motif, pas
+	@# recopiée : trois listes à la main divergent (#956).
+	@echo "$(GREEN)🛡️  Gardes du dépôt ($(words $(GARDES)) harnais, aucune dette ne grossit)...$(NC)"
+	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo test --no-fail-fast $(addprefix --test ,$(GARDES))"
 	@echo "$(GREEN)🔧 Compilation tests E2E backend...$(NC)"
 	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo test --test e2e --no-run"
 	@echo "$(GREEN)🔧 Compilation tests BDD backend...$(NC)"
