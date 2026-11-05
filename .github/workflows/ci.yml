@@ -8,22 +8,15 @@ on:
       - integration
       - staging
       - production
-      - "claude/**"
-      - "release/**"
-      - "feature/**"
-      # `feature/dev` est la branche que le VPS ecosolva déploie en continu
-      # sur koprogo.com. Elle a son propre circuit, volontairement court :
-      # .github/workflows/vps-feature-dev.yml construit les deux images et
-      # les publie sous `sha-<court>`, et deploy-ecosolva.sh attend qu'elles
-      # existent avant de déployer.
+      # Plus de branches de travail ici (story/**, chore/**, feature/**,
+      # claude/**, release/**) depuis le 2026-11-05, décision du PO : chaque
+      # push d'une story coûtait environ 200 minutes de runner pour un verdict
+      # que le hook pre-push (`make ci`) donne déjà en local, et que la PR vers
+      # `main` redonne au moment de la promotion. Mesuré du 2026-10-29 au
+      # 2026-11-05 : 594 minutes sur trois pushs de branches de travail.
       #
-      # Cette pipeline-ci prend environ 95 minutes : la laisser tourner sur
-      # chaque commit de la branche allongeait la boucle sans rien bloquer,
-      # puisque le déploiement ne l'attend pas. L'exclusion doit rester APRÈS
-      # `feature/**`, les motifs étant évalués dans l'ordre.
-      - "!feature/dev"
-      - "story/**"
-      - "chore/**"
+      # `feature/dev` n'y est pas non plus : elle a son propre circuit, court,
+      # .github/workflows/vps-feature-dev.yml, que le déploiement attend.
   pull_request:
     branches:
       - main

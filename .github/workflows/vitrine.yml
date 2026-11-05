@@ -32,12 +32,23 @@
 # jeton), et le MODÉRATEUR COMMUNAUTÉ est un rôle prévu, non construit —
 # aucune interface de modération, aucune ancre dans le contrat gelé.
 
-name: Vitrine (feature/dev)
+name: Vitrine
 
+# ── 2026-11-05 : sur `main`, plus sur chaque commit de `feature/dev` ──────
+#
+# Décision du PO : seuls les workflows essentiels tournent sur `feature/dev`,
+# le reste sur `main`. La vitrine coûtait 451 minutes de runner en sept jours
+# (dix runs, du 2026-10-29 au 2026-11-05) pour une preuve qui n'est pas un
+# verdict. Elle tourne désormais quand `main` bouge, ce qui la cale sur le
+# site de documentation, publié depuis `main` lui aussi.
+#
+# Pour filmer `feature/dev` (ce que koprogo.com sert) : lancer le workflow à
+# la main sur cette branche. La branche `vitrine-publiee` garde le dernier
+# enregistrement complet, quelle que soit sa source.
 on:
   push:
     branches:
-      - feature/dev
+      - main
   workflow_dispatch:
 
 permissions:

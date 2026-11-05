@@ -17,9 +17,11 @@
 # qui porte le *répondre-de*, instruit par les gates et la vitrine — c'est la
 # modalité que le PO a choisie le 2026-09-12.
 #
-# `ci.yml` se déclenche sur `story/**`, ce workflow n'a donc pas à rejouer les
-# gates — MAIS encore faut-il que le push déclenche quelque chose. Cf. le
-# troisième secret plus bas : avec le `GITHUB_TOKEN`, il ne déclenche rien.
+# `ci.yml` ne se déclenche plus sur `story/**` depuis le 2026-11-05 (décision
+# du PO, minutes de runner) : une branche poussée ici n'a donc AUCUNE gate
+# avant sa PR. Lancer `ci.yml` à la main (workflow_dispatch) sur la branche,
+# ou `make ci` en local, avant de la sortir du brouillon. Cf. aussi le
+# troisième secret plus bas : avec le `GITHUB_TOKEN`, un push ne déclenche rien.
 #
 # ── Ce que ça coûte, et c'est un choix ────────────────────────────────────
 #
