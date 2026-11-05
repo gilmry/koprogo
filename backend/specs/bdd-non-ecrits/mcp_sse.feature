@@ -133,24 +133,24 @@ Feature: MCP SSE Server - Model Context Protocol
     And the result content should contain legal rules about quorum
     And each result should have "code", "article", "title" and "content"
 
-  Scenario: Call majority_calculator tool for ordinary decision
+  # Lot 0, S4 : la majorité est dérivée de majorites.rs (Art. 3.88 CC).
+  Scenario: Call majority_calculator for works affecting common parts
+    Given I have an active SSE connection with a session_id
+    When I send a JSON-RPC tools/call request:
+      | tool_name     | majority_calculator          |
+      | decision_type | travaux_aux_parties_communes |
+    Then the response should be a JSON-RPC success response
+    And the result "majorite_requise" should be "two_thirds"
+    And the result "base_legale" should reference "Art. 3.88"
+
+  Scenario: Call majority_calculator with an unknown nature
     Given I have an active SSE connection with a session_id
     When I send a JSON-RPC tools/call request:
       | tool_name     | majority_calculator |
       | decision_type | ordinary            |
     Then the response should be a JSON-RPC success response
-    And the result should indicate "Simple" majority
-    And the threshold should be "50%+1 des votes exprimes"
-    And the article should reference "Art. 3.88"
-
-  Scenario: Call majority_calculator for heavy works
-    Given I have an active SSE connection with a session_id
-    When I send a JSON-RPC tools/call request:
-      | tool_name     | majority_calculator |
-      | decision_type | works_heavy         |
-    Then the response should be a JSON-RPC success response
-    And the result should indicate "Two-thirds" majority
-    And the percentage should be 66.7
+    And the result "nature" should be "droit_commun"
+    And the result "majorite_requise" should be "absolute"
 
   # ADR 0059 : un outil non branché est retiré, il ne simule pas de réponse.
   Scenario: Call a retired tool returns METHOD_NOT_FOUND
