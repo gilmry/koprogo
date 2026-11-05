@@ -41,7 +41,7 @@ validator = { version = "0.21", features = ["derive"] }
 bcrypt = "0.19"
 jsonwebtoken = { version = "11.0", default-features = false, features = ["aws_lc_rs"] }
 hex = "0.4"
-sha2 = "0.10"
+sha2 = "0.11"
 hmac = "0.12"
 md5 = "0.8"
 
