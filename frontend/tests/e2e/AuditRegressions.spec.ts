@@ -97,7 +97,10 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
   }) => {
     await page.goto("/login");
 
-    const switcher = page.locator('button[aria-label="Changer de langue"]');
+    // Par son data-testid contractuel, pas par son libellé : depuis WCAG 2.5.3
+    // (axe 4.14, 2026-11-05), le nom accessible commence par la langue
+    // affichée (« FR, changer de langue ») et change donc avec elle.
+    const switcher = page.getByTestId("language-selector-button");
     await expect(switcher).toBeVisible({ timeout: 10000 });
 
     await switcher.click();
