@@ -432,6 +432,7 @@ test.describe("Story 2 (#698) — ACP au lieu d'Organisation", () => {
         role: "syndic",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     const syndic = await regResp.json();
 

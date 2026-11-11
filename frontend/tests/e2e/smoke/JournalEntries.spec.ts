@@ -18,6 +18,7 @@ async function setupAccountant(page: Page) {
       role: "accountant",
       organization_id: ctx.orgId,
     },
+    headers: { Authorization: `Bearer ${ctx.adminToken}` },
   });
   const accountantData = await regResp.json();
   const accountantToken = accountantData.token;

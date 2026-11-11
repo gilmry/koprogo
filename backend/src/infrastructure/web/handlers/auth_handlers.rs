@@ -62,6 +62,43 @@ pub async fn login(
     Ok(auth_response_with_cookie(response))
 }
 
+/// Qui a le droit de créer quel compte par `POST /auth/register`.
+///
+/// Le rôle et l'organisation arrivent dans le corps de la requête. Ils étaient
+/// repris tels quels : un anonyme pouvait s'inscrire `superadmin`, ou syndic
+/// de n'importe quelle organisation dont il connaissait l'identifiant.
+///
+/// - SuperAdmin authentifié : tout compte, dans toute organisation. C'est la
+///   même règle que la gestion des utilisateurs (`user_handlers`).
+/// - Tout autre appelant, anonyme compris : un compte `owner` sans
+///   organisation. Le rattachement à une copropriété passe ensuite par le
+///   syndic.
+///
+/// Le jeton est vérifié ici : la seule présence d'un en-tête `Authorization`
+/// ne donne aucun droit.
+fn verifier_droit_de_creer(
+    data: &web::Data<AppState>,
+    req: &HttpRequest,
+    request: &RegisterRequest,
+) -> Result<(), String> {
+    let appelant = req
+        .headers()
+        .get(actix_web::http::header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.trim_start_matches("Bearer ").trim())
+        .and_then(|jeton| data.auth_use_cases.verify_token(jeton).ok());
+
+    if appelant.is_some_and(|claims| claims.is_superadmin()) {
+        return Ok(());
+    }
+    if request.role.trim().to_lowercase() != "owner" || request.organization_id.is_some() {
+        return Err(
+            "public registration only creates an owner account without organization".to_string(),
+        );
+    }
+    Ok(())
+}
+
 #[utoipa::path(
     post,
     path = "/auth/register",
@@ -114,6 +151,10 @@ pub async fn register(
         .get(actix_web::http::header::AUTHORIZATION)
         .is_some()
         || req.cookie(REFRESH_COOKIE_NAME).is_some();
+
+    if let Err(refus) = verifier_droit_de_creer(&data, &req, &request) {
+        return HttpResponse::Forbidden().json(serde_json::json!({ "error": refus }));
+    }
 
     match data.auth_use_cases.register(request.into_inner()).await {
         Ok(response) => {

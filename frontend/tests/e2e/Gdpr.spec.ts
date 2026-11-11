@@ -69,6 +69,7 @@ async function registerAndLogin(
       role,
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
 
   expect(response.ok()).toBeTruthy();

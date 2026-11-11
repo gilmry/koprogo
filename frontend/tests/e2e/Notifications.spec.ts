@@ -40,6 +40,7 @@ async function registerAndLogin(
       role,
       organization_id: orgId,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   expect(response.ok()).toBeTruthy();
   const data = await response.json();

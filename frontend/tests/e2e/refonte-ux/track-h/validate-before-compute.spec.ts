@@ -51,6 +51,7 @@ test.describe("Track H Story H2 — validate-before-compute", () => {
         role: "syndic",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     const syndicToken = (await syndicRegResp.json()).token;
 
@@ -131,6 +132,7 @@ test.describe("Track H Story H2 — validate-before-compute", () => {
         role: "syndic",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     const syndicToken = (await syndicRegResp.json()).token;
 

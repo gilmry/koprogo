@@ -61,6 +61,7 @@ async function loginAsAccountant(
       role: "accountant",
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   const userData = await amorce(regResp, `register ${prefix}`);
 

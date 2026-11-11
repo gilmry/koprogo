@@ -42,6 +42,7 @@ async function registerAndLoginAsOwner(page: Page): Promise<{
       role: "owner",
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   expect(response.ok()).toBeTruthy();
   const data = await response.json();

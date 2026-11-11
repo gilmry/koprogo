@@ -98,6 +98,7 @@ export const prestataire: Parcours = {
           role: "contractor",
           organization_id: org.id,
         },
+        headers: entete,
       }),
       "amorçage:prestataire",
     );

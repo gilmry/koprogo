@@ -74,6 +74,7 @@ async function seedSyndicWithTicket(request: APIRequestContext): Promise<{
       role: "syndic",
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   const syndic = await regResp.json();
   const syndicUserId = syndic.user?.id || syndic.id || syndic.user_id || "";
@@ -134,6 +135,7 @@ async function seedSyndicWithTicket(request: APIRequestContext): Promise<{
       role: "contractor",
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   const contractor = await contractorResp.json();
   const contractorUserId =

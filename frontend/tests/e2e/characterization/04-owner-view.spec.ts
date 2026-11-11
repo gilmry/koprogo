@@ -70,6 +70,7 @@ async function registerOwnerWithBuilding(
       role: "owner",
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   const { token: ownerToken } = await regResp.json();
 

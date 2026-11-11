@@ -133,6 +133,7 @@ test.describe("Resolutions - AG Voting System", () => {
         role: "owner",
         organization_id: orgId,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(ownerRegResp.status()).toBe(201);
     const ownerUser = await ownerRegResp.json();

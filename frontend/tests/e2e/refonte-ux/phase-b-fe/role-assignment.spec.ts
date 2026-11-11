@@ -66,6 +66,7 @@ async function seedOrgWithUser(
       role: opts.role,
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   const reg = await regResp.json();
   const userId = reg.user?.id || reg.id || reg.user_id || "";

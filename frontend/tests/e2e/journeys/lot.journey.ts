@@ -164,6 +164,7 @@ export const lot: Parcours = {
           role: "syndic",
           organization_id: org.id,
         },
+        headers: entete,
       }),
       "amorçage:syndic",
     );

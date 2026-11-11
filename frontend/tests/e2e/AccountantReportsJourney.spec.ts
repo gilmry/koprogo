@@ -33,6 +33,7 @@ async function loginAsAccountant(page: Page, prefix: string) {
       role: "accountant",
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
 
   // Connexion RÉELLE, pas une injection dans `localStorage`.

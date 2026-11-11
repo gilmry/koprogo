@@ -178,6 +178,7 @@ test.describe(`Parcours de référence — ${parcours.titre}`, () => {
           role: "accountant",
           organization_id: org.id,
         },
+        headers: { Authorization: `Bearer ${adminToken}` },
       });
       expect(inscription.ok()).toBeTruthy();
 

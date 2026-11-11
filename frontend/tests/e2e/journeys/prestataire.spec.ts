@@ -134,6 +134,7 @@ test.describe(`Parcours de référence — ${parcours.titre}`, () => {
           role: "notary",
           organization_id: org.id,
         },
+        headers: { Authorization: `Bearer ${adminToken}` },
       });
       expect(
         inscription.ok(),

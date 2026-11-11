@@ -53,6 +53,7 @@ export default async function globalSetup() {
       role: "syndic",
       organization_id: org.id,
     },
+    headers: adminHeaders,
   });
   const syndicData = await syndicRegResp.json();
 
@@ -68,6 +69,7 @@ export default async function globalSetup() {
       role: "owner",
       organization_id: org.id,
     },
+    headers: adminHeaders,
   });
   const ownerData = await ownerRegResp.json();
 

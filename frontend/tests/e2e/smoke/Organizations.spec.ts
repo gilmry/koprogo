@@ -72,6 +72,7 @@ test.describe("Organizations - SuperAdmin Management", () => {
         role: "syndic",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     const userData = await regResp.json();
 

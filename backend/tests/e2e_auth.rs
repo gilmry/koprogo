@@ -725,7 +725,7 @@ async fn register_authentifie_ne_repose_pas_la_session_de_lappelant() {
 #[actix_web::test]
 #[serial]
 async fn register_anonyme_pose_bien_la_session() {
-    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let (app_state, _container, _org_id) = common::setup_test_db().await;
 
     let app = test::init_service(
         App::new()
@@ -739,8 +739,9 @@ async fn register_anonyme_pose_bien_la_session() {
         "password": "Passw0rd!",
         "first_name": "Libre",
         "last_name": "Inscrit",
-        "role": "syndic",
-        "organization_id": org_id,
+        // L'inscription publique ne crée qu'un copropriétaire sans
+        // organisation : voir `inscription_publique_ne_choisit_ni_role_ni_organisation`.
+        "role": "owner",
     });
 
     let req = test::TestRequest::post()
@@ -755,4 +756,126 @@ async fn register_anonyme_pose_bien_la_session() {
         "L'inscription publique ne pose plus de session : le nouvel inscrit \
          devrait se connecter séparément, alors que rien ne le lui dit."
     );
+}
+
+/// `@security` — L'inscription publique ne choisit ni son rôle ni son
+/// organisation.
+///
+/// `POST /auth/register` reprenait tels quels le `role` et l'`organization_id`
+/// du corps. Un anonyme pouvait donc s'inscrire `superadmin`, ou syndic d'une
+/// organisation dont il connaissait l'identifiant. Chaque cas ci-dessous doit
+/// répondre 403 et ne créer aucun compte.
+#[actix_web::test]
+#[serial]
+async fn inscription_publique_ne_choisit_ni_role_ni_organisation() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let jeton_owner = common::register_and_login_with_role(&app_state, org_id, "owner").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    // (description, jeton éventuel, rôle demandé, organisation demandée)
+    let tentatives: Vec<(&str, Option<String>, &str, Option<Uuid>)> = vec![
+        ("anonyme superadmin", None, "superadmin", None),
+        ("anonyme superadmin, casse modifiée", None, "SuperAdmin", None),
+        ("anonyme admin d'une organisation", None, "admin", Some(org_id)),
+        ("anonyme syndic d'une organisation", None, "syndic", Some(org_id)),
+        ("anonyme owner rattaché d'office", None, "owner", Some(org_id)),
+        (
+            "jeton forgé superadmin",
+            Some("eyJhbGciOiJub25lIn0.eyJyb2xlIjoic3VwZXJhZG1pbiJ9.".to_string()),
+            "superadmin",
+            None,
+        ),
+        (
+            "copropriétaire connecté qui crée un superadmin",
+            Some(jeton_owner.clone()),
+            "superadmin",
+            None,
+        ),
+        (
+            "copropriétaire connecté qui crée un syndic",
+            Some(jeton_owner.clone()),
+            "syndic",
+            Some(org_id),
+        ),
+    ];
+
+    for (description, jeton, role, organisation) in tentatives {
+        let email = format!("attaque+{}@test.com", Uuid::new_v4());
+        let mut corps = json!({
+            "email": email,
+            "password": "Passw0rd!",
+            "first_name": "Mallory",
+            "last_name": "Attaquante",
+            "role": role,
+        });
+        if let Some(org) = organisation {
+            corps["organization_id"] = json!(org);
+        }
+        let mut req = test::TestRequest::post()
+            .uri("/api/v1/auth/register")
+            .set_json(&corps);
+        if let Some(j) = jeton {
+            req = req.insert_header((header::AUTHORIZATION, format!("Bearer {j}")));
+        }
+        let resp = test::call_service(&app, req.to_request()).await;
+        assert_eq!(
+            resp.status(),
+            403,
+            "{description} : l'inscription a été acceptée"
+        );
+
+        let (cree,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users WHERE email = $1")
+            .bind(email.to_lowercase())
+            .fetch_one(&app_state.pool)
+            .await
+            .expect("comptage des comptes");
+        assert_eq!(cree, 0, "{description} : un compte a été créé malgré le refus");
+    }
+}
+
+/// `@security` — Seul le superadmin crée des comptes rattachés à une
+/// organisation ; un syndic authentifié n'a pas plus de droit qu'un anonyme.
+#[actix_web::test]
+#[serial]
+async fn seul_le_superadmin_cree_des_comptes_d_organisation() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let org_b = common::create_test_organization(&app_state).await;
+    let jeton_syndic = common::register_and_login_with_role(&app_state, org_a, "syndic").await;
+    let jeton_superadmin =
+        common::register_and_login_with_role(&app_state, org_a, "superadmin").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    for (description, jeton, role, organisation, attendu) in [
+        ("superadmin crée un syndic", &jeton_superadmin, "syndic", org_b, 201),
+        ("syndic crée un syndic chez lui", &jeton_syndic, "syndic", org_a, 403),
+        ("syndic crée un owner chez lui", &jeton_syndic, "owner", org_a, 403),
+        ("syndic crée un superadmin", &jeton_syndic, "superadmin", org_a, 403),
+    ] {
+        let req = test::TestRequest::post()
+            .uri("/api/v1/auth/register")
+            .insert_header((header::AUTHORIZATION, format!("Bearer {jeton}")))
+            .set_json(json!({
+                "email": format!("cree-par-admin+{}@test.com", Uuid::new_v4()),
+                "password": "Passw0rd!",
+                "first_name": "Créé",
+                "last_name": "ParAdmin",
+                "role": role,
+                "organization_id": organisation,
+            }))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), attendu, "{description}");
+    }
 }
