@@ -13,6 +13,7 @@ depends_on: brief.md (SIGNED v1.0) ; option A « rouge attendu strict » (brief 
 
 | Story | Objet | Déps | Taille |
 |---|---|---|---|
+| **S-1** — Caractérisation du rattachement actuel | filet vert, comportement actuel | aucune | S |
 | **S0** — Harnais « rouge attendu » | outillage de test | décision brief § 4 | S |
 | **S1** — `acp_transfer.feature` | BDD, 4 catégories | S0 | M |
 | **S2** — `e2e_transfert_acp.rs` | e2e API + MCP | S0 | M |
@@ -26,6 +27,59 @@ la PR du lot qui le fait passer.
 ACP « Résidence Les Tilleuls » ; cabinet **A** (syndic sortant) et cabinet
 **B** (syndic entrant) ; copropriétaires du lot 3 ; SuperAdmin ; un Admin
 d'organisation (pas SuperAdmin).
+
+---
+
+## Story S-1 — Caractérisation du rattachement actuel (ajoutée le 2026-11-11)
+
+Les scénarios S1 et S2 décrivent le comportement **voulu**, rouge d'abord.
+Rien ne fige le comportement **actuel** que les lots 2 à 4 vont modifier :
+`Acp::set_organization` (`domain/copropriete/acp.rs`), la colonne
+`acps.organization_id` et les gardes `verify_*_org_access`. Le rétrofit
+Foyer exige ce filet vert avant tout changement de modèle.
+
+**Fichier** : `backend/tests/e2e_caracterisation_rattachement_acp.rs`, cité
+dans le bloc e2e de `ci.yml`.
+
+| Cas | Comportement figé |
+|---|---|
+| C1 | `PUT /acps/{id}` du SuperAdmin avec `organization_id` = B : 200, `acps.organization_id` écrasé, aucune table `syndic_mandates` |
+| C2 | Après C1, le syndic de A reçoit 403 sur l'ACP et sur son immeuble, celui de B 200 |
+| C3 | Le syndic de A qui déplace l'ACP vers B ou la détache (`null`) : 403, rattachement inchangé |
+| C4 | Le SuperAdmin qui envoie `organization_id: null` : 200, rattachement **inchangé** ; une chaîne vide `""` détache |
+| C5 | ACP détachée et son immeuble : 403 pour le syndic de A, 200 pour le SuperAdmin |
+| C6 | Rattachement à un cabinet inexistant : 400, rattachement inchangé |
+| C7 | `DELETE FROM organizations` : l'ACP survit, détachée, son immeuble aussi |
+
+**Règle** : verts sur le code du 2026-11-11, jamais modifiés pour passer.
+Le lot qui change délibérément un comportement retire ou réécrit le test
+concerné dans sa propre PR, et le dit.
+
+### Registre S-1 : bug ou voulu ?
+
+Figés tels quels par les tests ; la décision revient au PO.
+
+- **R1** — Le code prévoit un Admin de cabinet (`AcpCaller::Admin`) qui
+  pourrait détacher l'ACP sans pouvoir la déplacer. Ce rôle est inatteignable :
+  `UserRole` refuse `admin`, donc seul le SuperAdmin modifie une ACP (C3). Code
+  mort à retirer, ou rôle à créer ? Une ACP détachée devient illisible pour son
+  ancien cabinet (C5).
+- **R2** — Supprimer un cabinet détache ses ACP (C7). Ce que la suppression
+  emporte dans les autres tables qui portent encore un `organization_id` en
+  cascade n'est pas caractérisé : à mesurer avant le lot 2 (ADR 0058).
+- **R3** — Le transfert ne laisse aucune trace de l'ancien cabinet (C1) ;
+  l'accès bascule sur tout l'historique à l'instant (C2). C'est l'écart que
+  le lot 2 comble ; noté pour mémoire, pas une question.
+- **R4** — `UpdateAcpDto` documente « `null` = détache », mais `null` est
+  ignoré : serde lit `null` comme une clé absente sur un `Option<Option<_>>`
+  sans `deserialize_with`. La réponse est 200, sans rien changer. Seule une
+  chaîne vide détache (C4).
+
+### DoD
+
+Le harnais est vert en local (`KCARGO_DOCKER=1 kcargo test --test
+e2e_caracterisation_rattachement_acp`) et cité dans `ci.yml` ; R1 et R2
+sont posés au PO.
 
 ---
 
