@@ -239,7 +239,7 @@ fn racine_handlers() -> PathBuf {
 /// `verifier_mandat_sur_ag` fait de même depuis une assemblée ;
 /// `require_organization` et `is_superadmin` sont des décisions plus grossières
 /// mais réelles. Un corps qui n'en contient aucun ne décide de rien.
-const MARQUEURS_DE_GARDE: [&str; 25] = [
+const MARQUEURS_DE_GARDE: [&str; 27] = [
     // La primitive de cloisonnement elle-même — celle que les huit
     // `verify_*_org_access` finissent tous par appeler après avoir remonté la
     // chaîne jusqu'à l'organisation.
@@ -295,6 +295,11 @@ const MARQUEURS_DE_GARDE: [&str; 25] = [
     "verify_poll_org_access",
     "verify_meeting_org_access",
     "verify_expense_org_access",
+    // Les gardes du copropriétaire (#1027) : chacune appelle d'abord sa
+    // `verify_*_org_access`, puis restreint le rôle `owner` à sa propre fiche
+    // ou à ses propres lots.
+    "verify_owner_personal_access",
+    "verify_unit_holder_access",
     "verifier_mandat",
     "require_organization",
     "is_superadmin",
