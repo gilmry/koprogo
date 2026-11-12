@@ -35,6 +35,7 @@ async function loginAsAccountant(page: Page, prefix: string) {
       role: "accountant",
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   const userData = await regResp.json();
 

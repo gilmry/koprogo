@@ -344,8 +344,17 @@ export async function loginAsSyndic(
       role: "syndic",
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
-  const userData = await expectOk(regResp, "seed:reg");
+  await expectOk(regResp, "seed:reg");
+
+  // Le compte est créé par l'administrateur (seul un SuperAdmin peut créer un
+  // syndic) : le serveur ne lui pose donc pas de session (#769). Une vraie
+  // connexion lui donne son propre cookie de rafraîchissement (#828).
+  const loginResp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: { email, password: "test123456" },
+  });
+  const userData = await expectOk(loginResp, "seed:login");
 
   // Inject auth into browser (no UI login!)
   await injectAuth(page, userData.token, {
@@ -692,6 +701,7 @@ export async function loginAsSyndicWithLinkedOwner(
       role: "owner",
       organization_id: ctx.orgId,
     },
+    headers: { Authorization: `Bearer ${ctx.adminToken}` },
   });
   const ownerUserData = await expectOk(regResp, "seed:reg");
   const ownerUserId =
@@ -837,8 +847,19 @@ async function registerScopedUser(
       role,
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
-  const userData = await expectOk(regResp, "seed:reg");
+  await expectOk(regResp, "seed:reg");
+
+  // Même raison que dans `loginAsSyndic` : créé par l'administrateur, le
+  // compte n'a pas de session (#769) ; la connexion lui donne la sienne.
+  const loginResp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: {
+      email,
+      password: process.env.PLAYWRIGHT_TEST_PASSWORD || "test123456",
+    },
+  });
+  const userData = await expectOk(loginResp, "seed:login");
 
   await injectAuth(page, userData.token, {
     email,
@@ -1208,6 +1229,7 @@ export async function provisionneComptesDuParcours(
       role: "syndic",
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   await expectOk(syndicResp, "seed:syndic");
 
@@ -1220,6 +1242,7 @@ export async function provisionneComptesDuParcours(
       role: "owner",
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   const coproUser = await expectOk(coproResp, "seed:copro");
   const coproUserId =

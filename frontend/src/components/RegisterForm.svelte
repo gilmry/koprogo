@@ -31,11 +31,10 @@
   let loading = false;
   let showOrgField = false;
 
-  $: roleOptions = [
-    { value: UserRole.OWNER, label: $_("auth.roles.owner") },
-    { value: UserRole.SYNDIC, label: $_("auth.roles.syndic") },
-    { value: UserRole.ACCOUNTANT, label: $_("auth.roles.accountant") },
-  ];
+  // L'inscription publique ne crée qu'un copropriétaire sans organisation :
+  // le serveur refuse tout autre rôle. Syndics et comptables sont créés par
+  // l'administrateur de leur organisation.
+  $: roleOptions = [{ value: UserRole.OWNER, label: $_("auth.roles.owner") }];
 
   $: showOrgField = formData.role !== UserRole.OWNER;
 

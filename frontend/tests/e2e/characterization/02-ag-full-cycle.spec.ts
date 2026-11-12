@@ -84,6 +84,7 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
         role: "syndic",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     const { token: syndicToken } = await syndicRegResp.json();
 
@@ -96,6 +97,7 @@ test.describe("Characterization 02 — AG Full Cycle (multi-rôle)", () => {
         role: "owner",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
 
     // ---- STEP 1 : SYNDIC LOGIN (UI) — crée AG + résolution

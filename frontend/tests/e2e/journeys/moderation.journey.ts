@@ -96,6 +96,7 @@ export const moderation: Parcours = {
           role: "community.moderator",
           organization_id: org.id,
         },
+        headers: entete,
       }),
       "amorçage:modérateur",
     );

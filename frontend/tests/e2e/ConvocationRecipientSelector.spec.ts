@@ -273,6 +273,7 @@ test.describe("Convocation — sélection des destinataires (#780)", () => {
         role: "owner",
         organization_id: ctx.orgId,
       },
+      headers: { Authorization: `Bearer ${ctx.adminToken}` },
     });
     expect(regResp.status()).toBe(201);
 

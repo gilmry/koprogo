@@ -224,6 +224,7 @@ async function amorcerLeCompte(page: Page, acteur: Acteur) {
       role: ROLE_DE[acteur],
       organization_id: org.id,
     },
+    headers: { Authorization: `Bearer ${jetonAdmin}` },
   });
   if (!reponseCompte.ok()) {
     throw new Error(

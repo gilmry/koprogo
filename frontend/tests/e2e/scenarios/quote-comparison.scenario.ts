@@ -123,6 +123,7 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
             role: "owner",
             organization_id: building.organization_id,
           },
+          headers: adminHeaders,
         });
         const user = await amorce(resp, "POST /auth/register");
         contractorIds.push(user.id || user.user_id || user.user?.id);

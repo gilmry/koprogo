@@ -94,6 +94,7 @@ test.describe("Consent - Privacy Policy Consent Modal", () => {
         role: "owner",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(regResp.ok()).toBeTruthy();
     const userData = await regResp.json();

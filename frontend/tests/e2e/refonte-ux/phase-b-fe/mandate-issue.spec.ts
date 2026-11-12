@@ -143,6 +143,7 @@ async function registerNotary(
       role: "notary",
       organization_id: cabinetId,
     },
+    headers: { Authorization: `Bearer ${await adminLogin(request)}` },
   });
   expect(resp.status(), `register notary`).toBeLessThan(400);
   const body = await resp.json();
@@ -175,6 +176,7 @@ async function registerSyndic(
       role: "syndic",
       organization_id: cabinetId,
     },
+    headers: { Authorization: `Bearer ${await adminLogin(request)}` },
   });
   expect(resp.status(), `register syndic`).toBeLessThan(400);
   const body = await resp.json();

@@ -197,6 +197,7 @@ async function registerOwner(
       role: "owner",
       organization_id: cabinetId,
     },
+    headers: { Authorization: `Bearer ${await adminLogin(request)}` },
   });
   expect(resp.status(), `register owner`).toBeLessThan(400);
   const body = await resp.json();
@@ -257,6 +258,7 @@ async function pageRegisterOwner(
       role: "owner",
       organization_id: cabinetId,
     },
+    headers: { Authorization: `Bearer ${await adminLogin(page)}` },
   });
   expect(resp.status(), `page register owner`).toBeLessThan(400);
   const body = await resp.json();

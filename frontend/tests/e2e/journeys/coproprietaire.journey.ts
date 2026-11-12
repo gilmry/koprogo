@@ -242,6 +242,7 @@ export const coproprietaire: Parcours = {
         role: "syndic",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     const syndic = await assertOk<{
       token: string;
@@ -288,6 +289,7 @@ export const coproprietaire: Parcours = {
         role: "owner",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     const ownerUser = await assertOk<{
       user?: { id?: string };

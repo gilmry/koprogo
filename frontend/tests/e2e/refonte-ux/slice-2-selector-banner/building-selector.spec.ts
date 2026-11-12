@@ -84,6 +84,7 @@ test.describe("Story 2.2 — BuildingSelector (top-left)", () => {
         role: "owner",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
 
     // Connexion RÉELLE, pas une injection dans `localStorage`.

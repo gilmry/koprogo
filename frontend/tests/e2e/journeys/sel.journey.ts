@@ -142,6 +142,7 @@ export const sel: Parcours = {
             role,
             organization_id: org.id,
           },
+          headers: entete,
         }),
         `amorçage:${email}`,
       );

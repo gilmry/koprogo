@@ -96,6 +96,7 @@ test.describe(`Parcours de référence — ${parcours.titre}`, () => {
           role: "owner",
           organization_id: org.id,
         },
+        headers: { Authorization: `Bearer ${adminToken}` },
       });
 
       const connexion = await page.request.post(`${API_BASE}/auth/login`, {

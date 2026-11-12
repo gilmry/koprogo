@@ -138,6 +138,7 @@ test.describe(`Parcours de référence — ${parcours.titre}`, () => {
           role: "community.moderator",
           organization_id: org.id,
         },
+        headers: { Authorization: `Bearer ${adminToken}` },
       });
 
       expect(

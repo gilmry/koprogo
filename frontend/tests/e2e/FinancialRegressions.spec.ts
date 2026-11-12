@@ -659,6 +659,7 @@ test.describe("Workflows financiers 2026-09-01 — non-régression", () => {
         role: "accountant",
         organization_id: ctx.orgId,
       },
+      headers: admin,
     });
     expect(reg.status(), await reg.text()).toBe(201);
     const compta = { Authorization: `Bearer ${(await reg.json()).token}` };

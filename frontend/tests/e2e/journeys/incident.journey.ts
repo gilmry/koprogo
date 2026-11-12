@@ -201,6 +201,7 @@ export const incident: Parcours = {
             role,
             organization_id: org.id,
           },
+          headers: entete,
         }),
         `amorçage:${role}`,
       );

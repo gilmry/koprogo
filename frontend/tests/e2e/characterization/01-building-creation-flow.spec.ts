@@ -77,6 +77,7 @@ test.describe("Characterization 01 — Building Creation Flow", () => {
         role: "syndic",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(regResp.ok()).toBeTruthy();
     const { token: syndicToken } = await regResp.json();

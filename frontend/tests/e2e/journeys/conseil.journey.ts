@@ -129,6 +129,7 @@ export const conseil: Parcours = {
           role: "owner",
           organization_id: org.id,
         },
+        headers: entete,
       }),
       "amorçage:élu",
     );
@@ -142,6 +143,7 @@ export const conseil: Parcours = {
           role: "syndic",
           organization_id: org.id,
         },
+        headers: entete,
       }),
       "amorçage:syndic",
     );

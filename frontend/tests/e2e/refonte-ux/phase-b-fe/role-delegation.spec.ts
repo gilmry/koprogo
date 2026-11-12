@@ -90,6 +90,7 @@ async function registerUser(
       role,
       organization_id: cabinetId,
     },
+    headers: { Authorization: `Bearer ${await adminLogin(request)}` },
   });
   expect(resp.status(), `register ${role}`).toBeLessThan(400);
   const body = await resp.json();

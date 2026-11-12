@@ -105,6 +105,7 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
         role: "syndic",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(regResp.ok()).toBeTruthy();
 
@@ -161,6 +162,7 @@ test.describe("Characterization 00 — Login + Dashboards", () => {
         role: "owner",
         organization_id: org.id,
       },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(regResp.ok()).toBeTruthy();
 
