@@ -1121,12 +1121,13 @@ async fn when_owner_votes(world: &mut GovernanceWorld, name: String, choice: Str
 }
 
 #[when(regex = r#"^"(\w+)" changes (?:her|his) vote to "(Pour|Contre|Abstention)"$"#)]
-async fn when_change_vote(world: &mut GovernanceWorld, _name: String, choice: String) {
+async fn when_change_vote(world: &mut GovernanceWorld, name: String, choice: String) {
     let uc = world.resolution_use_cases.as_ref().unwrap().clone();
     let vote_id = world.last_vote_id.expect("No vote to change");
     let new_choice = parse_vote_choice(&choice);
+    let caller_owner_id = world.get_owner_id(&name);
 
-    let result = uc.change_vote(vote_id, new_choice).await;
+    let result = uc.change_vote(vote_id, new_choice, caller_owner_id).await;
     match result {
         Ok(vote) => {
             world.last_vote_choice = Some(vote.vote_choice);
