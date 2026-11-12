@@ -276,6 +276,52 @@ impl PaymentUseCases {
             return;
         }
 
+        // Une quote-part n'est soldee que si l'encaisse COUVRE le du : la
+        // somme nette (remboursements deduits) des paiements reussis qui la
+        // visent. Sans ce controle, un paiement de 1 centime soldait une
+        // quote-part de 1 250 EUR. Un paiement partiel laisse la quote-part
+        // ouverte ; le suivant la soldera.
+        let encaisse_cents: i64 = match self
+            .payment_repository
+            .find_by_owner(payment.owner_id)
+            .await
+        {
+            Ok(paiements) => paiements
+                .iter()
+                .filter(|p| p.contribution_id == Some(contribution_id))
+                .filter(|p| {
+                    matches!(
+                        p.status,
+                        TransactionStatus::Succeeded | TransactionStatus::Refunded
+                    )
+                })
+                .map(|p| p.get_net_amount_cents())
+                .sum(),
+            Err(err) => {
+                tracing::error!(
+                    payment_id = %payment.id,
+                    contribution_id = %contribution_id,
+                    error = %err,
+                    "encaisse de la quote-part illisible, quote-part laissee ouverte",
+                );
+                return;
+            }
+        };
+        let du_cents = rust_decimal::prelude::ToPrimitive::to_i64(
+            &(contribution.amount * rust_decimal::Decimal::from(100)).round(),
+        )
+        .unwrap_or(i64::MAX);
+        if encaisse_cents < du_cents {
+            tracing::info!(
+                payment_id = %payment.id,
+                contribution_id = %contribution_id,
+                encaisse_cents,
+                du_cents,
+                "paiement partiel : quote-part laissee ouverte",
+            );
+            return;
+        }
+
         let mut contribution = contribution;
         contribution.mark_as_paid(
             payment.succeeded_at.unwrap_or(payment.updated_at),
@@ -1121,6 +1167,54 @@ mod tests {
     // ------------------------------------------------------------------
 
     /// Un paiement REUSSI solde la quote-part qu'il designe.
+    /// Monte un paiement reussi de `montants` successifs sur la quote-part de
+    /// 2 000,00 EUR de `seed_contribution`, et rend son statut final.
+    async fn statut_apres_paiements(montants: &[i64]) -> ContributionPaymentStatus {
+        let org_id = Uuid::new_v4();
+        let owner_id = Uuid::new_v4();
+        let contribution = seed_contribution(org_id, owner_id);
+        let contribution_id = contribution.id;
+        let contrib_repo = Arc::new(MockOwnerContributionRepository::with_contribution(
+            contribution,
+        ));
+        let uc = make_use_cases_with_contributions(
+            Arc::new(MockPaymentRepository::new()),
+            Arc::new(MockPaymentMethodRepository::new()),
+            contrib_repo.clone(),
+        );
+        for montant in montants {
+            let mut request = make_create_request(Uuid::new_v4(), owner_id, *montant);
+            request.contribution_id = Some(contribution_id);
+            let created = uc.create_payment(org_id, request).await.unwrap();
+            uc.mark_processing(created.id).await.unwrap();
+            uc.mark_succeeded(created.id).await.unwrap();
+        }
+        contrib_repo.get(contribution_id).unwrap().payment_status
+    }
+
+    #[tokio::test]
+    async fn security_un_paiement_de_1_centime_ne_solde_pas_la_quote_part() {
+        assert_eq!(
+            statut_apres_paiements(&[1]).await,
+            ContributionPaymentStatus::Pending,
+            "une quote-part de 2 000 EUR soldee par 1 centime"
+        );
+    }
+
+    #[tokio::test]
+    async fn edge_deux_paiements_partiels_soldent_la_quote_part() {
+        assert_eq!(
+            statut_apres_paiements(&[150_000]).await,
+            ContributionPaymentStatus::Pending,
+            "le premier paiement partiel ne solde pas"
+        );
+        assert_eq!(
+            statut_apres_paiements(&[150_000, 50_000]).await,
+            ContributionPaymentStatus::Paid,
+            "le second paiement complete le du"
+        );
+    }
+
     #[tokio::test]
     async fn test_paiement_reussi_solde_la_quote_part_liee() {
         let org_id = Uuid::new_v4();

@@ -416,6 +416,15 @@ pub async fn record_payment(
     id: web::Path<Uuid>,
     req: web::Json<RecordPaymentRequest>,
 ) -> HttpResponse {
+    // Constater l'encaissement revient au syndic et au comptable mandatés par
+    // l'ACP : un copropriétaire de la même copropriété soldait sinon sa
+    // propre dette.
+    if !crate::infrastructure::web::handlers::payment_handlers::mandate_pour_encaisser(&user) {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Constater un encaissement est réservé au syndic et au comptable mandatés par l'ACP."
+        }));
+    }
+
     // Cloisonnement : déclarer qu'un copropriétaire a payé éteint une dette.
     // Sans ce contrôle, on pouvait le faire dans la comptabilité d'une autre
     // copropriété. L'identité était prise puis ignorée — `_user` (#772).

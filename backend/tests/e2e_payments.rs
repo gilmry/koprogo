@@ -1230,3 +1230,281 @@ async fn test_complete_payment_lifecycle() {
     assert!(stats["total_count"].as_i64().unwrap() >= 1);
     assert_eq!(stats["total_refunded_cents"], 50000);
 }
+
+// ==================== Encaissement : réservé aux mandataires de l'ACP ====================
+//
+// Le copropriétaire paie sur le compte de l'ACP ; le syndic et le comptable,
+// mandatés par elle, constatent l'encaissement. Un copropriétaire déclare un
+// paiement, il ne le valide pas, et une quote-part n'est soldée que si
+// l'encaissé couvre le dû.
+
+macro_rules! appeler {
+    ($app:expr, $jeton:expr, $req:expr $(,)?) => {{
+        let resp = test::call_service(
+            &$app,
+            $req.insert_header((header::AUTHORIZATION, format!("Bearer {}", $jeton)))
+                .to_request(),
+        )
+        .await;
+        let statut = resp.status().as_u16();
+        let corps = test::read_body(resp).await;
+        let json: serde_json::Value =
+            serde_json::from_slice(&corps).unwrap_or(serde_json::Value::Null);
+        (statut, json)
+    }};
+}
+
+struct Copropriete {
+    syndic: String,
+    proprietaire: String,
+    immeuble: Uuid,
+    fiche: String,
+    quote_part: String,
+}
+
+/// Une copropriété : un syndic, un lot, un copropriétaire relié à son compte,
+/// et une quote-part due de 1 250,00 EUR.
+macro_rules! copropriete {
+    ($app:expr, $app_state:expr, $org_id:expr) => {{
+    let app_state = &$app_state;
+    let org_id = $org_id;
+    let syndic = common::register_and_login_with_role(app_state, org_id, "syndic").await;
+    let immeuble = common::create_test_building(app_state, org_id).await;
+    let acp_id = common::ensure_default_acp_for_org(&app_state.pool, org_id).await;
+
+    let (statut, lot) = appeler!(
+        $app,
+        syndic,
+        test::TestRequest::post().uri("/api/v1/units").set_json(json!({
+            "acp_id": acp_id.to_string(),
+            "building_id": immeuble.to_string(),
+            "unit_number": "A1",
+            "unit_type": "Apartment",
+            "floor": 1,
+            "surface_area": 80.0,
+            "quota": 500.0
+        })),
+    );
+    assert_eq!(statut, 201, "création du lot : {lot}");
+    let lot = lot["id"].as_str().unwrap().to_string();
+
+    let (statut, fiche) = appeler!(
+        $app,
+        syndic,
+        test::TestRequest::post().uri("/api/v1/owners").set_json(json!({
+            "first_name": "Alice",
+            "last_name": "Payeuse",
+            "email": format!("alice-{}@example.com", Uuid::new_v4()),
+            "phone": "+32123456789",
+            "address": "1 rue du Palier",
+            "city": "Bruxelles",
+            "postal_code": "1000",
+            "country": "Belgium"
+        })),
+    );
+    assert_eq!(statut, 201, "création de la fiche : {fiche}");
+    let fiche = fiche["id"].as_str().unwrap().to_string();
+
+    let (statut, corps) = appeler!(
+        $app,
+        syndic,
+        test::TestRequest::post()
+            .uri(&format!("/api/v1/units/{lot}/owners"))
+            .set_json(json!({
+                "owner_id": fiche,
+                "ownership_percentage": 1.0,
+                "is_primary_contact": true
+            })),
+    );
+    assert_eq!(statut, 201, "rattachement au lot : {corps}");
+
+    let (proprietaire, user_id) =
+        common::register_and_login_returning_user(app_state, org_id, "owner").await;
+    app_state
+        .owner_use_cases
+        .link_user_to_owner(Uuid::parse_str(&fiche).unwrap(), Some(user_id))
+        .await
+        .expect("rattachement du compte à la fiche");
+
+    let (statut, quote_part) = appeler!(
+        $app,
+        syndic,
+        test::TestRequest::post()
+            .uri("/api/v1/owner-contributions")
+            .set_json(json!({
+                "owner_id": fiche,
+                "unit_id": lot,
+                "description": "Appel de fonds T1",
+                "amount": 1250.00,
+                "contribution_type": "regular",
+                "contribution_date": Utc::now().to_rfc3339()
+            })),
+    );
+    assert_eq!(statut, 201, "création de la quote-part : {quote_part}");
+
+    Copropriete {
+        syndic,
+        proprietaire,
+        immeuble,
+        fiche,
+        quote_part: quote_part["id"].as_str().unwrap().to_string(),
+    }
+}}
+}
+
+macro_rules! statut_quote_part {
+    ($app:expr, $c:expr) => {{
+        let (statut, corps) = appeler!(
+            $app,
+            $c.syndic,
+            test::TestRequest::get().uri(&format!("/api/v1/owner-contributions/{}", $c.quote_part))
+        );
+        assert_eq!(statut, 200, "lecture de la quote-part : {corps}");
+        corps["payment_status"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string()
+    }};
+}
+
+macro_rules! declarer_un_centime {
+    ($app:expr, $jeton:expr, $c:expr) => {{
+        appeler!(
+            $app,
+            $jeton,
+            test::TestRequest::post().uri("/api/v1/payments").set_json(json!({
+                "building_id": $c.immeuble,
+                "owner_id": $c.fiche,
+                "contribution_id": $c.quote_part,
+                "amount_cents": 1,
+                "payment_method_type": "card"
+            }))
+        )
+    }};
+}
+
+/// `@security` — Le copropriétaire déclare un paiement de 1 centime, puis
+/// tente de le valider lui-même, par `/payments` comme par `mark-paid`.
+#[actix_web::test]
+#[serial]
+async fn security_le_coproprietaire_ne_valide_pas_son_propre_paiement() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+    let c = copropriete!(app, app_state, org_id);
+
+    let (statut, paiement) = declarer_un_centime!(app, c.proprietaire, c);
+    assert_eq!(
+        statut, 201,
+        "le copropriétaire déclare son paiement : {paiement}"
+    );
+    let paiement = paiement["id"].as_str().unwrap().to_string();
+
+    for transition in ["processing", "succeeded"] {
+        let (statut, corps) = appeler!(
+            app,
+            c.proprietaire,
+            test::TestRequest::put().uri(&format!("/api/v1/payments/{paiement}/{transition}")),
+        );
+        assert_eq!(
+            statut, 403,
+            "le copropriétaire passe son paiement en {transition} : {corps}"
+        );
+    }
+
+    let (statut, corps) = appeler!(
+        app,
+        c.proprietaire,
+        test::TestRequest::put()
+            .uri(&format!(
+                "/api/v1/owner-contributions/{}/mark-paid",
+                c.quote_part
+            ))
+            .set_json(json!({
+                "payment_date": Utc::now().to_rfc3339(),
+                "payment_method": "bank_transfer",
+                "payment_reference": "auto-déclaré"
+            })),
+    );
+    assert_eq!(
+        statut, 403,
+        "le copropriétaire solde sa quote-part par mark-paid : {corps}"
+    );
+
+    assert_eq!(statut_quote_part!(app, c), "pending");
+}
+
+/// `@security` — Même encaissé par le syndic, 1 centime ne solde pas une
+/// quote-part de 1 250 EUR.
+#[actix_web::test]
+#[serial]
+async fn security_un_centime_encaisse_ne_solde_pas_la_quote_part() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+    let c = copropriete!(app, app_state, org_id);
+
+    let (statut, paiement) = declarer_un_centime!(app, c.proprietaire, c);
+    assert_eq!(statut, 201, "{paiement}");
+    let paiement = paiement["id"].as_str().unwrap().to_string();
+
+    for transition in ["processing", "succeeded"] {
+        let (statut, corps) = appeler!(
+            app,
+            c.syndic,
+            test::TestRequest::put().uri(&format!("/api/v1/payments/{paiement}/{transition}")),
+        );
+        assert_eq!(statut, 200, "le syndic encaisse ({transition}) : {corps}");
+    }
+
+    assert_eq!(statut_quote_part!(app, c), "pending");
+}
+
+/// `@security` — Le syndic d'un autre cabinet ne touche pas aux paiements
+/// d'une ACP qui n'est pas la sienne.
+#[actix_web::test]
+#[serial]
+async fn security_un_syndic_n_encaisse_pas_pour_un_autre_cabinet() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let org_b = common::create_test_organization(&app_state).await;
+    let syndic_b = common::register_and_login_with_role(&app_state, org_b, "syndic").await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+    let c = copropriete!(app, app_state, org_id);
+
+    let (statut, paiement) = declarer_un_centime!(app, c.proprietaire, c);
+    assert_eq!(statut, 201, "{paiement}");
+    let paiement = paiement["id"].as_str().unwrap().to_string();
+
+    for transition in ["processing", "succeeded", "failed", "cancelled"] {
+        let (statut, corps) = appeler!(
+            app,
+            syndic_b,
+            test::TestRequest::put()
+                .uri(&format!("/api/v1/payments/{paiement}/{transition}"))
+                .set_json(json!({})),
+        );
+        assert!(
+            matches!(statut, 403 | 404),
+            "le syndic de B passe le paiement de A en {transition} : {statut} {corps}"
+        );
+    }
+
+    let (statut, corps) = declarer_un_centime!(app, syndic_b, c);
+    assert!(
+        matches!(statut, 403 | 404),
+        "le syndic de B déclare un paiement dans l'ACP de A : {statut} {corps}"
+    );
+}
