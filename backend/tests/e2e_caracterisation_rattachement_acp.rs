@@ -116,13 +116,19 @@ async fn happy_le_transfert_ecrase_le_rattachement_et_bascule_tout_l_acces() {
             jeton,
             test::TestRequest::get().uri(&format!("/api/v1/acps/{acp}"))
         );
-        assert_eq!(statut, attendu, "avant transfert, ACP vue par {qui} : {texte}");
+        assert_eq!(
+            statut, attendu,
+            "avant transfert, ACP vue par {qui} : {texte}"
+        );
         let (statut, texte, _) = appeler!(
             app,
             jeton,
             test::TestRequest::get().uri(&format!("/api/v1/buildings/{immeuble}"))
         );
-        assert_eq!(statut, attendu, "avant transfert, immeuble vu par {qui} : {texte}");
+        assert_eq!(
+            statut, attendu,
+            "avant transfert, immeuble vu par {qui} : {texte}"
+        );
     }
 
     let (statut, texte, reponse) = appeler!(
@@ -134,7 +140,10 @@ async fn happy_le_transfert_ecrase_le_rattachement_et_bascule_tout_l_acces() {
     );
     assert_eq!(statut, 200, "transfert par le SuperAdmin : {texte}");
     assert_eq!(reponse["organization_id"], json!(org_b.to_string()));
-    assert_eq!(rattachement_en_base(&app_state.pool, acp).await, Some(org_b));
+    assert_eq!(
+        rattachement_en_base(&app_state.pool, acp).await,
+        Some(org_b)
+    );
 
     // Aucune trace de A : il n'existe pas de table de mandats.
     let (table,): (Option<String>,) =
@@ -151,13 +160,19 @@ async fn happy_le_transfert_ecrase_le_rattachement_et_bascule_tout_l_acces() {
             jeton,
             test::TestRequest::get().uri(&format!("/api/v1/acps/{acp}"))
         );
-        assert_eq!(statut, attendu, "après transfert, ACP vue par {qui} : {texte}");
+        assert_eq!(
+            statut, attendu,
+            "après transfert, ACP vue par {qui} : {texte}"
+        );
         let (statut, texte, _) = appeler!(
             app,
             jeton,
             test::TestRequest::get().uri(&format!("/api/v1/buildings/{immeuble}"))
         );
-        assert_eq!(statut, attendu, "après transfert, immeuble vu par {qui} : {texte}");
+        assert_eq!(
+            statut, attendu,
+            "après transfert, immeuble vu par {qui} : {texte}"
+        );
     }
 }
 
@@ -196,7 +211,10 @@ async fn security_seul_le_superadmin_modifie_le_rattachement() {
                 .set_json(corps_put(Some(cible)))
         );
         assert_eq!(statut, 403, "{quoi} par le syndic de A : {texte}");
-        assert_eq!(rattachement_en_base(&app_state.pool, acp).await, Some(org_a));
+        assert_eq!(
+            rattachement_en_base(&app_state.pool, acp).await,
+            Some(org_a)
+        );
     }
 }
 
@@ -231,7 +249,10 @@ async fn edge_null_ne_detache_pas_et_l_acp_detachee_n_est_lisible_que_du_superad
     );
     assert_eq!(statut, 200, "null envoyé par le SuperAdmin : {texte}");
     assert_eq!(reponse["organization_id"], json!(org_a.to_string()));
-    assert_eq!(rattachement_en_base(&app_state.pool, acp).await, Some(org_a));
+    assert_eq!(
+        rattachement_en_base(&app_state.pool, acp).await,
+        Some(org_a)
+    );
 
     let (statut, texte, reponse) = appeler!(
         app,
@@ -240,7 +261,10 @@ async fn edge_null_ne_detache_pas_et_l_acp_detachee_n_est_lisible_que_du_superad
             .uri(&format!("/api/v1/acps/{acp}"))
             .set_json(corps_put(Some(json!(""))))
     );
-    assert_eq!(statut, 200, "chaîne vide envoyée par le SuperAdmin : {texte}");
+    assert_eq!(
+        statut, 200,
+        "chaîne vide envoyée par le SuperAdmin : {texte}"
+    );
     assert_eq!(reponse["organization_id"], Value::Null);
     assert_eq!(rattachement_en_base(&app_state.pool, acp).await, None);
 
@@ -259,7 +283,10 @@ async fn edge_null_ne_detache_pas_et_l_acp_detachee_n_est_lisible_que_du_superad
             jeton,
             test::TestRequest::get().uri(&format!("/api/v1/buildings/{immeuble}"))
         );
-        assert_eq!(statut, attendu, "immeuble de l'ACP détachée vu par {qui} : {texte}");
+        assert_eq!(
+            statut, attendu,
+            "immeuble de l'ACP détachée vu par {qui} : {texte}"
+        );
     }
 }
 
@@ -287,7 +314,10 @@ async fn negative_rattacher_a_un_cabinet_inexistant_est_refuse() {
             .set_json(corps_put(Some(json!(Uuid::new_v4().to_string()))))
     );
     assert_eq!(statut, 400, "cabinet inexistant : {texte}");
-    assert_eq!(rattachement_en_base(&app_state.pool, acp).await, Some(org_a));
+    assert_eq!(
+        rattachement_en_base(&app_state.pool, acp).await,
+        Some(org_a)
+    );
 }
 
 /// C7 — Supprimer un cabinet détache ses ACP sans les supprimer, et leurs
@@ -316,5 +346,8 @@ async fn edge_supprimer_un_cabinet_detache_ses_acp_sans_les_supprimer() {
         .fetch_one(&app_state.pool)
         .await
         .expect("comptage des immeubles");
-    assert_eq!(immeubles, 1, "l'immeuble de l'ACP a disparu avec le cabinet");
+    assert_eq!(
+        immeubles, 1,
+        "l'immeuble de l'ACP a disparu avec le cabinet"
+    );
 }
