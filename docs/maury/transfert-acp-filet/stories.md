@@ -46,7 +46,7 @@ dans le bloc e2e de `ci.yml`.
 | C1 | `PUT /acps/{id}` du SuperAdmin avec `organization_id` = B : 200, `acps.organization_id` écrasé, aucune table `syndic_mandates` |
 | C2 | Après C1, le syndic de A reçoit 403 sur l'ACP et sur son immeuble, celui de B 200 |
 | C3 | Le syndic de A qui déplace l'ACP vers B ou la détache (`null`) : 403, rattachement inchangé |
-| C4 | Le SuperAdmin qui envoie `organization_id: null` : 200, rattachement **inchangé** ; une chaîne vide `""` détache |
+| C4 | Le SuperAdmin qui envoie `organization_id: null` : 200, ACP détachée (réécrit le 2026-11-12, R4) |
 | C5 | ACP détachée et son immeuble : 403 pour le syndic de A, 200 pour le SuperAdmin |
 | C6 | Rattachement à un cabinet inexistant : 400, rattachement inchangé |
 | C7 | `DELETE FROM organizations` : l'ACP survit, détachée, son immeuble aussi |
@@ -59,21 +59,23 @@ concerné dans sa propre PR, et le dit.
 
 Figés tels quels par les tests ; la décision revient au PO.
 
-- **R1** — Le code prévoit un Admin de cabinet (`AcpCaller::Admin`) qui
-  pourrait détacher l'ACP sans pouvoir la déplacer. Ce rôle est inatteignable :
-  `UserRole` refuse `admin`, donc seul le SuperAdmin modifie une ACP (C3). Code
-  mort à retirer, ou rôle à créer ? Une ACP détachée devient illisible pour son
-  ancien cabinet (C5).
+- **R1** — **Tranché le 2026-11-12 : retiré.** Le code prévoyait un Admin de
+  cabinet (`AcpCaller::Admin`), inatteignable puisque `UserRole` refuse
+  `admin`. La variante est supprimée ; un jeton portant `admin` tombe sur
+  `Owner`. Seul le SuperAdmin modifie une ACP (C3, inchangé). Une ACP
+  détachée reste illisible pour son ancien cabinet (C5).
 - **R2** — Supprimer un cabinet détache ses ACP (C7). Ce que la suppression
   emporte dans les autres tables qui portent encore un `organization_id` en
   cascade n'est pas caractérisé : à mesurer avant le lot 2 (ADR 0058).
 - **R3** — Le transfert ne laisse aucune trace de l'ancien cabinet (C1) ;
   l'accès bascule sur tout l'historique à l'instant (C2). C'est l'écart que
   le lot 2 comble ; noté pour mémoire, pas une question.
-- **R4** — `UpdateAcpDto` documente « `null` = détache », mais `null` est
-  ignoré : serde lit `null` comme une clé absente sur un `Option<Option<_>>`
-  sans `deserialize_with`. La réponse est 200, sans rien changer. Seule une
-  chaîne vide détache (C4).
+- **R4** — **Tranché le 2026-11-12 : corrigé.** `UpdateAcpDto` documentait
+  « `null` = détache », mais serde lisait `null` comme une clé absente sur un
+  `Option<Option<_>>` : 200 sans effet, et seule une chaîne vide détachait.
+  Le DTO distingue désormais les deux, et C4 est réécrit en conséquence. Le
+  choix « aucun cabinet » de l'écran d'administration, qui envoie `null`,
+  détache enfin.
 
 ### DoD
 

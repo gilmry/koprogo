@@ -3,8 +3,22 @@
 //! Request/Response DTOs pour les endpoints `/acps`. Validation via `validator`.
 //! Bornes alignées avec les invariants `Acp::new` (cf. `domain/entities/acp.rs`).
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use validator::Validate;
+
+/// Distingue une clé absente d'une clé à `null` sur un `Option<Option<T>>`.
+///
+/// Sans lui, serde lit `null` comme une clé absente : `"organization_id": null`
+/// répondait 200 sans détacher l'ACP, à l'inverse du contrat documenté.
+/// Avec `#[serde(default)]`, la clé absente donne `None` et `null` donne
+/// `Some(None)`.
+fn cle_presente<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    T::deserialize(deserializer).map(Some)
+}
 
 /// Création d'une ACP.
 ///
@@ -50,7 +64,11 @@ pub struct UpdateAcpDto {
     /// Permet à un admin de rattacher / détacher l'ACP d'un cabinet.
     /// `Some(None)` (JSON `"organization_id": null`) = détache,
     /// `None` (clé absente) = conserve l'existant.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "cle_presente",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub organization_id: Option<Option<String>>,
 
     #[validate(length(
@@ -179,5 +197,40 @@ mod tests {
             total_tantiemes: None,
         };
         assert!(dto.validate().is_err());
+    }
+
+    fn update_avec(organization_id: Option<serde_json::Value>) -> UpdateAcpDto {
+        let mut corps = serde_json::json!({
+            "name": "Acp Test",
+            "address_street": "Rue X 1",
+            "address_postal_code": "1000",
+            "address_city": "Bruxelles"
+        });
+        if let Some(valeur) = organization_id {
+            corps["organization_id"] = valeur;
+        }
+        serde_json::from_value(corps).expect("UpdateAcpDto lisible")
+    }
+
+    #[test]
+    fn edge_organization_id_absent_conserve_le_rattachement() {
+        assert_eq!(update_avec(None).organization_id, None);
+    }
+
+    #[test]
+    fn edge_organization_id_null_demande_le_detachement() {
+        assert_eq!(
+            update_avec(Some(serde_json::Value::Null)).organization_id,
+            Some(None)
+        );
+    }
+
+    #[test]
+    fn happy_organization_id_renseigne_demande_le_rattachement() {
+        let org = uuid::Uuid::new_v4().to_string();
+        assert_eq!(
+            update_avec(Some(serde_json::json!(org))).organization_id,
+            Some(Some(org))
+        );
     }
 }

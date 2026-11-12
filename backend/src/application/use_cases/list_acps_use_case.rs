@@ -9,7 +9,7 @@
 //!
 //! Permissions (cf. architecture §3.3 + ADR-0010) :
 //! - `SuperAdmin` → `ListScope::All` (sees all ACPs)
-//! - `Admin { org_id }` / `Syndic { org_id }` → `ListScope::Organization(org)`
+//! - `Syndic { org_id }` → `ListScope::Organization(org)`
 //! - `Owner { user_id }` → `ListScope::Owner(user_id)`
 //!
 //! All returns are typed `Result<T, AppError>` — CRITICAL §4. No
@@ -73,12 +73,10 @@ impl ListAcpsUseCase {
     pub fn caller_can_see(caller: &AcpCaller, acp: &Acp) -> Result<(), AppError> {
         match caller {
             AcpCaller::SuperAdmin => Ok(()),
-            AcpCaller::Admin { organization_id } | AcpCaller::Syndic { organization_id } => {
-                match acp.organization_id {
-                    Some(org) if org == *organization_id => Ok(()),
-                    _ => Err(AppError::AcpNotInScope { acp_id: acp.id }),
-                }
-            }
+            AcpCaller::Syndic { organization_id } => match acp.organization_id {
+                Some(org) if org == *organization_id => Ok(()),
+                _ => Err(AppError::AcpNotInScope { acp_id: acp.id }),
+            },
             // Story 1.3 — owner direct visibility on a single ACP is
             // derived from `list_for_user(Owner { user_id })`. For a
             // direct id-lookup we conservatively refuse here: the

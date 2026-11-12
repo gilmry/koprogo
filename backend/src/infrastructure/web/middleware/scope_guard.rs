@@ -150,14 +150,9 @@ impl From<AppError> for ScopeGuardError {
 pub fn caller_from_role(role: &str, organization_id: Option<Uuid>, user_id: Uuid) -> AcpCaller {
     match role.to_lowercase().as_str() {
         "superadmin" => AcpCaller::SuperAdmin,
-        "admin" => match organization_id {
-            Some(org) => AcpCaller::Admin {
-                organization_id: org,
-            },
-            // Un admin sans organisation n'hérite d'aucun droit global :
-            // seul le rôle `superadmin` mène à `SuperAdmin` (lot 0, S2).
-            None => AcpCaller::Owner { user_id },
-        },
+        // Pas de bras `admin` : le rôle n'existe pas dans `UserRole`, et le
+        // bras qui menait à un « admin de cabinet » était du code mort
+        // (lot 1, R1). Un jeton qui le porterait tombe sur `Owner`.
         "syndic" | "accountant" => match organization_id {
             Some(org) => AcpCaller::Syndic {
                 organization_id: org,
@@ -202,9 +197,9 @@ pub fn requires_repository_check(
         (AcpCaller::SuperAdmin, Some(id)) => Ok(Some(id)),
         (AcpCaller::SuperAdmin, None) => Ok(None),
 
-        // Admin / Syndic with their own org are allowed if requested
-        // matches their org-derived scope or is None.
-        (AcpCaller::Admin { .. }, req) | (AcpCaller::Syndic { .. }, req) => Ok(req),
+        // Syndic with their own org is allowed if requested matches their
+        // org-derived scope or is None.
+        (AcpCaller::Syndic { .. }, req) => Ok(req),
 
         // Owner: every request must be checked via the use-case (no
         // direct shortcut — story 1.3 conservatively refuses pinning
@@ -1229,10 +1224,11 @@ mod tests {
     // ----- @happy --------------------------------------------------------------
 
     #[test]
-    fn happy_caller_from_role_admin() {
+    fn security_caller_from_role_admin_with_org_has_no_cabinet_right() {
         let org = Uuid::new_v4();
-        let c = caller_from_role("admin", Some(org), Uuid::new_v4());
-        assert!(matches!(c, AcpCaller::Admin { organization_id } if organization_id == org));
+        let uid = Uuid::new_v4();
+        let c = caller_from_role("admin", Some(org), uid);
+        assert!(matches!(c, AcpCaller::Owner { user_id } if user_id == uid));
     }
 
     #[test]
@@ -1294,10 +1290,11 @@ mod tests {
     // Lot 0, story S2 : un admin sans organisation n'est pas SuperAdmin.
 
     #[test]
-    fn edge_caller_from_role_admin_mixed_case() {
+    fn security_caller_from_role_admin_mixed_case_has_no_cabinet_right() {
         let org = Uuid::new_v4();
-        let c = caller_from_role("Admin", Some(org), Uuid::new_v4());
-        assert!(matches!(c, AcpCaller::Admin { organization_id } if organization_id == org));
+        let uid = Uuid::new_v4();
+        let c = caller_from_role("Admin", Some(org), uid);
+        assert!(matches!(c, AcpCaller::Owner { user_id } if user_id == uid));
     }
 
     #[test]

@@ -179,10 +179,9 @@ async fn happy_le_transfert_ecrase_le_rattachement_et_bascule_tout_l_acces() {
 /// C3 — Le syndic du cabinet ne touche pas au rattachement : ni déplacement,
 /// ni détachement. Seul le SuperAdmin modifie une ACP.
 ///
-/// Le code connaît un appelant `Admin` de cabinet (`AcpCaller::Admin`), qui
-/// pourrait détacher l'ACP mais pas la déplacer. Il est inatteignable : aucun
-/// compte ne peut porter le rôle `admin`, que `UserRole` refuse. Registre S-1,
-/// anomalie R1.
+/// Le code connaissait un appelant `Admin` de cabinet, inatteignable puisque
+/// `UserRole` refuse le rôle `admin`. Retiré le 2026-11-12 (registre S-1,
+/// anomalie R1) : ce test, qui ne l'utilisait pas, ne change pas.
 #[actix_web::test]
 #[serial]
 async fn security_seul_le_superadmin_modifie_le_rattachement() {
@@ -218,15 +217,15 @@ async fn security_seul_le_superadmin_modifie_le_rattachement() {
     }
 }
 
-/// C4 — `organization_id: null` ne détache PAS l'ACP : 200 et rattachement
-/// inchangé. Le DTO documente l'inverse, mais serde lit `null` comme une clé
-/// absente sur un `Option<Option<_>>`. Registre S-1, anomalie R4.
+/// C4 — `organization_id: null` détache l'ACP. Jusqu'au 2026-11-12, `null`
+/// était ignoré (200 sans effet) et seule une chaîne vide détachait :
+/// registre S-1, anomalie R4, corrigée dans le DTO par décision du PO.
 ///
-/// C5 — Une chaîne vide détache. L'ACP détachée et son immeuble ne sont plus
-/// lisibles que du SuperAdmin, son ancien cabinet compris.
+/// C5 — L'ACP détachée et son immeuble ne sont plus lisibles que du
+/// SuperAdmin, son ancien cabinet compris.
 #[actix_web::test]
 #[serial]
-async fn edge_null_ne_detache_pas_et_l_acp_detachee_n_est_lisible_que_du_superadmin() {
+async fn edge_null_detache_et_l_acp_detachee_n_est_lisible_que_du_superadmin() {
     let (app_state, _container, org_a) = common::setup_test_db().await;
     let app = test::init_service(
         App::new()
@@ -248,23 +247,6 @@ async fn edge_null_ne_detache_pas_et_l_acp_detachee_n_est_lisible_que_du_superad
             .set_json(corps_put(Some(Value::Null)))
     );
     assert_eq!(statut, 200, "null envoyé par le SuperAdmin : {texte}");
-    assert_eq!(reponse["organization_id"], json!(org_a.to_string()));
-    assert_eq!(
-        rattachement_en_base(&app_state.pool, acp).await,
-        Some(org_a)
-    );
-
-    let (statut, texte, reponse) = appeler!(
-        app,
-        superadmin,
-        test::TestRequest::put()
-            .uri(&format!("/api/v1/acps/{acp}"))
-            .set_json(corps_put(Some(json!(""))))
-    );
-    assert_eq!(
-        statut, 200,
-        "chaîne vide envoyée par le SuperAdmin : {texte}"
-    );
     assert_eq!(reponse["organization_id"], Value::Null);
     assert_eq!(rattachement_en_base(&app_state.pool, acp).await, None);
 

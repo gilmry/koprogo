@@ -83,10 +83,10 @@ async fn setup() -> Fixture {
     }
 }
 
-fn admin_caller(org_id: Uuid) -> AcpCaller {
-    AcpCaller::Admin {
-        organization_id: org_id,
-    }
+/// Seul le SuperAdmin crée une ACP (lot 1, R1 : l'« admin de cabinet »
+/// n'existait pas).
+fn createur_d_acp() -> AcpCaller {
+    AcpCaller::SuperAdmin
 }
 
 fn create_acp_dto(org_id: Uuid, name: &str) -> CreateAcpDto {
@@ -111,7 +111,7 @@ async fn happy_create_and_fetch_building_runtime_post_acp_id_migration() {
     let fx = setup().await;
 
     // Crée une ACP rattachée à l'organisation
-    let caller = admin_caller(fx.org.id);
+    let caller = createur_d_acp();
     let acp = fx
         .acp_uc
         .create_acp(&caller, create_acp_dto(fx.org.id, "ACP Runtime Test"))
@@ -160,7 +160,7 @@ async fn happy_list_buildings_paginated_with_org_filter() {
     let fx = setup().await;
 
     // ACP miroir
-    let caller = admin_caller(fx.org.id);
+    let caller = createur_d_acp();
     let acp = fx
         .acp_uc
         .create_acp(&caller, create_acp_dto(fx.org.id, "ACP List"))
@@ -222,7 +222,7 @@ async fn edge_filter_by_acp_id_direct_returns_only_that_acp_buildings() {
     let fx = setup().await;
 
     // 2 ACPs : A et B
-    let caller = admin_caller(fx.org.id);
+    let caller = createur_d_acp();
     let acp_a = fx
         .acp_uc
         .create_acp(&caller, create_acp_dto(fx.org.id, "ACP A"))
