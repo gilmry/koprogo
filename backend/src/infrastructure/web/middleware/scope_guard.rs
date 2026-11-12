@@ -55,6 +55,7 @@ use crate::application::use_cases::shared_object_use_cases::SharedObjectUseCases
 use crate::application::use_cases::skill_use_cases::SkillUseCases;
 use crate::application::use_cases::technical_spec_use_cases::TechnicalSpecUseCases;
 use crate::application::use_cases::ticket_use_cases::TicketUseCases;
+use crate::application::use_cases::unit_owner_use_cases::UnitOwnerUseCases;
 use crate::application::use_cases::unit_use_cases::UnitUseCases;
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::AuthenticatedUser;
@@ -860,6 +861,125 @@ pub async fn verify_owner_org_access(
 
     user.verify_org_access(org_id)
         .map_err(|_| AppError::Forbidden("Owner outside your organization".to_string()))
+}
+
+/// Rôle « copropriétaire » : **seulement sa propre fiche** (#1027).
+///
+/// `verify_owner_org_access` borne à l'organisation, ce qui suffit pour un
+/// syndic ou un comptable, qui gèrent tous les copropriétaires de leurs
+/// immeubles. Mais un copropriétaire est membre de la même organisation que
+/// ses voisins : la garde d'organisation le laissait lire, nominativement, la
+/// fiche, les lots, les paiements, les moyens de paiement, les répartitions et
+/// les dettes de chacun d'eux, emails compris.
+///
+/// Sémantique : d'abord la garde d'organisation, inchangée ; puis, pour le
+/// rôle `owner` seul, la fiche visée doit être liée au compte de l'appelant
+/// (`owners.user_id`). Une fiche non liée à aucun compte est refusée : on ne
+/// sait pas à qui elle appartient.
+///
+/// Ne s'applique PAS aux routes communautaires (SEL, compétences, objets
+/// partagés, petites annonces), où voir un voisin est l'objet même du service.
+pub async fn verify_owner_personal_access(
+    user: &AuthenticatedUser,
+    owner_id: Uuid,
+    owner_use_cases: &OwnerUseCases,
+) -> Result<(), AppError> {
+    verify_owner_org_access(user, owner_id, owner_use_cases).await?;
+    if user.role != "owner" {
+        return Ok(());
+    }
+    let owner = owner_use_cases
+        .get_owner(owner_id)
+        .await
+        .map_err(AppError::from)?
+        .ok_or(AppError::NotFound(format!("Owner not found: {owner_id}")))?;
+    let appelant = user.user_id.to_string();
+    if owner.user_id.as_deref() == Some(appelant.as_str()) {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden(
+            "A co-owner can only access their own record".to_string(),
+        ))
+    }
+}
+
+/// Fiches de copropriétaire liées au compte de l'appelant, dans son
+/// organisation (une par organisation au plus).
+pub async fn own_owner_ids(
+    user: &AuthenticatedUser,
+    owner_use_cases: &OwnerUseCases,
+) -> Result<Vec<Uuid>, AppError> {
+    let fiche = match user.organization_id {
+        Some(org_id) => owner_use_cases
+            .find_owner_by_user_id_and_organization(user.user_id, org_id)
+            .await
+            .map_err(AppError::from)?,
+        None => owner_use_cases
+            .find_owner_by_user_id(user.user_id)
+            .await
+            .map_err(AppError::from)?,
+    };
+    Ok(fiche
+        .and_then(|f| Uuid::parse_str(&f.id).ok())
+        .into_iter()
+        .collect())
+}
+
+/// Lots **actuellement** détenus par l'appelant (rôle copropriétaire).
+pub async fn own_unit_ids(
+    user: &AuthenticatedUser,
+    owner_use_cases: &OwnerUseCases,
+    unit_owner_use_cases: &UnitOwnerUseCases,
+) -> Result<Vec<Uuid>, AppError> {
+    let mut lots = Vec::new();
+    for owner_id in own_owner_ids(user, owner_use_cases).await? {
+        for detention in unit_owner_use_cases
+            .get_owner_units(owner_id)
+            .await
+            .map_err(AppError::from)?
+        {
+            if detention.end_date.is_none() && !lots.contains(&detention.unit_id) {
+                lots.push(detention.unit_id);
+            }
+        }
+    }
+    Ok(lots)
+}
+
+/// Rôle « copropriétaire » : un lot n'est lisible, avec ses titulaires, que
+/// s'il le détient (#1027). Les autres rôles passent par la garde
+/// d'organisation, inchangée. Les co-indivisaires d'un même lot se voient :
+/// ils partagent ce lot.
+pub async fn verify_unit_holder_access(
+    user: &AuthenticatedUser,
+    unit_id: Uuid,
+    unit_use_cases: &UnitUseCases,
+    building_use_cases: &BuildingUseCases,
+    acp_use_cases: &AcpUseCases,
+    owner_use_cases: &OwnerUseCases,
+    unit_owner_use_cases: &UnitOwnerUseCases,
+) -> Result<(), AppError> {
+    verify_unit_org_access(
+        user,
+        unit_id,
+        unit_use_cases,
+        building_use_cases,
+        acp_use_cases,
+    )
+    .await?;
+    if user.role != "owner" {
+        return Ok(());
+    }
+    if own_unit_ids(user, owner_use_cases, unit_owner_use_cases)
+        .await?
+        .contains(&unit_id)
+    {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden(
+            "A co-owner can only access their own units".to_string(),
+        ))
+    }
 }
 
 /// Vérifie le mandat de l'appelant sur l'ACP dont relève une **assemblée**.

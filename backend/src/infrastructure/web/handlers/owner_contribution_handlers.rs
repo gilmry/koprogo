@@ -2,7 +2,7 @@ use crate::application::dto::{
     CreateOwnerContributionRequest, OwnerContributionResponse, RecordPaymentRequest,
 };
 use crate::infrastructure::web::middleware::scope_guard::{
-    verify_contribution_org_access, verify_owner_org_access,
+    own_owner_ids, verify_contribution_org_access, verify_owner_personal_access,
 };
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, put, web, HttpResponse, ResponseError};
@@ -204,6 +204,17 @@ pub async fn get_contribution(
         .await
     {
         Ok(Some(contribution)) => {
+            // Un copropriétaire ne lit que ses propres quotes-parts (#1027).
+            if user.role == "owner" {
+                match own_owner_ids(&user, &state.owner_use_cases).await {
+                    Ok(ids) if ids.contains(&contribution.owner_id) => {}
+                    Ok(_) => {
+                        return HttpResponse::NotFound()
+                            .json(serde_json::json!({ "error": "Contribution not found" }))
+                    }
+                    Err(err) => return err.error_response(),
+                }
+            }
             let response = OwnerContributionResponse::from(contribution);
             HttpResponse::Ok().json(response)
         }
@@ -260,7 +271,9 @@ pub async fn get_contributions_by_owner(
         // Aucun cliquet ne voit cette forme : le cloisonnement n'est pas
         // absent du gestionnaire, il est absent d'UNE de ses branches, et la
         // route a l'air gardée parce que son cas nominal l'est.
-        if let Err(err) = verify_owner_org_access(&user, owner_id, &state.owner_use_cases).await {
+        if let Err(err) =
+            verify_owner_personal_access(&user, owner_id, &state.owner_use_cases).await
+        {
             return err.error_response();
         }
 
@@ -289,14 +302,32 @@ pub async fn get_contributions_by_owner(
         }
     };
 
+    // Un copropriétaire ne reçoit que SES contributions, pas celles de toute
+    // l'organisation : qui doit combien est une donnée personnelle (#1027).
+    let seulement = if user.role == "owner" {
+        match own_owner_ids(&user, &state.owner_use_cases).await {
+            Ok(ids) => Some(ids),
+            Err(err) => return err.error_response(),
+        }
+    } else {
+        None
+    };
+
     match state
         .owner_contribution_use_cases
         .get_contributions_by_organization(organization_id)
         .await
     {
         Ok(contributions) => {
-            let responses: Vec<OwnerContributionResponse> =
-                contributions.into_iter().map(Into::into).collect();
+            let responses: Vec<OwnerContributionResponse> = contributions
+                .into_iter()
+                .filter(|c| {
+                    seulement
+                        .as_ref()
+                        .is_none_or(|ids| ids.contains(&c.owner_id))
+                })
+                .map(Into::into)
+                .collect();
             HttpResponse::Ok().json(responses)
         }
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({ "error": e })),
@@ -340,7 +371,7 @@ pub async fn get_outstanding_contributions(
     // aucune vérification — n'importe quel utilisateur authentifié pouvait
     // lire les arriérés d'un copropriétaire quelconque, dans n'importe quelle
     // organisation, en connaissant son seul UUID.
-    if let Err(err) = verify_owner_org_access(&user, owner_id, &state.owner_use_cases).await {
+    if let Err(err) = verify_owner_personal_access(&user, owner_id, &state.owner_use_cases).await {
         return err.error_response();
     }
 

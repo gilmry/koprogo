@@ -1,7 +1,10 @@
 use crate::application::dto::{CreateOwnerDto, PageRequest, PageResponse};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::{
+    own_owner_ids, verify_owner_personal_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{get, post, put, web, HttpResponse, Responder};
+use actix_web::{get, post, put, web, HttpResponse, Responder, ResponseError};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use uuid::Uuid;
@@ -111,6 +114,35 @@ pub async fn list_owners(
     user: AuthenticatedUser,
     page_request: web::Query<PageRequest>,
 ) -> impl Responder {
+    // Un copropriétaire ne reçoit que SA fiche, jamais celles de ses voisins
+    // avec leurs emails (#1027). La garde d'organisation ci-dessous suffit au
+    // syndic et au comptable, pas à lui : il est membre de la même
+    // organisation que les fiches qu'elle laisse passer.
+    if user.role == "owner" {
+        let ids = match own_owner_ids(&user, &state.owner_use_cases).await {
+            Ok(ids) => ids,
+            Err(err) => return err.error_response(),
+        };
+        let mut fiches = Vec::new();
+        for id in ids {
+            match state.owner_use_cases.get_owner(id).await {
+                Ok(Some(fiche)) => fiches.push(fiche),
+                Ok(None) => {}
+                Err(err) => {
+                    return HttpResponse::InternalServerError()
+                        .json(serde_json::json!({ "error": err }))
+                }
+            }
+        }
+        let total = fiches.len() as i64;
+        return HttpResponse::Ok().json(PageResponse::new(
+            fiches,
+            page_request.page,
+            page_request.per_page,
+            total,
+        ));
+    }
+
     // SuperAdmin can see all owners, others only see their organization's owners
     let organization_id = if user.is_superadmin() {
         None // SuperAdmin sees all organizations
@@ -183,6 +215,11 @@ pub async fn get_owner(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Un copropriétaire ne lit que sa propre fiche (#1027).
+    if let Err(err) = verify_owner_personal_access(&user, *id, &state.owner_use_cases).await {
+        return err.error_response();
+    }
+
     match state.owner_use_cases.get_owner(*id).await {
         Ok(Some(owner)) => {
             // Multi-tenant isolation: verify owner belongs to user's organization
@@ -449,6 +486,13 @@ pub async fn export_owner_statement_pdf(
             }))
         }
     };
+
+    // Cloisonnement (#1027) : cette route n'en avait aucun. L'identifiant
+    // d'une fiche suffisait à obtenir le décompte d'un tiers (lots, charges,
+    // montants), toutes organisations confondues.
+    if let Err(err) = verify_owner_personal_access(&user, *id, &state.owner_use_cases).await {
+        return err.error_response();
+    }
 
     let owner_id = *id;
     let building_id = query.building_id;

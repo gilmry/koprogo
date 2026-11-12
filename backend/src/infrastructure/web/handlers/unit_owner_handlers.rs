@@ -5,7 +5,7 @@ use crate::application::dto::{
 use crate::domain::entities::UnitOwner;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::middleware::scope_guard::{
-    verify_owner_org_access, verify_unit_org_access,
+    verify_owner_personal_access, verify_unit_holder_access, verify_unit_org_access,
 };
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
@@ -304,12 +304,17 @@ pub async fn get_unit_owners(
     // la donnée la plus sensible du produit après les montants.
     //
     // L'identité était prise puis ignorée — `_user` (#772).
-    if let Err(err) = verify_unit_org_access(
+    //
+    // Un copropriétaire ne voit les titulaires que des lots qu'il détient
+    // (#1027).
+    if let Err(err) = verify_unit_holder_access(
         &user,
         unit_id,
         &state.unit_use_cases,
         &state.building_use_cases,
         &state.acp_use_cases,
+        &state.owner_use_cases,
+        &state.unit_owner_use_cases,
     )
     .await
     {
@@ -348,7 +353,7 @@ pub async fn get_owner_units(
     // Cloisonnement : le copropriétaire visé doit relever d'une organisation
     // que cet utilisateur a le droit de voir. Lister ses lots hors de son ACP,
     // c'est apprendre le patrimoine d'un tiers (#772).
-    if let Err(err) = verify_owner_org_access(&user, owner_id, &state.owner_use_cases).await {
+    if let Err(err) = verify_owner_personal_access(&user, owner_id, &state.owner_use_cases).await {
         return err.error_response();
     }
 
@@ -386,12 +391,17 @@ pub async fn get_unit_ownership_history(
     // la donnée la plus sensible du produit après les montants.
     //
     // L'identité était prise puis ignorée — `_user` (#772).
-    if let Err(err) = verify_unit_org_access(
+    //
+    // Un copropriétaire ne voit les titulaires que des lots qu'il détient
+    // (#1027).
+    if let Err(err) = verify_unit_holder_access(
         &user,
         unit_id,
         &state.unit_use_cases,
         &state.building_use_cases,
         &state.acp_use_cases,
+        &state.owner_use_cases,
+        &state.unit_owner_use_cases,
     )
     .await
     {
@@ -434,7 +444,7 @@ pub async fn get_owner_ownership_history(
     // Cloisonnement : le copropriétaire visé doit relever d'une organisation
     // que cet utilisateur a le droit de voir. Lister ses lots hors de son ACP,
     // c'est apprendre le patrimoine d'un tiers (#772).
-    if let Err(err) = verify_owner_org_access(&user, owner_id, &state.owner_use_cases).await {
+    if let Err(err) = verify_owner_personal_access(&user, owner_id, &state.owner_use_cases).await {
         return err.error_response();
     }
 
@@ -751,6 +761,16 @@ pub async fn export_ownership_contract_pdf(
     };
 
     // 2. Get unit
+    // Cloisonnement (#1027) : cette route n'en avait aucun. L'identifiant du
+    // lien suffisait à obtenir le contrat d'un tiers, toutes organisations
+    // confondues : nom, adresse, lot et quote-part. Même règle que la fiche :
+    // l'organisation pour le syndic, sa propre détention pour le copropriétaire.
+    if let Err(err) =
+        verify_owner_personal_access(&user, unit_owner.owner_id, &state.owner_use_cases).await
+    {
+        return err.error_response();
+    }
+
     let unit_dto = match state.unit_use_cases.get_unit(unit_owner.unit_id).await {
         Ok(Some(dto)) => dto,
         Ok(None) => {
