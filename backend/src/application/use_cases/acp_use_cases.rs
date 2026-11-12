@@ -28,9 +28,6 @@ use uuid::Uuid;
 pub enum AcpCaller {
     /// SuperAdmin SaaS — accès global, peut tout faire.
     SuperAdmin,
-    /// Admin métier d'un cabinet syndic — peut CRUD sur les ACPs de son
-    /// cabinet.
-    Admin { organization_id: Uuid },
     /// Syndic — lecture seule des ACPs de son cabinet (Story 1.1 ; les
     /// permissions write s'étoffent en stories suivantes).
     Syndic { organization_id: Uuid },
@@ -40,18 +37,18 @@ pub enum AcpCaller {
 
 impl AcpCaller {
     /// L'appelant a-t-il le droit de créer/mettre à jour/archiver une ACP ?
-    /// Story 1.1 : seul `SuperAdmin` ou `Admin` (admin métier cabinet).
+    /// Seul le `SuperAdmin`. L'« admin métier de cabinet » qu'annonçait la
+    /// story 1.1 n'a jamais existé : `UserRole` refuse le rôle `admin`
+    /// (registre S-1 du lot 1, anomalie R1, retiré le 2026-11-12).
     pub fn can_mutate(&self) -> bool {
-        matches!(self, AcpCaller::SuperAdmin | AcpCaller::Admin { .. })
+        matches!(self, AcpCaller::SuperAdmin)
     }
 
     /// Scope de listing par rôle. Le SuperAdmin voit tout.
     pub fn list_scope(&self) -> ListScope {
         match self {
             AcpCaller::SuperAdmin => ListScope::All,
-            AcpCaller::Admin { organization_id } | AcpCaller::Syndic { organization_id } => {
-                ListScope::Organization(*organization_id)
-            }
+            AcpCaller::Syndic { organization_id } => ListScope::Organization(*organization_id),
             AcpCaller::Owner { user_id } => ListScope::Owner(*user_id),
         }
     }
@@ -108,18 +105,6 @@ impl AcpUseCases {
             }
             _ => None,
         };
-
-        // Admin métier ne peut créer une ACP que dans son propre cabinet
-        // (ou auto-gérée). Le SuperAdmin peut tout.
-        if let AcpCaller::Admin { organization_id } = caller {
-            if let Some(target) = org_id {
-                if target != *organization_id {
-                    return Err(AppError::Forbidden(
-                        "Admin can only create ACPs within their own organization".to_string(),
-                    ));
-                }
-            }
-        }
 
         let acp = Acp::new(
             org_id,
@@ -235,17 +220,6 @@ impl AcpUseCases {
                 _ => None,
             };
 
-            // Admin métier ne peut pas déplacer une ACP vers un autre cabinet.
-            if let AcpCaller::Admin { organization_id } = caller {
-                if let Some(t) = new_org_id {
-                    if t != *organization_id {
-                        return Err(AppError::Forbidden(
-                            "Admin cannot move ACP to a different organization".to_string(),
-                        ));
-                    }
-                }
-            }
-
             acp.set_organization(new_org_id);
         }
 
@@ -325,12 +299,10 @@ impl AcpUseCases {
     fn assert_scope(caller: &AcpCaller, acp: &Acp) -> Result<(), AppError> {
         match caller {
             AcpCaller::SuperAdmin => Ok(()),
-            AcpCaller::Admin { organization_id } | AcpCaller::Syndic { organization_id } => {
-                match acp.organization_id {
-                    Some(org) if org == *organization_id => Ok(()),
-                    _ => Err(AppError::AcpNotInScope { acp_id: acp.id }),
-                }
-            }
+            AcpCaller::Syndic { organization_id } => match acp.organization_id {
+                Some(org) if org == *organization_id => Ok(()),
+                _ => Err(AppError::AcpNotInScope { acp_id: acp.id }),
+            },
             // Owner scope : Story 1.1 — on délègue la vérification fine
             // (UserRoleAssignment) au repository `list`. Pour `get`, on
             // refuse par défaut sauf si l'ACP est ressortie de `list` —
@@ -554,34 +526,6 @@ mod tests {
         match err {
             AppError::AcpNotInScope { acp_id: a } => assert_eq!(a, acp_id),
             other => panic!("expected AcpNotInScope, got {:?}", other),
-        }
-    }
-
-    #[tokio::test]
-    async fn security_admin_cannot_create_acp_in_different_cabinet() {
-        let own_cabinet = Uuid::new_v4();
-        let other_cabinet = Uuid::new_v4();
-
-        let mut org_repo = MockOrgRepo::new();
-        org_repo
-            .expect_find_by_id()
-            .returning(move |id| Ok(Some(make_org(id))));
-        let acp_repo = MockAcpRepo::new();
-        let uc = AcpUseCases::new(Arc::new(acp_repo), Arc::new(org_repo));
-
-        let dto = make_dto("Forbidden Acp", Some(other_cabinet));
-        let err = uc
-            .create_acp(
-                &AcpCaller::Admin {
-                    organization_id: own_cabinet,
-                },
-                dto,
-            )
-            .await
-            .unwrap_err();
-        match err {
-            AppError::Forbidden(_) => {}
-            other => panic!("expected Forbidden, got {:?}", other),
         }
     }
 
