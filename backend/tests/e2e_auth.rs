@@ -781,10 +781,30 @@ async fn inscription_publique_ne_choisit_ni_role_ni_organisation() {
     // (description, jeton éventuel, rôle demandé, organisation demandée)
     let tentatives: Vec<(&str, Option<String>, &str, Option<Uuid>)> = vec![
         ("anonyme superadmin", None, "superadmin", None),
-        ("anonyme superadmin, casse modifiée", None, "SuperAdmin", None),
-        ("anonyme admin d'une organisation", None, "admin", Some(org_id)),
-        ("anonyme syndic d'une organisation", None, "syndic", Some(org_id)),
-        ("anonyme owner rattaché d'office", None, "owner", Some(org_id)),
+        (
+            "anonyme superadmin, casse modifiée",
+            None,
+            "SuperAdmin",
+            None,
+        ),
+        (
+            "anonyme admin d'une organisation",
+            None,
+            "admin",
+            Some(org_id),
+        ),
+        (
+            "anonyme syndic d'une organisation",
+            None,
+            "syndic",
+            Some(org_id),
+        ),
+        (
+            "anonyme owner rattaché d'office",
+            None,
+            "owner",
+            Some(org_id),
+        ),
         (
             "jeton forgé superadmin",
             Some("eyJhbGciOiJub25lIn0.eyJyb2xlIjoic3VwZXJhZG1pbiJ9.".to_string()),
@@ -835,7 +855,10 @@ async fn inscription_publique_ne_choisit_ni_role_ni_organisation() {
             .fetch_one(&app_state.pool)
             .await
             .expect("comptage des comptes");
-        assert_eq!(cree, 0, "{description} : un compte a été créé malgré le refus");
+        assert_eq!(
+            cree, 0,
+            "{description} : un compte a été créé malgré le refus"
+        );
     }
 }
 
@@ -858,10 +881,34 @@ async fn seul_le_superadmin_cree_des_comptes_d_organisation() {
     .await;
 
     for (description, jeton, role, organisation, attendu) in [
-        ("superadmin crée un syndic", &jeton_superadmin, "syndic", org_b, 201),
-        ("syndic crée un syndic chez lui", &jeton_syndic, "syndic", org_a, 403),
-        ("syndic crée un owner chez lui", &jeton_syndic, "owner", org_a, 403),
-        ("syndic crée un superadmin", &jeton_syndic, "superadmin", org_a, 403),
+        (
+            "superadmin crée un syndic",
+            &jeton_superadmin,
+            "syndic",
+            org_b,
+            201,
+        ),
+        (
+            "syndic crée un syndic chez lui",
+            &jeton_syndic,
+            "syndic",
+            org_a,
+            403,
+        ),
+        (
+            "syndic crée un owner chez lui",
+            &jeton_syndic,
+            "owner",
+            org_a,
+            403,
+        ),
+        (
+            "syndic crée un superadmin",
+            &jeton_syndic,
+            "superadmin",
+            org_a,
+            403,
+        ),
     ] {
         let req = test::TestRequest::post()
             .uri("/api/v1/auth/register")
