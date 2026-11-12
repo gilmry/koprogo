@@ -530,7 +530,7 @@ Jalons Produit
      - Conformité Légale
    * - **Jalon 0** ✅
      - 10-20 early adopters
-     - Architecture hexagonale, 73 endpoints API
+     - Architecture hexagonale, 73 endpoints API au Jalon 0 (620 au 03/11/2026)
      - 30% (CRUD de base)
    * - **Jalon 1**
      - 50-100 copros (beta publique)
@@ -684,7 +684,7 @@ Pour Contributeurs Opensource
 
 **🔍 Recrutement actif**:
 
-Nous recherchons un(e) **Co-fondateur(trice) Product** avec expertise en gestion de copropriété (syndic, conseil syndical, ou comptabilité copropriété belge). Profil idéal: connaissance terrain du secteur + vision produit.
+Nous recherchons un(e) **Co-fondateur(trice) Product** avec expertise en gestion de copropriété (syndic, conseil de copropriété, ou comptabilité copropriété belge). Profil idéal: connaissance terrain du secteur + vision produit.
 
 **Disponibilité pitch**:
 

@@ -151,8 +151,10 @@ d'être contraint de le faire lors d'une rénovation future.
 
    1. Proposez une résolution AG : "Installation d'une infrastructure de
       recharge mutualisée pour X emplacements"
-   2. Obtenez 3 devis (obligation Art. 3.88 CC si > 5,000 €)
-   3. Vote à la majorité simple (décision ordinaire)
+   2. Obtenez plusieurs devis, au moins autant que le seuil de mise en
+      concurrence fixé par votre AG (art. 3.88 § 1er, 1°, c)
+   3. Vote à la majorité des 2/3 (travaux aux parties communes,
+      art. 3.88 § 1er, 1°, b)
 
 .. admonition:: Base légale
 

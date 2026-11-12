@@ -100,7 +100,7 @@ Après cette étape, vous devriez pouvoir répondre à ces questions :
 
 2. Voyez :doc:`roadmap/jalons-atteints` (5 min)
 
-   * Jalon 0-1 : Fondations techniques (73 endpoints API ✅)
+   * Jalon 0-1 : Fondations techniques (73 endpoints API au Jalon 0 ✅ ; 620 au 03/11/2026)
    * Architecture hexagonale opérationnelle
    * Tests E2E automatisés avec Playwright
    * Infrastructure VPS OVH en place

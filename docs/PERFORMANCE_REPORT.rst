@@ -499,7 +499,7 @@ Hypothèses de Calcul
 **Profil utilisateur moyen** :
 
 
-* **Copropriété moyenne** : 20-50 lots, 3-5 utilisateurs actifs (syndic, comptable, conseil syndical)
+* **Copropriété moyenne** : 20-50 lots, 3-5 utilisateurs actifs (syndic, comptable, conseil de copropriété)
 * **Requêtes par session** : 20-30 requêtes (navigation, consultation données)
 * **Durée de session** : 5-10 minutes
 * **Pattern d'usage** : 70% lecture, 30% écriture (reflété dans les tests)

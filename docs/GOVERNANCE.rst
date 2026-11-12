@@ -80,7 +80,7 @@ Progression par Capacités
 
 **Phase 1 - Bootstrap (Jalons 0-1)** :
 
-- **Jalon 0** ✅ : Architecture hexagonale, 73 endpoints API (10-20 early adopters)
+- **Jalon 0** ✅ : Architecture hexagonale, 73 endpoints API au Jalon 0, oct. 2025 (10-20 early adopters)
 - **Jalon 1** : LUKS encryption, backups GPG, GDPR basique → **50-100 copropriétés**
 - **Revenus** : 2,400€/an (100 copros × 40% cloud × 5€ × 12 mois)
 - **Force de frappe** : Solo dev + IA

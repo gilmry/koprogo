@@ -56,7 +56,7 @@ Architecture Ultra-Optimisée
 Fonctionnalités Opérationnelles
 --------------------------------
 
-* **73 endpoints REST API** (CRUD complet)
+* **620 endpoints REST** déclarés dans le code (03/11/2026), dont 209 documentés dans OpenAPI
 * **11 entités du domaine** (Building, Unit, Owner, Expense, etc.)
 * **Multi-owner support** (pourcentages de propriété)
 * **Multi-role support** (syndic, copropriétaire, comptable)

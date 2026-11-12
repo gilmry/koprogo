@@ -19,15 +19,15 @@ Canaux de notification
    :header-rows: 1
 
    * - Canal
-     - Usage
+     - Usage et état au 03/11/2026
    * - Email
-     - Canal principal, toutes notifications
-   * - SMS
-     - Notifications urgentes uniquement
+     - Canal principal. Suivi d'envoi ; transport SMTP à brancher (aucun email ne part aujourd'hui)
    * - Push
-     - Notifications mobiles
+     - Prévu
    * - InApp
      - Dashboard web (auto-sent a la creation)
+
+Le canal SMS a été retiré : aucun prestataire n'est intégré.
 
 Types de notifications (22)
 ---------------------------

@@ -18,7 +18,7 @@
 
 ## Résumé Exécutif
 
-KoproGo v0.1.0 démontre une **architecture backend solide** (559 endpoints, 59 entités domaine, conformité légale belge codée dans le domaine). Cependant, le **frontend présente des bugs d'intégration significatifs** qui empêchent l'utilisation de plusieurs workflows critiques via l'interface. Le backend fonctionne correctement quand appelé directement via API.
+KoproGo v0.1.0 démontre une **architecture backend solide** (559 endpoints à la date de la revue ; 620 au 03/11/2026, 59 entités domaine, conformité légale belge codée dans le domaine). Cependant, le **frontend présente des bugs d'intégration significatifs** qui empêchent l'utilisation de plusieurs workflows critiques via l'interface. Le backend fonctionne correctement quand appelé directement via API.
 
 **Recommandation : NO-GO pour release publique — GO conditionnel pour beta privée** (avec liste de correctifs prioritaires ci-dessous).
 
@@ -278,7 +278,7 @@ KoproGo v0.1.0 démontre une **architecture backend solide** (559 endpoints, 59 
 
 ## Points Forts
 
-1. **Architecture backend excellente** — Hexagonale/DDD propre, 559 endpoints fonctionnels, validations métier dans le domaine
+1. **Architecture backend excellente** — Hexagonale/DDD propre, 559 endpoints à la date de la revue, validations métier dans le domaine
 2. **Conformité légale codée** — Les règles belges (délais, majorités, RGPD) sont implémentées dans la couche domaine
 3. **Dashboards différenciés par rôle** — 4 dashboards distincts et pertinents (syndic, owner, accountant, admin)
 4. **Seed data réaliste** — 21 personas, immeubles avec tantièmes, rôles multiples

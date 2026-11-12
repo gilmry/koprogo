@@ -19,7 +19,7 @@
 
 ## 1. Introduction
 
-Le **Conseil de Copropriété** (aussi appelé "Board of Directors" ou "Raad van Mede-eigendom" en néerlandais) est un organe de contrôle obligatoire dans les copropriétés belges de plus de 20 lots.
+Le **Conseil de Copropriété** (aussi appelé "Board of Directors" ou "Raad van Mede-eigendom" en néerlandais) est un organe de contrôle obligatoire dans les copropriétés belges d’au moins 20 lots (art. 3.90).
 
 ### Qu'est-ce que le Conseil de Copropriété ?
 
@@ -33,9 +33,9 @@ Le conseil est composé de copropriétaires élus lors de l'Assemblée Général
 
 ## 2. Obligation Légale
 
-### Article 577-8/4 du Code Civil belge
+### Article 3.90 du Code civil belge (ex-577-8/1)
 
-> **"Dans les immeubles comportant plus de 20 lots, l'assemblée générale désigne, parmi les copropriétaires, un conseil de copropriété."**
+Dans tout immeuble d'**au moins 20 lots** (caves, garages et parkings exclus), l'assemblée générale constitue un **conseil de copropriété**, composé de copropriétaires.
 
 #### Points clés :
 - 🔴 **OBLIGATOIRE** pour immeubles >20 lots
@@ -420,7 +420,7 @@ FOR EACH ROW EXECUTE FUNCTION check_board_syndic_incompatibility();
 ## FAQ
 
 ### Q: Le conseil est-il obligatoire pour mon immeuble de 18 lots ?
-**R:** Non. Le conseil n'est obligatoire que pour les immeubles de **plus de 20 lots**. Cependant, vous pouvez en créer un volontairement.
+**R:** Non. Le conseil n'est obligatoire qu'à partir de **20 lots au moins** (art. 3.90). Cependant, vous pouvez en créer un volontairement.
 
 ### Q: Combien de membres dans le conseil ?
 **R:** La loi ne fixe pas de nombre minimum. Recommandation :
@@ -458,7 +458,7 @@ FOR EACH ROW EXECUTE FUNCTION check_board_syndic_incompatibility();
 
 ## Conformité Légale
 
-✅ **Conforme Article 577-8/4 Code Civil belge**
+✅ **Conçu selon l'article 3.90 du Code civil belge** (conseil de copropriété)
 ✅ **Validation trigger SQL incompatibilité syndic/board**
 ✅ **Alertes mandats expirants**
 ✅ **Audit trail complet**

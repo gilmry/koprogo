@@ -19,12 +19,12 @@ Vue d'Ensemble
 
 **Proposition de Valeur**
 
-L'intégration IoT via les APIs Linky/Ores permet de monitoring intelligent de la consommation électrique **sans aucun coût matériel** ni installation physique.
+L'intégration IoT via l'API Enedis (Linky, France) permettrait de monitoring intelligent de la consommation électrique **sans aucun coût matériel** ni installation physique.
 
 **Bénéfices**
 - ✅ **0€ coût**: API gratuite, pas d'achat de capteurs IoT
 - ✅ **0 installation physique**: Simple appel API
-- ✅ **80%+ couverture**: Linky obligatoire en Belgique/France depuis 2024
+- **Couverture visée** : Linky est un compteur français (Enedis). Le client vise l'API d'Enedis ; les gestionnaires de réseau belges (ORES, Fluvius, Sibelga) ne sont pas encore intégrés
 - ✅ **95% bénéfices IoT** pour 0% du coût matériel
 - ✅ **Time-to-market: 1 semaine** vs 3-6 mois pour hardware IoT
 - ✅ **Granularité 30 min**: Courbe de charge détaillée

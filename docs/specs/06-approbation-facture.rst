@@ -168,7 +168,7 @@ Etapes
 3. **Alice Dubois (presidente CdC) + Diane Peeters (membre CdC)** — Approuvent sous condition
 
    - Alice et Diane examinent la facture. Diane verifie la conformite
-     juridique du devis (3 devis obligatoires pour > 5.000 EUR).
+     du devis avec le seuil de mise en concurrence fixé par l'AG (art. 3.88 § 1er, 1°, c).
    - Alice calcule l'impact sur les coproprietaires vulnerables :
      Marguerite (2.069 EUR = 1.7 mois de pension), Jeanne (1.579 EUR = 1.5 mois).
    - Decision : **Approbation sous condition d'echelonnement sur 6 mois**
@@ -241,7 +241,8 @@ Etapes
 3bis. **Diane** — Rejette la facture
 
    - Diane constate que seuls 2 devis ont ete presentes au lieu des 3
-     obligatoires (travaux > 5.000 EUR, Art. 3.86).
+     exiges par le seuil de mise en concurrence fixe par l'AG
+     (art. 3.88 § 1er, 1°, c ; aucune loi n'impose 3 devis).
    - Appel : ``PUT /api/v1/expenses/{id}/reject``
    - Payload : ``{ "reason": "Seulement 2 devis presentes. La loi exige 3 devis comparatifs pour des travaux superieurs a 5.000 EUR." }``
    - Resultat : ``rejection_reason`` enregistre
@@ -444,8 +445,8 @@ Scenario E2E (narratif)
    ``PendingApproval``. La facture n'est plus modifiable.
 
 3. Alice (presidente CdC) et Diane (membre CdC, avocate) examinent la
-   facture. Diane verifie que 3 devis comparatifs ont ete obtenus
-   (obligation legale pour travaux > 5.000 EUR). Alice calcule l'impact
+   facture. Diane verifie que la mise en concurrence decidee par l'AG a
+   ete respectee (seuil fixe par l'AG aux 2/3, art. 3.88 § 1er, 1°, c). Alice calcule l'impact
    sur les coproprietaires vulnerables — Marguerite (2.069 EUR = 1.7 mois
    de pension) et Jeanne (1.579 EUR = 1.5 mois de pension). Le CdC
    approuve via ``PUT /expenses/{id}/approve`` avec la condition d'un

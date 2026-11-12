@@ -648,7 +648,7 @@ Option 2: Cloud KoproGo (Tarifs Échelonnés) ☁️
 Cette tarification échelonnée permet de :
 
 * Maintenir un prix d'entrée bas pour les petites copropriétés (1,50€)
-* Aligner les prix sur les frontières légales belges (Article 577-8/4 : 20 lots = Conseil obligatoire)
+* Aligner les prix sur les frontières légales belges (art. 3.90 : conseil de copropriété obligatoire à partir de 20 lots)
 * Refléter les coûts réels de stockage et compute par segment
 * Rester compétitif face aux solutions propriétaires (200-500€/mois)
 

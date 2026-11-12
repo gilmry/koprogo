@@ -217,7 +217,7 @@ Chiffres Clés (État Actuel)
 
 **Architecture & Code**
 
-* **73 endpoints REST API** opérationnels
+* **620 endpoints REST** déclarés dans le code (03/11/2026), dont 209 documentés dans OpenAPI ; aucun en production
 * **11 entités du domaine** (Organization, Building, Unit, Owner, Expense, etc.)
 * **Architecture hexagonale** (Domain-Driven Design)
 * **Tests E2E automatisés** avec Playwright

@@ -658,7 +658,7 @@ Pour toute question GDPR :
 
 - **Guide du syndic** : :doc:`syndic-guide`
 - **Guide du comptable** : :doc:`accountant-guide`
-- **Guide du conseil syndical** : :doc:`board-member-guide`
+- **Guide du conseil de copropriété** : :doc:`board-member-guide`
 - **Documentation GDPR** : :doc:`../GDPR_COMPLIANCE_CHECKLIST`
 - **Plan comptable PCMN** : :doc:`../BELGIAN_ACCOUNTING_PCMN`
 

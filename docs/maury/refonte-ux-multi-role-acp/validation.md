@@ -115,7 +115,7 @@ Conformément à la décision 2026-05-20, PO autorise la création de :
 
 ### 3.2 Intégration WBS autorisée
 
-PO autorise mise à jour [`docs/WBS_GO_LIVE_v0.1.0.md`](../../WBS_GO_LIVE_v0.1.0.md) :
+PO autorise mise à jour [`docs/WBS_GO_LIVE_v0.1.0.md`](../../archive/WBS_GO_LIVE_v0.1.0.md) :
 
 - Track H Conformité enrichi avec slices 1+2 (déjà préparé par commit `7c24150`)
 - 3 nouveaux WPs (H2/H3/H4) ajoutés en Track H pour slices 3/4/5
@@ -171,6 +171,6 @@ Phase 6 (Exécution — dev / qa / release-manager) débloquée. Première actio
 - Architecture Phase 3 : [`architecture.md`](architecture.md)
 - Stories Phase 4 : [`stories.md`](stories.md)
 - README pipeline : [`README.md`](README.md)
-- WBS go-live v0.1.0 : [`../../WBS_GO_LIVE_v0.1.0.md`](../../WBS_GO_LIVE_v0.1.0.md)
+- WBS go-live v0.1.0 : [`../../WBS_GO_LIVE_v0.1.0.md`](../../archive/WBS_GO_LIVE_v0.1.0.md)
 
 🤖 Validation rédigée par Product Owner persona — signature Tier 1 @gilmry apposée.

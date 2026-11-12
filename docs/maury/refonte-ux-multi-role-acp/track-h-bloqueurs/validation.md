@@ -104,7 +104,7 @@ Si exécution révèle un sub-bug isolé → issue séparée à ce moment.
 
 ### 3.2 Intégration WBS go-live v0.1.0
 
-PO autorise mise à jour [`docs/WBS_GO_LIVE_v0.1.0.md`](../../../WBS_GO_LIVE_v0.1.0.md) Track H :
+PO autorise mise à jour [`docs/WBS_GO_LIVE_v0.1.0.md`](../../../archive/WBS_GO_LIVE_v0.1.0.md) Track H :
 
 - WP-B4 → marquer FAIT (cartographie 2026-06-15 confirme code OK) avec note « regression spec couverte par Story B4 ».
 - WP-H1 → enrichir avec bug fix `quota_basis` + `BuildingNotConformantError` typée.

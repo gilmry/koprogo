@@ -1,31 +1,31 @@
 ==================================================
-Guide Utilisateur : Conseil Syndical
+Guide Utilisateur : Conseil de Copropriété
 ==================================================
 
 :Version: 1.0.0
 :Date: 10 novembre 2025
-:Public: Membres du conseil syndical
+:Public: Membres du conseil de copropriété
 :Voir aussi: :doc:`syndic-guide` | :doc:`owner-guide` | :doc:`accountant-guide`
 
 📋 Vue d'ensemble
 =================
 
-Ce guide explique comment utiliser **KoproGo** en tant que **membre du conseil syndical**. Vous y trouverez :
+Ce guide explique comment utiliser **KoproGo** en tant que **membre du conseil de copropriété**. Vous y trouverez :
 
-- ✅ Rôle et responsabilités du conseil syndical
+- ✅ Rôle et responsabilités du conseil de copropriété
 - ✅ Validation des dépenses importantes
 - ✅ Suivi budgétaire et financier
 - ✅ Préparation et organisation des AG
 - ✅ Contrôle des prestataires et contrats
 - ✅ Communication avec les copropriétaires
 
-🏛️ Le Conseil Syndical : Cadre Légal
-======================================
+🏛️ Le Conseil de Copropriété : Cadre Légal
+=============================================
 
 Obligation légale (Belgique)
 -----------------------------
 
-En Belgique, le **conseil syndical** est **obligatoire pour les copropriétés de plus de 20 lots** (Art. 577-8/4 du Code civil).
+En Belgique, le **conseil de copropriété** est **obligatoire pour les copropriétés d'au moins 20 lots** (art. 3.90 du Code civil).
 
 **Rôle** :
 
@@ -44,7 +44,7 @@ En Belgique, le **conseil syndical** est **obligatoire pour les copropriétés d
 Responsabilités dans KoproGo
 -----------------------------
 
-Dans KoproGo, le conseil syndical a accès à :
+Dans KoproGo, le conseil de copropriété a accès à :
 
 - ✅ Tableau de bord financier
 - ✅ Validation des dépenses > seuil défini en AG
@@ -132,7 +132,7 @@ KoproGo implémente un workflow de validation à 3 niveaux :
 **Seuils** (définissables en AG) :
 
 - < 500€ : Approbation automatique syndic
-- 500€ - 5,000€ : Approbation conseil syndical
+- 500€ - 5,000€ : Approbation conseil de copropriété
 - > 5,000€ : Approbation AG
 
 Consulter les dépenses en attente
@@ -631,7 +631,7 @@ Envoyer un message collectif
    POST /api/v1/board/announcements
    {
      "subject": "Travaux de peinture cage d'escalier",
-     "message": "Chers copropriétaires,\n\nLes travaux de peinture de la cage d'escalier débuteront le lundi 20 novembre et dureront 5 jours ouvrables.\n\nMerci de votre compréhension.\n\nLe Conseil Syndical",
+     "message": "Chers copropriétaires,\n\nLes travaux de peinture de la cage d'escalier débuteront le lundi 20 novembre et dureront 5 jours ouvrables.\n\nMerci de votre compréhension.\n\nLe Conseil de Copropriété",
      "priority": "Normal",
      "recipients": "AllOwners"
    }
@@ -676,7 +676,7 @@ Réponses et questions
 
    POST /api/v1/board/messages/{message_id}/reply
    {
-     "message": "Bonjour Monsieur Dupont,\n\nL'augmentation est due à la hausse des tarifs énergétiques (+12%) et à des travaux exceptionnels de maintenance.\n\nCordialement,\nLe Conseil Syndical"
+     "message": "Bonjour Monsieur Dupont,\n\nL'augmentation est due à la hausse des tarifs énergétiques (+12%) et à des travaux exceptionnels de maintenance.\n\nCordialement,\nLe Conseil de Copropriété"
    }
 
 📊 Rapports et statistiques
@@ -889,7 +889,7 @@ Références légales (Belgique)
 ------------------------------
 
 - **Code civil belge** : Art. 577-3 à 577-14 (copropriété)
-- **Conseil syndical** : Art. 577-8/4 (obligation > 20 lots)
+- **Conseil de copropriété** : art. 3.90 (obligatoire à partir de 20 lots)
 - **AG** : Art. 577-6 (quorum, majorités)
 - **Comptabilité** : AR 12/07/2012 (PCMN)
 

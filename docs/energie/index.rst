@@ -55,7 +55,7 @@ sans commission, entièrement transparent, conforme à la Charte CREG 2018
 3. **Calcul d'économies réel** — Basé sur le contrat actuel du consommateur, pas sur une moyenne marché
 4. **Ouvert aux maisons individuelles** — Pas uniquement les copropriétés
 5. **Communautés d'énergie** — Prêt pour CER/CEC (partage énergie locale)
-6. **Label CREG ciblé** — Accréditation Charte B1614 (processus Jalon 3+)
+6. **Charte CREG visée** — Accréditation Charte B1614 (processus Jalon 3+)
 
 **Base légale :**
 

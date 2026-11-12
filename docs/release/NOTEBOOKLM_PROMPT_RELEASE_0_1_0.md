@@ -62,7 +62,7 @@ Slide 2 — Le problème : logiciels existants propriétaires, souvent non-confo
 
 Slide 3 — La solution : plateforme SaaS open-source, conforme aux Articles 3.84-3.94 du Code Civil belge, Rust pour la performance et la fiabilité, interface web moderne.
 
-Slide 4 — Chiffres clés : 110k lignes Rust, 511 endpoints API, 57 entités métier, 64 migrations SQL, 81 pages web, 886 commits.
+Slide 4 — Chiffres clés : 110k lignes Rust, 620 endpoints déclarés (03/11/2026), 57 entités métier, 64 migrations SQL, 81 pages web, 886 commits.
 
 Slide 5 — Comptabilité belge : PCMN conforme AR 12/07/2012, 90 comptes pré-chargés, TVA 6/12/21%, factures multi-lignes, rapports bilan et compte de résultats.
 

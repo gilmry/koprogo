@@ -184,7 +184,7 @@ Cérémonies Scrum Locales
    - [ ] Migration DB: add approved_by_id column (1h)
 
    Risques:
-   - ⚠️ Email notification conseil syndical (dépend Infra SendGrid)
+   - ⚠️ Email notification conseil de copropriété (dépend Infra SendGrid)
    - ⚠️ Idempotence (submit multiple fois ?)
 
    Attribution:
@@ -835,14 +835,14 @@ BDD (Behavior-Driven Development)
 
    Feature: Expense Approval Workflow
      As a syndic, I want to submit expenses for approval
-     So that conseil syndical can review before payment
+     So that conseil de copropriété can review before payment
 
    Scenario: Submit expense for approval
      Given a building "Résidence Mozart" exists
      And an expense "Plumbing repair" in Draft state
      When the syndic submits the expense for approval
      Then the expense state is "PendingApproval"
-     And an email is sent to conseil syndical members
+     And an email is sent to conseil de copropriété members
      And the audit log records "Submitted by syndic@example.com"
 
 **Run tests BDD** :

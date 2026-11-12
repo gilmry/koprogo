@@ -8,7 +8,7 @@ Guide complet pour déployer KoproGo sur OVH Public Cloud avec Terraform, Ansibl
 
 .. note::
    **v0.1.0 = bêta privée fermée, VPS-first.** k3s/ArgoCD = Phase 2
-   post-v0.1.0 (cf. ``WBS_GO_LIVE_v0.1.0`` Track F). Pré-requis env
+   post-v0.1.0 (cf. ``archive/WBS_GO_LIVE_v0.1.0`` Track F, remplacé par ``WBS_v0_1_0``). Pré-requis env
    actuels : ``COOKIE_SECURE=true`` en prod (HTTPS obligatoire pour le
    cookie refresh HttpOnly post-FE1), ``CORS_ALLOWED_ORIGINS`` explicites
    (``*`` rejeté par ``validate_cors_origins``).

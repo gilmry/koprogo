@@ -43,7 +43,7 @@ Documents
    Roadmap complète 2025-2030 avec les 3 phases, l'évolution juridique (ASBL → Coopérative), et les modules PropTech 2.0.
 
 :doc:`jalons-atteints`
-   Ce qui est déjà fait : Jalon 0-1 (73 endpoints API, architecture hexagonale, tests E2E, infrastructure VPS).
+   Ce qui est déjà fait : Jalon 0-1 (620 endpoints déclarés au 03/11/2026, architecture hexagonale, tests E2E, infrastructure VPS).
 
 :doc:`jalons-a-venir`
    Ce qui vient ensuite : Jalons 2-6 (conformité légale, features différenciantes, automation, mobile, PropTech 2.0).

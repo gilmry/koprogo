@@ -134,10 +134,10 @@ KoproGo peut se positionner sur des axes NON couverts par les acteurs actuels :
   Un habitant d'une maison individuelle dans le même quartier peut rejoindre
   la campagne énergétique de la copropriété voisine.
 
-**Axe 5 — Label CREG atteignable**
+**Axe 5 — Accréditation à la charte CREG, visée**
 
-  Avec zéro commission, calcul honnête, RGPD parfait (AES-256-GCM, k-anonymité),
-  KoproGo est parfaitement positionné pour obtenir le label CREG. Premiers
+  Avec zéro commission, calcul honnête, conçu pour le RGPD (AES-256-GCM, k-anonymité),
+  KoproGo vise l'accréditation à la charte de la CREG. Premiers
   acteurs accrédités depuis la fin du label Wikipower (2023).
 
 3.2 Risques à anticiper

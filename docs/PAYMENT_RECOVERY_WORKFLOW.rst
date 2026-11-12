@@ -11,13 +11,13 @@ Workflow de Recouvrement Automatisé des Paiements Impayés
 📋 Vue d'ensemble
 =================
 
-Le système de recouvrement automatisé implémente un **workflow en 4 niveaux d'escalade** conforme à la législation belge, avec calcul automatique des pénalités de retard au taux légal de 8% annuel.
+Le système de recouvrement automatisé implémente un **workflow en 4 niveaux d'escalade** conforme à la législation belge, avec calcul automatique des pénalités de retard au taux d'intérêt légal en matière civile (4,5 % pour 2026 dans le code, ``payment_reminder.rs``, ``BELGIAN_PENALTY_RATE``).
 
 **Statut d'implémentation** ✅ :
 
 - ✅ **4 niveaux d'escalade** : Gentle → Formal → FinalNotice → LegalAction
 - ✅ **Délais réglementaires** : J+15, J+30, J+45, J+60
-- ✅ **Calcul pénalités** : 8% annuel automatique
+- ✅ **Calcul pénalités** : taux légal annuel (4,5 % en 2026) automatique
 - ✅ **Backend complet** : Domain entity, repository, use cases, handlers
 - ✅ **Tests** : Scénarios d'escalade + calcul pénalités
 - ✅ **API REST** : Endpoints CRUD + actions (escalate, mark-sent, etc.)
@@ -28,7 +28,7 @@ Objectifs
 
 1. **Automatiser** les relances d'impayés selon 4 niveaux d'escalade
 2. **Réduire** les impayés de 30-50% via suivi systématique
-3. **Conformité** légale belge (taux pénalité 8% annuel)
+3. **Conformité** légale belge (taux d'intérêt légal de l'année)
 4. **Traçabilité** complète des actions de recouvrement
 
 🎯 Architecture
@@ -42,7 +42,7 @@ Hexagonal Architecture (Ports & Adapters)
    Domain Layer (Logique métier pure)
      └─ PaymentReminder entity
         ├─ ReminderLevel enum (Gentle, Formal, FinalNotice, LegalAction)
-        ├─ Business rules: penalty calculation (8% annuel)
+        ├─ Business rules: penalty calculation (taux légal, 4,5 % en 2026)
         ├─ Escalation logic (délais J+15)
         └─ Invariants: timing, validations
 
@@ -118,16 +118,24 @@ Escalade Automatique
 Calcul des Pénalités
 ---------------------
 
-**Taux légal belge** : 8% annuel
+**Taux légal belge** : taux d'intérêt légal en matière civile, publié chaque
+année. Le code applique 4,5 % pour 2026 (``BELGIAN_PENALTY_RATE``,
+``backend/src/domain/comptabilite/payment_reminder.rs``).
+
+.. warning::
+
+   Le taux de l'année doit être confirmé par le PO avant toute mise en
+   production : il change chaque année (2024 : 5,25 %, 2025 : 4 %, 2026 : 4,5 %
+   selon le commentaire du code).
 
 .. code-block:: rust
 
-   pénalité = montant_impayé × 0.08 × (jours_retard / 365)
+   pénalité = montant_impayé × 0.045 × (jours_retard / 365)
 
-   // Exemples :
-   // 100€, 30 jours  → 0.66€
-   // 1000€, 365 jours → 80.00€
-   // 500€, 180 jours → 19.73€
+   // Exemples (4,5 %) :
+   // 100€, 30 jours  → 0.37€
+   // 1000€, 365 jours → 45.00€
+   // 500€, 180 jours → 11.10€
 
 **Recalcul automatique** : Les pénalités sont recalculées quotidiennement pour tous les reminders actifs.
 
@@ -321,7 +329,7 @@ Cas 1 : Workflow Standard
      "amount_owed": 100.00,
      "days_overdue": 20
    }
-   # → Pénalités calculées : 0.44€ (100€ × 0.08 × 20/365)
+   # → Pénalités calculées : 0.25€ (100€ × 0.045 × 20/365)
    # → Total : 100.44€
 
    # Étape 2 : Marquer comme envoyée
@@ -392,8 +400,8 @@ Règles d'Escalade
 Règles de Pénalités
 --------------------
 
-1. **Taux légal belge** : 8% annuel (0.08)
-2. **Formule** : ``montant × 0.08 × (jours / 365)``
+1. **Taux légal belge** : taux d'intérêt légal de l'année (0.045 en 2026)
+2. **Formule** : ``montant × taux × (jours / 365)``
 3. **Recalcul** : Quotidien pour les reminders actifs
 4. **Arrondi** : 2 décimales (ex: 0.657€ → 0.66€)
 
@@ -463,7 +471,7 @@ Tests Unitaires (Domain)
    cargo test --lib payment_reminder
 
    # Tests incluent :
-   # - Calcul pénalités (8% annuel)
+   # - Calcul pénalités (taux légal, 4,5 % en 2026)
    # - Validation délais par niveau
    # - Escalade Gentle → Formal → FinalNotice → LegalAction
    # - Recalcul pénalités
@@ -480,8 +488,8 @@ Tests BDD (Gherkin)
        Given une facture impayée de 100€ due il y a 20 jours
        When je crée une relance "Gentle"
        Then la relance est créée avec succès
-       And les pénalités sont calculées à 0.44€
-       And le total dû est 100.44€
+       And les pénalités sont calculées à 0.25€
+       And le total dû est 100.25€
 
      Scenario: Escalade automatique après non-paiement
        Given une relance "Gentle" envoyée il y a 15 jours
@@ -599,14 +607,14 @@ Requêtes SQL Utiles
 
 **Code Source :**
 
-- ``backend/src/domain/entities/payment_reminder.rs`` - Entité domain + business rules
+- ``backend/src/domain/comptabilite/payment_reminder.rs`` - Entité domain + business rules
 - ``backend/src/application/use_cases/payment_reminder_use_cases.rs`` - Cas d'usage
 - ``backend/src/infrastructure/web/handlers/payment_reminder_handlers.rs`` - API REST
 - ``backend/migrations/20251107000000_create_payment_reminders.sql`` - Schéma BDD
 
 **Tests :**
 
-- ``backend/src/domain/entities/payment_reminder.rs`` - Tests unitaires (15+ tests)
+- ``backend/src/domain/comptabilite/payment_reminder.rs`` - Tests unitaires (15+ tests)
 - ``backend/tests/features/payment_recovery.feature`` - Tests BDD Gherkin
 - ``backend/tests/e2e.rs`` - Tests E2E workflow complet (à implémenter)
 
@@ -618,7 +626,7 @@ Requêtes SQL Utiles
 
 **Législation :**
 
-- Taux légal belge des pénalités de retard : 8% annuel
+- Taux légal belge des pénalités de retard : taux d'intérêt légal de l'année (4,5 % en 2026 dans le code, à confirmer chaque année)
 - Délais de mise en demeure : conformes au Code Civil belge
 
 ----

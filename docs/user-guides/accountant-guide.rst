@@ -574,17 +574,6 @@ Export Noalyss
 
 **Réponse** : Fichier CSV avec écritures comptables au format Noalyss.
 
-Export FEC (Fichier des Écritures Comptables)
-----------------------------------------------
-
-**Format standard pour administrations fiscales** :
-
-.. code-block:: bash
-
-   GET /api/v1/exports/fec?organization_id={uuid}&year=2025
-
-**Format** : Fichier texte tabulé conforme à la norme FEC.
-
 Export Excel
 ------------
 

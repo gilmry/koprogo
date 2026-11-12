@@ -5,7 +5,7 @@ Nouvelles Fonctionnalités 2025 - KoproGo
 :Date: 2025-11-18 (snapshot original) — v0.1.0 jamais livrée en prod
 :Version: 1.0 (snapshot historique)
 :Statut: Implémenté
-:Note: Pour l'état courant, voir ``WBS_GO_LIVE_v0.1.0`` (go-live bêta) et ``roadmap/jalons-atteints`` (Jalon 1 complété mai 2026). Ce fichier devrait être auto-régénéré à chaque release (cf. #428 §8bis).
+:Note: Pour l'état courant, voir ``WBS_v0_1_0`` (périmètre 0.1.0 ; l'ancien ``WBS_GO_LIVE`` est archivé) et ``roadmap/jalons-atteints`` (Jalon 1 complété mai 2026). Ce fichier devrait être auto-régénéré à chaque release (cf. #428 §8bis).
 
 Ce document centralise toutes les nouvelles fonctionnalités implémentées en 2025, organisées par jalon et par domaine fonctionnel.
 
@@ -18,7 +18,7 @@ Vue d'Ensemble des Implémentations 2025
 ============================================
 
 **Statistiques Globales**
-- **73 endpoints API REST** implémentés
+- **73 endpoints API REST** implémentés à l'époque (620 au 03/11/2026)
 - **~50,000 lignes de code** Rust (backend)
 - **45+ entités de domaine** avec validation métier
 - **100+ migrations PostgreSQL** appliquées
@@ -156,7 +156,7 @@ Jalon 2: Conformité Légale Belge 📋 (COMPLET)
 - ``POST /buildings/:id/call-for-funds`` - Créer appel de fonds
 - ``GET /call-for-funds/:id`` - Détails appel
 - ``GET /buildings/:id/call-for-funds`` - Liste appels bâtiment
-- ``PUT /call-for-funds/:id/send`` - Envoyer aux propriétaires (email + PDF)
+- ``PUT /call-for-funds/:id/send`` - Marquer comme envoyé aux propriétaires (suivi d'envoi ; ni email réel ni PDF d'appel de fonds au 03/11/2026)
 - ``PUT /call-for-funds/:id/mark-paid`` - Marquer payé
 - ``DELETE /call-for-funds/:id`` - Supprimer (Draft only)
 
@@ -235,7 +235,6 @@ Jalon 2: Conformité Légale Belge 📋 (COMPLET)
 - ✅ Types: CallForFunds, PaymentReceived, ExpensePayment, TransferBetweenAccounts, YearEndClosing
 - ✅ Numérotation séquentielle par bâtiment
 - ✅ Trigger PostgreSQL (validation balance automatique)
-- ✅ Intégration FEC (Fichier Écritures Comptables export)
 
 **Endpoints API**
 - ``POST /buildings/:id/journal-entries`` - Créer écriture
@@ -350,7 +349,7 @@ Jalon 3: Features Différenciantes 🎯 (COMPLET)
 3.1 Système de Sondages (Poll System - Issue #51)
 --------------------------------------------------
 
-**Contexte Légal Belge**: Article 577-8/4 §4 Code Civil - Consultations rapides entre AG
+**Contexte Légal Belge**: aucune base légale de décision. Un sondage entre deux AG est purement consultatif ; seule l'AG décide (art. 3.87 et suivants)
 
 **4 Types de Sondages**
 - **YesNo**: Décisions simples (oui/non) - Ex: "Repeindre le hall en bleu?"
@@ -667,7 +666,7 @@ Jalon 4: Automation & Intégrations 📅
 **Proposition de Valeur**
 - ✅ 0€ coût (API gratuite, pas d'achat capteurs)
 - ✅ 0 installation physique (API call uniquement)
-- ✅ 80%+ couverture (Linky obligatoire Belgique/France)
+- Couverture visée : compteurs Linky en France (API Enedis) ; les compteurs numériques belges (ORES, Fluvius, Sibelga) ne sont pas encore intégrés
 - ✅ 95% bénéfices IoT pour 0% du coût
 - ✅ Time-to-market: 1 semaine vs 3-6 mois hardware
 
@@ -785,7 +784,7 @@ A. Statistiques Globales du Projet
 -----------------------------------
 
 **Backend (Rust)**
-- **73 endpoints API REST** implémentés
+- **73 endpoints API REST** implémentés à l'époque (620 au 03/11/2026)
 - **45+ entités de domaine** avec validation
 - **~50,000 lignes de code** Rust
 - **100+ migrations PostgreSQL**
@@ -952,7 +951,7 @@ Changelog & Versions
 
 **Version 1.0** (2025-11-18)
 - Documentation initiale complète
-- 73 endpoints API documentés
+- 209 opérations documentées dans OpenAPI (03/11/2026)
 - Toutes fonctionnalités Jalon 1-3 couvertes
 
 **À venir**
