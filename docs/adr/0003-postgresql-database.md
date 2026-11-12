@@ -4,6 +4,14 @@
 - **Date**: 2025-01-25
 - **Track**: Software
 
+> **Note de correction (2026-11-03)** : la décision (PostgreSQL) est conservée.
+> Le paragraphe « Multi-tenancy » ci-dessous ne décrit plus le schéma : les
+> politiques RLS ont été créées puis désactivées (migration `20250103000002`),
+> et l'isolation est aujourd'hui **applicative**. `buildings` ne porte plus
+> `organization_id` mais `acp_id` (migration `20260601040000`) : l'ACP est
+> titulaire des données, l'organisation est le cabinet syndic mandaté. Un RLS
+> par ACP est envisagé (lot 5 de la v0.1.0, non planifié).
+
 ## Context
 
 KoproGo requires a database that supports:

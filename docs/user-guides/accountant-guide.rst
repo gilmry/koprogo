@@ -67,7 +67,7 @@ Connexion et rôle multi-organisations
         "role_id": "role-2-uuid"
       }
 
-Le rôle actif détermine quelle copropriété vous gérez. Toutes les opérations comptables sont isolées par ``organization_id``.
+Le rôle actif détermine dans quel cabinet vous travaillez. L'ACP est titulaire de sa comptabilité ; le cabinet syndic y reçoit un mandat révocable. Aujourd'hui, l'accès est contrôlé par l'application en comparant votre organisation à celle de l'ACP (pas encore par mandat actif, ni par RLS en base).
 
 📊 Plan Comptable PCMN Belge
 ==============================

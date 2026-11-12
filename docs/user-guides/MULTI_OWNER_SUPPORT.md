@@ -2,6 +2,12 @@
 
 Suivi fonctionnel et technique du module de copropriété multi-détenteurs introduit en janvier 2025.
 
+> **Modèle d'accès (état au 03/11/2026)** : l'ACP est titulaire des données ;
+> le cabinet syndic (`organization_id`) y reçoit un mandat révocable. L'accès
+> est contrôlé dans l'application en comparant l'organisation de l'utilisateur
+> à celle de l'ACP. Il n'y a pas de RLS actif, et l'accès par mandat actif
+> (ADR 0053) n'est pas encore implémenté.
+
 ---
 
 ## Vue d'ensemble

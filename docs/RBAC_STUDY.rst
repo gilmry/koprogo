@@ -5,6 +5,14 @@ RBAC Granulaire : Etude d'Opportunite (Issues #72, #71)
 .. contents:: Table des matieres
    :depth: 3
 
+.. note::
+
+   Étude de conception (issues #71, #72). Elle décrit un modèle cible, pas le
+   code actuel. Au 03/11/2026, l'ACP est titulaire des données, l'accès est
+   contrôlé par l'application selon l'organisation de l'appelant, sans RLS
+   actif ; l'accès par mandat actif est décidé (ADR 0053) mais pas
+   implémenté.
+
 Resume Executif
 ===============
 

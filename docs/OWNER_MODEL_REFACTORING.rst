@@ -2,6 +2,14 @@
 Refactoring du modèle Owner - Multi-copropriété
 ===============================================
 
+.. note::
+
+   **Document historique.** Ce plan date du refactoring « multi-copropriété »
+   (table ``unit_owners``) ; il ne décrit pas le modèle courant. Au 03/11/2026,
+   l'ACP est titulaire des données et le syndic y reçoit un mandat révocable.
+   La place du copropriétaire comme personne globale rattachée aux ACP par ses
+   lots est en cours de décision (ADR 0057, proposée).
+
 🎯 Objectif
 -----------
 

@@ -175,7 +175,7 @@ This document tracks GDPR compliance implementation for the KoproGo platform.
 ## 🌍 Multi-Tenancy Considerations
 
 ### Implemented
-- [x] **Organization Isolation**: All GDPR operations scoped to organization_id
+- [x] **Organization Isolation**: GDPR operations checked against the caller's organization in the application layer (no database RLS; access by active mandate per ADR 0053 not yet implemented)
 - [x] **SuperAdmin Override**: SuperAdmin can export across organizations
 - [x] **User-Owner Linking**: Email-based discovery of related owners
 - [x] **Partial Anonymization**: Only anonymize owners linked to user email

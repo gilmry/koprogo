@@ -357,10 +357,17 @@ Pour éviter la duplication, des fonctions helper sont utilisées::
 Organisation Scoping
 --------------------
 
-Pour les rôles non-SuperAdmin, les requêtes sont automatiquement scopées à leur ``organization_id`` via le JWT::
+Pour les rôles non-SuperAdmin, l'``organization_id`` du JWT est comparée, dans
+chaque handler, à l'organisation de l'ACP qui porte la ressource (gardes
+``verify_*_org_access`` de ``middleware/scope_guard.rs``)::
 
     let organization_id = user.require_organization()?;
-    // Filters all queries by this organization_id
+    verify_acp_org_access(&user, acp_id, &state.acp_use_cases).await?;
+
+État au 03/11/2026 : contrôle **applicatif** uniquement. Il n'y a pas de RLS
+actif en base, et l'accès par mandat actif (ADR 0053) n'est pas encore
+implémenté. L'ACP est titulaire des données ; le syndic y reçoit un mandat
+révocable.
 
 Messages d'erreur
 =================
