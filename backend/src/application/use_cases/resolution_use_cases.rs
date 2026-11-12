@@ -472,12 +472,30 @@ impl ResolutionUseCases {
     }
 
     /// Change a vote (if allowed by business rules)
-    pub async fn change_vote(&self, vote_id: Uuid, new_choice: VoteChoice) -> Result<Vote, String> {
+    ///
+    /// `caller_owner_id` est le copropriétaire résolu depuis l'utilisateur
+    /// authentifié, comme pour `cast_vote` (#850). Seul celui qui a déposé la
+    /// voix la modifie : le copropriétaire lui-même pour un vote direct, le
+    /// mandataire pour un vote par procuration.
+    pub async fn change_vote(
+        &self,
+        vote_id: Uuid,
+        new_choice: VoteChoice,
+        caller_owner_id: Uuid,
+    ) -> Result<Vote, String> {
         let mut vote = self
             .vote_repository
             .find_by_id(vote_id)
             .await?
             .ok_or_else(|| "Vote not found".to_string())?;
+
+        let auteur = vote.proxy_owner_id.unwrap_or(vote.owner_id);
+        if auteur != caller_owner_id {
+            return Err(format!(
+                "FORBIDDEN: {caller_owner_id} ne peut pas modifier le vote {vote_id}, \
+                 déposé par {auteur}"
+            ));
+        }
 
         // Check if resolution is still pending
         let resolution = self

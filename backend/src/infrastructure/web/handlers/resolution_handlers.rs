@@ -10,6 +10,54 @@ use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
 
+/// Le copropriétaire derrière l'utilisateur authentifié (#850).
+///
+/// QUI vote, ou QUI modifie un vote, est résolu depuis le jeton, jamais repris
+/// du corps de la requête.
+async fn coproprietaire_appelant(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+) -> Result<Uuid, Box<HttpResponse>> {
+    match state
+        .owner_use_cases
+        .find_owner_by_user_id(user.user_id)
+        .await
+    {
+        Ok(Some(owner)) => match Uuid::parse_str(&owner.id) {
+            Ok(id) => Ok(id),
+            Err(e) => Err(Box::new(HttpResponse::InternalServerError().json(
+                serde_json::json!({
+                    "error": format!("Identifiant de copropriétaire illisible : {}", e)
+                }),
+            ))),
+        },
+        Ok(None) => {
+            // Un utilisateur sans fiche de copropriétaire ne peut voter pour
+            // personne — ni pour lui-même (il n'a pas de lot), ni comme
+            // mandataire (aucune identité à opposer à `caller_owner_id`).
+            //
+            // Ceci ferme, pour l'instant, la question que #850 pose sans la
+            // trancher : le syndic doit-il pouvoir saisir des votes en séance ?
+            // Cette route ne le permet plus. Si l'usage l'exige, il faut une
+            // route dédiée, réservée au syndic, journalisée comme saisie pour
+            // compte de tiers et soumise à la limite des procurations — pas
+            // rouvrir celle-ci.
+            Err(Box::new(HttpResponse::Forbidden().json(
+                serde_json::json!({
+                    "error": "Aucune fiche de copropriétaire n'est rattachée à ce compte : \
+                              voter à une assemblée est réservé aux copropriétaires.",
+                    "kind": "owner_not_linked"
+                }),
+            )))
+        }
+        Err(e) => Err(Box::new(HttpResponse::InternalServerError().json(
+            serde_json::json!({
+                "error": format!("Failed to resolve owner for user: {}", e)
+            }),
+        ))),
+    }
+}
+
 // ==================== Resolution Endpoints ====================
 
 /// Clôturer un scrutin proclame une majorité opposable (Art. 3.87 §4 CC) :
@@ -348,41 +396,9 @@ pub async fn cast_vote(
     // son identité de `request.owner_id`. Même geste que #849
     // (`poll_handlers.rs::cast_poll_vote`) : résoudre le copropriétaire, pas
     // l'utilisateur.
-    let caller_owner_id = match state
-        .owner_use_cases
-        .find_owner_by_user_id(user.user_id)
-        .await
-    {
-        Ok(Some(owner)) => match Uuid::parse_str(&owner.id) {
-            Ok(id) => id,
-            Err(e) => {
-                return HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": format!("Identifiant de copropriétaire illisible : {}", e)
-                }));
-            }
-        },
-        Ok(None) => {
-            // Un utilisateur sans fiche de copropriétaire ne peut voter pour
-            // personne — ni pour lui-même (il n'a pas de lot), ni comme
-            // mandataire (aucune identité à opposer à `caller_owner_id`).
-            //
-            // Ceci ferme, pour l'instant, la question que #850 pose sans la
-            // trancher : le syndic doit-il pouvoir saisir des votes en séance ?
-            // Cette route ne le permet plus. Si l'usage l'exige, il faut une
-            // route dédiée, réservée au syndic, journalisée comme saisie pour
-            // compte de tiers et soumise à la limite des procurations — pas
-            // rouvrir celle-ci.
-            return HttpResponse::Forbidden().json(serde_json::json!({
-                "error": "Aucune fiche de copropriétaire n'est rattachée à ce compte : \
-                          voter à une assemblée est réservé aux copropriétaires.",
-                "kind": "owner_not_linked"
-            }));
-        }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Failed to resolve owner for user: {}", e)
-            }));
-        }
+    let caller_owner_id = match coproprietaire_appelant(&state, &user).await {
+        Ok(id) => id,
+        Err(refus) => return *refus,
     };
 
     match state
@@ -560,9 +576,14 @@ pub async fn change_vote(
         }
     };
 
+    let caller_owner_id = match coproprietaire_appelant(&state, &user).await {
+        Ok(id) => id,
+        Err(refus) => return *refus,
+    };
+
     match state
         .resolution_use_cases
-        .change_vote(*vote_id, request.vote_choice.clone())
+        .change_vote(*vote_id, request.vote_choice.clone(), caller_owner_id)
         .await
     {
         Ok(vote) => {
@@ -587,6 +608,10 @@ pub async fn change_vote(
             )
             .with_error(err.clone())
             .log();
+
+            if est_interdit(&err) {
+                return HttpResponse::Forbidden().json(serde_json::json!({"error": err}));
+            }
 
             HttpResponse::BadRequest().json(serde_json::json!({"error": err}))
         }

@@ -1054,6 +1054,77 @@ async fn test_change_vote_success() {
     );
 }
 
+/// `@security` — Un copropriétaire ne modifie pas le vote d'un autre : seul
+/// l'auteur de la voix (le votant, ou son mandataire) la change.
+#[actix_web::test]
+#[serial]
+async fn security_un_coproprietaire_ne_modifie_pas_le_vote_d_un_autre() {
+    let (app_state, _container, org_id) = setup_app().await;
+    let (token, _org_id, _building_id, meeting_id, owner1_id, _owner2_id, unit1_id, token_owner2) =
+        create_test_fixtures(&app_state, org_id).await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let create_req = test::TestRequest::post()
+        .uri(&format!("/api/v1/meetings/{}/resolutions", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "meeting_id": meeting_id.to_string(),
+            "title": "Résolution dont le vote ne change pas de main",
+            "description": "Un autre copropriétaire tente de modifier le vote",
+            "resolution_type": "ordinary",
+            "majority_required": "absolute",
+            "agenda_item_index": 0
+        }))
+        .to_request();
+    let resolution: serde_json::Value =
+        test::read_body_json(test::call_service(&app, create_req).await).await;
+    let resolution_id = resolution["id"].as_str().unwrap();
+
+    let vote_req = test::TestRequest::post()
+        .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "owner_id": owner1_id.to_string(),
+            "unit_id": unit1_id.to_string(),
+            "vote_choice": "pour",
+            "voting_power": 0.4,
+            "auth_method": "presence"
+        }))
+        .to_request();
+    let vote: serde_json::Value =
+        test::read_body_json(test::call_service(&app, vote_req).await).await;
+    let vote_id = vote["id"].as_str().unwrap();
+
+    let change_req = test::TestRequest::put()
+        .uri(&format!("/api/v1/votes/{}", vote_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_owner2)))
+        .set_json(json!({ "vote_choice": "contre" }))
+        .to_request();
+    let change_resp = test::call_service(&app, change_req).await;
+    assert_eq!(
+        change_resp.status(),
+        403,
+        "un autre copropriétaire a pu modifier le vote"
+    );
+
+    let (choix,): (String,) = sqlx::query_as("SELECT vote_choice::text FROM votes WHERE id = $1")
+        .bind(uuid::Uuid::parse_str(vote_id).unwrap())
+        .fetch_one(&app_state.pool)
+        .await
+        .expect("lecture du vote");
+    assert_eq!(
+        choix.to_lowercase(),
+        "pour",
+        "le vote a changé malgré le refus"
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_close_voting_simple_majority() {
