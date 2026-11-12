@@ -1,9 +1,97 @@
 use crate::application::dto::{CreatePaymentRequest, RefundPaymentRequest};
 use crate::domain::entities::TransactionStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_contribution_org_access, verify_owner_org_access,
+    verify_owner_personal_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
 use uuid::Uuid;
+
+/// Les rôles mandatés par l'ACP pour l'encaissement.
+///
+/// Le copropriétaire paie sur le compte de l'ACP ; le syndic et le comptable,
+/// mandatés par elle, font les appels de fonds et constatent l'encaissement.
+/// Le copropriétaire peut déclarer un paiement, il ne le valide pas : sinon il
+/// soldait lui-même sa dette.
+pub(crate) fn mandate_pour_encaisser(user: &AuthenticatedUser) -> bool {
+    user.is_superadmin()
+        || matches!(
+            user.role.as_str(),
+            "syndic" | "accountant" | "accountant.emetteur"
+        )
+}
+
+/// Faire avancer un paiement (réussi, échoué, annulé, remboursé, supprimé) :
+/// un mandataire de l'encaissement, sur un paiement d'une ACP de son cabinet.
+async fn verifier_encaissement(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    payment_id: Uuid,
+) -> Result<(), Box<HttpResponse>> {
+    if !mandate_pour_encaisser(user) {
+        return Err(Box::new(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Constater un encaissement est réservé au syndic et au comptable mandatés par l'ACP."
+        }))));
+    }
+    let paiement = match state.payment_use_cases.get_payment(payment_id).await {
+        Ok(Some(p)) => p,
+        Ok(None) => {
+            return Err(Box::new(
+                HttpResponse::NotFound().json(serde_json::json!({"error": "Payment not found"})),
+            ))
+        }
+        Err(e) => {
+            return Err(Box::new(
+                HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
+            ))
+        }
+    };
+    verify_building_org_access(
+        user,
+        paiement.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    .map_err(|err| Box::new(err.error_response()))
+}
+
+/// Déclarer un paiement : immeuble, copropriétaire et quote-part de
+/// l'organisation de l'appelant ; un copropriétaire ne déclare que pour
+/// lui-même.
+async fn verifier_declaration(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    request: &CreatePaymentRequest,
+) -> Result<(), Box<HttpResponse>> {
+    verify_building_org_access(
+        user,
+        request.building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    .map_err(|err| Box::new(err.error_response()))?;
+    if mandate_pour_encaisser(user) {
+        verify_owner_org_access(user, request.owner_id, &state.owner_use_cases).await
+    } else {
+        verify_owner_personal_access(user, request.owner_id, &state.owner_use_cases).await
+    }
+    .map_err(|err| Box::new(err.error_response()))?;
+    if let Some(contribution_id) = request.contribution_id {
+        verify_contribution_org_access(
+            user,
+            contribution_id,
+            &state.owner_contribution_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+        .map_err(|err| Box::new(err.error_response()))?;
+    }
+    Ok(())
+}
 
 // ==================== Payment CRUD Endpoints ====================
 
@@ -32,6 +120,10 @@ pub async fn create_payment(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+
+    if let Err(refus) = verifier_declaration(&state, &user, &request).await {
+        return *refus;
+    }
 
     match state
         .payment_use_cases
@@ -443,6 +535,10 @@ pub async fn mark_payment_processing(
         }
     };
 
+    if let Err(refus) = verifier_encaissement(&state, &user, *id).await {
+        return *refus;
+    }
+
     match state.payment_use_cases.mark_processing(*id).await {
         Ok(payment) => {
             AuditLogEntry::new(
@@ -485,6 +581,10 @@ pub async fn mark_payment_requires_action(
         }
     };
 
+    if let Err(refus) = verifier_encaissement(&state, &user, *id).await {
+        return *refus;
+    }
+
     match state.payment_use_cases.mark_requires_action(*id).await {
         Ok(payment) => {
             AuditLogEntry::new(
@@ -526,6 +626,10 @@ pub async fn mark_payment_succeeded(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+
+    if let Err(refus) = verifier_encaissement(&state, &user, *id).await {
+        return *refus;
+    }
 
     match state.payment_use_cases.mark_succeeded(*id).await {
         Ok(payment) => {
@@ -570,6 +674,10 @@ pub async fn mark_payment_failed(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+
+    if let Err(refus) = verifier_encaissement(&state, &user, *id).await {
+        return *refus;
+    }
 
     let reason = request
         .get("reason")
@@ -619,6 +727,10 @@ pub async fn mark_payment_cancelled(
         }
     };
 
+    if let Err(refus) = verifier_encaissement(&state, &user, *id).await {
+        return *refus;
+    }
+
     match state.payment_use_cases.mark_cancelled(*id).await {
         Ok(payment) => {
             AuditLogEntry::new(
@@ -662,6 +774,10 @@ pub async fn refund_payment(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+
+    if let Err(refus) = verifier_encaissement(&state, &user, *id).await {
+        return *refus;
+    }
 
     match state
         .payment_use_cases
@@ -719,6 +835,10 @@ pub async fn delete_payment(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+
+    if let Err(refus) = verifier_encaissement(&state, &user, *id).await {
+        return *refus;
+    }
 
     match state.payment_use_cases.delete_payment(*id).await {
         Ok(true) => {
