@@ -25,9 +25,14 @@
     class="inline-flex items-center gap-1.5 rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors"
     aria-expanded={isOpen}
     aria-haspopup="true"
-    aria-label="Changer de langue"
+    aria-label={`${currentLang.code.toUpperCase()}, changer de langue`}
   >
-    <span class="text-base leading-none">{currentLang.flag}</span>
+    <!-- Le nom accessible commence par le texte visible (WCAG 2.5.3, règle
+         axe label-content-name-mismatch) : un utilisateur de commande vocale
+         dit ce qu'il lit. Le drapeau est décoratif. -->
+    <span class="text-base leading-none" aria-hidden="true"
+      >{currentLang.flag}</span
+    >
     <span class="text-xs font-semibold">{currentLang.code.toUpperCase()}</span>
     <svg
       class="h-4 w-4 text-muted transition-transform"

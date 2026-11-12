@@ -97,7 +97,7 @@ test.describe("Audit 2026-08-30 — non-régression", () => {
   }) => {
     await page.goto("/login");
 
-    const switcher = page.locator('button[aria-label="Changer de langue"]');
+    const switcher = page.getByTestId("language-selector-button");
     await expect(switcher).toBeVisible({ timeout: 10000 });
 
     await switcher.click();
