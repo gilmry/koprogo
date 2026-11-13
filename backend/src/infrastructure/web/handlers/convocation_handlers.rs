@@ -4,7 +4,9 @@ use crate::application::dto::{
 };
 use crate::application::error::AppError;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
-use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_convocation_org_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::ResponseError;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
@@ -23,6 +25,50 @@ fn require_syndic_or_superadmin(user: &AuthenticatedUser) -> Result<(), AppError
             "Seul le syndic peut envoyer une convocation".to_string(),
         )),
     }
+}
+
+/// Le jour de l'AG, le syndic contrôle les présences et les procurations
+/// jusqu'au quorum : lui seul (et le superadmin) les consigne, et sur une
+/// convocation de son organisation. Sans cette garde, n'importe quel compte
+/// se désignait mandataire d'autrui, puis votait en son nom.
+async fn verifier_controle_de_seance(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    recipient_id: Uuid,
+) -> Result<(), Box<HttpResponse>> {
+    if !(user.is_superadmin() || user.role == "syndic") {
+        return Err(Box::new(HttpResponse::Forbidden().json(
+            serde_json::json!({
+                "error": "Le contrôle des présences et des procurations revient au syndic."
+            }),
+        )));
+    }
+    let convocation_id = match state
+        .convocation_use_cases
+        .convocation_du_destinataire(recipient_id)
+        .await
+    {
+        Ok(Some(id)) => id,
+        Ok(None) => {
+            return Err(Box::new(HttpResponse::NotFound().json(
+                serde_json::json!({"error": format!("Recipient not found: {recipient_id}")}),
+            )))
+        }
+        Err(e) => {
+            return Err(Box::new(
+                HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
+            ))
+        }
+    };
+    verify_convocation_org_access(
+        user,
+        convocation_id,
+        &state.convocation_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    .map_err(|err| Box::new(err.error_response()))
 }
 
 #[post("/convocations")]
@@ -457,6 +503,10 @@ pub async fn update_recipient_attendance(
         }
     };
 
+    if let Err(refus) = verifier_controle_de_seance(&state, &user, *id).await {
+        return *refus;
+    }
+
     match state
         .convocation_use_cases
         .update_recipient_attendance(*id, request.attendance_status.clone())
@@ -491,6 +541,10 @@ pub async fn set_recipient_proxy(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+
+    if let Err(refus) = verifier_controle_de_seance(&state, &user, *id).await {
+        return *refus;
+    }
 
     match state
         .convocation_use_cases

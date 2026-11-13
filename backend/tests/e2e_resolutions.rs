@@ -842,6 +842,111 @@ async fn enregistrer_procuration(
     .expect("procuration consignée");
 }
 
+/// Un destinataire de convocation pour `mandant`, sans procuration : le
+/// syndic la consignera le jour de l'AG. Rend l'identifiant du destinataire.
+async fn destinataire_sans_procuration(
+    app_state: &actix_web::web::Data<AppState>,
+    org_id: Uuid,
+    building_id: Uuid,
+    meeting_id: Uuid,
+    mandant: Uuid,
+) -> Uuid {
+    let (createur,): (Uuid,) = sqlx::query_as("SELECT id FROM users LIMIT 1")
+        .fetch_one(&app_state.pool)
+        .await
+        .expect("un utilisateur pour created_by");
+    let (convocation,): (Uuid,) = sqlx::query_as(
+        "INSERT INTO convocations (id, organization_id, building_id, acp_id, meeting_id, \
+         meeting_type, meeting_date, minimum_send_date, language, created_by) \
+         SELECT $5, $1, $2, b.acp_id, $3, 'ordinary', NOW() + INTERVAL '7 days', NOW(), 'FR', $4 \
+         FROM buildings b WHERE b.id = $2 RETURNING id",
+    )
+    .bind(org_id)
+    .bind(building_id)
+    .bind(meeting_id)
+    .bind(createur)
+    .bind(Uuid::new_v4())
+    .fetch_one(&app_state.pool)
+    .await
+    .expect("convocation de l'assemblée");
+    let destinataire = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO convocation_recipients (id, convocation_id, owner_id, email) \
+         VALUES ($1, $2, $3, 'mandant@example.com')",
+    )
+    .bind(destinataire)
+    .bind(convocation)
+    .bind(mandant)
+    .execute(&app_state.pool)
+    .await
+    .expect("destinataire de la convocation");
+    destinataire
+}
+
+/// `@security` — Consigner une procuration (ou une présence) est le geste du
+/// syndic qui contrôle la séance : un copropriétaire ne se désigne pas
+/// mandataire d'autrui, et un syndic d'un autre cabinet ne touche pas à la
+/// liste.
+#[actix_web::test]
+#[serial]
+async fn security_seul_le_syndic_consigne_une_procuration() {
+    let (app_state, _container, org_id) = setup_app().await;
+    let (_token, _org_id, building_id, meeting_id, owner1_id, owner2_id, _unit1_id, token_owner2) =
+        create_test_fixtures(&app_state, org_id).await;
+    let org_b = common::create_test_organization(&app_state).await;
+    let syndic_b = common::register_and_login_with_role(&app_state, org_b, "syndic").await;
+    let destinataire =
+        destinataire_sans_procuration(&app_state, org_id, building_id, meeting_id, owner1_id).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    for (qui, jeton) in [
+        ("le copropriétaire", &token_owner2),
+        ("le syndic de B", &syndic_b),
+    ] {
+        let req = test::TestRequest::put()
+            .uri(&format!(
+                "/api/v1/convocation-recipients/{destinataire}/proxy"
+            ))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {jeton}")))
+            .set_json(json!({ "proxy_owner_id": owner2_id.to_string() }))
+            .to_request();
+        let statut = test::call_service(&app, req).await.status().as_u16();
+        assert!(
+            matches!(statut, 403 | 404),
+            "{qui} consigne une procuration : {statut}"
+        );
+
+        let req = test::TestRequest::put()
+            .uri(&format!(
+                "/api/v1/convocation-recipients/{destinataire}/attendance"
+            ))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {jeton}")))
+            .set_json(json!({ "attendance_status": "Attended" }))
+            .to_request();
+        let statut = test::call_service(&app, req).await.status().as_u16();
+        assert!(
+            matches!(statut, 403 | 404),
+            "{qui} modifie la présence : {statut}"
+        );
+    }
+
+    let (procuration,): (Option<Uuid>,) =
+        sqlx::query_as("SELECT proxy_owner_id FROM convocation_recipients WHERE id = $1")
+            .bind(destinataire)
+            .fetch_one(&app_state.pool)
+            .await
+            .expect("lecture du destinataire");
+    assert_eq!(
+        procuration, None,
+        "une procuration a été consignée malgré le refus"
+    );
+}
+
 /// `@security` — Se déclarer mandataire ne suffit pas : sans procuration
 /// enregistrée pour l'assemblée, le vote au nom d'autrui est refusé.
 #[actix_web::test]

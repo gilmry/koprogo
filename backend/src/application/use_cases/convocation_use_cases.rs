@@ -401,6 +401,19 @@ impl ConvocationUseCases {
         Ok(destinataire.and_then(|d| d.proxy_owner_id) == Some(mandataire))
     }
 
+    /// La convocation à laquelle appartient un destinataire (pour la garde de
+    /// périmètre des routes `/convocation-recipients/{id}/...`).
+    pub async fn convocation_du_destinataire(
+        &self,
+        recipient_id: Uuid,
+    ) -> Result<Option<Uuid>, String> {
+        Ok(self
+            .recipient_repository
+            .find_by_id(recipient_id)
+            .await?
+            .map(|r| r.convocation_id))
+    }
+
     /// Set proxy delegation for recipient
     pub async fn set_recipient_proxy(
         &self,
