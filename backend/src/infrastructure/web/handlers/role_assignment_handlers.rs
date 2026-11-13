@@ -106,8 +106,18 @@ async fn ensure_can_admin_target(
         .iter()
         .any(|a| a.organization_id.is_some() && a.organization_id == caller.organization_id);
     // Cas bootstrap : si la target n'a encore AUCUNE assignment, on autorise le
-    // syndic à créer la première assignment dans sa propre organization.
-    let bootstrap = target.is_empty() && caller.organization_id.is_some();
+    // syndic à créer la première assignment dans sa propre organization —
+    // pourvu que le compte visé soit déjà de cette organisation. Sans ce
+    // contrôle, un syndic s'appropriait tout compte sans rôle, d'où qu'il
+    // vienne.
+    let bootstrap = target.is_empty()
+        && caller.organization_id.is_some()
+        && state
+            .auth_use_cases
+            .get_user_by_id(target_user_id)
+            .await?
+            .organization_id
+            == caller.organization_id;
     if same_org || bootstrap {
         Ok(())
     } else {
@@ -148,6 +158,22 @@ pub async fn assign_role(
 
     let req = body.into_inner();
     let role = UserRole::from_str(&req.role).map_err(AppError::Validation)?;
+
+    // Un syndic distribue les rôles de SA copropriété, et seulement ceux-là :
+    // jamais `superadmin`, ni `syndic` (le mandat de syndic se donne au
+    // niveau de la plateforme), ni un rôle rattaché à une autre organisation.
+    if !user.is_superadmin() {
+        if matches!(role, UserRole::SuperAdmin | UserRole::Syndic) {
+            return Err(AppError::Forbidden(
+                "A syndic cannot assign the superadmin or syndic role".to_string(),
+            ));
+        }
+        if req.organization_id.is_none() || req.organization_id != user.organization_id {
+            return Err(AppError::Forbidden(
+                "A syndic can only assign roles inside their own organization".to_string(),
+            ));
+        }
+    }
 
     let saved = state
         .user_use_cases
@@ -226,6 +252,21 @@ pub async fn revoke_role_assignment(
 ) -> Result<HttpResponse, AppError> {
     let (target_user_id, assignment_id) = path.into_inner();
     ensure_can_admin_target(&state, &user, target_user_id).await?;
+    // L'autorisation porte sur `user_id` du chemin : l'assignment révoquée
+    // doit donc lui appartenir, sans quoi n'importe quel identifiant
+    // d'assignment, d'un autre utilisateur et d'une autre organisation,
+    // passait.
+    let appartient = state
+        .user_use_cases
+        .list_assignments_for_user(target_user_id)
+        .await?
+        .iter()
+        .any(|a| a.id == assignment_id);
+    if !appartient {
+        return Err(AppError::NotFound(format!(
+            "Role assignment {assignment_id} not found for user {target_user_id}"
+        )));
+    }
     state
         .user_use_cases
         .revoke_assignment(assignment_id)
