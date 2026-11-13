@@ -58,6 +58,54 @@ async fn coproprietaire_appelant(
     }
 }
 
+/// Un vote par procuration n'est reçu que si la procuration est enregistrée.
+///
+/// #850 refusait déjà de voter au nom d'autrui sans se déclarer mandataire ;
+/// mais se déclarer suffisait. Le mandat doit figurer au registre de
+/// l'assemblée (destinataires de la convocation, tenus par le syndic), du
+/// mandant vers l'appelant.
+async fn verifier_procuration(
+    state: &web::Data<AppState>,
+    resolution_id: Uuid,
+    mandant: Uuid,
+    mandataire: Uuid,
+) -> Result<(), Box<HttpResponse>> {
+    let resolution = match state
+        .resolution_use_cases
+        .get_resolution(resolution_id)
+        .await
+    {
+        Ok(Some(r)) => r,
+        Ok(None) => {
+            return Err(Box::new(
+                HttpResponse::NotFound().json(serde_json::json!({"error": "Resolution not found"})),
+            ))
+        }
+        Err(e) => {
+            return Err(Box::new(
+                HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
+            ))
+        }
+    };
+    match state
+        .convocation_use_cases
+        .procuration_enregistree(resolution.meeting_id, mandant, mandataire)
+        .await
+    {
+        Ok(true) => Ok(()),
+        Ok(false) => Err(Box::new(HttpResponse::Forbidden().json(
+            serde_json::json!({
+                "error": "Aucune procuration de ce copropriétaire vers vous n'est enregistrée \
+                          pour cette assemblée : le syndic la consigne sur la convocation.",
+                "kind": "proxy_not_registered"
+            }),
+        ))),
+        Err(e) => Err(Box::new(
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
+        )),
+    }
+}
+
 // ==================== Resolution Endpoints ====================
 
 /// Clôturer un scrutin proclame une majorité opposable (Art. 3.87 §4 CC) :
@@ -400,6 +448,14 @@ pub async fn cast_vote(
         Ok(id) => id,
         Err(refus) => return *refus,
     };
+
+    if let Some(mandataire) = request.proxy_owner_id {
+        if let Err(refus) =
+            verifier_procuration(&state, *resolution_id, request.owner_id, mandataire).await
+        {
+            return *refus;
+        }
+    }
 
     match state
         .resolution_use_cases

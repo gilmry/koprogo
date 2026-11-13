@@ -777,6 +777,260 @@ async fn security_le_syndic_ne_peut_deposer_aucune_voix() {
     );
 }
 
+/// Crée une résolution sur l'assemblée du décor et rend son identifiant.
+macro_rules! resolution_du_decor {
+    ($app:expr, $token:expr, $meeting_id:expr) => {{
+        let req = test::TestRequest::post()
+            .uri(&format!("/api/v1/meetings/{}/resolutions", $meeting_id))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", $token)))
+            .set_json(json!({
+                "meeting_id": $meeting_id.to_string(),
+                "title": "Résolution votée par procuration",
+                "description": "Le mandataire vote pour le mandant",
+                "resolution_type": "ordinary",
+                "majority_required": "absolute",
+                "agenda_item_index": 0
+            }))
+            .to_request();
+        let resolution: serde_json::Value =
+            test::read_body_json(test::call_service(&$app, req).await).await;
+        resolution["id"].as_str().unwrap().to_string()
+    }};
+}
+
+/// Consigne au registre de l'assemblée la procuration de `mandant` à
+/// `mandataire`, comme le fait le syndic sur la convocation. Écrit en base :
+/// la convocation exige un préavis de quinze jours que l'assemblée du décor
+/// (J+7) ne respecte pas, et ce test porte sur le vote, pas sur la
+/// convocation.
+async fn enregistrer_procuration(
+    app_state: &actix_web::web::Data<AppState>,
+    org_id: Uuid,
+    building_id: Uuid,
+    meeting_id: Uuid,
+    mandant: Uuid,
+    mandataire: Uuid,
+) {
+    let (createur,): (Uuid,) = sqlx::query_as("SELECT id FROM users LIMIT 1")
+        .fetch_one(&app_state.pool)
+        .await
+        .expect("un utilisateur pour created_by");
+    let (convocation,): (Uuid,) = sqlx::query_as(
+        "INSERT INTO convocations (id, organization_id, building_id, acp_id, meeting_id, \
+         meeting_type, meeting_date, minimum_send_date, language, created_by) \
+         SELECT $5, $1, $2, b.acp_id, $3, 'ordinary', NOW() + INTERVAL '7 days', NOW(), 'FR', $4 \
+         FROM buildings b WHERE b.id = $2 RETURNING id",
+    )
+    .bind(org_id)
+    .bind(building_id)
+    .bind(meeting_id)
+    .bind(createur)
+    .bind(Uuid::new_v4())
+    .fetch_one(&app_state.pool)
+    .await
+    .expect("convocation de l'assemblée");
+    sqlx::query(
+        "INSERT INTO convocation_recipients (id, convocation_id, owner_id, email, proxy_owner_id) \
+         VALUES ($4, $1, $2, 'mandant@example.com', $3)",
+    )
+    .bind(convocation)
+    .bind(mandant)
+    .bind(mandataire)
+    .bind(Uuid::new_v4())
+    .execute(&app_state.pool)
+    .await
+    .expect("procuration consignée");
+}
+
+/// Un destinataire de convocation pour `mandant`, sans procuration : le
+/// syndic la consignera le jour de l'AG. Rend l'identifiant du destinataire.
+async fn destinataire_sans_procuration(
+    app_state: &actix_web::web::Data<AppState>,
+    org_id: Uuid,
+    building_id: Uuid,
+    meeting_id: Uuid,
+    mandant: Uuid,
+) -> Uuid {
+    let (createur,): (Uuid,) = sqlx::query_as("SELECT id FROM users LIMIT 1")
+        .fetch_one(&app_state.pool)
+        .await
+        .expect("un utilisateur pour created_by");
+    let (convocation,): (Uuid,) = sqlx::query_as(
+        "INSERT INTO convocations (id, organization_id, building_id, acp_id, meeting_id, \
+         meeting_type, meeting_date, minimum_send_date, language, created_by) \
+         SELECT $5, $1, $2, b.acp_id, $3, 'ordinary', NOW() + INTERVAL '7 days', NOW(), 'FR', $4 \
+         FROM buildings b WHERE b.id = $2 RETURNING id",
+    )
+    .bind(org_id)
+    .bind(building_id)
+    .bind(meeting_id)
+    .bind(createur)
+    .bind(Uuid::new_v4())
+    .fetch_one(&app_state.pool)
+    .await
+    .expect("convocation de l'assemblée");
+    let destinataire = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO convocation_recipients (id, convocation_id, owner_id, email) \
+         VALUES ($1, $2, $3, 'mandant@example.com')",
+    )
+    .bind(destinataire)
+    .bind(convocation)
+    .bind(mandant)
+    .execute(&app_state.pool)
+    .await
+    .expect("destinataire de la convocation");
+    destinataire
+}
+
+/// `@security` — Consigner une procuration (ou une présence) est le geste du
+/// syndic qui contrôle la séance : un copropriétaire ne se désigne pas
+/// mandataire d'autrui, et un syndic d'un autre cabinet ne touche pas à la
+/// liste.
+#[actix_web::test]
+#[serial]
+async fn security_seul_le_syndic_consigne_une_procuration() {
+    let (app_state, _container, org_id) = setup_app().await;
+    let (_token, _org_id, building_id, meeting_id, owner1_id, owner2_id, _unit1_id, token_owner2) =
+        create_test_fixtures(&app_state, org_id).await;
+    let org_b = common::create_test_organization(&app_state).await;
+    let syndic_b = common::register_and_login_with_role(&app_state, org_b, "syndic").await;
+    let destinataire =
+        destinataire_sans_procuration(&app_state, org_id, building_id, meeting_id, owner1_id).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    for (qui, jeton) in [
+        ("le copropriétaire", &token_owner2),
+        ("le syndic de B", &syndic_b),
+    ] {
+        let req = test::TestRequest::put()
+            .uri(&format!(
+                "/api/v1/convocation-recipients/{destinataire}/proxy"
+            ))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {jeton}")))
+            .set_json(json!({ "proxy_owner_id": owner2_id.to_string() }))
+            .to_request();
+        let statut = test::call_service(&app, req).await.status().as_u16();
+        assert!(
+            matches!(statut, 403 | 404),
+            "{qui} consigne une procuration : {statut}"
+        );
+
+        let req = test::TestRequest::put()
+            .uri(&format!(
+                "/api/v1/convocation-recipients/{destinataire}/attendance"
+            ))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {jeton}")))
+            .set_json(json!({ "attendance_status": "Attended" }))
+            .to_request();
+        let statut = test::call_service(&app, req).await.status().as_u16();
+        assert!(
+            matches!(statut, 403 | 404),
+            "{qui} modifie la présence : {statut}"
+        );
+    }
+
+    let (procuration,): (Option<Uuid>,) =
+        sqlx::query_as("SELECT proxy_owner_id FROM convocation_recipients WHERE id = $1")
+            .bind(destinataire)
+            .fetch_one(&app_state.pool)
+            .await
+            .expect("lecture du destinataire");
+    assert_eq!(
+        procuration, None,
+        "une procuration a été consignée malgré le refus"
+    );
+}
+
+/// `@security` — Se déclarer mandataire ne suffit pas : sans procuration
+/// enregistrée pour l'assemblée, le vote au nom d'autrui est refusé.
+#[actix_web::test]
+#[serial]
+async fn security_une_procuration_inventee_est_refusee() {
+    let (app_state, _container, org_id) = setup_app().await;
+    let (token, _org_id, _building_id, meeting_id, owner1_id, owner2_id, unit1_id, token_owner2) =
+        create_test_fixtures(&app_state, org_id).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+    let resolution_id = resolution_du_decor!(app, token, meeting_id);
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_owner2)))
+        .set_json(json!({
+            "owner_id": owner1_id.to_string(),
+            "unit_id": unit1_id.to_string(),
+            "vote_choice": "pour",
+            "proxy_owner_id": owner2_id.to_string(),
+            "auth_method": "presence"
+        }))
+        .to_request();
+    assert_eq!(
+        test::call_service(&app, req).await.status(),
+        403,
+        "une procuration que personne n'a donnée est acceptée"
+    );
+
+    let (votes,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM votes WHERE owner_id = $1")
+        .bind(owner1_id)
+        .fetch_one(&app_state.pool)
+        .await
+        .expect("comptage des votes");
+    assert_eq!(votes, 0, "la voix du mandant a été captée");
+}
+
+/// `@happy` — Une procuration enregistrée au registre de l'assemblée permet
+/// au mandataire de voter pour son mandant.
+#[actix_web::test]
+#[serial]
+async fn happy_une_procuration_enregistree_permet_de_voter() {
+    let (app_state, _container, org_id) = setup_app().await;
+    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id, token_owner2) =
+        create_test_fixtures(&app_state, org_id).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+    let resolution_id = resolution_du_decor!(app, token, meeting_id);
+    enregistrer_procuration(
+        &app_state,
+        org_id,
+        building_id,
+        meeting_id,
+        owner1_id,
+        owner2_id,
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_owner2)))
+        .set_json(json!({
+            "owner_id": owner1_id.to_string(),
+            "unit_id": unit1_id.to_string(),
+            "vote_choice": "pour",
+            "proxy_owner_id": owner2_id.to_string(),
+            "auth_method": "presence"
+        }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let statut = resp.status();
+    let corps: serde_json::Value = test::read_body_json(resp).await;
+    assert_eq!(statut, 201, "vote par procuration enregistrée : {corps}");
+    assert_eq!(corps["proxy_owner_id"], json!(owner2_id.to_string()));
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_cast_vote_pour_success() {

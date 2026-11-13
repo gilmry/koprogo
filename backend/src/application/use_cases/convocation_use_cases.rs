@@ -374,6 +374,46 @@ impl ConvocationUseCases {
         Ok(ConvocationRecipientResponse::from(updated))
     }
 
+    /// La procuration de `mandant` à `mandataire` est-elle enregistrée pour
+    /// cette assemblée ?
+    ///
+    /// Le registre des procurations est la liste des destinataires de la
+    /// convocation : le syndic y consigne, pour chaque copropriétaire, le
+    /// mandataire qu'il a désigné (`set_recipient_proxy`). Une assemblée sans
+    /// convocation n'a donc aucune procuration enregistrée.
+    pub async fn procuration_enregistree(
+        &self,
+        meeting_id: Uuid,
+        mandant: Uuid,
+        mandataire: Uuid,
+    ) -> Result<bool, String> {
+        let Some(convocation) = self
+            .convocation_repository
+            .find_by_meeting_id(meeting_id)
+            .await?
+        else {
+            return Ok(false);
+        };
+        let destinataire = self
+            .recipient_repository
+            .find_by_convocation_and_owner(convocation.id, mandant)
+            .await?;
+        Ok(destinataire.and_then(|d| d.proxy_owner_id) == Some(mandataire))
+    }
+
+    /// La convocation à laquelle appartient un destinataire (pour la garde de
+    /// périmètre des routes `/convocation-recipients/{id}/...`).
+    pub async fn convocation_du_destinataire(
+        &self,
+        recipient_id: Uuid,
+    ) -> Result<Option<Uuid>, String> {
+        Ok(self
+            .recipient_repository
+            .find_by_id(recipient_id)
+            .await?
+            .map(|r| r.convocation_id))
+    }
+
     /// Set proxy delegation for recipient
     pub async fn set_recipient_proxy(
         &self,
