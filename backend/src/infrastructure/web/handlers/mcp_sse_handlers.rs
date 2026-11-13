@@ -18,6 +18,9 @@
 /// Reference: https://modelcontextprotocol.io/specification/2024-11-05/basic/transports/
 use crate::domain::copropriete::{MajorityType, NatureDeDecision};
 use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_owner_personal_access,
+};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use actix_web::{
     get, post,
@@ -675,6 +678,61 @@ fn outil_annonce(tool_name: &str) -> Result<(), RpcError> {
 
 /// Dispatches a `tools/call` request to the appropriate tool implementation.
 /// Returns a ToolResult or a JSON-RPC error.
+/// Les outils MCP lisent les mêmes données que les routes HTTP : ils passent
+/// par les mêmes gardes. Tout `building_id`, `owner_id` ou `meeting_id` reçu
+/// en argument est vérifié avant l'appel du cas d'usage, quel que soit
+/// l'outil : l'immeuble (ou celui de l'assemblée) doit relever d'une ACP de
+/// l'organisation de l'appelant, et un copropriétaire ne lit que sa fiche.
+async fn verifier_perimetre(
+    arguments: &Value,
+    state: &AppState,
+    user: &AuthenticatedUser,
+) -> Result<(), RpcError> {
+    let refus = |message: String| RpcError {
+        code: ErrorCode::INVALID_PARAMS,
+        message,
+        data: None,
+    };
+    let uuid = |cle: &str| -> Result<Option<Uuid>, RpcError> {
+        match arguments.get(cle).and_then(|v| v.as_str()) {
+            None => Ok(None),
+            Some(s) => Uuid::parse_str(s)
+                .map(Some)
+                .map_err(|_| refus(format!("{cle} must be a valid UUID"))),
+        }
+    };
+
+    let mut immeubles = Vec::new();
+    if let Some(id) = uuid("building_id")? {
+        immeubles.push(id);
+    }
+    if let Some(id) = uuid("meeting_id")? {
+        let assemblee = state
+            .meeting_use_cases
+            .get_meeting(id)
+            .await
+            .map_err(refus)?
+            .ok_or_else(|| refus(format!("Meeting not found: {id}")))?;
+        immeubles.push(assemblee.building_id);
+    }
+    for immeuble in immeubles {
+        verify_building_org_access(
+            user,
+            immeuble,
+            &state.building_use_cases,
+            &state.acp_use_cases,
+        )
+        .await
+        .map_err(|e| refus(e.to_string()))?;
+    }
+    if let Some(id) = uuid("owner_id")? {
+        verify_owner_personal_access(user, id, &state.owner_use_cases)
+            .await
+            .map_err(|e| refus(e.to_string()))?;
+    }
+    Ok(())
+}
+
 async fn dispatch_tool(
     tool_name: &str,
     arguments: &Value,
@@ -691,6 +749,8 @@ async fn dispatch_tool(
             })
         }
     };
+
+    verifier_perimetre(arguments, state, user).await?;
 
     match tool_name {
         "list_buildings" => {
