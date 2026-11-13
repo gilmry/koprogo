@@ -251,3 +251,98 @@ async fn test_mcp_messages_with_auth() {
         );
     }
 }
+
+/// Appelle un outil MCP et rend la réponse JSON-RPC.
+macro_rules! outil {
+    ($app:expr, $jeton:expr, $nom:expr, $args:expr) => {{
+        let req = test::TestRequest::post()
+            .uri("/mcp/messages?session_id=cloisonnement")
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", $jeton)))
+            .set_json(json!({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "tools/call",
+                "params": { "name": $nom, "arguments": $args }
+            }))
+            .to_request();
+        let resp = test::call_service(&$app, req).await;
+        let corps: serde_json::Value = test::read_body_json(resp).await;
+        corps
+    }};
+}
+
+/// `@security` — Les outils MCP ne lisent pas une autre organisation : un
+/// `building_id` ou un `owner_id` d'ailleurs est refusé, comme sur les routes
+/// HTTP. Le même outil sur son propre immeuble répond.
+#[actix_web::test]
+#[serial]
+async fn security_les_outils_mcp_ne_lisent_pas_une_autre_organisation() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let org_b = common::create_test_organization(&app_state).await;
+    let jeton_a = common::register_and_login_with_role(&app_state, org_a, "syndic").await;
+    let immeuble_a = common::create_test_building(&app_state, org_a).await;
+    let immeuble_b = common::create_test_building(&app_state, org_b).await;
+    let fiche_b = app_state
+        .owner_use_cases
+        .create_owner(koprogo_api::application::dto::CreateOwnerDto {
+            organization_id: org_b.to_string(),
+            first_name: "Bernadette".to_string(),
+            last_name: "Ailleurs".to_string(),
+            email: format!("bernadette-{}@example.com", uuid::Uuid::new_v4()),
+            phone: None,
+            address: "2 rue d'en face".to_string(),
+            city: "Bruxelles".to_string(),
+            postal_code: "1000".to_string(),
+            country: "Belgium".to_string(),
+            user_id: None,
+        })
+        .await
+        .expect("fiche de B")
+        .id;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    for nom in [
+        "get_building",
+        "list_meetings",
+        "get_financial_summary",
+        "list_tickets",
+        "list_pending_expenses",
+        "get_building_documents",
+        "list_owners_of_building",
+        "comptabilite_situation",
+    ] {
+        let corps = outil!(app, jeton_a, nom, json!({ "building_id": immeuble_b }));
+        assert!(
+            corps.get("error").is_some(),
+            "{nom} a servi l'immeuble de B : {corps}"
+        );
+    }
+
+    let corps = outil!(
+        app,
+        jeton_a,
+        "get_owner_balance",
+        json!({ "owner_id": fiche_b })
+    );
+    assert!(
+        corps.get("error").is_some(),
+        "get_owner_balance a servi un copropriétaire de B : {corps}"
+    );
+
+    let corps = outil!(
+        app,
+        jeton_a,
+        "get_building",
+        json!({ "building_id": immeuble_a })
+    );
+    assert!(
+        corps.get("error").is_none(),
+        "get_building refuse son propre immeuble : {corps}"
+    );
+}
