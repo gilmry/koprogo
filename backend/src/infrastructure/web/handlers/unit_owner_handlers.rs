@@ -5,7 +5,8 @@ use crate::application::dto::{
 use crate::domain::entities::UnitOwner;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::middleware::scope_guard::{
-    verify_owner_personal_access, verify_unit_holder_access, verify_unit_org_access,
+    verify_owner_org_access, verify_owner_personal_access, verify_unit_holder_access,
+    verify_unit_org_access,
 };
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
@@ -15,14 +16,46 @@ use validator::Validate;
 
 /// Helper function to check if user role can modify unit ownership
 /// Only SuperAdmin and Syndic can modify unit ownership (who owns what)
+///
+/// Liste BLANCHE : la titularité porte la voix et les charges. L'ancienne
+/// liste noire (`owner`, `accountant`) laissait passer les quinze autres rôles
+/// de `UserRole`, prestataire et notaire compris.
 fn verify_unit_ownership_permission(user: &AuthenticatedUser) -> Option<HttpResponse> {
-    if user.role == "owner" || user.role == "accountant" {
+    if !(user.is_superadmin() || user.role == "syndic") {
         Some(HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Only SuperAdmin and Syndic can modify unit ownership"
         })))
     } else {
         None
     }
+}
+
+/// Le lot et les fiches citées relèvent de l'organisation de l'appelant.
+///
+/// « Ce rôle a le droit de faire ce geste » ne dit rien de « sur cet
+/// objet-ci » (#864) : un syndic du cabinet A ne touche ni aux lots du
+/// cabinet B, ni à leurs copropriétaires.
+async fn verifier_lot_et_fiches(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    unit_id: Uuid,
+    fiches: &[Uuid],
+) -> Result<(), Box<HttpResponse>> {
+    verify_unit_org_access(
+        user,
+        unit_id,
+        &state.unit_use_cases,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    .map_err(|err| Box::new(err.error_response()))?;
+    for fiche in fiches {
+        verify_owner_org_access(user, *fiche, &state.owner_use_cases)
+            .await
+            .map_err(|err| Box::new(err.error_response()))?;
+    }
+    Ok(())
 }
 
 /// Add an owner to a unit
@@ -63,6 +96,10 @@ pub async fn add_owner_to_unit(
             }))
         }
     };
+
+    if let Err(refus) = verifier_lot_et_fiches(&state, &user, unit_id, &[owner_id]).await {
+        return *refus;
+    }
 
     // Call use case
     match state
@@ -216,6 +253,26 @@ pub async fn update_unit_owner(
             }))
         }
     };
+
+    // La ligne de titularité désigne son lot : c'est lui qui fixe le périmètre.
+    let titularite = match state
+        .unit_owner_use_cases
+        .get_unit_owner(unit_owner_id)
+        .await
+    {
+        Ok(Some(t)) => t,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Unit owner not found"
+            }))
+        }
+        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
+    };
+    if let Err(refus) =
+        verifier_lot_et_fiches(&state, &user, titularite.unit_id, &[titularite.owner_id]).await
+    {
+        return *refus;
+    }
 
     // Update ownership percentage if provided
     let result = if let Some(percentage) = dto.ownership_percentage {
@@ -511,6 +568,12 @@ pub async fn transfer_ownership(
             }))
         }
     };
+
+    if let Err(refus) =
+        verifier_lot_et_fiches(&state, &user, unit_id, &[from_owner_id, to_owner_id]).await
+    {
+        return *refus;
+    }
 
     // Call use case
     match state

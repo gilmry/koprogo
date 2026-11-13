@@ -673,3 +673,169 @@ async fn test_unit_owner_endpoints_require_auth() {
     let resp = test::call_service(&app, req).await;
     assert_eq!(resp.status(), 401, "Should reject unauthorized request");
 }
+
+/// Une fiche de copropriétaire dans `org_id`.
+async fn fiche(
+    app_state: &actix_web::web::Data<koprogo_api::infrastructure::web::AppState>,
+    org_id: Uuid,
+    prenom: &str,
+) -> Uuid {
+    let fiche = app_state
+        .owner_use_cases
+        .create_owner(CreateOwnerDto {
+            organization_id: org_id.to_string(),
+            first_name: prenom.to_string(),
+            last_name: "Titulaire".to_string(),
+            email: format!("{}-{}@example.com", prenom.to_lowercase(), Uuid::new_v4()),
+            phone: None,
+            address: "1 rue du Lot".to_string(),
+            city: "Bruxelles".to_string(),
+            postal_code: "1000".to_string(),
+            country: "Belgium".to_string(),
+            user_id: None,
+        })
+        .await
+        .expect("création de la fiche");
+    Uuid::parse_str(&fiche.id).unwrap()
+}
+
+/// `@security` — La titularité d'un lot porte la voix et les charges : seuls
+/// le syndic (de l'organisation du lot) et le superadmin y touchent. Les
+/// autres rôles, prestataire et notaire compris, sont refusés, et un syndic
+/// d'un autre cabinet aussi.
+#[actix_web::test]
+#[serial]
+async fn security_seul_le_syndic_du_cabinet_modifie_la_titularite() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let (jeton_superadmin, _immeuble, lot_a, titulaire_a) =
+        create_test_fixtures(&app_state, org_a).await;
+    let org_b = common::create_test_organization(&app_state).await;
+    let candidat_a = fiche(&app_state, org_a, "Candidat").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/units/{lot_a}/owners"))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {jeton_superadmin}")))
+        .set_json(json!({
+            "owner_id": titulaire_a.to_string(),
+            "ownership_percentage": 1.0,
+            "is_primary_contact": true
+        }))
+        .to_request();
+    assert_eq!(test::call_service(&app, req).await.status(), 201, "décor");
+
+    let mut refuses = Vec::new();
+    for role in [
+        "contractor",
+        "notary",
+        "board_member",
+        "warden",
+        "lawyer",
+        "accountant.encodeur",
+    ] {
+        refuses.push((
+            role.to_string(),
+            common::register_and_login_with_role(&app_state, org_a, role).await,
+        ));
+    }
+    refuses.push((
+        "syndic d'un autre cabinet".to_string(),
+        common::register_and_login_with_role(&app_state, org_b, "syndic").await,
+    ));
+
+    for (qui, jeton) in &refuses {
+        let ajout = test::TestRequest::post()
+            .uri(&format!("/api/v1/units/{lot_a}/owners"))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {jeton}")))
+            .set_json(json!({
+                "owner_id": candidat_a.to_string(),
+                "ownership_percentage": 0.1,
+                "is_primary_contact": false
+            }))
+            .to_request();
+        let statut = test::call_service(&app, ajout).await.status().as_u16();
+        assert!(
+            matches!(statut, 403 | 404),
+            "{qui} ajoute un titulaire au lot : {statut}"
+        );
+
+        let transfert = test::TestRequest::post()
+            .uri(&format!("/api/v1/units/{lot_a}/owners/transfer"))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {jeton}")))
+            .set_json(json!({
+                "from_owner_id": titulaire_a.to_string(),
+                "to_owner_id": candidat_a.to_string()
+            }))
+            .to_request();
+        let statut = test::call_service(&app, transfert).await.status().as_u16();
+        assert!(
+            matches!(statut, 403 | 404),
+            "{qui} transfère le lot : {statut}"
+        );
+    }
+
+    let (titulaires,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM unit_owners WHERE unit_id = $1 AND owner_id = $2")
+            .bind(lot_a)
+            .bind(candidat_a)
+            .fetch_one(&app_state.pool)
+            .await
+            .expect("lecture des titularités");
+    assert_eq!(titulaires, 0, "le candidat est devenu titulaire");
+
+    // Le syndic du cabinet, lui, gère ses lots.
+    let syndic_a = common::register_and_login_with_role(&app_state, org_a, "syndic").await;
+    let transfert = test::TestRequest::post()
+        .uri(&format!("/api/v1/units/{lot_a}/owners/transfer"))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {syndic_a}")))
+        .set_json(json!({
+            "from_owner_id": titulaire_a.to_string(),
+            "to_owner_id": candidat_a.to_string()
+        }))
+        .to_request();
+    assert_eq!(
+        test::call_service(&app, transfert).await.status(),
+        200,
+        "le syndic du cabinet transfère son lot"
+    );
+}
+
+/// `@security` — Un syndic ne rattache pas à son lot la fiche d'un
+/// copropriétaire d'un autre cabinet.
+#[actix_web::test]
+#[serial]
+async fn security_un_syndic_ne_rattache_pas_une_fiche_d_un_autre_cabinet() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let (_jeton, _immeuble, lot_a, _titulaire) = create_test_fixtures(&app_state, org_a).await;
+    let org_b = common::create_test_organization(&app_state).await;
+    let fiche_b = fiche(&app_state, org_b, "Etrangere").await;
+    let syndic_a = common::register_and_login_with_role(&app_state, org_a, "syndic").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/units/{lot_a}/owners"))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {syndic_a}")))
+        .set_json(json!({
+            "owner_id": fiche_b.to_string(),
+            "ownership_percentage": 1.0,
+            "is_primary_contact": true
+        }))
+        .to_request();
+    let statut = test::call_service(&app, req).await.status().as_u16();
+    assert!(
+        matches!(statut, 403 | 404),
+        "fiche d'un autre cabinet rattachée : {statut}"
+    );
+}
