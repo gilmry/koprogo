@@ -926,3 +926,115 @@ async fn seul_le_superadmin_cree_des_comptes_d_organisation() {
         assert_eq!(resp.status(), attendu, "{description}");
     }
 }
+
+/// `@security` — Un syndic ne fabrique ni superadmin, ni syndic, ni rôle dans
+/// une autre organisation, même sur un compte complaisant de son cabinet.
+/// Il distribue en revanche les rôles de sa copropriété.
+#[actix_web::test]
+#[serial]
+async fn security_un_syndic_ne_distribue_que_les_roles_de_sa_copropriete() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let org_b = common::create_test_organization(&app_state).await;
+    let (jeton_syndic, _) =
+        common::register_and_login_returning_user(&app_state, org_a, "syndic").await;
+    let (_, complice) = common::register_and_login_returning_user(&app_state, org_a, "owner").await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    for (description, corps, attendu) in [
+        (
+            "superadmin global",
+            json!({"role": "superadmin", "organization_id": null}),
+            403,
+        ),
+        (
+            "syndic de son cabinet",
+            json!({"role": "syndic", "organization_id": org_a}),
+            403,
+        ),
+        (
+            "syndic d'un autre cabinet",
+            json!({"role": "syndic", "organization_id": org_b}),
+            403,
+        ),
+        (
+            "comptable d'un autre cabinet",
+            json!({"role": "accountant", "organization_id": org_b}),
+            403,
+        ),
+        (
+            "comptable sans organisation",
+            json!({"role": "accountant", "organization_id": null}),
+            403,
+        ),
+        (
+            "comptable de son cabinet",
+            json!({"role": "accountant", "organization_id": org_a}),
+            201,
+        ),
+    ] {
+        let req = test::TestRequest::post()
+            .uri(&format!("/api/v1/users/{complice}/role-assignments"))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {jeton_syndic}")))
+            .set_json(corps)
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), attendu, "le syndic attribue : {description}");
+    }
+}
+
+/// `@security` — Révoquer passe par l'utilisateur du chemin : un syndic ne
+/// supprime pas l'assignment d'un utilisateur d'une autre organisation en la
+/// glissant sous un compte de son cabinet.
+#[actix_web::test]
+#[serial]
+async fn security_un_syndic_ne_revoque_pas_le_role_d_un_autre_cabinet() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let org_b = common::create_test_organization(&app_state).await;
+    let (jeton_syndic, _) =
+        common::register_and_login_returning_user(&app_state, org_a, "syndic").await;
+    let (_, complice) = common::register_and_login_returning_user(&app_state, org_a, "owner").await;
+    let (_, victime) = common::register_and_login_returning_user(&app_state, org_b, "syndic").await;
+    let assignment_victime = app_state
+        .user_use_cases
+        .list_assignments_for_user(victime)
+        .await
+        .expect("assignments de la victime")
+        .first()
+        .expect("la victime a un rôle")
+        .id;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let req = test::TestRequest::delete()
+        .uri(&format!(
+            "/api/v1/users/{complice}/role-assignments/{assignment_victime}"
+        ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {jeton_syndic}")))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(
+        resp.status(),
+        404,
+        "révocation de l'assignment d'un autre cabinet"
+    );
+
+    let encore = app_state
+        .user_use_cases
+        .list_assignments_for_user(victime)
+        .await
+        .expect("assignments de la victime")
+        .iter()
+        .any(|a| a.id == assignment_victime);
+    assert!(encore, "le rôle de la victime a été supprimé");
+}
