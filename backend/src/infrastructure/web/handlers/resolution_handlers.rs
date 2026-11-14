@@ -176,6 +176,23 @@ async fn verifier_mandat_sur_ag(
         .map(|err| err.error_response())
 }
 
+/// Mettre une résolution aux voix, ou la retirer, est un acte du syndic sur
+/// une AG de son cabinet. N'importe quel compte, d'une autre organisation
+/// comprise, pouvait jusqu'ici ajouter une résolution avec la majorité de son
+/// choix, ou supprimer celle du syndic avant le premier vote.
+async fn verifier_pilotage_de_l_ag(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    meeting_id: Uuid,
+) -> Option<HttpResponse> {
+    if !(user.is_superadmin() || user.role == "syndic") {
+        return Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Seul le syndic met une résolution aux voix ou la retire."
+        })));
+    }
+    verifier_mandat_sur_ag(state, user, meeting_id).await
+}
+
 #[utoipa::path(
     post,
     path = "/meetings/{meeting_id}/resolutions",
@@ -207,6 +224,10 @@ pub async fn create_resolution(
     };
 
     let meeting_id = *meeting_id;
+
+    if let Some(refus) = verifier_pilotage_de_l_ag(&state, &user, meeting_id).await {
+        return refus;
+    }
 
     match state
         .resolution_use_cases
@@ -375,6 +396,19 @@ pub async fn delete_resolution(
             return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
+
+    let resolution = match state.resolution_use_cases.get_resolution(*id).await {
+        Ok(Some(r)) => r,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Resolution not found"
+            }))
+        }
+        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
+    };
+    if let Some(refus) = verifier_pilotage_de_l_ag(&state, &user, resolution.meeting_id).await {
+        return refus;
+    }
 
     match state.resolution_use_cases.delete_resolution(*id).await {
         Ok(true) => {

@@ -3,6 +3,7 @@ use crate::application::dto::{
 };
 use crate::domain::entities::DocumentType;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::middleware::scope_guard::verify_building_org_access;
 use crate::infrastructure::web::{app_state::AppState, AuthenticatedUser};
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, ResponseError};
@@ -16,7 +17,10 @@ pub struct UploadForm {
     document_type: Text<String>,
     title: Text<String>,
     description: Option<Text<String>>,
-    uploaded_by: Text<String>,
+    /// Ignoré : l'auteur d'un dépôt est l'appelant authentifié. Le champ reste
+    /// accepté pour ne pas casser les clients qui l'envoient encore.
+    #[allow(dead_code)]
+    uploaded_by: Option<Text<String>>,
 }
 
 /// Upload a document with multipart/form-data
@@ -42,6 +46,20 @@ pub async fn upload_document(
         Err(_) => return HttpResponse::BadRequest().json("Invalid building_id"),
     };
 
+    // Le document est déposé dans l'immeuble cité : il doit relever d'une ACP
+    // de l'organisation de l'appelant, sans quoi il apparaissait dans la
+    // liste documentaire d'une autre copropriété.
+    if let Err(err) = verify_building_org_access(
+        &user,
+        building_id,
+        &app_state.building_use_cases,
+        &app_state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     // Parse document_type
     let document_type = match form.document_type.0.as_str() {
         "meeting_minutes" | "MeetingMinutes" => DocumentType::MeetingMinutes,
@@ -54,11 +72,9 @@ pub async fn upload_document(
         _ => return HttpResponse::BadRequest().json("Invalid document_type"),
     };
 
-    // Parse uploaded_by
-    let uploaded_by = match Uuid::parse_str(&form.uploaded_by.0) {
-        Ok(id) => id,
-        Err(_) => return HttpResponse::BadRequest().json("Invalid uploaded_by"),
-    };
+    // L'auteur est l'appelant : le champ `uploaded_by` du formulaire
+    // permettait d'attribuer un dépôt à n'importe qui.
+    let uploaded_by = user.user_id;
 
     // Get file metadata
     let filename = form

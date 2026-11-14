@@ -35,6 +35,28 @@ pub async fn create_poll(
     auth_user: AuthenticatedUser,
     dto: web::Json<CreatePollDto>,
 ) -> HttpResponse {
+    // Un sondage est rattaché à un immeuble : il doit relever d'une ACP de
+    // l'organisation de l'appelant. La publication l'était déjà ; la création,
+    // non, si bien qu'on déposait des brouillons chez une autre copropriété.
+    let building_id = match Uuid::parse_str(&dto.building_id) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Invalid building_id"
+            }))
+        }
+    };
+    if let Err(err) = verify_building_org_access(
+        &auth_user,
+        building_id,
+        &state.building_use_cases,
+        &state.acp_use_cases,
+    )
+    .await
+    {
+        return err.error_response();
+    }
+
     match state
         .poll_use_cases
         .create_poll(dto.into_inner(), auth_user.user_id)
