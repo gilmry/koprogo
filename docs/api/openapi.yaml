@@ -12786,35 +12786,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /convocation-recipients/{id}/email-opened:
-    put:
+  /convocation-recipients/ouverture/{jeton}:
+    get:
       tags:
       - Convocations
-      summary: Mark recipient email as opened (tracking pixel endpoint)
-      operationId: markRecipientEmailOpened
-      security:
-      - BearerAuth: []
+      summary: Tracking pixel for an opened convocation email (public, signed token)
+      operationId: pixelOuvertureConvocation
       parameters:
-      - name: id
+      - name: jeton
         in: path
         required: true
         schema:
           type: string
-          format: uuid
-        description: Convocation recipient UUID
+        description: Server-signed token; a raw recipient UUID records nothing
       responses:
         '200':
-          description: Email marked as opened
+          description: 1x1 transparent GIF, identical whether the token is valid or not
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConvocationRecipientResponse'
-        '400':
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+            image/gif: {}
   /convocation-recipients/{id}/attendance:
     put:
       tags:

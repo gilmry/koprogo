@@ -208,13 +208,6 @@ export const convocationsApi = {
   },
 
   /**
-   * Mark email opened (tracking pixel endpoint)
-   */
-  async markEmailOpened(recipientId: string): Promise<void> {
-    return api.put(`/convocation-recipients/${recipientId}/email-opened`, {});
-  },
-
-  /**
    * Update attendance status
    */
   async updateAttendance(
