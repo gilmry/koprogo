@@ -412,6 +412,11 @@ pub async fn mark_expense_paid(
     if let Some(response) = check_can_emit_expenses(&user) {
         return response;
     }
+    // Les quatre routes voisines (mark-overdue, cancel, reactivate, unpay)
+    // vérifiaient déjà le périmètre ; celle-ci, qui sort l'argent, non.
+    if let Some(response) = verify_expense_org_access(&state, &user, *id).await {
+        return response;
+    }
 
     match state.expense_use_cases.mark_as_paid(*id).await {
         Ok(expense) => {

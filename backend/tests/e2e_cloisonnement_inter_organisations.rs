@@ -152,27 +152,86 @@ async fn lecriture_inter_organisations_est_refusee() {
     )
     .await;
 
+    // Les deux premières entrées visaient jusqu'au 2026-11-13
+    // `/buildings/{id}/units` et `/buildings/{id}/polls`, routes qui
+    // n'existent pas : actix rendait 404, compté comme un refus. Le test ne
+    // prouvait donc rien pour elles. Elles visent désormais les vraies routes,
+    // l'immeuble dans le corps, et la contre-épreuve plus bas vérifie que le
+    // même corps est accepté par le syndic de B.
+    let acp_b = common::ensure_default_acp_for_org(&ctx.app_state.pool, ctx.org_b).await;
+    let lot = serde_json::json!({
+        "acp_id": acp_b.to_string(),
+        "building_id": ctx.immeuble_b.to_string(),
+        "unit_number": format!("Z{}", &Uuid::new_v4().to_string()[..4]),
+        "unit_type": "Apartment",
+        "floor": 1,
+        "surface_area": 80.0,
+        "quota": 100.0
+    });
+    let sondage = serde_json::json!({
+        "building_id": ctx.immeuble_b.to_string(),
+        "title": "Sondage intrus",
+        "description": "Ne doit jamais être créé",
+        "poll_type": "yes_no",
+        "options": [
+            {"option_text": "oui", "display_order": 0},
+            {"option_text": "non", "display_order": 1}
+        ],
+        "ends_at": (chrono::Utc::now() + chrono::Duration::days(7)).to_rfc3339()
+    });
+    let jeton_b = common::register_and_login_with_role(&ctx.app_state, ctx.org_b, "syndic").await;
+    for (route, corps) in [("/api/v1/units", &lot), ("/api/v1/polls", &sondage)] {
+        let req = test::TestRequest::post()
+            .uri(route)
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", jeton_b)))
+            .set_json(corps)
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        let statut = resp.status().as_u16();
+        let reponse: serde_json::Value =
+            serde_json::from_slice(&test::read_body(resp).await).unwrap_or_default();
+        // Un sondage exige au moins un votant éligible : le lot créé à
+        // l'instant reçoit un titulaire avant le sondage.
+        if route == "/api/v1/units" && (200..300).contains(&statut) {
+            let lot_id = Uuid::parse_str(reponse["id"].as_str().unwrap()).unwrap();
+            let fiche = ctx
+                .app_state
+                .owner_use_cases
+                .create_owner(koprogo_api::application::dto::CreateOwnerDto {
+                    organization_id: ctx.org_b.to_string(),
+                    first_name: "Titulaire".to_string(),
+                    last_name: "DeB".to_string(),
+                    email: format!("titulaire-b-{}@example.com", Uuid::new_v4()),
+                    phone: None,
+                    address: "1 rue de B".to_string(),
+                    city: "Bruxelles".to_string(),
+                    postal_code: "1000".to_string(),
+                    country: "Belgium".to_string(),
+                    user_id: None,
+                })
+                .await
+                .expect("fiche de B");
+            ctx.app_state
+                .unit_owner_use_cases
+                .add_owner_to_unit(
+                    lot_id,
+                    Uuid::parse_str(&fiche.id).unwrap(),
+                    rust_decimal::Decimal::ONE,
+                    true,
+                )
+                .await
+                .expect("titulaire du lot de B");
+        }
+        assert!(
+            (200..300).contains(&statut),
+            "contre-épreuve : le syndic de B, sur son immeuble, doit être servi par {route} \
+             (rendu {statut} : {reponse}). Sinon le refus fait au syndic de A ne prouve rien."
+        );
+    }
+
     let ecritures = [
-        (
-            format!("/api/v1/buildings/{}/units", ctx.immeuble_b),
-            serde_json::json!({
-                "building_id": ctx.immeuble_b.to_string(),
-                "unit_number": "A1",
-                "floor": 1,
-                "quota": 100,
-                "unit_type": "Apartment"
-            }),
-        ),
-        (
-            format!("/api/v1/buildings/{}/polls", ctx.immeuble_b),
-            serde_json::json!({
-                "building_id": ctx.immeuble_b.to_string(),
-                "title": "Sondage intrus",
-                "description": "Ne doit jamais être créé",
-                "poll_type": "SingleChoice",
-                "options": ["oui", "non"]
-            }),
-        ),
+        ("/api/v1/units".to_string(), lot.clone()),
+        ("/api/v1/polls".to_string(), sondage.clone()),
         // `POST /quotes` n'est pas imbriquée sous `/buildings/{id}` :
         // l'immeuble arrive dans le CORPS (#864).
         //
@@ -206,7 +265,7 @@ async fn lecriture_inter_organisations_est_refusee() {
         let statut = resp.status().as_u16();
 
         assert!(
-            !(200..300).contains(&statut),
+            est_un_refus(statut) && statut != 401,
             "ÉCRITURE INTER-ORGANISATIONS ACCEPTÉE : {route} a rendu {statut} au \
              syndic d'une AUTRE organisation.\n\n\
              Une ressource vient d'être créée dans le patrimoine d'une \
@@ -668,4 +727,158 @@ async fn security_le_pilotage_dune_ag_inter_organisations_est_refuse() {
             statut_avant, relue.status
         );
     }
+}
+
+/// `@security` — Trois écritures que A faisait dans le patrimoine de B :
+/// mettre une résolution aux voix sur l'AG de B, déposer un document dans
+/// l'immeuble de B, marquer payée une dépense de B. Chaque refus est suivi
+/// d'une relecture de l'état.
+#[actix_web::test]
+#[serial]
+async fn security_resolutions_documents_et_depenses_de_b_sont_hors_d_atteinte() {
+    let ctx = preparer().await;
+    let app = test::init_service(
+        App::new()
+            .app_data(ctx.app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    // 1. Résolution sur l'AG de B : refusée au syndic de A, et au
+    //    copropriétaire de B lui-même (ce n'est pas son geste).
+    let ag_b = ctx
+        .app_state
+        .meeting_use_cases
+        .create_meeting(koprogo_api::application::dto::CreateMeetingRequest {
+            organization_id: ctx.org_b,
+            building_id: ctx.immeuble_b,
+            meeting_type: koprogo_api::domain::entities::MeetingType::Ordinary,
+            title: "AG ordinaire de B".to_string(),
+            description: None,
+            scheduled_date: chrono::Utc::now() + chrono::Duration::days(30),
+            location: "Chez B".to_string(),
+            is_second_convocation: false,
+        })
+        .await
+        .expect("assemblée de B");
+    let proprietaire_b =
+        common::register_and_login_with_role(&ctx.app_state, ctx.org_b, "owner").await;
+    for (qui, jeton) in [
+        ("le syndic de A", &ctx.jeton_a),
+        ("un copropriétaire de B", &proprietaire_b),
+    ] {
+        let req = test::TestRequest::post()
+            .uri(&format!("/api/v1/meetings/{}/resolutions", ag_b.id))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {jeton}")))
+            .set_json(serde_json::json!({
+                "meeting_id": ag_b.id.to_string(),
+                "title": "Résolution intruse",
+                "description": "Ne doit jamais être mise aux voix",
+                "resolution_type": "ordinary",
+                "majority_required": "absolute",
+                "agenda_item_index": 0
+            }))
+            .to_request();
+        let statut = test::call_service(&app, req).await.status().as_u16();
+        assert!(
+            est_un_refus(statut) && statut != 401,
+            "{qui} met une résolution aux voix sur l'AG de B : {statut}"
+        );
+    }
+    let (resolutions,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM resolutions WHERE meeting_id = $1")
+            .bind(ag_b.id)
+            .fetch_one(&ctx.app_state.pool)
+            .await
+            .expect("comptage des résolutions");
+    assert_eq!(resolutions, 0, "une résolution a été créée sur l'AG de B");
+
+    // 2. Document déposé dans l'immeuble de B.
+    let frontiere = "----frontiere-cloisonnement";
+    let corps = format!(
+        "--{frontiere}\r\n\
+         Content-Disposition: form-data; name=\"file\"; filename=\"appel.pdf\"\r\n\
+         Content-Type: application/pdf\r\n\
+         \r\n\
+         %PDF-1.4 faux appel de fonds\r\n\
+         --{frontiere}\r\n\
+         Content-Disposition: form-data; name=\"building_id\"\r\n\
+         \r\n\
+         {immeuble}\r\n\
+         --{frontiere}\r\n\
+         Content-Disposition: form-data; name=\"document_type\"\r\n\
+         \r\n\
+         Invoice\r\n\
+         --{frontiere}\r\n\
+         Content-Disposition: form-data; name=\"title\"\r\n\
+         \r\n\
+         Appel de fonds\r\n\
+         --{frontiere}--\r\n",
+        immeuble = ctx.immeuble_b
+    );
+    let req = test::TestRequest::post()
+        .uri("/api/v1/documents")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", ctx.jeton_a)))
+        .insert_header((
+            header::CONTENT_TYPE,
+            format!("multipart/form-data; boundary={frontiere}"),
+        ))
+        .set_payload(corps)
+        .to_request();
+    let statut = test::call_service(&app, req).await.status().as_u16();
+    assert!(
+        est_un_refus(statut) && statut != 401,
+        "document déposé dans l'immeuble de B : {statut}"
+    );
+    let (documents,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM documents WHERE building_id = $1")
+            .bind(ctx.immeuble_b)
+            .fetch_one(&ctx.app_state.pool)
+            .await
+            .expect("comptage des documents");
+    assert_eq!(documents, 0, "un document est apparu chez B");
+
+    // 3. Dépense de B marquée payée.
+    let depense = ctx
+        .app_state
+        .expense_use_cases
+        .create_expense(koprogo_api::application::dto::CreateExpenseDto {
+            organization_id: ctx.org_b.to_string(),
+            building_id: ctx.immeuble_b.to_string(),
+            category: koprogo_api::domain::entities::ExpenseCategory::Maintenance,
+            amount: rust_decimal_macros::dec!(500),
+            description: "Dépense de B".to_string(),
+            expense_date: chrono::Utc::now().to_rfc3339(),
+            supplier: Some("Fournisseur".to_string()),
+            invoice_number: None,
+            account_code: None,
+            amount_excl_vat: None,
+            vat_rate: None,
+            due_date: None,
+            line_items: None,
+        })
+        .await
+        .expect("dépense de B");
+    let statut_avant = format!("{:?}", depense.payment_status);
+    let req = test::TestRequest::put()
+        .uri(&format!("/api/v1/expenses/{}/mark-paid", depense.id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", ctx.jeton_a)))
+        .to_request();
+    let statut = test::call_service(&app, req).await.status().as_u16();
+    assert!(
+        est_un_refus(statut) && statut != 401,
+        "dépense de B marquée payée par A : {statut}"
+    );
+    let relue = ctx
+        .app_state
+        .expense_use_cases
+        .get_expense(Uuid::parse_str(&depense.id).unwrap())
+        .await
+        .expect("lecture de la dépense")
+        .expect("la dépense existe");
+    assert_eq!(
+        format!("{:?}", relue.payment_status),
+        statut_avant,
+        "le statut de paiement de la dépense de B a changé"
+    );
 }
