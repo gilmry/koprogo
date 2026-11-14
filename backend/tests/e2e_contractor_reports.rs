@@ -572,3 +572,77 @@ async fn test_contractor_reports_delete() {
         "Should delete contractor report in Draft (204 or 200)"
     );
 }
+
+/// `@security` — Un lien magique ouvre une ressource à un tiers sans compte :
+/// un syndic n'en émet pas sur le ticket ou le rapport d'intervention d'une
+/// autre copropriété. Le syndic de B, sur son propre ticket, l'émet.
+#[actix_web::test]
+#[serial]
+async fn security_un_syndic_n_emet_pas_de_lien_magique_sur_une_autre_copropriete() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let org_b = common::create_test_organization(&app_state).await;
+    let (jeton_admin_b, admin_b) = setup_contractor_user_token(&app_state, org_b).await;
+    let (jeton_syndic_a, _) =
+        common::register_and_login_returning_user(&app_state, org_a, "syndic").await;
+    let (jeton_syndic_b, _) =
+        common::register_and_login_returning_user(&app_state, org_b, "syndic").await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let immeuble_b = create_contractor_test_building(&app_state, org_b).await;
+    let ticket_b = create_contractor_test_ticket(&app_state, org_b, immeuble_b, admin_b).await;
+    let req = test::TestRequest::post()
+        .uri("/api/v1/contractor-reports")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", jeton_admin_b)))
+        .set_json(json!({
+            "building_id": immeuble_b.to_string(),
+            "contractor_name": "Toiture de B",
+            "ticket_id": ticket_b.to_string()
+        }))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 201, "rapport de B");
+    let rapport_b: serde_json::Value = test::read_body_json(resp).await;
+    let rapport_b = rapport_b["id"].as_str().unwrap().to_string();
+
+    for (portee, cible) in [
+        ("ticket", ticket_b.to_string()),
+        ("contractor_report", rapport_b),
+    ] {
+        let req = test::TestRequest::post()
+            .uri("/api/v1/magic-links")
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", jeton_syndic_a)))
+            .set_json(json!({
+                "subject_user_id": admin_b,
+                "scope_kind": portee,
+                "scope_id": cible,
+                "expires_in_seconds": 3600
+            }))
+            .to_request();
+        let statut = test::call_service(&app, req).await.status().as_u16();
+        assert!(
+            matches!(statut, 403 | 404),
+            "le syndic de A émet un lien sur le {portee} de B : {statut}"
+        );
+    }
+
+    let req = test::TestRequest::post()
+        .uri("/api/v1/magic-links")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", jeton_syndic_b)))
+        .set_json(json!({
+            "subject_user_id": admin_b,
+            "scope_kind": "ticket",
+            "scope_id": ticket_b.to_string(),
+            "expires_in_seconds": 3600
+        }))
+        .to_request();
+    assert_eq!(
+        test::call_service(&app, req).await.status(),
+        201,
+        "le syndic de B émet un lien sur son propre ticket"
+    );
+}

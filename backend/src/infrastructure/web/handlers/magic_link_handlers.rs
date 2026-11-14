@@ -11,6 +11,10 @@ use crate::application::dto::contractor_report_dto::UpdateContractorReportDto;
 use crate::application::error::AppError;
 use crate::application::use_cases::MagicLinkUseCases;
 use crate::domain::entities::MagicLinkScopeKind;
+use crate::infrastructure::web::middleware::scope_guard::{
+    verify_building_org_access, verify_expense_org_access, verify_quote_org_access,
+    verify_ticket_org_access,
+};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, web, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -59,6 +63,67 @@ fn require_syndic_or_superadmin(user: &AuthenticatedUser) -> Result<(), AppError
     }
 }
 
+/// Un lien magique ouvre une ressource à un tiers sans compte : l'émetteur
+/// doit avoir le droit d'y toucher. Le rôle (syndic) était vérifié, pas la
+/// ressource : un syndic émettait un lien sur le ticket ou le rapport
+/// d'intervention d'une autre copropriété, puis le lisait et le réécrivait.
+async fn verifier_portee_du_lien(
+    state: &web::Data<AppState>,
+    user: &AuthenticatedUser,
+    scope_kind: &MagicLinkScopeKind,
+    scope_id: Uuid,
+) -> Result<(), AppError> {
+    match scope_kind {
+        MagicLinkScopeKind::Ticket => {
+            verify_ticket_org_access(
+                user,
+                scope_id,
+                &state.ticket_use_cases,
+                &state.building_use_cases,
+                &state.acp_use_cases,
+            )
+            .await
+        }
+        MagicLinkScopeKind::Quote => {
+            verify_quote_org_access(
+                user,
+                scope_id,
+                &state.quote_use_cases,
+                &state.building_use_cases,
+                &state.acp_use_cases,
+            )
+            .await
+        }
+        MagicLinkScopeKind::Invoice => {
+            verify_expense_org_access(
+                user,
+                scope_id,
+                &state.expense_use_cases,
+                &state.building_use_cases,
+                &state.acp_use_cases,
+            )
+            .await
+        }
+        MagicLinkScopeKind::ContractorReport => {
+            let rapport = state
+                .contractor_report_use_cases
+                .get_via_magic_link(scope_id)
+                .await?;
+            verify_building_org_access(
+                user,
+                rapport.building_id,
+                &state.building_use_cases,
+                &state.acp_use_cases,
+            )
+            .await
+        }
+        // Aucune charge utile n'est servie pour ce périmètre (`GET /c/{token}`
+        // ne rend que l'identifiant) : rien à cloisonner tant qu'il n'est pas
+        // câblé. À reprendre avec lui.
+        MagicLinkScopeKind::ContractorEvaluation => Ok(()),
+    }
+}
+
 // ---------------------------------------------------------------------------
 // POST /magic-links — syndic / superadmin only
 // ---------------------------------------------------------------------------
@@ -84,6 +149,7 @@ pub async fn issue_magic_link(
 
     let req = body.into_inner();
     let scope_kind = MagicLinkScopeKind::from_str(&req.scope_kind)?;
+    verifier_portee_du_lien(&state, &user, &scope_kind, req.scope_id).await?;
 
     let issued = state
         .magic_link_use_cases
