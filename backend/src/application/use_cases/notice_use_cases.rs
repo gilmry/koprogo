@@ -19,11 +19,12 @@ impl NoticeUseCases {
         }
     }
 
-    /// Check if user has building admin privileges (admin, superadmin, syndic,
-    /// or `community.moderator` — Story 5.3 #587, ce dernier rôle existe
-    /// précisément pour porter cette capacité sans être syndic).
+    /// Check if user has building admin privileges (superadmin, syndic, or
+    /// `community.moderator` — Story 5.3 #587, ce dernier rôle existe
+    /// précisément pour porter cette capacité sans être syndic). Le rôle
+    /// « admin » n'existe pas (`UserRole`) : il n'est plus reconnu ici.
     fn is_building_admin(role: &str) -> bool {
-        role == "admin" || role == "superadmin" || role == "syndic" || role == "community.moderator"
+        role == "superadmin" || role == "syndic" || role == "community.moderator"
     }
 
     /// Resolve user_id to display name via user lookup
@@ -1077,7 +1078,7 @@ mod tests {
                 notice_id,
                 admin_id,
                 org_id,
-                "admin",
+                "superadmin",
                 Some("Contenu obsolète signalé".to_string()),
             )
             .await;
