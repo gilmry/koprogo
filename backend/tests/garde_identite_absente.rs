@@ -146,9 +146,10 @@ const PUBLIQUES: &[(&str, &str)] = &[
          serait un piège (ADR 0048)",
     ),
     (
-        "/convocation-recipients/{id}/email-opened",
+        "/convocation-recipients/ouverture/{jeton}",
         "pixel de suivi d'ouverture : l'appelant est un client de messagerie, \
-         qui ne porte aucun jeton (ADR 0048)",
+         sans session ; le jeton signé par le serveur fait la preuve (ADR 0048, \
+         décision PO du 2026-11-14)",
     ),
 ];
 

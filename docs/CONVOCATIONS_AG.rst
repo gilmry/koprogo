@@ -98,7 +98,7 @@ Endpoints API (14)
 - ``PUT /convocations/:id/cancel`` - Annuler
 - ``GET /convocations/:id/recipients`` - Liste destinataires avec tracking
 - ``GET /convocations/:id/tracking-summary`` - Statistiques agregees
-- ``PUT /convocation-recipients/:id/email-opened`` - Marquer email ouvert
+- ``GET /convocation-recipients/ouverture/:jeton`` - Pixel d'ouverture, public, jeton signé par le serveur
 - ``PUT /convocation-recipients/:id/attendance`` - Mettre a jour presence
 - ``PUT /convocation-recipients/:id/proxy`` - Definir procuration
 - ``POST /convocations/:id/reminders`` - Envoyer rappels J-3
