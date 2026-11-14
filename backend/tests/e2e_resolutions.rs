@@ -1031,6 +1031,94 @@ async fn happy_une_procuration_enregistree_permet_de_voter() {
     assert_eq!(corps["proxy_owner_id"], json!(owner2_id.to_string()));
 }
 
+/// `@happy` — Le mandataire vote pour lui et pour son mandant, chaque voix
+/// pour son propre compte : « pour » en son nom, « contre » au nom du mandant.
+/// Les deux votes coexistent, chacun avec son lot et son choix.
+#[actix_web::test]
+#[serial]
+async fn happy_le_mandataire_vote_differemment_pour_lui_et_pour_son_mandant() {
+    let (app_state, _container, org_id) = setup_app().await;
+    let (token, _org_id, building_id, meeting_id, owner1_id, owner2_id, unit1_id, token_owner2) =
+        create_test_fixtures(&app_state, org_id).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+    let resolution_id = resolution_du_decor!(app, token, meeting_id);
+    enregistrer_procuration(
+        &app_state,
+        org_id,
+        building_id,
+        meeting_id,
+        owner1_id,
+        owner2_id,
+    )
+    .await;
+    let (unit2_id,): (Uuid,) =
+        sqlx::query_as("SELECT unit_id FROM unit_owners WHERE owner_id = $1 LIMIT 1")
+            .bind(owner2_id)
+            .fetch_one(&app_state.pool)
+            .await
+            .expect("lot du mandataire");
+
+    for (corps, attendu) in [
+        (
+            json!({
+                "owner_id": owner2_id.to_string(),
+                "unit_id": unit2_id.to_string(),
+                "vote_choice": "pour",
+                "auth_method": "presence"
+            }),
+            "vote du mandataire en son nom",
+        ),
+        (
+            json!({
+                "owner_id": owner1_id.to_string(),
+                "unit_id": unit1_id.to_string(),
+                "vote_choice": "contre",
+                "proxy_owner_id": owner2_id.to_string(),
+                "auth_method": "presence"
+            }),
+            "vote du mandataire au nom du mandant",
+        ),
+    ] {
+        let req = test::TestRequest::post()
+            .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", token_owner2)))
+            .set_json(corps)
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        let statut = resp.status();
+        let reponse: serde_json::Value = test::read_body_json(resp).await;
+        assert_eq!(statut, 201, "{attendu} : {reponse}");
+    }
+
+    let req = test::TestRequest::get()
+        .uri(&format!("/api/v1/resolutions/{}/votes", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .to_request();
+    let votes: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+    let votes = votes.as_array().expect("liste des votes");
+    assert_eq!(votes.len(), 2, "deux voix distinctes : {votes:?}");
+    let choix_de = |owner: Uuid| {
+        votes
+            .iter()
+            .find(|v| v["owner_id"] == json!(owner.to_string()))
+            .map(|v| (v["vote_choice"].clone(), v["proxy_owner_id"].clone()))
+            .expect("vote présent")
+    };
+    assert_eq!(
+        choix_de(owner2_id),
+        (json!("pour"), serde_json::Value::Null)
+    );
+    assert_eq!(
+        choix_de(owner1_id),
+        (json!("contre"), json!(owner2_id.to_string()))
+    );
+}
+
 #[actix_web::test]
 #[serial]
 async fn test_cast_vote_pour_success() {
