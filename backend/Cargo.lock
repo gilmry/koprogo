@@ -85,9 +85,9 @@ dependencies = [
 
 [[package]]
 name = "actix-multipart"
-version = "0.8.5"
+version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "689ad8dca448cfbcfc32c8988dd411c564ee177d85d724982f6b0a026f382d0a"
+checksum = "5df22eb72a5e6c66649083fff2fcb96df9f1e999e4cc32a15d58f34cb0102c47"
 dependencies = [
  "actix-multipart-derive",
  "actix-utils",
@@ -110,9 +110,9 @@ dependencies = [
 
 [[package]]
 name = "actix-multipart-derive"
-version = "0.8.1"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69112d423cd092e024d7a5473b7862b0e5d95247728a5b414545c0251f9df5a7"
+checksum = "413b2498eb596cfa31ae922bf5ec1aa008635b4fa153753e07e9f14c259452fd"
 dependencies = [
  "bytesize",
  "darling 0.24.1",
@@ -6476,9 +6476,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-actix-web"
-version = "0.7.25"
+version = "0.7.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3133a9a17a910bb708dcdcf1ff89d3dd98d412938b5e017c6e42de11b63ef164"
+checksum = "57452ae2b79737a7f0c32ec1d430aaf7ed068c53284f6a63adf0e0855ac17f79"
 dependencies = [
  "actix-web",
  "mutually_exclusive_features",
@@ -6811,9 +6811,9 @@ dependencies = [
 
 [[package]]
 name = "uuid"
-version = "1.29.0"
+version = "1.29.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a0e2d11620c50695fe12bbbfde96b3477fe606e7284c22d505c12ce51214514"
+checksum = "bed99139f7dac9b5cfe5f17be4d66dc7079a34dee1d74bcc77217119240e267c"
 dependencies = [
  "atomic",
  "getrandom 0.4.3",
