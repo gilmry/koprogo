@@ -88,6 +88,11 @@ const PUBLIQUES: &[(&str, &str)] = &[
         "/auth/login",
         "on ne peut pas exiger d'être connecté pour se connecter",
     ),
+    (
+        "/auth/login/2fa",
+        "seconde étape de la connexion : le défi signé émis après le mot de \
+         passe fait foi, plafonné à cinq codes faux",
+    ),
     ("/auth/register", "création de compte"),
     ("/auth/refresh", "le cookie de rafraîchissement fait foi"),
     ("/auth/me", "lit le jeton lui-même"),
@@ -146,9 +151,10 @@ const PUBLIQUES: &[(&str, &str)] = &[
          serait un piège (ADR 0048)",
     ),
     (
-        "/convocation-recipients/{id}/email-opened",
+        "/convocation-recipients/ouverture/{jeton}",
         "pixel de suivi d'ouverture : l'appelant est un client de messagerie, \
-         qui ne porte aucun jeton (ADR 0048)",
+         sans session ; le jeton signé par le serveur fait la preuve (ADR 0048, \
+         décision PO du 2026-11-14)",
     ),
 ];
 

@@ -379,7 +379,13 @@
       "setup": "Set up 2FA",
       "title": "Two-Factor Authentication",
       "verify": "Verify"
-    }
+    },
+    "secondFactorTitle": "Verification code",
+    "secondFactorHelp": "Enter the 6-digit code from your authenticator app, or a backup code.",
+    "secondFactorCode": "Code",
+    "secondFactorSubmit": "Verify",
+    "secondFactorError": "Incorrect or expired code.",
+    "secondFactorRestart": "Start sign-in again"
   },
   "board": {
     "deadline": "Deadline:",

@@ -1,6 +1,6 @@
 use crate::application::dto::{
-    LoginRequest, LoginResponse, RefreshTokenRequest, RegisterRequest, SwitchRoleRequest,
-    UserResponse,
+    LoginRequest, LoginResponse, LoginSecondFactorRequest, RefreshTokenRequest, RegisterRequest,
+    SecondFactorChallengeResponse, SwitchRoleRequest, UserResponse, Verify2FADto,
 };
 use crate::application::error::AppError;
 use crate::infrastructure::web::{
@@ -8,6 +8,7 @@ use crate::infrastructure::web::{
 };
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::Serialize;
+use uuid::Uuid;
 use validator::Validate;
 
 /// Corps de réponse d'authentification **sans** `refresh_token` (WP-FE1).
@@ -40,12 +41,12 @@ fn auth_response_with_cookie(resp: LoginResponse) -> HttpResponse {
     post,
     path = "/auth/login",
     tag = "Auth",
-    summary = "Login",
+    summary = "Login (first step when the account has a second factor)",
     request_body = LoginRequest,
     responses(
-        (status = 201, description = "Resource created successfully"),
+        (status = 200, description = "Session opened, or second factor required (SecondFactorChallengeResponse, no token, no cookie)"),
         (status = 400, description = "Bad Request"),
-        (status = 404, description = "Not Found"),
+        (status = 401, description = "Invalid credentials"),
         (status = 500, description = "Internal Server Error"),
     ),
 )]
@@ -58,7 +59,64 @@ pub async fn login(
         .validate()
         .map_err(|errors| AppError::Validation(errors.to_string()))?;
 
-    let response = data.auth_use_cases.login(request.into_inner()).await?;
+    let user = data
+        .auth_use_cases
+        .verifier_identifiants(request.into_inner())
+        .await?;
+    // Échec fermé : un état de second facteur illisible n'ouvre pas la session.
+    if data
+        .two_factor_use_cases
+        .est_actif(user.id)
+        .await
+        .map_err(AppError::Internal)?
+    {
+        let challenge_token = data
+            .auth_use_cases
+            .emettre_defi_second_facteur(user.id)
+            .ok_or_else(|| AppError::Internal("défi de second facteur".to_string()))?;
+        return Ok(HttpResponse::Ok().json(SecondFactorChallengeResponse {
+            two_factor_required: true,
+            challenge_token,
+        }));
+    }
+    let response = data.auth_use_cases.ouvrir_session(&user).await?;
+    Ok(auth_response_with_cookie(response))
+}
+
+#[utoipa::path(
+    post,
+    path = "/auth/login/2fa",
+    tag = "Auth",
+    summary = "Login, second step: challenge token and TOTP or backup code",
+    request_body = LoginSecondFactorRequest,
+    responses(
+        (status = 200, description = "Session opened"),
+        (status = 401, description = "Invalid, expired or exhausted challenge, or wrong code"),
+    ),
+)]
+#[post("/auth/login/2fa")]
+pub async fn login_second_facteur(
+    data: web::Data<AppState>,
+    request: web::Json<LoginSecondFactorRequest>,
+) -> Result<HttpResponse, AppError> {
+    let LoginSecondFactorRequest {
+        challenge_token,
+        code,
+    } = request.into_inner();
+    let user_id = data.auth_use_cases.compte_du_defi(&challenge_token)?;
+    let verification = data
+        .two_factor_use_cases
+        .verify_2fa(user_id, Uuid::nil(), Verify2FADto { totp_code: code })
+        .await;
+    if verification.is_err() {
+        data.auth_use_cases.noter_code_faux(&challenge_token);
+        return Err(AppError::InvalidCredentials);
+    }
+    data.auth_use_cases.clore_defi(&challenge_token);
+    let response = data
+        .auth_use_cases
+        .ouvrir_session_du_compte(user_id)
+        .await?;
     Ok(auth_response_with_cookie(response))
 }
 

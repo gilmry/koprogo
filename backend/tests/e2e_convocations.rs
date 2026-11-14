@@ -11,7 +11,24 @@ use koprogo_api::application::dto::{
     CreateOwnerDto, CreateUnitDto, EligibleRecipientResponse, RecipientTrackingSummaryResponse,
 };
 use koprogo_api::domain::entities::{AttendanceStatus, ConvocationStatus, MeetingType, UnitType};
+use koprogo_api::infrastructure::web::handlers::url_pixel_ouverture;
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
+
+/// Les destinataires d'une convocation, relus par le syndic.
+macro_rules! destinataires {
+    ($app:expr, $token:expr, $convocation_id:expr) => {{
+        let req = test::TestRequest::get()
+            .uri(&format!(
+                "/api/v1/convocations/{}/recipients",
+                $convocation_id
+            ))
+            .insert_header((header::AUTHORIZATION, format!("Bearer {}", $token)))
+            .to_request();
+        let recipients: Vec<ConvocationRecipientResponse> =
+            test::read_body_json(test::call_service(&$app, req).await).await;
+        recipients
+    }};
+}
 
 // ==================== Test Helpers ====================
 
@@ -944,22 +961,99 @@ async fn test_mark_recipient_email_opened() {
     let recipients: Vec<ConvocationRecipientResponse> = test::read_body_json(list_resp).await;
     let recipient = &recipients[0];
 
-    // Mark email opened
-    let mark_opened_req = test::TestRequest::put()
-        .uri(&format!(
-            "/api/v1/convocation-recipients/{}/email-opened",
-            recipient.id
-        ))
-        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+    // Le client de courriel charge le pixel signé, sans session.
+    let pixel = url_pixel_ouverture(&app_state, recipient.id).unwrap();
+    let mark_opened_req = test::TestRequest::get()
+        .uri(&format!("/api/v1{pixel}"))
         .to_request();
-
     let mark_opened_resp = test::call_service(&app, mark_opened_req).await;
     assert_eq!(mark_opened_resp.status(), 200);
+    assert_eq!(
+        mark_opened_resp.headers().get("content-type").unwrap(),
+        "image/gif"
+    );
 
-    let updated_recipient: ConvocationRecipientResponse =
-        test::read_body_json(mark_opened_resp).await;
+    let updated_recipient = destinataires!(app, token, convocation.id)
+        .into_iter()
+        .find(|r| r.id == recipient.id)
+        .unwrap();
     assert!(updated_recipient.has_opened_email);
     assert!(updated_recipient.email_opened_at.is_some());
+}
+
+/// `@security` — La preuve d'ouverture ne se fabrique pas : ni l'identifiant
+/// brut, ni un jeton forgé, ni l'ancien PUT anonyme ne marquent l'email comme
+/// ouvert. La réponse du pixel reste la même, pour ne rien apprendre à qui
+/// sonde.
+#[actix_web::test]
+#[serial]
+async fn security_l_ouverture_d_une_convocation_ne_se_falsifie_pas() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
+    let owner_id = create_test_owner(&app_state, org_id).await;
+    let meeting_date = Utc::now() + Duration::days(30);
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let create_req = test::TestRequest::post()
+        .uri("/api/v1/convocations")
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({
+            "building_id": building_id.to_string(),
+            "meeting_id": meeting_id.to_string(),
+            "meeting_type": "Ordinary",
+            "meeting_date": meeting_date.to_rfc3339(),
+            "language": "FR"
+        }))
+        .to_request();
+    let convocation: ConvocationResponse =
+        test::read_body_json(test::call_service(&app, create_req).await).await;
+    let send_req = test::TestRequest::post()
+        .uri(&format!("/api/v1/convocations/{}/send", convocation.id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+        .set_json(json!({ "recipient_owner_ids": [owner_id.to_string()] }))
+        .to_request();
+    test::call_service(&app, send_req).await;
+    let recipient_id = destinataires!(app, token, convocation.id)[0].id;
+
+    let signature_d_un_autre = url_pixel_ouverture(&app_state, Uuid::new_v4())
+        .unwrap()
+        .rsplit_once('.')
+        .unwrap()
+        .1
+        .to_string();
+    for jeton in [
+        recipient_id.to_string(),
+        format!("{recipient_id}.{signature_d_un_autre}"),
+        format!("{recipient_id}.00"),
+    ] {
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/v1/convocation-recipients/ouverture/{jeton}"))
+            .to_request();
+        assert_eq!(test::call_service(&app, req).await.status(), 200);
+    }
+    let req = test::TestRequest::put()
+        .uri(&format!(
+            "/api/v1/convocation-recipients/{recipient_id}/email-opened"
+        ))
+        .to_request();
+    let statut = test::call_service(&app, req).await.status().as_u16();
+    assert!(matches!(statut, 404 | 405), "ancien PUT anonyme : {statut}");
+
+    let destinataire = destinataires!(app, token, convocation.id)
+        .into_iter()
+        .find(|r| r.id == recipient_id)
+        .unwrap();
+    assert!(
+        destinataire.email_opened_at.is_none(),
+        "ouverture falsifiée enregistrée"
+    );
 }
 
 #[actix_web::test]
@@ -1350,13 +1444,10 @@ async fn test_complete_convocation_lifecycle() {
     let recipients: Vec<ConvocationRecipientResponse> = test::read_body_json(list_resp).await;
     assert_eq!(recipients.len(), 2);
 
-    // 5. Owner 1 opens email
-    let mark_opened_req = test::TestRequest::put()
-        .uri(&format!(
-            "/api/v1/convocation-recipients/{}/email-opened",
-            recipients[0].id
-        ))
-        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
+    // 5. Owner 1 opens email : son client de courriel charge le pixel signé
+    let pixel = url_pixel_ouverture(&app_state, recipients[0].id).unwrap();
+    let mark_opened_req = test::TestRequest::get()
+        .uri(&format!("/api/v1{pixel}"))
         .to_request();
 
     test::call_service(&app, mark_opened_req).await;

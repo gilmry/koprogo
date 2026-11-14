@@ -379,7 +379,13 @@
       "setup": "2FA einrichten",
       "title": "Zwei-Faktor-Authentifizierung",
       "verify": "Überprüfen"
-    }
+    },
+    "secondFactorTitle": "Bestätigungscode",
+    "secondFactorHelp": "Geben Sie den 6-stelligen Code Ihrer Authenticator-App oder einen Backup-Code ein.",
+    "secondFactorCode": "Code",
+    "secondFactorSubmit": "Bestätigen",
+    "secondFactorError": "Falscher oder abgelaufener Code.",
+    "secondFactorRestart": "Anmeldung neu beginnen"
   },
   "board": {
     "deadline": "Frist:",

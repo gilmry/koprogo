@@ -292,6 +292,36 @@ impl TwoFactorUseCases {
         Ok(())
     }
 
+    /// Le second facteur est-il actif pour ce compte ? Une erreur de lecture
+    /// remonte : la connexion échoue plutôt que de l'ignorer.
+    pub async fn est_actif(&self, user_id: Uuid) -> Result<bool, String> {
+        Ok(self
+            .two_factor_repo
+            .find_by_user_id(user_id)
+            .await?
+            .is_some_and(|secret| secret.is_enabled))
+    }
+
+    /// Réinitialisation par le superadmin, pour un utilisateur qui a perdu son
+    /// téléphone et ses codes de secours. Le compte se reconnecte avec son
+    /// seul mot de passe et réactive ensuite son second facteur.
+    pub async fn reinitialiser_par_superadmin(
+        &self,
+        user_id: Uuid,
+        superadmin_id: Uuid,
+    ) -> Result<(), String> {
+        self.two_factor_repo.delete(user_id).await?;
+        log_audit_event(
+            AuditEventType::TwoFactorDisabled,
+            Some(user_id),
+            None,
+            Some(format!("2FA reset by superadmin {superadmin_id}")),
+            None,
+        )
+        .await;
+        Ok(())
+    }
+
     /// Regenerate backup codes (requires TOTP verification)
     pub async fn regenerate_backup_codes(
         &self,

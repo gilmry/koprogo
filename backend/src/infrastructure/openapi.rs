@@ -84,6 +84,7 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::unit_owner_handlers::designate_voting_representative,
         // Auth
         crate::infrastructure::web::handlers::auth_handlers::login,
+        crate::infrastructure::web::handlers::auth_handlers::login_second_facteur,
         crate::infrastructure::web::handlers::auth_handlers::register,
         crate::infrastructure::web::handlers::auth_handlers::refresh_token,
         crate::infrastructure::web::handlers::auth_handlers::switch_role,

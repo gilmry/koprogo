@@ -29,6 +29,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_majority_for)
             // Authentication
             .service(login)
+            .service(login_second_facteur) // POST /auth/login/2fa, avant tout /auth/{...}
             .service(register)
             .service(refresh_token)
             .service(switch_role)
@@ -163,7 +164,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(list_convocation_recipients)
             .service(list_eligible_convocation_recipients) // GET /buildings/{id}/eligible-convocation-recipients (#780 verrou 1)
             .service(get_convocation_tracking_summary)
-            .service(mark_recipient_email_opened)
+            .service(pixel_ouverture_convocation) // GET public, jeton signé (pas d'identifiant brut)
             .service(update_recipient_attendance)
             .service(set_recipient_proxy)
             .service(send_convocation_reminders)
@@ -594,6 +595,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(update_user)
             .service(activate_user)
             .service(deactivate_user)
+            .service(reset_user_second_factor)
             .service(delete_user)
             // GDPR (Data Privacy)
             .service(export_user_data)

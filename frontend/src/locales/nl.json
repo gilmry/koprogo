@@ -379,7 +379,13 @@
       "setup": "2FA instellen",
       "title": "Tweefactorauthenticatie",
       "verify": "Verifiëren"
-    }
+    },
+    "secondFactorTitle": "Verificatiecode",
+    "secondFactorHelp": "Voer de 6-cijferige code van uw authenticatie-app in, of een back-upcode.",
+    "secondFactorCode": "Code",
+    "secondFactorSubmit": "Verifiëren",
+    "secondFactorError": "Onjuiste of verlopen code.",
+    "secondFactorRestart": "Opnieuw aanmelden"
   },
   "board": {
     "deadline": "Deadline:",

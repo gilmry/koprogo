@@ -379,7 +379,13 @@
       "setup": "Configurer la 2FA",
       "title": "Authentification à deux facteurs",
       "verify": "Vérifier"
-    }
+    },
+    "secondFactorTitle": "Code de vérification",
+    "secondFactorHelp": "Saisissez le code à 6 chiffres de votre application d'authentification, ou un code de secours.",
+    "secondFactorCode": "Code",
+    "secondFactorSubmit": "Vérifier",
+    "secondFactorError": "Code incorrect ou expiré.",
+    "secondFactorRestart": "Recommencer la connexion"
   },
   "board": {
     "deadline": "Échéance :",
