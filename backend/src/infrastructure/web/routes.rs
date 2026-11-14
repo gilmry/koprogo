@@ -29,6 +29,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_majority_for)
             // Authentication
             .service(login)
+            .service(login_second_facteur) // POST /auth/login/2fa, avant tout /auth/{...}
             .service(register)
             .service(refresh_token)
             .service(switch_role)
@@ -594,6 +595,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(update_user)
             .service(activate_user)
             .service(deactivate_user)
+            .service(reset_user_second_factor)
             .service(delete_user)
             // GDPR (Data Privacy)
             .service(export_user_data)
