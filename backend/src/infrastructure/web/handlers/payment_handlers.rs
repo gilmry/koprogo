@@ -23,6 +23,13 @@ pub(crate) fn mandate_pour_encaisser(user: &AuthenticatedUser) -> bool {
         )
 }
 
+/// Saisir un paiement au nom d'un copropriétaire du cabinet : les mandataires
+/// de l'encaissement, et l'encodeur comptable, qui encode sans valider
+/// (règle PO du 2026-11-14). Le copropriétaire ne déclare que pour lui-même.
+fn saisit_pour_le_cabinet(user: &AuthenticatedUser) -> bool {
+    mandate_pour_encaisser(user) || user.role == "accountant.encodeur"
+}
+
 /// Faire avancer un paiement (réussi, échoué, annulé, remboursé, supprimé) :
 /// un mandataire de l'encaissement, sur un paiement d'une ACP de son cabinet.
 async fn verifier_encaissement(
@@ -74,7 +81,7 @@ async fn verifier_declaration(
     )
     .await
     .map_err(|err| Box::new(err.error_response()))?;
-    if mandate_pour_encaisser(user) {
+    if saisit_pour_le_cabinet(user) {
         verify_owner_org_access(user, request.owner_id, &state.owner_use_cases).await
     } else {
         verify_owner_personal_access(user, request.owner_id, &state.owner_use_cases).await

@@ -1438,6 +1438,61 @@ async fn security_le_coproprietaire_ne_valide_pas_son_propre_paiement() {
     assert_eq!(statut_quote_part!(app, c), "pending");
 }
 
+/// `@security` — L'encodeur comptable saisit le paiement d'un copropriétaire
+/// de son cabinet, mais ne le valide pas : ni transition, ni `mark-paid`.
+/// Règle PO du 2026-11-14 : « il encode mais ne valide pas ».
+#[actix_web::test]
+#[serial]
+async fn security_l_encodeur_saisit_le_paiement_sans_le_valider() {
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+    let c = copropriete!(app, app_state, org_id);
+    let encodeur =
+        common::register_and_login_with_role(&app_state, org_id, "accountant.encodeur").await;
+
+    let (statut, paiement) = declarer_un_centime!(app, encodeur, c);
+    assert_eq!(
+        statut, 201,
+        "l'encodeur saisit le paiement du copropriétaire : {paiement}"
+    );
+    let paiement = paiement["id"].as_str().unwrap().to_string();
+
+    for transition in ["processing", "succeeded"] {
+        let (statut, corps) = appeler!(
+            app,
+            encodeur,
+            test::TestRequest::put().uri(&format!("/api/v1/payments/{paiement}/{transition}")),
+        );
+        assert_eq!(
+            statut, 403,
+            "l'encodeur passe le paiement en {transition} : {corps}"
+        );
+    }
+
+    let (statut, corps) = appeler!(
+        app,
+        encodeur,
+        test::TestRequest::put()
+            .uri(&format!(
+                "/api/v1/owner-contributions/{}/mark-paid",
+                c.quote_part
+            ))
+            .set_json(json!({
+                "payment_date": Utc::now().to_rfc3339(),
+                "payment_method": "bank_transfer",
+                "payment_reference": "saisie encodeur"
+            })),
+    );
+    assert_eq!(statut, 403, "l'encodeur solde la quote-part : {corps}");
+
+    assert_eq!(statut_quote_part!(app, c), "pending");
+}
+
 /// `@security` — Même encaissé par le syndic, 1 centime ne solde pas une
 /// quote-part de 1 250 EUR.
 #[actix_web::test]
