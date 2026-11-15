@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 // ========================================
 
 /// DTO for initiating 2FA setup (returns QR code)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Setup2FAResponseDto {
     pub secret: String, // Base32-encoded secret (ONLY returned during setup, never again)
     pub qr_code_data_url: String, // Data URL for QR code image (data:image/png;base64,...)
@@ -17,13 +17,13 @@ pub struct Setup2FAResponseDto {
 }
 
 /// DTO for enabling 2FA (requires TOTP verification)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Enable2FADto {
     pub totp_code: String, // 6-digit TOTP code from authenticator app
 }
 
 /// DTO for 2FA enable response
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Enable2FAResponseDto {
     pub success: bool,
     pub message: String,
@@ -35,13 +35,13 @@ pub struct Enable2FAResponseDto {
 // ========================================
 
 /// DTO for verifying TOTP code during login
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Verify2FADto {
     pub totp_code: String, // 6-digit TOTP code OR 8-character backup code
 }
 
 /// DTO for 2FA verification response
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Verify2FAResponseDto {
     pub success: bool,
     pub message: String,
@@ -54,26 +54,26 @@ pub struct Verify2FAResponseDto {
 // ========================================
 
 /// DTO for disabling 2FA (requires current password)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Disable2FADto {
     pub current_password: String, // Require password to disable 2FA
 }
 
 /// DTO for regenerating backup codes (requires TOTP verification)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct RegenerateBackupCodesDto {
     pub totp_code: String, // Must verify with TOTP before regenerating
 }
 
 /// DTO for regenerate backup codes response
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct RegenerateBackupCodesResponseDto {
     pub backup_codes: Vec<String>, // 10 new plaintext backup codes
     pub regenerated_at: DateTime<Utc>,
 }
 
 /// DTO for 2FA status response
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct TwoFactorStatusDto {
     pub is_enabled: bool,
     pub verified_at: Option<DateTime<Utc>>,

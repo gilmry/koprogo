@@ -4,6 +4,261 @@
  */
 
 export interface paths {
+  "/2fa/disable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Disable the second factor (current password required)
+     * @description Disables 2FA for the authenticated user. Requires password verification for security.
+     *
+     *     # Security
+     *     - User must be authenticated
+     *     - Requires current password verification
+     *     - All 2FA configuration is deleted (secret + backup codes)
+     *     - Action is logged for audit trail
+     *
+     *     # Request Body
+     *     ```json
+     *     {
+     *       "current_password": "user_password"
+     *     }
+     *     ```
+     *
+     *     # Returns
+     *     - 200 OK: 2FA successfully disabled
+     *     - 400 Bad Request: Invalid password
+     *     - 401 Unauthorized: Not authenticated
+     *     - 500 Internal Server Error: Disable failed
+     */
+    post: operations["disable_2fa"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/2fa/enable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Enable the second factor with a TOTP code from the authenticator app
+     * @description After setup, the user must verify their TOTP code from their authenticator app
+     *     to enable 2FA. This confirms they have successfully saved the secret.
+     *
+     *     # Security
+     *     - User must be authenticated
+     *     - Requires valid 6-digit TOTP code
+     *     - Failed attempts are logged for security monitoring
+     *
+     *     # Request Body
+     *     ```json
+     *     {
+     *       "totp_code": "123456"
+     *     }
+     *     ```
+     *
+     *     # Returns
+     *     - 200 OK: 2FA successfully enabled
+     *     - 400 Bad Request: Invalid TOTP code or already enabled
+     *     - 401 Unauthorized: Not authenticated
+     *     - 500 Internal Server Error: Enable failed
+     */
+    post: operations["enable_2fa"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/2fa/regenerate-backup-codes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Regenerate the 10 backup codes (TOTP code required)
+     * @description Generates a new set of 10 backup codes, replacing the old ones.
+     *     Requires TOTP verification for security.
+     *
+     *     # Security
+     *     - User must be authenticated
+     *     - Requires valid 6-digit TOTP code
+     *     - Old backup codes are invalidated
+     *     - New codes are only shown once (user must save them)
+     *
+     *     # Request Body
+     *     ```json
+     *     {
+     *       "totp_code": "123456"
+     *     }
+     *     ```
+     *
+     *     # Returns
+     *     - 200 OK: Backup codes regenerated
+     *     - 400 Bad Request: Invalid TOTP code or 2FA not enabled
+     *     - 401 Unauthorized: Not authenticated
+     *     - 500 Internal Server Error: Regeneration failed
+     *
+     *     # Example Response
+     *     ```json
+     *     {
+     *       "backup_codes": ["ABCD-EFGH", "IJKL-MNOP", ...],
+     *       "regenerated_at": "2024-12-02T12:00:00Z"
+     *     }
+     *     ```
+     */
+    post: operations["regenerate_backup_codes"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/2fa/setup": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Start second factor setup: secret, QR code and 10 backup codes (shown once)
+     * @description This endpoint initiates 2FA setup by generating a TOTP secret, QR code, and backup codes.
+     *     The user must then verify a TOTP code via `POST /2fa/enable` to activate 2FA.
+     *
+     *     # Security
+     *     - User must be authenticated
+     *     - Secret is only returned once during setup
+     *     - Backup codes are only shown once (user must save them)
+     *
+     *     # Returns
+     *     - 200 OK: Setup successful with QR code and backup codes
+     *     - 400 Bad Request: 2FA already enabled
+     *     - 401 Unauthorized: Not authenticated
+     *     - 500 Internal Server Error: Setup failed
+     *
+     *     # Example Response
+     *     ```json
+     *     {
+     *       "secret": "JBSWY3DPEHPK3PXP...",
+     *       "qr_code_data_url": "data:image/png;base64,...",
+     *       "backup_codes": ["ABCD-EFGH", "IJKL-MNOP", ...],
+     *       "issuer": "KoproGo",
+     *       "account_name": "user@example.com"
+     *     }
+     *     ```
+     */
+    post: operations["setup_2fa"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/2fa/status": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Second factor status of the authenticated account
+     * @description Returns the current 2FA configuration status, including:
+     *     - Whether 2FA is enabled
+     *     - Number of backup codes remaining
+     *     - Whether backup codes are low (< 3)
+     *     - Whether reverification is needed (not used in 90 days)
+     *
+     *     # Security
+     *     - User must be authenticated
+     *     - Only returns user's own 2FA status
+     *
+     *     # Returns
+     *     - 200 OK: Status retrieved successfully
+     *     - 401 Unauthorized: Not authenticated
+     *     - 500 Internal Server Error: Failed to retrieve status
+     *
+     *     # Example Response
+     *     ```json
+     *     {
+     *       "is_enabled": true,
+     *       "verified_at": "2024-11-01T10:00:00Z",
+     *       "last_used_at": "2024-12-01T08:30:00Z",
+     *       "backup_codes_remaining": 7,
+     *       "backup_codes_low": false,
+     *       "needs_reverification": false
+     *     }
+     *     ```
+     */
+    get: operations["get_2fa_status"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/2fa/verify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Verify a TOTP or backup code for the authenticated account
+     * @description Validates a TOTP code or backup code during login. This endpoint is called after
+     *     successful password authentication when 2FA is enabled for the user.
+     *
+     *     # Security
+     *     - User must be authenticated (pre-2FA session)
+     *     - Accepts 6-digit TOTP code OR 8-character backup code
+     *     - Backup codes are one-time use (removed after verification)
+     *     - Failed attempts are logged and rate-limited
+     *
+     *     # Request Body
+     *     ```json
+     *     {
+     *       "totp_code": "123456"  // Or backup code like "ABCD-EFGH"
+     *     }
+     *     ```
+     *
+     *     # Returns
+     *     - 200 OK: Verification successful
+     *     - 400 Bad Request: Invalid code
+     *     - 401 Unauthorized: Not authenticated
+     *     - 429 Too Many Requests: Rate limit exceeded (3 attempts per 5 min)
+     *     - 500 Internal Server Error: Verification failed
+     */
+    post: operations["verify_2fa"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/acps": {
     parameters: {
       query?: never;
@@ -3998,6 +4253,10 @@ export interface components {
     DesignateVotingRepresentativeDto: {
       owner_id: string;
     };
+    /** @description DTO for disabling 2FA (requires current password) */
+    Disable2FADto: {
+      current_password: string;
+    };
     /**
      * @description DTO pour élire les membres du conseil à l'issue d'une AG (Story 4.7).
      *
@@ -4027,6 +4286,17 @@ export interface components {
       full_name: string;
       /** Format: uuid */
       owner_id: string;
+    };
+    /** @description DTO for enabling 2FA (requires TOTP verification) */
+    Enable2FADto: {
+      totp_code: string;
+    };
+    /** @description DTO for 2FA enable response */
+    Enable2FAResponseDto: {
+      /** Format: date-time */
+      enabled_at: string;
+      message: string;
+      success: boolean;
     };
     /**
      * @description Réponse de `GET /acps/{id}/modules`.
@@ -4535,6 +4805,16 @@ export interface components {
       amount_cents: number;
       reason?: string | null;
     };
+    /** @description DTO for regenerating backup codes (requires TOTP verification) */
+    RegenerateBackupCodesDto: {
+      totp_code: string;
+    };
+    /** @description DTO for regenerate backup codes response */
+    RegenerateBackupCodesResponseDto: {
+      backup_codes: string[];
+      /** Format: date-time */
+      regenerated_at: string;
+    };
     RegisterRequest: {
       email: string;
       first_name: string;
@@ -4621,6 +4901,14 @@ export interface components {
     SendCallForFundsResponse: {
       call_for_funds: components["schemas"]["CallForFundsResponse"];
       contributions_generated: number;
+    };
+    /** @description DTO for initiating 2FA setup (returns QR code) */
+    Setup2FAResponseDto: {
+      account_name: string;
+      backup_codes: string[];
+      issuer: string;
+      qr_code_data_url: string;
+      secret: string;
     };
     /** @description Partage du portfolio avec un autre utilisateur. */
     SharePortfolioDto: {
@@ -4804,6 +5092,17 @@ export interface components {
       | "failed"
       | "cancelled"
       | "refunded";
+    /** @description DTO for 2FA status response */
+    TwoFactorStatusDto: {
+      backup_codes_low: boolean;
+      backup_codes_remaining: number;
+      is_enabled: boolean;
+      /** Format: date-time */
+      last_used_at?: string | null;
+      needs_reverification: boolean;
+      /** Format: date-time */
+      verified_at?: string | null;
+    };
     UnitResponseDto: {
       building_id: string;
       /** Format: int32 */
@@ -4970,6 +5269,17 @@ export interface components {
       /** Format: date-time */
       valid_until?: string | null;
     };
+    /** @description DTO for verifying TOTP code during login */
+    Verify2FADto: {
+      totp_code: string;
+    };
+    /** @description DTO for 2FA verification response */
+    Verify2FAResponseDto: {
+      backup_code_used: boolean;
+      backup_codes_remaining?: number | null;
+      message: string;
+      success: boolean;
+    };
     /**
      * @description Méthode d'authentification du votant (Story 4.2, Art. 3.87 §1er, §4 CC,
      *     #48). `Presence` couvre la signature de la feuille de présence en AG
@@ -5021,6 +5331,259 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  disable_2fa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Disable2FADto"];
+      };
+    };
+    responses: {
+      /** @description Second factor disabled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid password */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  enable_2fa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Enable2FADto"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Enable2FAResponseDto"];
+        };
+      };
+      /** @description Invalid code, already enabled, or no setup */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  regenerate_backup_codes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RegenerateBackupCodesDto"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RegenerateBackupCodesResponseDto"];
+        };
+      };
+      /** @description Invalid code or second factor not enabled */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  setup_2fa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Setup2FAResponseDto"];
+        };
+      };
+      /** @description Second factor already enabled */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_2fa_status: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TwoFactorStatusDto"];
+        };
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  verify_2fa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Verify2FADto"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Verify2FAResponseDto"];
+        };
+      };
+      /** @description Invalid code or second factor not enabled */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   list_acps: {
     parameters: {
       query?: never;
