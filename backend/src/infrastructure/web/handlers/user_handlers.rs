@@ -365,6 +365,21 @@ pub async fn activate_user(
 /// PUT /api/v1/users/{id}/2fa/reset — réinitialise le second facteur d'un
 /// compte (SuperAdmin only), pour un utilisateur qui a perdu son téléphone et
 /// ses codes de secours. Ses sessions ouvertes sont révoquées.
+#[utoipa::path(
+    put,
+    path = "/users/{id}/2fa/reset",
+    tag = "Users",
+    summary = "Reset a user's second factor and revoke their sessions (superadmin only)",
+    params(
+        ("id" = Uuid, Path, description = "User ID")
+    ),
+    responses(
+        (status = 204, description = "Second factor reset, sessions revoked"),
+        (status = 403, description = "Only SuperAdmin can reset a second factor"),
+        (status = 500, description = "Reset or revocation failed"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/users/{id}/2fa/reset")]
 pub async fn reset_user_second_factor(
     state: web::Data<AppState>,

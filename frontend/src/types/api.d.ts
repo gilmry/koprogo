@@ -3221,6 +3221,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/users/{id}/2fa/reset": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Reset a user's second factor and revoke their sessions (superadmin only) */
+    put: operations["reset_user_second_factor"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/{user_id}/role-assignments": {
     parameters: {
       query?: never;
@@ -12391,6 +12408,41 @@ export interface operations {
       };
       /** @description Hors mandat sur ce lot */
       403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  reset_user_second_factor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description User ID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Second factor reset, sessions revoked */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Only SuperAdmin can reset a second factor */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Reset or revocation failed */
+      500: {
         headers: {
           [name: string]: unknown;
         };
