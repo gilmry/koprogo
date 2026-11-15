@@ -27,6 +27,25 @@ fn require_syndic_or_superadmin(user: &AuthenticatedUser) -> Result<(), AppError
     }
 }
 
+/// Le pixel d'ouverture d'une convocation : un GIF transparent de 1 x 1.
+const PIXEL_GIF: &[u8] = &[
+    0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0xff, 0xff, 0xff, 0x21, 0xf9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b,
+];
+
+/// Finalité du jeton signé du pixel d'ouverture.
+const FINALITE_OUVERTURE: &str = "ouverture-convocation";
+
+/// Chemin du pixel d'ouverture à embarquer dans l'email de convocation d'un
+/// destinataire, sous `/api/v1`.
+pub fn url_pixel_ouverture(state: &AppState, recipient_id: Uuid) -> Option<String> {
+    let jeton = state
+        .auth_use_cases
+        .signer_identifiant(FINALITE_OUVERTURE, recipient_id)?;
+    Some(format!("/convocation-recipients/ouverture/{jeton}"))
+}
+
 /// Le jour de l'AG, le syndic contrôle les présences et les procurations
 /// jusqu'au quorum : lui seul (et le superadmin) les consigne, et sur une
 /// convocation de son organisation. Sans cette garde, n'importe quel compte
@@ -474,19 +493,31 @@ pub async fn get_convocation_tracking_summary(
     }
 }
 
-#[put("/convocation-recipients/{id}/email-opened")]
-pub async fn mark_recipient_email_opened(
+/// Ouverture de l'email de convocation, constatée par le pixel qu'il embarque.
+/// Route publique : le jeton est signé par le serveur
+/// (`url_pixel_ouverture`), un identifiant brut ne marque rien. La réponse
+/// est la même dans tous les cas, pour ne rien apprendre à qui sonde.
+#[get("/convocation-recipients/ouverture/{jeton}")]
+pub async fn pixel_ouverture_convocation(
     state: web::Data<AppState>,
-    id: web::Path<Uuid>,
+    jeton: web::Path<String>,
 ) -> impl Responder {
-    match state
-        .convocation_use_cases
-        .mark_recipient_email_opened(*id)
-        .await
+    if let Some(recipient_id) = state
+        .auth_use_cases
+        .verifier_identifiant(FINALITE_OUVERTURE, &jeton)
     {
-        Ok(recipient) => HttpResponse::Ok().json(recipient),
-        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({"error": err})),
+        if let Err(err) = state
+            .convocation_use_cases
+            .mark_recipient_email_opened(recipient_id)
+            .await
+        {
+            log::warn!("pixel d'ouverture {recipient_id} : {err}");
+        }
     }
+    HttpResponse::Ok()
+        .content_type("image/gif")
+        .insert_header(("Cache-Control", "no-store"))
+        .body(PIXEL_GIF)
 }
 
 #[put("/convocation-recipients/{id}/attendance")]

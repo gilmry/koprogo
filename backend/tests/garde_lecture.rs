@@ -89,16 +89,6 @@ use std::path::{Path, PathBuf};
 /// être affichées à l'entrée de l'immeuble. Les rendre lisibles en ligne est
 /// conforme, pas fuyant.
 ///
-/// **Une est appelée depuis un client de courriel.**
-///
-///     PUT /convocation-recipients/{id}/email-opened
-///
-/// Un pixel de suivi ne porte aucune session. Elle reste néanmoins une
-/// ÉCRITURE non authentifiée dont la seule clé est un UUID : qui devinerait un
-/// identifiant marquerait un courriel comme lu. La conséquence est mince — une
-/// statistique faussée, pas une donnée divulguée — mais elle mérite d'être
-/// dite plutôt que d'être comptée comme réglée.
-///
 /// **Quatre relèvent d'un choix produit non tranché.**
 ///
 ///     POST   /energy-campaigns/{id}/join-as-individual
@@ -151,6 +141,13 @@ const JETON_FAIT_IDENTITE: &[(&str, &str)] = &[
     (
         "contractor_report_handlers  POST /contractor-reports/magic/{token}/submit",
         "idem",
+    ),
+    (
+        "convocation_handlers  GET /convocation-recipients/ouverture/{jeton}",
+        "pixel d'ouverture lu par un client de courriel, sans session ; le \
+         jeton est signé par le serveur (HMAC, finalité dédiée), un \
+         identifiant brut ne marque rien. Remplace le PUT anonyme du \
+         2026-09-06 (décision PO du 2026-11-14)",
     ),
 ];
 

@@ -16,7 +16,7 @@ il ne fallait pas le supposer :
 |---|---|
 | `POST /energy-campaigns/{id}/join-as-individual` et les trois routes de consentement | une campagne énergétique s'ouvre-t-elle hors copropriété ? |
 | `GET /etats-dates/reference/{reference_number}` | un notaire consulte-t-il un état daté par sa référence, sans compte ? |
-| `PUT /convocation-recipients/{id}/email-opened` | pixel de suivi appelé par un client de messagerie sans jeton |
+| `GET /convocation-recipients/ouverture/{jeton}` | pixel de suivi appelé par un client de messagerie sans session ; jeton signé par le serveur (2026-11-14) |
 
 ## Décision
 

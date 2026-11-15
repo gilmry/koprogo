@@ -155,7 +155,7 @@ Etapes
 - Emmanuel n'ouvre pas (J+5 sans ouverture → candidat au rappel).
 - Philippe ouvre mais ne confirme pas sa presence.
 
-- Le tracking pixel declenche ``PUT /convocation-recipients/:id/email-opened``.
+- Le tracking pixel declenche ``GET /convocation-recipients/ouverture/:jeton``, ou le jeton est signe par le serveur (un identifiant brut ne marque rien).
 - ``email_opened_at`` est enregistre (idempotent si deja ouvert).
 - Le compteur ``opened_count`` de la convocation est incremente.
 - Le taux d'ouverture est calcule : ``(opened_count / total_recipients) * 100``.
@@ -445,8 +445,8 @@ E2E
      1. POST /convocations (Francois cree, Draft)
      2. PUT /convocations/:id/schedule (Scheduled, J-20)
      3. POST /convocations/:id/send (Sent, 10 recipients)
-     4. PUT /convocation-recipients/:id/email-opened (Alice ouvre en 1ere)
-     5. PUT /convocation-recipients/:id/email-opened (Bob, Charlie, Diane, Marcel, Nadia, Marguerite ouvrent)
+     4. GET /convocation-recipients/ouverture/:jeton (Alice ouvre en 1ere)
+     5. GET /convocation-recipients/ouverture/:jeton (Bob, Charlie, Diane, Marcel, Nadia, Marguerite ouvrent)
      6. PUT /convocation-recipients/:id/attendance (Alice WillAttend)
      7. PUT /convocation-recipients/:id/attendance (8 confirmations WillAttend)
      8. Jeanne : confirmation par telephone (Francois enregistre WillAttend)

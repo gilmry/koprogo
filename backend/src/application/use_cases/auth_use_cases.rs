@@ -8,7 +8,9 @@ use crate::domain::entities::{RefreshToken, User, UserRole, UserRoleAssignment};
 use crate::infrastructure::audit::{log_audit_event, AuditEventType};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::Utc;
+use hmac::{Hmac, Mac};
 use jsonwebtoken::{encode, EncodingKey, Header};
+use sha2::Sha256;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -547,6 +549,36 @@ impl AuthUseCases {
         let now = Utc::now().timestamp();
         format!("{}:{}:{}", user.id, now, uuid::Uuid::new_v4())
     }
+
+    /// Jeton public `{id}.{hmac}` : HMAC-SHA256 du couple (finalité,
+    /// identifiant) sous le secret serveur. La finalité sépare les usages :
+    /// un jeton signé pour un pixel d'ouverture ne vaut rien ailleurs.
+    pub fn signer_identifiant(&self, finalite: &str, id: Uuid) -> Option<String> {
+        let mac = self.mac_identifiant(finalite, id)?;
+        Some(format!("{id}.{}", hex::encode(mac.finalize().into_bytes())))
+    }
+
+    /// L'identifiant porté par le jeton, si la signature est la bonne
+    /// (comparaison en temps constant).
+    pub fn verifier_identifiant(&self, finalite: &str, jeton: &str) -> Option<Uuid> {
+        let (id, signature) = jeton.split_once('.')?;
+        let id = Uuid::parse_str(id).ok()?;
+        let signature = hex::decode(signature).ok()?;
+        self.mac_identifiant(finalite, id)?
+            .verify_slice(&signature)
+            .ok()
+            .map(|_| id)
+    }
+
+    /// HMAC-SHA256 accepte une clé de toute longueur : `None` ne survient pas
+    /// en pratique, mais ne se transforme pas en panique.
+    fn mac_identifiant(&self, finalite: &str, id: Uuid) -> Option<Hmac<Sha256>> {
+        let mut mac = Hmac::<Sha256>::new_from_slice(self.jwt_secret.as_bytes()).ok()?;
+        mac.update(finalite.as_bytes());
+        mac.update(b":");
+        mac.update(id.as_bytes());
+        Some(mac)
+    }
 }
 
 #[cfg(test)]
@@ -625,6 +657,46 @@ mod tests {
             Arc::new(role_repo),
             TEST_JWT_SECRET.to_string(),
         )
+    }
+
+    fn use_cases_seuls() -> AuthUseCases {
+        build_use_cases(
+            MockUserRepo::new(),
+            MockRefreshTokenRepo::new(),
+            MockUserRoleRepo::new(),
+        )
+    }
+
+    #[test]
+    fn happy_un_jeton_signe_rend_son_identifiant() {
+        let uc = use_cases_seuls();
+        let id = Uuid::new_v4();
+        let jeton = uc.signer_identifiant("ouverture-convocation", id).unwrap();
+        assert_eq!(
+            uc.verifier_identifiant("ouverture-convocation", &jeton),
+            Some(id)
+        );
+    }
+
+    #[test]
+    fn security_un_jeton_forge_ou_detourne_est_refuse() {
+        let uc = use_cases_seuls();
+        let id = Uuid::new_v4();
+        let jeton = uc.signer_identifiant("ouverture-convocation", id).unwrap();
+        let signature = jeton.split_once('.').unwrap().1;
+        // Identifiant brut, signature d'un autre identifiant, autre finalité.
+        assert_eq!(
+            uc.verifier_identifiant("ouverture-convocation", &id.to_string()),
+            None
+        );
+        assert_eq!(
+            uc.verifier_identifiant(
+                "ouverture-convocation",
+                &format!("{}.{signature}", Uuid::new_v4())
+            ),
+            None
+        );
+        assert_eq!(uc.verifier_identifiant("autre-usage", &jeton), None);
     }
 
     // ── 1. login success ────────────────────────────────────────────────
