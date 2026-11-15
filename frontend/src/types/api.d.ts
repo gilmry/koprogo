@@ -330,8 +330,25 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Login */
+    /** Login (first step when the account has a second factor) */
     post: operations["login"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/login/2fa": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Login, second step: challenge token and TOTP or backup code */
+    post: operations["login_second_facteur"];
     delete?: never;
     options?: never;
     head?: never;
@@ -4226,6 +4243,14 @@ export interface components {
       password: string;
     };
     /**
+     * @description Deuxième étape de la connexion d'un compte à second facteur : le défi
+     *     reçu de `POST /auth/login` et un code TOTP ou de secours.
+     */
+    LoginSecondFactorRequest: {
+      challenge_token: string;
+      code: string;
+    };
+    /**
      * @description Type de majorité requise pour adoption — Art. 3.88 §1 Code Civil belge
      * @enum {string}
      */
@@ -5481,8 +5506,8 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Resource created successfully */
-      201: {
+      /** @description Session opened, or second factor required (SecondFactorChallengeResponse, no token, no cookie) */
+      200: {
         headers: {
           [name: string]: unknown;
         };
@@ -5495,8 +5520,8 @@ export interface operations {
         };
         content?: never;
       };
-      /** @description Not Found */
-      404: {
+      /** @description Invalid credentials */
+      401: {
         headers: {
           [name: string]: unknown;
         };
@@ -5504,6 +5529,35 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  login_second_facteur: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginSecondFactorRequest"];
+      };
+    };
+    responses: {
+      /** @description Session opened */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid, expired or exhausted challenge, or wrong code */
+      401: {
         headers: {
           [name: string]: unknown;
         };

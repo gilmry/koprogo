@@ -569,7 +569,7 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Login",
+        "summary": "Login (first step when the account has a second factor)",
         "operationId": "login",
         "requestBody": {
           "content": {
@@ -582,17 +582,44 @@
           "required": true
         },
         "responses": {
-          "201": {
-            "description": "Resource created successfully"
+          "200": {
+            "description": "Session opened, or second factor required (SecondFactorChallengeResponse, no token, no cookie)"
           },
           "400": {
             "description": "Bad Request"
           },
-          "404": {
-            "description": "Not Found"
+          "401": {
+            "description": "Invalid credentials"
           },
           "500": {
             "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/auth/login/2fa": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login, second step: challenge token and TOTP or backup code",
+        "operationId": "login_second_facteur",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginSecondFactorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Session opened"
+          },
+          "401": {
+            "description": "Invalid, expired or exhausted challenge, or wrong code"
           }
         }
       }
@@ -10799,6 +10826,22 @@
             "type": "string"
           },
           "password": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginSecondFactorRequest": {
+        "type": "object",
+        "description": "Deuxième étape de la connexion d'un compte à second facteur : le défi\nreçu de `POST /auth/login` et un code TOTP ou de secours.",
+        "required": [
+          "challenge_token",
+          "code"
+        ],
+        "properties": {
+          "challenge_token": {
+            "type": "string"
+          },
+          "code": {
             "type": "string"
           }
         }

@@ -2,6 +2,22 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
 
+/// Deuxième étape de la connexion d'un compte à second facteur : le défi
+/// reçu de `POST /auth/login` et un code TOTP ou de secours.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct LoginSecondFactorRequest {
+    pub challenge_token: String,
+    pub code: String,
+}
+
+/// Réponse de `POST /auth/login` quand le second facteur est requis : un défi
+/// de courte durée, et ni jeton d'accès ni cookie de session.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SecondFactorChallengeResponse {
+    pub two_factor_required: bool,
+    pub challenge_token: String,
+}
+
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct LoginRequest {
     #[validate(email(message = "Email must be valid"))]

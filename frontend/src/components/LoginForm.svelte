@@ -10,11 +10,75 @@
   let password = $state("");
   let error = $state("");
   let loading = $state(false);
+  // Défi émis par /auth/login quand le compte a un second facteur.
+  let challengeToken = $state("");
+  let code = $state("");
 
   $effect(() => {
     // Ensure auth store is initialized before any login attempt
     authStore.init();
   });
+
+  // WP-FE1 : plus de refresh_token dans le corps — il est dans le cookie
+  // HttpOnly. Seul l'access token (mémoire) transite ici.
+  const openSession = async (data: { token: string; user: unknown }) => {
+    const mappedUser: User = mapUserFromBackend(data.user);
+    await authStore.login(mappedUser, data.token);
+
+    const redirectMap: Record<string, string> = {
+      [UserRole.SUPERADMIN]: "/admin",
+      [UserRole.SYNDIC]: "/syndic",
+      [UserRole.ACCOUNTANT]: "/accountant",
+      [UserRole.OWNER]: "/owner",
+    };
+
+    // Check for ?redirect= query param (set by RouteGuard)
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectTo = urlParams.get("redirect");
+    const targetUrl = redirectTo || redirectMap[mappedUser.role] || "/";
+
+    // Petit délai pour laisser localStorage se propager avant navigation
+    setTimeout(() => {
+      window.location.href = targetUrl;
+    }, 100);
+  };
+
+  const handleSecondFactor = async (e: Event) => {
+    e.preventDefault();
+    error = "";
+    loading = true;
+    try {
+      const response = await fetch(apiEndpoint("/auth/login/2fa"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          challenge_token: challengeToken,
+          code: code.trim(),
+        }),
+      });
+      if (response.ok) {
+        await openSession(await response.json());
+      } else {
+        // Code faux, défi expiré ou épuisé : même message, sans relayer
+        // le texte du serveur.
+        error = $_("auth.secondFactorError");
+        code = "";
+      }
+    } catch (e) {
+      console.error("Second factor error:", e);
+      error = $_("auth.connectionError");
+    } finally {
+      loading = false;
+    }
+  };
+
+  const restartLogin = () => {
+    challengeToken = "";
+    code = "";
+    password = "";
+    error = "";
+  };
 
   const handleLogin = async (e: Event) => {
     e.preventDefault();
@@ -34,33 +98,12 @@
 
       if (response.ok) {
         const data = await response.json();
-        // WP-FE1 : plus de refresh_token dans le corps — il est dans le
-        // cookie HttpOnly. Seul l'access token (mémoire) transite ici.
-        const { token, user } = data;
-
-        // Map backend user format to frontend format
-        const mappedUser: User = mapUserFromBackend(user);
-
-        // Access token en mémoire ; refresh = cookie posé par le backend
-        await authStore.login(mappedUser, token);
-
-        // Redirect based on role
-        const redirectMap: Record<string, string> = {
-          [UserRole.SUPERADMIN]: "/admin",
-          [UserRole.SYNDIC]: "/syndic",
-          [UserRole.ACCOUNTANT]: "/accountant",
-          [UserRole.OWNER]: "/owner",
-        };
-
-        // Check for ?redirect= query param (set by RouteGuard)
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectTo = urlParams.get("redirect");
-        const targetUrl = redirectTo || redirectMap[mappedUser.role] || "/";
-
-        // Petit délai pour laisser localStorage se propager avant navigation
-        setTimeout(() => {
-          window.location.href = targetUrl;
-        }, 100);
+        if (data.two_factor_required) {
+          // Mot de passe bon, second facteur requis : aucune session encore.
+          challengeToken = data.challenge_token;
+          return;
+        }
+        await openSession(data);
       } else if (response.status === 429) {
         error =
           $_("auth.tooManyAttempts") ||
@@ -93,6 +136,62 @@
       class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
     ></div>
   </div>
+{:else if challengeToken}
+  <form
+    onsubmit={handleSecondFactor}
+    class="space-y-6"
+    data-testid="login-second-factor-form"
+  >
+    {#if error}
+      <div
+        class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+        role="alert"
+        data-testid="login-error"
+      >
+        {error}
+      </div>
+    {/if}
+
+    <div>
+      <h2 class="text-lg font-semibold text-gray-900 mb-1">
+        {$_("auth.secondFactorTitle")}
+      </h2>
+      <p class="text-sm text-gray-600 mb-4">{$_("auth.secondFactorHelp")}</p>
+      <label
+        for="second-factor-code"
+        class="block text-sm font-medium text-gray-700 mb-2"
+      >
+        {$_("auth.secondFactorCode")}
+      </label>
+      <input
+        id="second-factor-code"
+        type="text"
+        bind:value={code}
+        required
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 tracking-widest"
+        data-testid="login-second-factor-code"
+      />
+    </div>
+
+    <button
+      type="submit"
+      disabled={loading}
+      class="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+      data-testid="login-second-factor-submit"
+    >
+      {loading ? $_("auth.loggingIn") : $_("auth.secondFactorSubmit")}
+    </button>
+    <button
+      type="button"
+      onclick={restartLogin}
+      class="w-full text-sm text-primary-600 hover:text-primary-700"
+      data-testid="login-second-factor-restart"
+    >
+      {$_("auth.secondFactorRestart")}
+    </button>
+  </form>
 {:else}
   <form onsubmit={handleLogin} class="space-y-6" data-testid="login-form">
     {#if error}

@@ -11,7 +11,8 @@ use chrono::Utc;
 use hmac::{Hmac, Mac};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use sha2::Sha256;
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 // ── bcrypt est du CPU bloquant, et il ne doit pas tenir un worker (#718) ───
@@ -70,7 +71,14 @@ pub struct AuthUseCases {
     refresh_token_repo: Arc<dyn RefreshTokenRepository>,
     user_role_repo: Arc<dyn UserRoleRepository>,
     jwt_secret: String,
+    /// Essais faux par défi de second facteur encore valable.
+    essais_defi: Mutex<HashMap<String, u8>>,
 }
+
+/// Durée de vie du défi de second facteur émis après le mot de passe.
+const DUREE_DEFI_SECONDES: i64 = 300;
+/// Codes faux tolérés sur un même défi ; au-delà, retour au mot de passe.
+const ESSAIS_PAR_DEFI: u8 = 5;
 
 impl AuthUseCases {
     pub fn new(
@@ -84,10 +92,20 @@ impl AuthUseCases {
             refresh_token_repo,
             user_role_repo,
             jwt_secret,
+            essais_defi: Mutex::new(HashMap::new()),
         }
     }
 
+    /// Connexion en un temps, pour un compte sans second facteur. Le
+    /// gestionnaire HTTP passe par `verifier_identifiants` puis
+    /// `ouvrir_session`, pour intercaler le second facteur.
     pub async fn login(&self, request: LoginRequest) -> Result<LoginResponse, AppError> {
+        let user = self.verifier_identifiants(request).await?;
+        self.ouvrir_session(&user).await
+    }
+
+    /// Le compte dont l'email et le mot de passe sont les bons, actif.
+    pub async fn verifier_identifiants(&self, request: LoginRequest) -> Result<User, AppError> {
         // Emails sont stockés normalisés (lowercase, cf. `User::new`) — la
         // recherche doit l'être aussi, sinon un login avec une casse
         // différente de celle saisie à l'inscription échoue à tort en
@@ -149,8 +167,13 @@ impl AuthUseCases {
             return Err(AppError::InvalidCredentials);
         }
 
-        let (roles, active_role) = self.ensure_role_assignments(&user).await?;
-        let user_for_token = self.apply_active_role_metadata(&user, &active_role).await?;
+        Ok(user)
+    }
+
+    /// Jetons d'accès et de rafraîchissement pour un compte authentifié.
+    pub async fn ouvrir_session(&self, user: &User) -> Result<LoginResponse, AppError> {
+        let (roles, active_role) = self.ensure_role_assignments(user).await?;
+        let user_for_token = self.apply_active_role_metadata(user, &active_role).await?;
         let token = self.generate_token(&user_for_token, &active_role)?;
 
         let refresh_token_string = self.generate_refresh_token_string(&user_for_token);
@@ -550,6 +573,74 @@ impl AuthUseCases {
         format!("{}:{}:{}", user.id, now, uuid::Uuid::new_v4())
     }
 
+    /// Ouvre la session du compte qui a franchi le second facteur.
+    pub async fn ouvrir_session_du_compte(&self, user_id: Uuid) -> Result<LoginResponse, AppError> {
+        let user = self
+            .user_repo
+            .find_by_id(user_id)
+            .await?
+            .ok_or(AppError::InvalidCredentials)?;
+        if !user.is_active {
+            return Err(AppError::AccountDeactivated);
+        }
+        self.ouvrir_session(&user).await
+    }
+
+    /// Révoque toutes les sessions ouvertes d'un compte.
+    pub async fn revoquer_sessions(&self, user_id: Uuid) -> Result<u64, AppError> {
+        Ok(self.refresh_token_repo.revoke_all_for_user(user_id).await?)
+    }
+
+    /// Défi émis après le mot de passe d'un compte à second facteur :
+    /// `{échéance}.{id}.{hmac}`. Ce n'est pas un JWT : aucune route protégée
+    /// ne l'accepte comme jeton d'accès.
+    pub fn emettre_defi_second_facteur(&self, user_id: Uuid) -> Option<String> {
+        let echeance = Utc::now().timestamp() + DUREE_DEFI_SECONDES;
+        let signe = self.signer_identifiant(&format!("defi-2fa:{echeance}"), user_id)?;
+        Some(format!("{echeance}.{signe}"))
+    }
+
+    /// Le compte visé par un défi encore valable : signature bonne, échéance
+    /// non passée, moins de `ESSAIS_PAR_DEFI` codes faux, jamais utilisé.
+    pub fn compte_du_defi(&self, defi: &str) -> Result<Uuid, AppError> {
+        let (echeance, signe) = defi.split_once('.').ok_or(AppError::InvalidCredentials)?;
+        let echeance: i64 = echeance.parse().map_err(|_| AppError::InvalidCredentials)?;
+        if Utc::now().timestamp() > echeance {
+            return Err(AppError::InvalidCredentials);
+        }
+        let user_id = self
+            .verifier_identifiant(&format!("defi-2fa:{echeance}"), signe)
+            .ok_or(AppError::InvalidCredentials)?;
+        let essais = self
+            .essais_defi
+            .lock()
+            .map_err(|_| AppError::Internal("registre des défis indisponible".to_string()))?;
+        if essais.get(defi).copied().unwrap_or(0) >= ESSAIS_PAR_DEFI {
+            return Err(AppError::InvalidCredentials);
+        }
+        Ok(user_id)
+    }
+
+    /// Un code faux de plus sur ce défi ; les défis échus sont oubliés.
+    pub fn noter_code_faux(&self, defi: &str) {
+        if let Ok(mut essais) = self.essais_defi.lock() {
+            let maintenant = Utc::now().timestamp();
+            essais.retain(|cle, _| {
+                cle.split_once('.')
+                    .and_then(|(echeance, _)| echeance.parse::<i64>().ok())
+                    .is_some_and(|echeance| echeance >= maintenant)
+            });
+            *essais.entry(defi.to_string()).or_insert(0) += 1;
+        }
+    }
+
+    /// Un défi franchi ne resert pas.
+    pub fn clore_defi(&self, defi: &str) {
+        if let Ok(mut essais) = self.essais_defi.lock() {
+            essais.insert(defi.to_string(), ESSAIS_PAR_DEFI);
+        }
+    }
+
     /// Jeton public `{id}.{hmac}` : HMAC-SHA256 du couple (finalité,
     /// identifiant) sous le secret serveur. La finalité sépare les usages :
     /// un jeton signé pour un pixel d'ouverture ne vaut rien ailleurs.
@@ -665,6 +756,55 @@ mod tests {
             MockRefreshTokenRepo::new(),
             MockUserRoleRepo::new(),
         )
+    }
+
+    #[test]
+    fn happy_le_defi_de_second_facteur_designe_son_compte() {
+        let uc = use_cases_seuls();
+        let id = Uuid::new_v4();
+        let defi = uc.emettre_defi_second_facteur(id).unwrap();
+        assert_eq!(uc.compte_du_defi(&defi).unwrap(), id);
+    }
+
+    #[test]
+    fn edge_le_defi_tombe_apres_cinq_codes_faux_ou_une_fois_franchi() {
+        let uc = use_cases_seuls();
+        let defi = uc.emettre_defi_second_facteur(Uuid::new_v4()).unwrap();
+        for _ in 0..4 {
+            uc.noter_code_faux(&defi);
+        }
+        assert!(uc.compte_du_defi(&defi).is_ok(), "quatre codes faux");
+        uc.noter_code_faux(&defi);
+        assert!(uc.compte_du_defi(&defi).is_err(), "cinq codes faux");
+
+        let franchi = uc.emettre_defi_second_facteur(Uuid::new_v4()).unwrap();
+        uc.clore_defi(&franchi);
+        assert!(uc.compte_du_defi(&franchi).is_err(), "défi déjà franchi");
+    }
+
+    #[test]
+    fn security_un_defi_echu_ou_forge_est_refuse() {
+        let uc = use_cases_seuls();
+        let id = Uuid::new_v4();
+        let passe = Utc::now().timestamp() - 1;
+        let echu = format!(
+            "{passe}.{}",
+            uc.signer_identifiant(&format!("defi-2fa:{passe}"), id)
+                .unwrap()
+        );
+        assert!(uc.compte_du_defi(&echu).is_err(), "défi échu");
+
+        // Échéance repoussée sans re-signer, jeton d'une autre finalité.
+        let defi = uc.emettre_defi_second_facteur(id).unwrap();
+        let (_, signe) = defi.split_once('.').unwrap();
+        let repousse = format!("{}.{signe}", Utc::now().timestamp() + 86_400);
+        assert!(uc.compte_du_defi(&repousse).is_err(), "échéance repoussée");
+        let autre = format!(
+            "{}.{}",
+            Utc::now().timestamp() + 60,
+            uc.signer_identifiant("ouverture-convocation", id).unwrap()
+        );
+        assert!(uc.compte_du_defi(&autre).is_err(), "autre finalité");
     }
 
     #[test]

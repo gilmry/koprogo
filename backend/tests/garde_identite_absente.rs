@@ -88,6 +88,11 @@ const PUBLIQUES: &[(&str, &str)] = &[
         "/auth/login",
         "on ne peut pas exiger d'être connecté pour se connecter",
     ),
+    (
+        "/auth/login/2fa",
+        "seconde étape de la connexion : le défi signé émis après le mot de \
+         passe fait foi, plafonné à cinq codes faux",
+    ),
     ("/auth/register", "création de compte"),
     ("/auth/refresh", "le cookie de rafraîchissement fait foi"),
     ("/auth/me", "lit le jeton lui-même"),

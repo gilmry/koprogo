@@ -362,6 +362,39 @@ pub async fn activate_user(
     }
 }
 
+/// PUT /api/v1/users/{id}/2fa/reset — réinitialise le second facteur d'un
+/// compte (SuperAdmin only), pour un utilisateur qui a perdu son téléphone et
+/// ses codes de secours. Ses sessions ouvertes sont révoquées.
+#[put("/users/{id}/2fa/reset")]
+pub async fn reset_user_second_factor(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    path: web::Path<Uuid>,
+) -> impl Responder {
+    if !user.is_superadmin() {
+        return HttpResponse::Forbidden().json(json!({
+            "error": "Only SuperAdmin can reset a second factor"
+        }));
+    }
+
+    let user_id = path.into_inner();
+    if let Err(e) = state
+        .two_factor_use_cases
+        .reinitialiser_par_superadmin(user_id, user.user_id)
+        .await
+    {
+        return HttpResponse::InternalServerError().json(json!({
+            "error": format!("Failed to reset second factor: {}", e)
+        }));
+    }
+    match state.auth_use_cases.revoquer_sessions(user_id).await {
+        Ok(_) => HttpResponse::NoContent().finish(),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": format!("Second factor reset, sessions not revoked: {}", e)
+        })),
+    }
+}
+
 /// PUT /api/v1/users/{id}/deactivate — deactivate user (SuperAdmin only)
 #[put("/users/{id}/deactivate")]
 pub async fn deactivate_user(
