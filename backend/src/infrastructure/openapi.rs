@@ -224,6 +224,7 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::mandate_handlers::revoke_mandate,
         // Users — org-scoped listing (syndic org-users-endpoint)
         crate::infrastructure::web::handlers::user_handlers::list_organization_users,
+        crate::infrastructure::web::handlers::user_handlers::reset_user_second_factor,
         // RoleAssignment — CRUD REST (Story B0bis — gap Story 3.1)
         crate::infrastructure::web::handlers::role_assignment_handlers::assign_role,
         crate::infrastructure::web::handlers::role_assignment_handlers::list_role_assignments_for_user,

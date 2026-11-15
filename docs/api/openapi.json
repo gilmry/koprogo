@@ -8158,6 +8158,43 @@
         ]
       }
     },
+    "/users/{id}/2fa/reset": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Reset a user's second factor and revoke their sessions (superadmin only)",
+        "operationId": "reset_user_second_factor",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Second factor reset, sessions revoked"
+          },
+          "403": {
+            "description": "Only SuperAdmin can reset a second factor"
+          },
+          "500": {
+            "description": "Reset or revocation failed"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/users/{user_id}/role-assignments": {
       "get": {
         "tags": [
