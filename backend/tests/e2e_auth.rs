@@ -740,7 +740,7 @@ async fn register_anonyme_pose_bien_la_session() {
         "first_name": "Libre",
         "last_name": "Inscrit",
         // L'inscription publique ne crée qu'un copropriétaire sans
-        // organisation : voir `inscription_publique_ne_choisit_ni_role_ni_organisation`.
+        // organisation : voir `security_inscription_publique_ne_choisit_ni_role_ni_organisation`.
         "role": "owner",
     });
 
@@ -767,7 +767,7 @@ async fn register_anonyme_pose_bien_la_session() {
 /// répondre 403 et ne créer aucun compte.
 #[actix_web::test]
 #[serial]
-async fn inscription_publique_ne_choisit_ni_role_ni_organisation() {
+async fn security_inscription_publique_ne_choisit_ni_role_ni_organisation() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
     let jeton_owner = common::register_and_login_with_role(&app_state, org_id, "owner").await;
 
@@ -866,7 +866,7 @@ async fn inscription_publique_ne_choisit_ni_role_ni_organisation() {
 /// organisation ; un syndic authentifié n'a pas plus de droit qu'un anonyme.
 #[actix_web::test]
 #[serial]
-async fn seul_le_superadmin_cree_des_comptes_d_organisation() {
+async fn security_seul_le_superadmin_cree_des_comptes_d_organisation() {
     let (app_state, _container, org_a) = common::setup_test_db().await;
     let org_b = common::create_test_organization(&app_state).await;
     let jeton_syndic = common::register_and_login_with_role(&app_state, org_a, "syndic").await;

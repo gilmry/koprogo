@@ -24,7 +24,6 @@ use actix_web::{get, web, HttpResponse, Responder};
 /// ne la croit protégée. Celle-ci avait l'air gardée.
 const ROLES_FINANCIERS: &[&str] = &[
     "superadmin",
-    "admin",
     "syndic",
     "accountant",
     "accountant.encodeur",
