@@ -346,3 +346,121 @@ async fn security_les_outils_mcp_ne_lisent_pas_une_autre_organisation() {
         "get_building refuse son propre immeuble : {corps}"
     );
 }
+
+/// Une fiche de copropriétaire de l'organisation, rattachée à un lot neuf de
+/// l'immeuble.
+async fn coproprietaire_de(
+    app_state: &actix_web::web::Data<koprogo_api::infrastructure::web::AppState>,
+    org_id: uuid::Uuid,
+    immeuble: uuid::Uuid,
+    nom: &str,
+) -> String {
+    let fiche = app_state
+        .owner_use_cases
+        .create_owner(koprogo_api::application::dto::CreateOwnerDto {
+            organization_id: org_id.to_string(),
+            first_name: nom.to_string(),
+            last_name: "Résidente".to_string(),
+            email: format!(
+                "{}-{}@example.com",
+                nom.to_lowercase(),
+                uuid::Uuid::new_v4()
+            ),
+            phone: None,
+            address: "1 rue du Palier".to_string(),
+            city: "Bruxelles".to_string(),
+            postal_code: "1000".to_string(),
+            country: "Belgium".to_string(),
+            user_id: None,
+        })
+        .await
+        .expect("fiche du copropriétaire")
+        .id;
+    let lot = common::create_test_unit(app_state, immeuble).await;
+    app_state
+        .unit_owner_use_cases
+        .add_owner_to_unit(
+            lot,
+            uuid::Uuid::parse_str(&fiche).unwrap(),
+            rust_decimal::Decimal::ONE,
+            true,
+        )
+        .await
+        .expect("rattachement au lot");
+    fiche
+}
+
+/// `@happy` — `list_owners` et `list_owners_of_building` ne rendent que les
+/// copropriétaires de l'immeuble demandé, pas ceux de tout le cabinet.
+#[actix_web::test]
+#[serial]
+async fn happy_les_coproprietaires_listes_sont_ceux_de_l_immeuble() {
+    let (app_state, _container, org) = common::setup_test_db().await;
+    let jeton = common::register_and_login_with_role(&app_state, org, "syndic").await;
+    let ici = common::create_test_building(&app_state, org).await;
+    let ailleurs = common::create_test_building(&app_state, org).await;
+    let alice = coproprietaire_de(&app_state, org, ici, "Alice").await;
+    let bruno = coproprietaire_de(&app_state, org, ailleurs, "Bruno").await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    for nom in ["list_owners", "list_owners_of_building"] {
+        let corps = outil!(app, jeton, nom, json!({ "building_id": ici }));
+        let texte = corps["result"]["content"][0]["text"]
+            .as_str()
+            .unwrap_or_else(|| panic!("{nom} : {corps}"));
+        assert!(texte.contains(&alice), "{nom} omet Alice : {texte}");
+        assert!(
+            !texte.contains(&bruno),
+            "{nom} rend Bruno, d'un autre immeuble : {texte}"
+        );
+    }
+}
+
+/// `@security` — Le refus ne dit pas si la ressource existe : une assemblée ou
+/// un immeuble inexistants reçoivent la même réponse que ceux d'un autre
+/// cabinet. Sinon l'outil sert d'oracle pour sonder les UUID d'autrui.
+#[actix_web::test]
+#[serial]
+async fn security_le_refus_de_perimetre_ne_sert_pas_d_oracle() {
+    let (app_state, _container, org_a) = common::setup_test_db().await;
+    let org_b = common::create_test_organization(&app_state).await;
+    let jeton_a = common::register_and_login_with_role(&app_state, org_a, "syndic").await;
+    let immeuble_b = common::create_test_building(&app_state, org_b).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    let ailleurs = outil!(
+        app,
+        jeton_a,
+        "get_building",
+        json!({ "building_id": immeuble_b })
+    );
+    let nulle_part = outil!(
+        app,
+        jeton_a,
+        "get_building",
+        json!({ "building_id": uuid::Uuid::new_v4() })
+    );
+    let assemblee_fantome = outil!(
+        app,
+        jeton_a,
+        "check_quorum",
+        json!({ "meeting_id": uuid::Uuid::new_v4() })
+    );
+    for corps in [&nulle_part, &assemblee_fantome] {
+        assert_eq!(
+            corps["error"], ailleurs["error"],
+            "le refus distingue l'inexistant de l'étranger : {corps} contre {ailleurs}"
+        );
+    }
+    assert!(ailleurs.get("error").is_some(), "{ailleurs}");
+}

@@ -28,6 +28,28 @@ impl UnitOwnerUseCases {
         }
     }
 
+    /// Copropriétaires actifs d'un immeuble, chacun une seule fois.
+    ///
+    /// Un copropriétaire de deux lots apparaît deux fois dans
+    /// `find_active_by_building` (une ligne par lot) : on dédoublonne en
+    /// gardant l'ordre de première apparition.
+    pub async fn active_owner_ids_of_building(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Vec<Uuid>, String> {
+        let detentions = self
+            .unit_owner_repository
+            .find_active_by_building(building_id)
+            .await?;
+        let mut ids: Vec<Uuid> = Vec::with_capacity(detentions.len());
+        for (_lot, coproprietaire, _part) in detentions {
+            if !ids.contains(&coproprietaire) {
+                ids.push(coproprietaire);
+            }
+        }
+        Ok(ids)
+    }
+
     /// Add an owner to a unit with specified ownership percentage
     pub async fn add_owner_to_unit(
         &self,
