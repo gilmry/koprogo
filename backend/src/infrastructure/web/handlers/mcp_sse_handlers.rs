@@ -676,6 +676,32 @@ fn outil_annonce(tool_name: &str) -> Result<(), RpcError> {
     })
 }
 
+/// « Introuvable » et « hors de votre périmètre » rendent le même refus :
+/// sinon l'outil sert d'oracle pour sonder les UUID d'un autre cabinet.
+const REFUS_DE_PERIMETRE: &str = "Resource not found or outside your scope";
+
+/// Les copropriétaires d'UN immeuble, et non de toute l'organisation.
+///
+/// `list_owners` et `list_owners_of_building` acceptaient un `building_id` et
+/// l'ignoraient : ils rendaient l'organisation entière. L'immeuble est déjà
+/// borné au périmètre de l'appelant par `verifier_perimetre`.
+async fn coproprietaires_de_limmeuble(
+    state: &AppState,
+    building_id: Uuid,
+) -> Result<Vec<crate::application::dto::OwnerResponseDto>, String> {
+    let ids = state
+        .unit_owner_use_cases
+        .active_owner_ids_of_building(building_id)
+        .await?;
+    let mut coproprietaires = Vec::with_capacity(ids.len());
+    for id in ids {
+        if let Some(coproprietaire) = state.owner_use_cases.get_owner(id).await? {
+            coproprietaires.push(coproprietaire);
+        }
+    }
+    Ok(coproprietaires)
+}
+
 /// Dispatches a `tools/call` request to the appropriate tool implementation.
 /// Returns a ToolResult or a JSON-RPC error.
 /// Les outils MCP lisent les mêmes données que les routes HTTP : ils passent
@@ -712,7 +738,7 @@ async fn verifier_perimetre(
             .get_meeting(id)
             .await
             .map_err(refus)?
-            .ok_or_else(|| refus(format!("Meeting not found: {id}")))?;
+            .ok_or_else(|| refus(REFUS_DE_PERIMETRE.to_string()))?;
         immeubles.push(assemblee.building_id);
     }
     for immeuble in immeubles {
@@ -723,12 +749,12 @@ async fn verifier_perimetre(
             &state.acp_use_cases,
         )
         .await
-        .map_err(|e| refus(e.to_string()))?;
+        .map_err(|_| refus(REFUS_DE_PERIMETRE.to_string()))?;
     }
     if let Some(id) = uuid("owner_id")? {
         verify_owner_personal_access(user, id, &state.owner_use_cases)
             .await
-            .map_err(|e| refus(e.to_string()))?;
+            .map_err(|_| refus(REFUS_DE_PERIMETRE.to_string()))?;
     }
     Ok(())
 }
@@ -832,23 +858,29 @@ async fn dispatch_tool(
         }
 
         "list_owners" => {
-            let _building_id = arguments
+            let building_id = arguments
                 .get("building_id")
                 .and_then(|v| v.as_str())
                 .and_then(|s| Uuid::parse_str(s).ok());
 
-            let page_request = crate::application::dto::PageRequest {
-                page: 1,
-                per_page: 100,
-                sort_by: None,
-                order: crate::application::dto::SortOrder::default(),
+            let owners = match building_id {
+                Some(bid) => coproprietaires_de_limmeuble(state, bid).await,
+                None => {
+                    let page_request = crate::application::dto::PageRequest {
+                        page: 1,
+                        per_page: 100,
+                        sort_by: None,
+                        order: crate::application::dto::SortOrder::default(),
+                    };
+                    state
+                        .owner_use_cases
+                        .list_owners_paginated(&page_request, Some(org_id))
+                        .await
+                        .map(|(owners, _total)| owners)
+                }
             };
-            match state
-                .owner_use_cases
-                .list_owners_paginated(&page_request, Some(org_id))
-                .await
-            {
-                Ok((owners, _total)) => {
+            match owners {
+                Ok(owners) => {
                     let text =
                         serde_json::to_string_pretty(&owners).unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
@@ -1242,24 +1274,14 @@ async fn dispatch_tool(
                     data: None,
                 })?;
 
-            let _building_id = Uuid::parse_str(building_id_str).map_err(|_| RpcError {
+            let building_id = Uuid::parse_str(building_id_str).map_err(|_| RpcError {
                 code: ErrorCode::INVALID_PARAMS,
                 message: "building_id must be a valid UUID".to_string(),
                 data: None,
             })?;
 
-            let page_request = crate::application::dto::PageRequest {
-                page: 1,
-                per_page: 100,
-                sort_by: None,
-                order: crate::application::dto::SortOrder::default(),
-            };
-            match state
-                .owner_use_cases
-                .list_owners_paginated(&page_request, Some(org_id))
-                .await
-            {
-                Ok((owners, _total)) => {
+            match coproprietaires_de_limmeuble(state, building_id).await {
+                Ok(owners) => {
                     let text =
                         serde_json::to_string_pretty(&owners).unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
@@ -1802,6 +1824,35 @@ pub async fn mcp_legal_index_endpoint(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Les identifiants que `verifier_perimetre` rattache au cabinet de
+    /// l'appelant. Un outil qui en annoncerait un autre dans son schéma passerait
+    /// sous la garde : `security_tout_identifiant_annonce_passe_par_la_garde`
+    /// l'interdit.
+    const IDENTIFIANTS_GARDES: [&str; 3] = ["building_id", "meeting_id", "owner_id"];
+
+    /// @security — tout identifiant qu'un outil annonce passe par la garde.
+    ///
+    /// `verifier_perimetre` ne connaît que `IDENTIFIANTS_GARDES`. Un outil qui
+    /// déclarerait `ticket_id` ou `document_id` passerait sous elle sans
+    /// contrôle : ce test l'interdit (reprise de #1102).
+    #[test]
+    fn security_tout_identifiant_annonce_passe_par_la_garde() {
+        for outil in get_mcp_tools() {
+            let proprietes = outil.input_schema["properties"]
+                .as_object()
+                .cloned()
+                .unwrap_or_default();
+            for cle in proprietes.keys().filter(|c| c.ends_with("_id")) {
+                assert!(
+                    IDENTIFIANTS_GARDES.contains(&cle.as_str()),
+                    "{} déclare `{}`, que la garde de périmètre ne vérifie pas",
+                    outil.name,
+                    cle
+                );
+            }
+        }
+    }
 
     // ─── Lot 0, story S4 : le droit du MCP vient de `majorites.rs` ────────
 
