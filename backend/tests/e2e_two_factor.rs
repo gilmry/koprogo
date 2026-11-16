@@ -516,3 +516,37 @@ async fn security_le_defi_n_ouvre_aucune_route_et_seul_le_superadmin_reinitialis
         "après réinitialisation, connexion en un temps : {corps}"
     );
 }
+
+/// `@edge` — Un copropriétaire inscrit seul n'a pas d'organisation. Il active
+/// son second facteur comme les autres comptes (#1145), et la connexion le lui
+/// demande ensuite.
+#[actix_web::test]
+#[serial]
+async fn edge_un_compte_sans_organisation_active_son_second_facteur() {
+    let (app_state, _container, _org_id) = common::setup_test_db().await;
+    let email = format!("2fa-sans-org-{}@example.be", Uuid::new_v4());
+    let inscrit = app_state
+        .auth_use_cases
+        .register(RegisterRequest {
+            email: email.clone(),
+            password: "SecurePass123!".to_string(),
+            first_name: "Sans".to_string(),
+            last_name: "Organisation".to_string(),
+            role: "owner".to_string(),
+            organization_id: None,
+        })
+        .await
+        .expect("inscription d'un copropriétaire sans organisation");
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
+
+    active_second_facteur!(app, inscrit.token);
+
+    let (statut, corps, _) = connexion!(app, email);
+    assert_eq!(statut, 200, "{corps}");
+    assert_eq!(corps["two_factor_required"], true, "{corps}");
+}

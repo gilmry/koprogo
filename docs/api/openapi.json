@@ -24,6 +24,252 @@
     }
   ],
   "paths": {
+    "/2fa/disable": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Disable the second factor (current password required)",
+        "description": "Disables 2FA for the authenticated user. Requires password verification for security.\n\n# Security\n- User must be authenticated\n- Requires current password verification\n- All 2FA configuration is deleted (secret + backup codes)\n- Action is logged for audit trail\n\n# Request Body\n```json\n{\n  \"current_password\": \"user_password\"\n}\n```\n\n# Returns\n- 200 OK: 2FA successfully disabled\n- 400 Bad Request: Invalid password\n- 401 Unauthorized: Not authenticated\n- 500 Internal Server Error: Disable failed",
+        "operationId": "disable_2fa",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Disable2FADto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Second factor disabled"
+          },
+          "400": {
+            "description": "Invalid password"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/2fa/enable": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Enable the second factor with a TOTP code from the authenticator app",
+        "description": "After setup, the user must verify their TOTP code from their authenticator app\nto enable 2FA. This confirms they have successfully saved the secret.\n\n# Security\n- User must be authenticated\n- Requires valid 6-digit TOTP code\n- Failed attempts are logged for security monitoring\n\n# Request Body\n```json\n{\n  \"totp_code\": \"123456\"\n}\n```\n\n# Returns\n- 200 OK: 2FA successfully enabled\n- 400 Bad Request: Invalid TOTP code or already enabled\n- 401 Unauthorized: Not authenticated\n- 500 Internal Server Error: Enable failed",
+        "operationId": "enable_2fa",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Enable2FADto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Enable2FAResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid code, already enabled, or no setup"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/2fa/regenerate-backup-codes": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Regenerate the 10 backup codes (TOTP code required)",
+        "description": "Generates a new set of 10 backup codes, replacing the old ones.\nRequires TOTP verification for security.\n\n# Security\n- User must be authenticated\n- Requires valid 6-digit TOTP code\n- Old backup codes are invalidated\n- New codes are only shown once (user must save them)\n\n# Request Body\n```json\n{\n  \"totp_code\": \"123456\"\n}\n```\n\n# Returns\n- 200 OK: Backup codes regenerated\n- 400 Bad Request: Invalid TOTP code or 2FA not enabled\n- 401 Unauthorized: Not authenticated\n- 500 Internal Server Error: Regeneration failed\n\n# Example Response\n```json\n{\n  \"backup_codes\": [\"ABCD-EFGH\", \"IJKL-MNOP\", ...],\n  \"regenerated_at\": \"2024-12-02T12:00:00Z\"\n}\n```",
+        "operationId": "regenerate_backup_codes",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegenerateBackupCodesDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegenerateBackupCodesResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid code or second factor not enabled"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/2fa/setup": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Start second factor setup: secret, QR code and 10 backup codes (shown once)",
+        "description": "This endpoint initiates 2FA setup by generating a TOTP secret, QR code, and backup codes.\nThe user must then verify a TOTP code via `POST /2fa/enable` to activate 2FA.\n\n# Security\n- User must be authenticated\n- Secret is only returned once during setup\n- Backup codes are only shown once (user must save them)\n\n# Returns\n- 200 OK: Setup successful with QR code and backup codes\n- 400 Bad Request: 2FA already enabled\n- 401 Unauthorized: Not authenticated\n- 500 Internal Server Error: Setup failed\n\n# Example Response\n```json\n{\n  \"secret\": \"JBSWY3DPEHPK3PXP...\",\n  \"qr_code_data_url\": \"data:image/png;base64,...\",\n  \"backup_codes\": [\"ABCD-EFGH\", \"IJKL-MNOP\", ...],\n  \"issuer\": \"KoproGo\",\n  \"account_name\": \"user@example.com\"\n}\n```",
+        "operationId": "setup_2fa",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Setup2FAResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Second factor already enabled"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/2fa/status": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Second factor status of the authenticated account",
+        "description": "Returns the current 2FA configuration status, including:\n- Whether 2FA is enabled\n- Number of backup codes remaining\n- Whether backup codes are low (< 3)\n- Whether reverification is needed (not used in 90 days)\n\n# Security\n- User must be authenticated\n- Only returns user's own 2FA status\n\n# Returns\n- 200 OK: Status retrieved successfully\n- 401 Unauthorized: Not authenticated\n- 500 Internal Server Error: Failed to retrieve status\n\n# Example Response\n```json\n{\n  \"is_enabled\": true,\n  \"verified_at\": \"2024-11-01T10:00:00Z\",\n  \"last_used_at\": \"2024-12-01T08:30:00Z\",\n  \"backup_codes_remaining\": 7,\n  \"backup_codes_low\": false,\n  \"needs_reverification\": false\n}\n```",
+        "operationId": "get_2fa_status",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
+    "/2fa/verify": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Verify a TOTP or backup code for the authenticated account",
+        "description": "Validates a TOTP code or backup code during login. This endpoint is called after\nsuccessful password authentication when 2FA is enabled for the user.\n\n# Security\n- User must be authenticated (pre-2FA session)\n- Accepts 6-digit TOTP code OR 8-character backup code\n- Backup codes are one-time use (removed after verification)\n- Failed attempts are logged and rate-limited\n\n# Request Body\n```json\n{\n  \"totp_code\": \"123456\"  // Or backup code like \"ABCD-EFGH\"\n}\n```\n\n# Returns\n- 200 OK: Verification successful\n- 400 Bad Request: Invalid code\n- 401 Unauthorized: Not authenticated\n- 429 Too Many Requests: Rate limit exceeded (3 attempts per 5 min)\n- 500 Internal Server Error: Verification failed",
+        "operationId": "verify_2fa",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Verify2FADto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Verify2FAResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid code or second factor not enabled"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
+      }
+    },
     "/acps": {
       "get": {
         "tags": [
@@ -10142,6 +10388,18 @@
           }
         }
       },
+      "Disable2FADto": {
+        "type": "object",
+        "description": "DTO for disabling 2FA (requires current password)",
+        "required": [
+          "current_password"
+        ],
+        "properties": {
+          "current_password": {
+            "type": "string"
+          }
+        }
+      },
       "ElectCdcMembersDto": {
         "type": "object",
         "description": "DTO pour élire les membres du conseil à l'issue d'une AG (Story 4.7).\n\n`building_id` vient du chemin (`/buildings/{building_id}/cdc/elections`),\npas du corps — même raison que `CreateBoardAlertDto`.\n\nL'AG référencée par `meeting_id` doit être `Completed` : sa clôture\nprouve déjà le quorum double (Art. 3.87 §5 CC) via\n`Meeting::assert_can_complete`. Cf. `CdcUseCases::elect_members`.",
@@ -10179,6 +10437,39 @@
           "owner_id": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "Enable2FADto": {
+        "type": "object",
+        "description": "DTO for enabling 2FA (requires TOTP verification)",
+        "required": [
+          "totp_code"
+        ],
+        "properties": {
+          "totp_code": {
+            "type": "string"
+          }
+        }
+      },
+      "Enable2FAResponseDto": {
+        "type": "object",
+        "description": "DTO for 2FA enable response",
+        "required": [
+          "success",
+          "message",
+          "enabled_at"
+        ],
+        "properties": {
+          "enabled_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
           }
         }
       },
@@ -11497,6 +11788,38 @@
           }
         }
       },
+      "RegenerateBackupCodesDto": {
+        "type": "object",
+        "description": "DTO for regenerating backup codes (requires TOTP verification)",
+        "required": [
+          "totp_code"
+        ],
+        "properties": {
+          "totp_code": {
+            "type": "string"
+          }
+        }
+      },
+      "RegenerateBackupCodesResponseDto": {
+        "type": "object",
+        "description": "DTO for regenerate backup codes response",
+        "required": [
+          "backup_codes",
+          "regenerated_at"
+        ],
+        "properties": {
+          "backup_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "regenerated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "RegisterRequest": {
         "type": "object",
         "required": [
@@ -11722,6 +12045,37 @@
           "contributions_generated": {
             "type": "integer",
             "minimum": 0
+          }
+        }
+      },
+      "Setup2FAResponseDto": {
+        "type": "object",
+        "description": "DTO for initiating 2FA setup (returns QR code)",
+        "required": [
+          "secret",
+          "qr_code_data_url",
+          "backup_codes",
+          "issuer",
+          "account_name"
+        ],
+        "properties": {
+          "account_name": {
+            "type": "string"
+          },
+          "backup_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "qr_code_data_url": {
+            "type": "string"
+          },
+          "secret": {
+            "type": "string"
           }
         }
       },
@@ -12049,6 +12403,45 @@
           "cancelled",
           "refunded"
         ]
+      },
+      "TwoFactorStatusDto": {
+        "type": "object",
+        "description": "DTO for 2FA status response",
+        "required": [
+          "is_enabled",
+          "backup_codes_remaining",
+          "backup_codes_low",
+          "needs_reverification"
+        ],
+        "properties": {
+          "backup_codes_low": {
+            "type": "boolean"
+          },
+          "backup_codes_remaining": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "is_enabled": {
+            "type": "boolean"
+          },
+          "last_used_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "needs_reverification": {
+            "type": "boolean"
+          },
+          "verified_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
       },
       "UnitResponseDto": {
         "type": "object",
@@ -12587,6 +12980,45 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "Verify2FADto": {
+        "type": "object",
+        "description": "DTO for verifying TOTP code during login",
+        "required": [
+          "totp_code"
+        ],
+        "properties": {
+          "totp_code": {
+            "type": "string"
+          }
+        }
+      },
+      "Verify2FAResponseDto": {
+        "type": "object",
+        "description": "DTO for 2FA verification response",
+        "required": [
+          "success",
+          "message",
+          "backup_code_used"
+        ],
+        "properties": {
+          "backup_code_used": {
+            "type": "boolean"
+          },
+          "backup_codes_remaining": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
           }
         }
       },

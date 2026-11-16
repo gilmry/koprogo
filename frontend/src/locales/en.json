@@ -3669,7 +3669,12 @@
     "interfaceLanguage": "Interface language (français, English, Nederlands, Deutsch)",
     "twoFactor": "Two-factor authentication (2FA)",
     "passwordChange": "Password change",
-    "integrations": "Integrations (API, SMTP, cloud services)"
+    "integrations": "Integrations (API, SMTP, cloud services)",
+    "security": {
+      "title": "Security",
+      "description": "Protect your account with a second factor",
+      "label": "Second factor"
+    }
   },
   "sharing": {
     "available": "Available",
@@ -4414,5 +4419,27 @@
       "governance": "Governance",
       "ticketing": "Tickets & interventions"
     }
+  },
+  "secondFactor": {
+    "intro": "After your password, sign-in will ask for a code from your authenticator app.",
+    "statusOn": "Enabled",
+    "statusOff": "Disabled",
+    "loading": "Loading…",
+    "scanQr": "Scan this QR code with your authenticator app, then enter the code it shows.",
+    "qrAlt": "Second factor activation QR code",
+    "manualKey": "Or enter this key in the app:",
+    "backupCodesWarning": "Write these codes down now and keep them safe: they will not be shown again. Each one works once if you lose your phone.",
+    "cancel": "Cancel",
+    "enabledMsg": "Second factor enabled. Your next sign-in will ask for a code.",
+    "disabledMsg": "Second factor disabled.",
+    "wrongCode": "Incorrect code. Check your phone's clock and try again.",
+    "wrongPassword": "Incorrect password: the second factor stays enabled.",
+    "genericError": "Something went wrong. Please try again in a moment.",
+    "remaining": "Backup codes left: {count}",
+    "lowCodes": "You have few backup codes left. Generate new ones.",
+    "regenerateHelp": "New backup codes (app code required):",
+    "regenerate": "Regenerate",
+    "regeneratedMsg": "New backup codes generated: the old ones no longer work.",
+    "passwordLabel": "To disable the second factor, confirm your password:"
   }
 }

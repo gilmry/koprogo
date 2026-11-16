@@ -3669,7 +3669,12 @@
     "interfaceLanguage": "Taal van de interface (français, English, Nederlands, Deutsch)",
     "twoFactor": "Tweefactorauthenticatie (2FA)",
     "passwordChange": "Wachtwoord wijzigen",
-    "integrations": "Integraties (API, SMTP, clouddiensten)"
+    "integrations": "Integraties (API, SMTP, clouddiensten)",
+    "security": {
+      "title": "Beveiliging",
+      "description": "Bescherm uw account met een tweede factor",
+      "label": "Tweede factor"
+    }
   },
   "sharing": {
     "available": "Beschikbaar",
@@ -4414,5 +4419,27 @@
       "governance": "Bestuur",
       "ticketing": "Tickets & interventies"
     }
+  },
+  "secondFactor": {
+    "intro": "Na uw wachtwoord vraagt de aanmelding een code uit uw authenticatie-app.",
+    "statusOn": "Ingeschakeld",
+    "statusOff": "Uitgeschakeld",
+    "loading": "Laden…",
+    "scanQr": "Scan deze QR-code met uw authenticatie-app en voer de getoonde code in.",
+    "qrAlt": "QR-code voor het activeren van de tweede factor",
+    "manualKey": "Of voer deze sleutel in de app in:",
+    "backupCodesWarning": "Noteer deze codes nu en bewaar ze veilig: ze worden niet opnieuw getoond. Elke code werkt één keer als u uw telefoon verliest.",
+    "cancel": "Annuleren",
+    "enabledMsg": "Tweede factor ingeschakeld. Bij de volgende aanmelding wordt een code gevraagd.",
+    "disabledMsg": "Tweede factor uitgeschakeld.",
+    "wrongCode": "Onjuiste code. Controleer de tijd op uw telefoon en probeer opnieuw.",
+    "wrongPassword": "Onjuist wachtwoord: de tweede factor blijft actief.",
+    "genericError": "Er is een fout opgetreden. Probeer het zo meteen opnieuw.",
+    "remaining": "Resterende back-upcodes: {count}",
+    "lowCodes": "U hebt nog maar weinig back-upcodes. Genereer nieuwe.",
+    "regenerateHelp": "Nieuwe back-upcodes (code uit de app vereist):",
+    "regenerate": "Opnieuw genereren",
+    "regeneratedMsg": "Nieuwe back-upcodes gegenereerd: de oude zijn ongeldig.",
+    "passwordLabel": "Bevestig uw wachtwoord om de tweede factor uit te schakelen:"
   }
 }

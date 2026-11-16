@@ -3669,7 +3669,12 @@
     "interfaceLanguage": "Langue de l'interface (français, English, Nederlands, Deutsch)",
     "twoFactor": "Authentification à deux facteurs (2FA)",
     "passwordChange": "Changement de mot de passe",
-    "integrations": "Intégrations (API, SMTP, services infonuagiques)"
+    "integrations": "Intégrations (API, SMTP, services infonuagiques)",
+    "security": {
+      "title": "Sécurité",
+      "description": "Protégez votre compte par un second facteur",
+      "label": "Second facteur"
+    }
   },
   "sharing": {
     "available": "Disponible",
@@ -4414,5 +4419,27 @@
       "governance": "Gouvernance",
       "ticketing": "Tickets & interventions"
     }
+  },
+  "secondFactor": {
+    "intro": "Après votre mot de passe, la connexion vous demandera un code de votre application d'authentification.",
+    "statusOn": "Activé",
+    "statusOff": "Désactivé",
+    "loading": "Chargement…",
+    "scanQr": "Scannez ce QR code avec votre application d'authentification, puis saisissez le code qu'elle affiche.",
+    "qrAlt": "QR code d'activation du second facteur",
+    "manualKey": "Ou saisissez cette clé dans l'application :",
+    "backupCodesWarning": "Notez ces codes maintenant et gardez-les en lieu sûr : ils ne seront plus affichés. Chacun sert une fois si vous perdez votre téléphone.",
+    "cancel": "Annuler",
+    "enabledMsg": "Second facteur activé. La prochaine connexion vous demandera un code.",
+    "disabledMsg": "Second facteur désactivé.",
+    "wrongCode": "Code incorrect. Vérifiez l'heure de votre téléphone et réessayez.",
+    "wrongPassword": "Mot de passe incorrect : le second facteur reste actif.",
+    "genericError": "Une erreur est survenue. Réessayez dans un instant.",
+    "remaining": "Codes de secours restants : {count}",
+    "lowCodes": "Il vous reste peu de codes de secours. Régénérez-en de nouveaux.",
+    "regenerateHelp": "Nouveaux codes de secours (code de l'application requis) :",
+    "regenerate": "Régénérer",
+    "regeneratedMsg": "Nouveaux codes de secours générés : les anciens ne valent plus.",
+    "passwordLabel": "Pour désactiver le second facteur, confirmez votre mot de passe :"
   }
 }

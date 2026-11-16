@@ -4,7 +4,15 @@ use crate::application::dto::{
 use crate::infrastructure::web::classification_erreurs;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
-use actix_web::{web, HttpResponse};
+use actix_web::{get, post, web, HttpResponse};
+
+/// L'organisation ne sert qu'au journal d'audit du second facteur. Un compte
+/// sans organisation (copropriétaire inscrit seul, superadmin) doit pouvoir
+/// protéger son compte comme les autres : on journalise alors l'identifiant
+/// nul plutôt que de refuser.
+fn organisation_pour_audit(auth: &AuthenticatedUser) -> uuid::Uuid {
+    auth.organization_id.unwrap_or_default()
+}
 
 /// Setup 2FA for a user (returns QR code + backup codes)
 ///
@@ -32,15 +40,22 @@ use actix_web::{web, HttpResponse};
 ///   "account_name": "user@example.com"
 /// }
 /// ```
+#[utoipa::path(
+    post,
+    path = "/2fa/setup",
+    tag = "Auth",
+    summary = "Start second factor setup: secret, QR code and 10 backup codes (shown once)",
+    responses(
+        (status = 200, description = "OK", body = crate::application::dto::Setup2FAResponseDto),
+        (status = 400, description = "Second factor already enabled"),
+        (status = 401, description = "Not authenticated"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[post("/2fa/setup")]
 pub async fn setup_2fa(auth: AuthenticatedUser, state: web::Data<AppState>) -> HttpResponse {
-    let organization_id = match auth.organization_id {
-        Some(id) => id,
-        None => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Organization ID is required"
-            }))
-        }
-    };
+    let organization_id = organisation_pour_audit(&auth);
 
     match state
         .two_factor_use_cases
@@ -85,19 +100,27 @@ pub async fn setup_2fa(auth: AuthenticatedUser, state: web::Data<AppState>) -> H
 /// - 400 Bad Request: Invalid TOTP code or already enabled
 /// - 401 Unauthorized: Not authenticated
 /// - 500 Internal Server Error: Enable failed
+#[utoipa::path(
+    post,
+    path = "/2fa/enable",
+    tag = "Auth",
+    summary = "Enable the second factor with a TOTP code from the authenticator app",
+    request_body = crate::application::dto::Enable2FADto,
+    responses(
+        (status = 200, description = "OK", body = crate::application::dto::Enable2FAResponseDto),
+        (status = 400, description = "Invalid code, already enabled, or no setup"),
+        (status = 401, description = "Not authenticated"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[post("/2fa/enable")]
 pub async fn enable_2fa(
     auth: AuthenticatedUser,
     dto: web::Json<Enable2FADto>,
     state: web::Data<AppState>,
 ) -> HttpResponse {
-    let organization_id = match auth.organization_id {
-        Some(id) => id,
-        None => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Organization ID is required"
-            }))
-        }
-    };
+    let organization_id = organisation_pour_audit(&auth);
 
     match state
         .two_factor_use_cases
@@ -154,19 +177,27 @@ pub async fn enable_2fa(
 /// - 401 Unauthorized: Not authenticated
 /// - 429 Too Many Requests: Rate limit exceeded (3 attempts per 5 min)
 /// - 500 Internal Server Error: Verification failed
+#[utoipa::path(
+    post,
+    path = "/2fa/verify",
+    tag = "Auth",
+    summary = "Verify a TOTP or backup code for the authenticated account",
+    request_body = crate::application::dto::Verify2FADto,
+    responses(
+        (status = 200, description = "OK", body = crate::application::dto::Verify2FAResponseDto),
+        (status = 400, description = "Invalid code or second factor not enabled"),
+        (status = 401, description = "Not authenticated"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[post("/2fa/verify")]
 pub async fn verify_2fa(
     auth: AuthenticatedUser,
     dto: web::Json<Verify2FADto>,
     state: web::Data<AppState>,
 ) -> HttpResponse {
-    let organization_id = match auth.organization_id {
-        Some(id) => id,
-        None => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Organization ID is required"
-            }))
-        }
-    };
+    let organization_id = organisation_pour_audit(&auth);
 
     match state
         .two_factor_use_cases
@@ -214,19 +245,27 @@ pub async fn verify_2fa(
 /// - 400 Bad Request: Invalid password
 /// - 401 Unauthorized: Not authenticated
 /// - 500 Internal Server Error: Disable failed
+#[utoipa::path(
+    post,
+    path = "/2fa/disable",
+    tag = "Auth",
+    summary = "Disable the second factor (current password required)",
+    request_body = crate::application::dto::Disable2FADto,
+    responses(
+        (status = 200, description = "Second factor disabled"),
+        (status = 400, description = "Invalid password"),
+        (status = 401, description = "Not authenticated"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[post("/2fa/disable")]
 pub async fn disable_2fa(
     auth: AuthenticatedUser,
     dto: web::Json<Disable2FADto>,
     state: web::Data<AppState>,
 ) -> HttpResponse {
-    let organization_id = match auth.organization_id {
-        Some(id) => id,
-        None => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Organization ID is required"
-            }))
-        }
-    };
+    let organization_id = organisation_pour_audit(&auth);
 
     match state
         .two_factor_use_cases
@@ -283,19 +322,27 @@ pub async fn disable_2fa(
 ///   "regenerated_at": "2024-12-02T12:00:00Z"
 /// }
 /// ```
+#[utoipa::path(
+    post,
+    path = "/2fa/regenerate-backup-codes",
+    tag = "Auth",
+    summary = "Regenerate the 10 backup codes (TOTP code required)",
+    request_body = crate::application::dto::RegenerateBackupCodesDto,
+    responses(
+        (status = 200, description = "OK", body = crate::application::dto::RegenerateBackupCodesResponseDto),
+        (status = 400, description = "Invalid code or second factor not enabled"),
+        (status = 401, description = "Not authenticated"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[post("/2fa/regenerate-backup-codes")]
 pub async fn regenerate_backup_codes(
     auth: AuthenticatedUser,
     dto: web::Json<RegenerateBackupCodesDto>,
     state: web::Data<AppState>,
 ) -> HttpResponse {
-    let organization_id = match auth.organization_id {
-        Some(id) => id,
-        None => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Organization ID is required"
-            }))
-        }
-    };
+    let organization_id = organisation_pour_audit(&auth);
 
     match state
         .two_factor_use_cases
@@ -349,6 +396,19 @@ pub async fn regenerate_backup_codes(
 ///   "needs_reverification": false
 /// }
 /// ```
+#[utoipa::path(
+    get,
+    path = "/2fa/status",
+    tag = "Auth",
+    summary = "Second factor status of the authenticated account",
+    responses(
+        (status = 200, description = "OK", body = crate::application::dto::TwoFactorStatusDto),
+        (status = 401, description = "Not authenticated"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[get("/2fa/status")]
 pub async fn get_2fa_status(auth: AuthenticatedUser, state: web::Data<AppState>) -> HttpResponse {
     match state
         .two_factor_use_cases
@@ -368,18 +428,15 @@ pub async fn get_2fa_status(auth: AuthenticatedUser, state: web::Data<AppState>)
 
 /// Configure 2FA routes
 pub fn configure_two_factor_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("/2fa")
-            .route("/setup", web::post().to(setup_2fa))
-            .route("/enable", web::post().to(enable_2fa))
-            .route("/verify", web::post().to(verify_2fa))
-            .route("/disable", web::post().to(disable_2fa))
-            .route(
-                "/regenerate-backup-codes",
-                web::post().to(regenerate_backup_codes),
-            )
-            .route("/status", web::get().to(get_2fa_status)),
-    );
+    // Routes déclarées par attribut : les cliquets du dépôt (chemins servis,
+    // couverture OpenAPI) ne lisent que cette forme. `/2fa/status` est la
+    // seule en GET, sans conflit d'ordre.
+    cfg.service(setup_2fa)
+        .service(enable_2fa)
+        .service(verify_2fa)
+        .service(disable_2fa)
+        .service(regenerate_backup_codes)
+        .service(get_2fa_status);
 }
 
 #[cfg(test)]

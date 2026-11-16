@@ -85,6 +85,12 @@ use utoipa_swagger_ui::SwaggerUi;
         // Auth
         crate::infrastructure::web::handlers::auth_handlers::login,
         crate::infrastructure::web::handlers::auth_handlers::login_second_facteur,
+        crate::infrastructure::web::handlers::two_factor_handlers::setup_2fa,
+        crate::infrastructure::web::handlers::two_factor_handlers::enable_2fa,
+        crate::infrastructure::web::handlers::two_factor_handlers::verify_2fa,
+        crate::infrastructure::web::handlers::two_factor_handlers::disable_2fa,
+        crate::infrastructure::web::handlers::two_factor_handlers::regenerate_backup_codes,
+        crate::infrastructure::web::handlers::two_factor_handlers::get_2fa_status,
         crate::infrastructure::web::handlers::auth_handlers::register,
         crate::infrastructure::web::handlers::auth_handlers::refresh_token,
         crate::infrastructure::web::handlers::auth_handlers::switch_role,
