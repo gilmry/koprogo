@@ -668,11 +668,9 @@ async fn fe1_edge_old_refresh_cookie_revoked_after_rotation() {
 ///
 /// ── Ce que ce test vérifie ─────────────────────────────────────────────────
 ///
-/// Les deux branches, parce que ne garder que la seconde laisserait casser
-/// l'inscription publique sans qu'on le voie :
-///
-///   1. appel **authentifié** → `201`, et **aucun** cookie `Set-Cookie` ;
-///   2. appel **anonyme**     → `201`, et le cookie de rafraîchissement posé.
+/// Un appel **authentifié** par le superadmin → `201`, et **aucun** cookie
+/// `Set-Cookie`. L'appel anonyme est refusé depuis la fermeture de
+/// l'inscription publique (#1155) : voir `security_inscription_publique_fermee`.
 #[actix_web::test]
 #[serial]
 async fn register_authentifie_ne_repose_pas_la_session_de_lappelant() {
@@ -717,14 +715,14 @@ async fn register_authentifie_ne_repose_pas_la_session_de_lappelant() {
     );
 }
 
-/// Le pendant du précédent : l'inscription publique doit continuer de marcher.
+/// `@security` — L'inscription publique est fermée (#1155).
 ///
-/// Sans ce second cas, on pourrait fermer #769 en retirant le cookie
-/// inconditionnellement — et casser l'inscription de soi-même sans qu'aucun
-/// test ne s'en aperçoive.
+/// Décision PO du 2026-11-19 : les comptes sont créés par l'administrateur.
+/// Un anonyme qui demande le seul compte qu'il pouvait encore créer, un
+/// copropriétaire sans organisation, reçoit 403 et aucun compte n'est créé.
 #[actix_web::test]
 #[serial]
-async fn register_anonyme_pose_bien_la_session() {
+async fn security_inscription_publique_fermee() {
     let (app_state, _container, _org_id) = common::setup_test_db().await;
 
     let app = test::init_service(
@@ -734,28 +732,31 @@ async fn register_anonyme_pose_bien_la_session() {
     )
     .await;
 
-    let corps = json!({
-        "email": format!("inscription-libre+{}@test.com", Uuid::new_v4()),
-        "password": "Passw0rd!",
-        "first_name": "Libre",
-        "last_name": "Inscrit",
-        // L'inscription publique ne crée qu'un copropriétaire sans
-        // organisation : voir `security_inscription_publique_ne_choisit_ni_role_ni_organisation`.
-        "role": "owner",
-    });
-
+    let email = format!("inscription-libre+{}@test.com", Uuid::new_v4());
     let req = test::TestRequest::post()
         .uri("/api/v1/auth/register")
-        .set_json(&corps)
+        .set_json(json!({
+            "email": email,
+            "password": "Passw0rd!",
+            "first_name": "Libre",
+            "last_name": "Inscrit",
+            "role": "owner",
+        }))
         .to_request();
     let resp = test::call_service(&app, req).await;
 
-    assert_eq!(resp.status(), 201);
+    assert_eq!(resp.status(), 403, "l'inscription publique est fermée");
     assert!(
-        resp.headers().get(header::SET_COOKIE).is_some(),
-        "L'inscription publique ne pose plus de session : le nouvel inscrit \
-         devrait se connecter séparément, alors que rien ne le lui dit."
+        resp.headers().get(header::SET_COOKIE).is_none(),
+        "un refus ne pose aucune session"
     );
+
+    let (cree,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users WHERE email = $1")
+        .bind(email.to_lowercase())
+        .fetch_one(&app_state.pool)
+        .await
+        .expect("comptage des comptes");
+    assert_eq!(cree, 0, "un compte a été créé malgré la fermeture");
 }
 
 /// `@security` — L'inscription publique ne choisit ni son rôle ni son

@@ -93,7 +93,10 @@ const PUBLIQUES: &[(&str, &str)] = &[
         "seconde étape de la connexion : le défi signé émis après le mot de \
          passe fait foi, plafonné à cinq codes faux",
     ),
-    ("/auth/register", "création de compte"),
+    (
+        "/auth/register",
+        "lit le jeton lui-même : superadmin seul, inscription publique fermée (#1155)",
+    ),
     ("/auth/refresh", "le cookie de rafraîchissement fait foi"),
     ("/auth/me", "lit le jeton lui-même"),
     ("/legal/rules", "texte de loi, public par nature"),

@@ -1,6 +1,8 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import RegisterForm from "../components/RegisterForm.svelte";
+
+// L'inscription publique est fermée (#1155) : les comptes sont créés par
+// l'administrateur. La page reste pour les anciens liens.
 ---
 
 <Layout title="Inscription - KoproGo" showNav={false}>
@@ -8,24 +10,21 @@ import RegisterForm from "../components/RegisterForm.svelte";
     class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
   >
     <div class="max-w-md w-full space-y-8">
-      <div>
-        <h1 class="text-center text-3xl font-bold text-gray-900">
-          Créer un compte
+      <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 text-center">
+        <h1 class="text-2xl font-bold text-gray-900">
+          Les inscriptions sont fermées
         </h1>
-        <p class="mt-2 text-center text-sm text-gray-600">
-          Ou
-          <a
-            data-testid="register-login-link"
-            href="/login"
-            class="font-medium text-primary-600 hover:text-primary-500"
-          >
-            connectez-vous à votre compte existant
-          </a>
+        <p class="mt-4 text-sm text-gray-600" data-testid="register-closed">
+          Les comptes KoproGo sont créés par l'administrateur. Si vous avez déjà
+          un compte, vous pouvez vous connecter.
         </p>
-      </div>
-
-      <div class="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-        <RegisterForm client:load />
+        <a
+          data-testid="register-login-link"
+          href="/login"
+          class="mt-6 inline-block font-medium text-primary-600 hover:text-primary-500"
+        >
+          Se connecter
+        </a>
       </div>
     </div>
   </div>

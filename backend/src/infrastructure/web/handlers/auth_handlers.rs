@@ -120,25 +120,19 @@ pub async fn login_second_facteur(
     Ok(auth_response_with_cookie(response))
 }
 
-/// Qui a le droit de créer quel compte par `POST /auth/register`.
+/// Qui a le droit de créer un compte par `POST /auth/register`.
 ///
-/// Le rôle et l'organisation arrivent dans le corps de la requête. Ils étaient
-/// repris tels quels : un anonyme pouvait s'inscrire `superadmin`, ou syndic
-/// de n'importe quelle organisation dont il connaissait l'identifiant.
+/// Le superadmin authentifié, et lui seul (#1155). L'inscription publique est
+/// fermée depuis le 2026-11-19 : les comptes sont créés par l'administrateur.
+/// Un anonyme reçoit 403, quel que soit le rôle demandé.
 ///
-/// - SuperAdmin authentifié : tout compte, dans toute organisation. C'est la
-///   même règle que la gestion des utilisateurs (`user_handlers`).
-/// - Tout autre appelant, anonyme compris : un compte `owner` sans
-///   organisation. Le rattachement à une copropriété passe ensuite par le
-///   syndic.
+/// Avant cette fermeture, un anonyme pouvait créer un compte `owner` sans
+/// organisation. Plus tôt encore, le rôle et l'organisation du corps étaient
+/// repris tels quels : un anonyme pouvait s'inscrire `superadmin`.
 ///
 /// Le jeton est vérifié ici : la seule présence d'un en-tête `Authorization`
 /// ne donne aucun droit.
-fn verifier_droit_de_creer(
-    data: &web::Data<AppState>,
-    req: &HttpRequest,
-    request: &RegisterRequest,
-) -> Result<(), String> {
+fn verifier_droit_de_creer(data: &web::Data<AppState>, req: &HttpRequest) -> Result<(), String> {
     let appelant = req
         .headers()
         .get(actix_web::http::header::AUTHORIZATION)
@@ -149,12 +143,7 @@ fn verifier_droit_de_creer(
     if appelant.is_some_and(|claims| claims.is_superadmin()) {
         return Ok(());
     }
-    if request.role.trim().to_lowercase() != "owner" || request.organization_id.is_some() {
-        return Err(
-            "public registration only creates an owner account without organization".to_string(),
-        );
-    }
-    Ok(())
+    Err("public registration is closed: accounts are created by the administrator".to_string())
 }
 
 #[utoipa::path(
@@ -166,6 +155,7 @@ fn verifier_droit_de_creer(
     responses(
         (status = 201, description = "Resource created successfully"),
         (status = 400, description = "Bad Request"),
+        (status = 403, description = "Forbidden: public registration is closed"),
         (status = 404, description = "Not Found"),
         (status = 500, description = "Internal Server Error"),
     ),
@@ -184,48 +174,14 @@ pub async fn register(
         }));
     }
 
-    // L'appelant est-il DÉJÀ authentifié ?
-    //
-    // `register` sert deux usages opposés : l'inscription de soi-même, où
-    // poser la session du nouveau compte est exactement ce qu'on veut, et la
-    // création d'un utilisateur par un administrateur, où c'est précisément ce
-    // qu'on ne veut pas. Un seul endpoint, un seul comportement, deux besoins
-    // contraires.
-    //
-    // Sans ce garde-fou, le cookie du compte créé écrase celui de l'appelant :
-    // un SuperAdmin qui crée trois utilisateurs se retrouve connecté en tant
-    // que le troisième, sans que rien à l'écran ne l'explique. Constaté en
-    // recette le 2026-09-04 (R1-4), où l'acte 1 demande justement de créer
-    // trois comptes d'affilée.
-    //
-    // Ce n'est pas une escalade de privilège — le compte créé est en général
-    // moins doté — mais une confusion de session, et rien ne garantit que le
-    // sens restera toujours favorable.
-    //
-    // La correction durable est de séparer les deux routes ; ce garde-fou
-    // ferme le défaut sans casser l'inscription publique en attendant.
-    let deja_authentifie = req
-        .headers()
-        .get(actix_web::http::header::AUTHORIZATION)
-        .is_some()
-        || req.cookie(REFRESH_COOKIE_NAME).is_some();
-
-    if let Err(refus) = verifier_droit_de_creer(&data, &req, &request) {
+    if let Err(refus) = verifier_droit_de_creer(&data, &req) {
         return HttpResponse::Forbidden().json(serde_json::json!({ "error": refus }));
     }
 
+    // Seul un superadmin authentifié arrive ici : on rend le compte créé sans
+    // poser de cookie, pour ne pas basculer sa session sur ce compte (#769).
     match data.auth_use_cases.register(request.into_inner()).await {
-        Ok(response) => {
-            if deja_authentifie {
-                // On rend le compte créé, sans toucher à la session en cours.
-                HttpResponse::Created().json(AuthBody::from(response))
-            } else {
-                let cookie = build_refresh_cookie(&response.refresh_token);
-                HttpResponse::Created()
-                    .cookie(cookie)
-                    .json(AuthBody::from(response))
-            }
-        }
+        Ok(response) => HttpResponse::Created().json(AuthBody::from(response)),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": e
         })),
