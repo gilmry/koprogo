@@ -34,12 +34,12 @@
     "test:unit:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.10",
-    "@astrojs/node": "^11.1.5",
-    "@astrojs/svelte": "^9.0.1",
+    "@astrojs/check": "^0.9.12",
+    "@astrojs/node": "^11.1.14",
+    "@astrojs/svelte": "^9.1.6",
     "@tailwindcss/typography": "^0.5.20",
-    "@tailwindcss/vite": "^4.3.3",
-    "astro": "^7.3.1",
+    "@tailwindcss/vite": "^4.3.5",
+    "astro": "^7.4.13",
     "svelte": "^5.57.0",
     "svelte-i18n": "^4.0.1",
     "tailwindcss": "^4.2.2",
